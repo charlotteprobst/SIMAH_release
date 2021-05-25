@@ -2,10 +2,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 setwd(k.wd)
 
-summary <- read.csv("output_data/1_mortality_rates_data_SES.csv")
+summary <- read.csv("SIMAH_workplace/protocol/output_data/1_mortality_rates_data_SES.csv")
 
 data_graph <- subset(summary, cause!="REST" )
 Data <- c("dashed", "solid")
