@@ -2,11 +2,11 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 setwd(k.wd)
 
 # read in the summarised data - comparison of microsimulation and death rates data
-df <- read.csv("output_data/microsim_deaths_summary.csv") %>% select(-c(percent,rate))
+df <- read.csv("SIMAH_workplace/protocol/output_data/microsim_deaths_summary.csv") %>% select(-c(percent,rate))
 
 df %>% group_by(year) %>% tally()
 
@@ -37,7 +37,7 @@ df <- left_join(df, age2018)
 options(digits=2)
 
 # check percent adds up to 1 for each cause of death 
-check <- df %>% ungroup() %>% group_by(cause, year, Sex, edclass, datatype) %>% summarise(sum=sum(percent)) %>% ungroup() %>% 
+check <- df %>% ungroup() %>% group_by(cause, year, datatype) %>% summarise(sum=sum(percent)) %>% ungroup() %>% 
   mutate(sum=round(sum, digits=2)) %>% filter(sum!=1) %>% mutate(cause = factor(cause))
 
 # causes of death not summing to 1 - i.e. missing certain age categories
