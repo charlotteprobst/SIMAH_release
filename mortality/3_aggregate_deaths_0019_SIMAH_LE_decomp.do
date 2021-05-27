@@ -20,7 +20,7 @@ set more off
 
 global dir `"C:/Users/marie/Dropbox/NIH2020/"'
 
-cd "${dir}/Mortality/"
+cd "${dir}/SIMAH_workplace/mortality/"
 
 
 use "3_out data/mort_0019_complete.dta", clear
@@ -157,13 +157,13 @@ replace rest = 1 if (lvdc == . & panc == . & dm == . & ihd == . & istr == . & hs
 
 // Update excel worksheet to include the variable names and the codes assigned
 
-save "3_out data/1_allethn_mortbycause_0019.dta", replace
+save "3_out data/1_allethn_mortbycause_0019_LE_decomp.dta", replace
 
 ///////////////////////////////////////////////////////////////////////////////
 
 //sum by COD 
 
-use "3_out data/1_allethn_mortbycause_0019.dta", clear
+use "3_out data/1_allethn_mortbycause_0019_LE_decomp.dta", clear
 
 // Test that all deaths have been assigned exactly once
 egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer)
@@ -201,13 +201,13 @@ bysort age_gp sex edclass race year: egen CANmort = total(cancer)
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
-save "3_out data/2_allethn_sumCOD_0019.dta", replace
+save "3_out data/2_allethn_sumCOD_0019_LE_decomp.dta", replace
 
 //assigning deaths without education information
 //Deaths with missing data on SES were assigned to an education category based 
 //on the proportion in each education group by year, race/ethnicity, sex, age group, and cause of death.
 
-use "3_out data/2_allethn_sumCOD_0019.dta", clear
+use "3_out data/2_allethn_sumCOD_0019_LE_decomp.dta", clear
 
 keep year sex age_gp edclass race *mort
 reshape wide Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, i(year age_gp sex race) j(edclass)
@@ -225,5 +225,5 @@ keep year sex race age_gp *mort1 *mort2 *mort3
 reshape long Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
  i(year age_gp sex race) j(edclass)
 
-save "3_out data/allethn_sumCOD_0019_final.dta", replace
-outsheet using "${dir}/Mortality/3_out data/allethn_sumCOD_0019_final.csv" , comma replace
+save "3_out data/allethn_sumCOD_0019_final_LE_decomp.dta", replace
+outsheet using "${dir}/mortality/3_out data/allethn_sumCOD_0019_LE_decomp.csv" , comma replace

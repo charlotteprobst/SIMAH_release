@@ -20,7 +20,7 @@ set more off
 
 global dir `"C:/Users/marie/Dropbox/NIH2020/"'
 
-cd "${dir}/Mortality/"
+cd "${dir}/SIMAH_workplace/mortality/"
 
 
 use "3_out data/mort_0019_complete.dta", clear
@@ -90,7 +90,8 @@ generate ij = 1 if inrange(icd10, "X60", "X84") | inrange(icd10, "Y870", "Y870")
 generate lvdc = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K713", "K715") ///
 	| inrange(icd10, "K717", "K717")  | inrange(icd10, "K72", "K749") 
 
-////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////
 
 // Diabetes mellitus [E10-E14]
 
@@ -104,30 +105,21 @@ generate ihd = 1 if inrange(icd10, "I20", "I259")
 
 /////////////////////////////////////////////////////////////////
 
-// Stroke [G45-G46.8, I60-I63.9, I65-I66.9, I67.0-I67.3, I67.5-I67.6, I68.1-I68.2, I69.0-I69.3]
-
-generate str = 1 if inrange(icd10, "G45","G468") | inrange(icd10, "I60", "I639") ///
-	| inrange(icd10, "I65", "I673")  | inrange(icd10, "I675", "I676")  ///
-	| inrange(icd10, "I681", "I682") | inrange(icd10, "I690", "I693")
-
+// Ischemic  Stroke [G45-G46.8, I63–I63.9, I65–I66.9, I67.2-–I67.848, I69.3-–I69.4
+generate istr = 1 if inrange(icd10, "G45","G468") | inrange(icd10, "I63", "I639") ///
+	| inrange(icd10, "I65", "I669") | inrange(icd10, "I672", "I678") ///
+	| inrange(icd10, "I693", "I694") 
+ 
 
 ////////////////////////////////////////////////////////////////////
 
 // Hypertensive Heart Disease [I11] 
-
 generate hyphd = 1 if inrange(icd10, "I110", "I119")
-
-
-// Make sure that no death was coded double and that all ICD 10 codes were assigned
-// tab icd 10 if all categories are 0 
-
-//tab icd10 if  (lvdc == . & dm == . & ihd == . & str == . & hyphd == . ///
-//	& aud == . & uij == . & mvacc == . & ij == . )
 
 
 // Generate rest category
 gen rest = .
-replace rest = 1 if (lvdc == . & dm == . & ihd == . & str == . & hyphd == . ///
+replace rest = 1 if (lvdc == . & dm == . & ihd == . & istr == . & hyphd == . ///
 	& aud == . & uij == . & mvacc == . & ij == . )
 
 
@@ -141,36 +133,50 @@ save "3_out data/1_allethn_mortbycause_0019.dta", replace
 
 use "3_out data/1_allethn_mortbycause_0019.dta", clear
 
+// Test that all deaths have been assigned exactly once
+egen test = rowtotal(lvdc dm ihd istr hyphd aud uij mvacc ij)
+tab test
+drop test	
+
 /////////////////////////////////////////////////////////////////////////
 
 // Sum by COD (TOTAL + 7 Catgories + Rest)
 
 gen one=1
+
+egen test = rowtotal(lvdc dm ihd istr hyphd aud uij mvacc ij rest one)
+tab test
+drop test	
+
+
 bysort age_gp sex edclass race year: egen Tmort = total(one)
 
 bysort age_gp sex edclass race year: egen LVDCmort = total(lvdc)
 bysort age_gp sex edclass race year: egen DMmort = total(dm)
 bysort age_gp sex edclass race year: egen IHDmort = total(ihd)
-bysort age_gp sex edclass race year: egen STRmort = total(str)
+bysort age_gp sex edclass race year: egen ISTRmort = total(istr)
 bysort age_gp sex edclass race year: egen HYPHDmort = total( hyphd )
 bysort age_gp sex edclass race year: egen AUDmort = total(aud)
 bysort age_gp sex edclass race year: egen UIJmort = total(uij)
 bysort age_gp sex edclass race year: egen MVACCmort = total(mvacc)
 bysort age_gp sex edclass race year: egen IJmort = total(ij)
+
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
 save "3_out data/2_allethn_sumCOD_0019.dta", replace
 
 //assigning deaths without education information
+//Deaths with missing data on SES were assigned to an education category based 
+//on the proportion in each education group by year, race/ethnicity, sex, age group, and cause of death.
 
 use "3_out data/2_allethn_sumCOD_0019.dta", clear
 
 keep year sex age_gp edclass race *mort
-reshape wide Tmort LVDCmort DMmort IHDmort STRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort RESTmort, i(year age_gp sex race) j(edclass)
+reshape wide Tmort LVDCmort DMmort IHDmort ISTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort RESTmort, i(year age_gp sex race) j(edclass)
 sum *mort99
 
-foreach i in T LVDC DM IHD STR HYPHD AUD UIJ MVACC IJ REST {
+foreach i in T LVDC DM IHD ISTR HYPHD AUD UIJ MVACC IJ REST {
 gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 	replace `i'mort1 = `i'mort1 + (`i'mort1/MORT`i') * `i'mort99 if MORT`i' != 0 
 	replace `i'mort2 = `i'mort2 + (`i'mort2/MORT`i') * `i'mort99 if MORT`i' != 0 
@@ -179,8 +185,8 @@ gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 
 keep year sex race age_gp *mort1 *mort2 *mort3   
 
-reshape long Tmort LVDCmort DMmort IHDmort STRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort RESTmort, ///
+reshape long Tmort LVDCmort DMmort IHDmort ISTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort RESTmort, ///
  i(year age_gp sex race) j(edclass)
 
 save "3_out data/allethn_sumCOD_0019_final.dta", replace
-outsheet using "${dir}/Mortality/3_out data/allethn_sumCOD_0019_final.csv" , comma replace
+outsheet using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0019_final.csv" , comma replace
