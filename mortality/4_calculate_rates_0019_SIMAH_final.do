@@ -14,13 +14,13 @@ global dir `"C:/Users/marie/Dropbox/NIH2020"'
 
 // combine deaths with population by cell
 // read in population counts
-use "${dir}/Demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", clear
+use "${dir}/SIMAH_workplace/demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", clear
 
-merge 1:1 year age_gp sex edclass race using "${dir}/Mortality/3_out data/allethn_sumCOD_0019_final.dta"
+merge 1:1 year age_gp sex edclass race using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0019_final.dta"
 
 /* _m==1 is for groups that recorded no deaths in that year (those that were not merged but only appear in master...) */
 
- foreach var in T LVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
+ foreach var in T LVDC DM IHD ISTR HYPHD AUD UIJ MVACC IJ REST {
    replace `var'mort = 0 if _m==1 
    gen `var'rate   = (`var'mort/TPop)*100000
    }
@@ -29,18 +29,15 @@ tab year if _m==2
 drop _m
 label var Trate "all cause"
 label var LVDCrate "liver disease and cirrohosis" 
-label var PANCrate "Pancreatitis" 
 label var DMrate "diabbetes mellitus"
 label var IHDrate "ischemic heart disease"
-label var HSTRrate "Hemorrhagic Stroke"
 label var HYPHDrate "hypertensive heart disease"
 label var AUDrate "alcohol use disorders"
 label var UIJrate "unintentional injuries"
 label var MVACCrate "motorvehicle accidents"
 label var IJrate  "intentional injuries"
-label var CANrate  "Cancer mortality"
 
 
-save "${dir}/Mortality/3_out data/allethn_rates_0019_final.dta", replace
+save "${dir}/SIMAH_workplace/mortality/3_out data/allethn_rates_0019_final.dta", replace
 
-outsheet using "${dir}/Mortality/3_out data/allethn_rates_0019_final.csv" , comma replace
+outsheet using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_rates_0019_final.csv" , comma replace
