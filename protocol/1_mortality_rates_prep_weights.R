@@ -3,6 +3,7 @@ library(tidyr)
 library(ggplot2)
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
+k.wd <- c("~/Google Drive/SIMAH Sheffield/")
 setwd(k.wd)
 
 df <- read.csv("SIMAH_workplace/protocol/output_data/1_microsim_deaths_summary.csv") 
