@@ -3,6 +3,7 @@ library(tidyr)
 library(ggplot2)
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
+k.wd <- c("~/Google Drive/SIMAH Sheffield/")
 setwd(k.wd)
 
 weights <- read.csv("SIMAH_workplace/protocol/output_data/1_population_weights_2018.csv")
@@ -15,13 +16,14 @@ Data <- c("dashed", "solid")
 Data <- Data[as.numeric(as.factor(df$datatype))]
 symbol <- c(16, 21)
 symbol <- symbol[as.numeric(as.factor(df$datatype))]
-df$edclass <- recode(df$edclass, 
-                             "LEHS" = "High school degree or less", 
-                             "SomeC" = "Some college", 
+
+df$edclass <- recode(df$edclass,
+                             "LEHS" = "High school degree or less",
+                             "SomeC" = "Some college",
                              "College" = "College degree or more")
-df$edclass <- factor(df$edclass, 
-                             levels = c("High school degree or less", 
-                                        "Some college", 
+df$edclass <- factor(df$edclass,
+                             levels = c("High school degree or less",
+                                        "Some college",
                                         "College degree or more"))
 
 df$sex <- recode(df$sex, "m" = "Men", "f" = "Women")
@@ -35,7 +37,7 @@ df$cause <- recode(df$cause,
                            "UIJ" = "Other UI",
                            "IHD" = "IHD", 
                            "HYPHD" = "HHD",
-                           "STR" = "Stroke",  
+                           "ISTR" = "Stroke",  
                            "DM" = "Diabetes")
 df$cause <- factor(df$cause, levels = c("AUD", "Liver C.", 
                                                         "Suicide", "MVA", 
@@ -45,8 +47,8 @@ df$datatype <- recode(df$datatype, "microsim" = "Microsimulation", "target"= "Ob
 
 
 ## Prepare for SES graph
-sum <- df %>% group_by(year, datatype, cause, agecat, sex, edclass, .drop=FALSE) %>% 
-  summarize(deaths=sum(totaldeaths), population=sum(n))
+sum <- df %>% ungroup() %>% group_by(year, datatype, cause, agecat, sex, edclass, .drop=FALSE) %>% 
+  summarise(deaths=sum(totaldeaths), population=sum(n))
 
 # join 2018 age percentages with data for all years - to only use age splits for 2018
 sum <- left_join(sum, weights)
@@ -62,7 +64,7 @@ sum <- sum %>% group_by(year, sex, edclass, cause, datatype) %>%
   summarise(rate = sum(weighted_rate))
 
 # Specifications for the SES graph
-data_graph <- subset(sum, cause!="Rest" )
+data_graph <- subset(sum, cause!="Rest")
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 ggplot(data=data_graph, aes(x=year, y=rate, colour=edclass)) + 
