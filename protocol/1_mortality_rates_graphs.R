@@ -81,6 +81,6 @@ ggplot(data=data_graph, aes(x=year, y=rate, colour=edclass)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
   labs(color="Education", linetype = "Data type", size = "Data type") +
   guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2))
-ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
+ggsave("SIMAH_workplace/protocol/output_data/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
 
 
