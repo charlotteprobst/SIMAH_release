@@ -14,9 +14,9 @@ global dir `"C:/Users/marie/Dropbox/NIH2020"'
 
 // combine deaths with population by cell
 // read in population counts
-use "${dir}/Demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", clear
+use "${dir}/SIMAH_workplace/demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", clear
 
-merge 1:1 year age_gp sex edclass race using "${dir}/Mortality/3_out data/allethn_sumCOD_0019_final.dta"
+merge 1:1 year age_gp sex edclass race using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0019_LE_decomp.dta"
 
 /* _m==1 is for groups that recorded no deaths in that year (those that were not merged but only appear in master...) */
 
@@ -41,6 +41,6 @@ label var IJrate  "intentional injuries"
 label var CANrate  "Cancer mortality"
 
 
-save "${dir}/Mortality/3_out data/allethn_rates_0019_final.dta", replace
+save "${dir}/SIMAH_workplace/mortality/3_out data/allethn_rates_0019_LE_decomp.dta", replace
 
-outsheet using "${dir}/Mortality/3_out data/allethn_rates_0019_final.csv" , comma replace
+outsheet using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_rates_0019_LE_decomp.csv" , comma replace
