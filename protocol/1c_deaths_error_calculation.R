@@ -29,7 +29,7 @@ sum <- sum %>% pivot_wider(names_from=datatype, values_from=rate) %>%
   mutate(cause= factor(cause, levels=c("AUD","LVDC","IJ","MVACC","UIJ","IHD","HYPHD","ISTR","DM","REST"))) %>% 
   ungroup() %>% group_by(cause) %>% arrange(desc(LEHS), .by_group=T) %>% filter(cause!="REST")
 
-write.csv(sum, "SIMAH_workplace/protocol/output_data/SuppTable3.csv", row.names=FALSE)
+write.csv(sum, "SIMAH_workplace/protocol/output_data/1_SuppTable3.csv", row.names=FALSE)
 
 # recalculate error - just split by race/ethnicity 
 sum <- df %>% ungroup() %>% group_by(year, datatype, cause, agecat, sex, raceeth, .drop=FALSE) %>% 
@@ -50,7 +50,7 @@ sum <- sum %>% pivot_wider(names_from=datatype, values_from=rate) %>%
   select(cause, WHI, BLA,SPA,OTH) %>% 
   mutate(cause= factor(cause, levels=c("AUD","LVDC","IJ","MVACC","UIJ","IHD","HYPHD","ISTR","DM","REST"))) %>% 
   ungroup() %>% group_by(cause) %>% arrange(desc(BLA), .by_group=T) %>% filter(cause!="REST")
-write.csv(sum, "SIMAH_workplace/protocol/output_data/SuppTable4.csv", row.names=FALSE)
+write.csv(sum, "SIMAH_workplace/protocol/output_data/1_SuppTable4.csv", row.names=FALSE)
 
 # recalculate error - split by both education and race/ethnicity
 sum <- df %>% ungroup() %>% group_by(year, datatype, cause, agecat, sex, edclass, raceeth, .drop=FALSE) %>% 
@@ -73,4 +73,4 @@ sum <- sum %>%
   select(edclass, cause, WHI, BLA, SPA, OTH) %>% 
   mutate(cause= factor(cause, levels=c("AUD","LVDC","IJ","MVACC","UIJ","IHD","HYPHD","ISTR","DM","REST"))) %>% 
   ungroup() %>% group_by(edclass) %>% arrange(cause, .by_group=T) %>% filter(cause!="REST")
-write.csv(sum, "SIMAH_workplace/protocol/output_data/SuppTable5.csv", row.names=FALSE)
+write.csv(sum, "SIMAH_workplace/protocol/output_data/1_SuppTable5.csv", row.names=FALSE)

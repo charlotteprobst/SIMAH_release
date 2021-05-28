@@ -6,9 +6,10 @@ library(forcats)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
-basepop <- read.csv("output_data/1millionbasepop.csv") %>% select(microsim.init.id, microsim.init.age, microsim.init.sex,
+basepop <- read.csv("SIMAH_workplace/protocol/output_data/0_1millionbasepop.csv") %>% select(microsim.init.id, microsim.init.age, microsim.init.sex,
                                                       microsim.init.race, microsim.init.education, microsim.init.drinkingstatus,
                                                       microsim.init.alc.gpd)
 # code each of the drinking categories
@@ -70,8 +71,8 @@ ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat))
                    labels=addline_format(c("High school degree or less", 
                                            "Some college", "College degree or more")))
 
-ggsave("graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
-write.csv(summary, "output_data/alcohol use by SES and sex.csv")
+ggsave("SIMAH_workplace/protocol/output_data/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
+write.csv(summary, "output_data/alcohol use by SES and sex.csv", row.names=F)
 # per 100,000 population (calculated on 1 million so divide by 10 for per 100,000)
 summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% mutate(n=n*(1/percentpop),
@@ -88,20 +89,5 @@ ggplot(data=summary, aes(x=microsim.init.education, y=n, fill=drinkercat)) + geo
         legend.title = element_blank()) + ylab("100,000 population")+ xlab("") + 
   scale_fill_manual(values=col.vec) + scale_y_continuous(expand=c(0,0), limits=c(0,500))
 ggsave("graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 27, height = 20, units = "cm")
-
-# race/ethnicity breakdown - if needed
-summary <- basepop %>% group_by(microsim.init.sex, microsim.init.race, microsim.init.education, drinkercat) %>% tally() %>% 
-  ungroup() %>% group_by(microsim.init.sex, microsim.init.education, microsim.init.race) %>% mutate(n=n*(1/percentpop),
-                                                                                n=n/100000)
-col.vec <- c('#808080', '#132268','#447a9e','#93aebf','#d72c40')
-ggplot(data=summary, aes(x=microsim.init.education, y=n, fill=drinkercat)) + geom_col(position=position_stack(reverse=T)) + 
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.race), scales="free") +
-  theme_light() + 
-  theme(strip.background = element_rect(fill = "white"), 
-        strip.text = element_text(colour = 'black'), 
-        text = element_text(size = 14),
-        axis.text = element_text(size = 12), legend.position="bottom", 
-        legend.title = element_blank()) + ylab("100,000 population")+ xlab("") + 
-  scale_fill_manual(values=col.vec) + scale_y_continuous(expand=c(0,10), limits=c(0,NA))
 
 
