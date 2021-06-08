@@ -1,3 +1,7 @@
+# SIMAH - protocol paper. June 2021
+# This code reads in the baseline population and generates a Figure for the 
+# protocol paper showing drinking patterns in the baseline population
+
 # baseline alcohol consumption of population 
 library(dplyr)
 library(tidyr)
@@ -5,7 +9,7 @@ library(ggplot2)
 library(forcats)
 
 
-k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
@@ -64,15 +68,16 @@ ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat))
         axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
         legend.position="bottom", 
         legend.title = element_blank()) +
-  ylab("Percentage (%)")+ xlab("") + 
+  ylab("Prevalence (%)")+ xlab("") + 
   scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,70)) +
+  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,72)) +
   scale_x_discrete(breaks=unique(summary$microsim.init.education), 
                    labels=addline_format(c("High school degree or less", 
                                            "Some college", "College degree or more")))
 
-ggsave("SIMAH_workplace/protocol/output_data/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
-write.csv(summary, "output_data/alcohol use by SES and sex.csv", row.names=F)
+ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
+write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
+
 # per 100,000 population (calculated on 1 million so divide by 10 for per 100,000)
 summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% mutate(n=n*(1/percentpop),
