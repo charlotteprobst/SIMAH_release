@@ -7,6 +7,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(forcats)
+library(readr)
+library(plotrix)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
@@ -43,11 +45,45 @@ basepop <- basepop %>% mutate(drinkercat = ifelse(microsim.init.alc.gpd==0, "Abs
                               drinkercat = factor(drinkercat, levels=c("Abstainer","Low risk","Medium risk","High risk","Very high risk")),
                               microsim.init.race = factor(microsim.init.race, levels=c("non-Hispanic White","non-Hispanic Black",
                                                                                        "Hispanic", "Other")))
+
+# read in upshifted BRFSS data
+brfss <- read_csv("SIMAH_workplace/protocol/output_data/BRFSS_upshift_BMIUSA.csv") %>% 
+  filter(YEAR==2000 & AGE<=79) %>% select(SEX, EDUCATION, alcgpd_new, DRINKINGSTATUS_NEW) %>% 
+  mutate(drinkercat = ifelse(alcgpd_new==0, "Abstainer",
+                             ifelse(SEX=="Male" & alcgpd_new>0 & alcgpd_new<=40, "Low risk",
+                                    ifelse(SEX=="Male" & alcgpd_new>40 & alcgpd_new<=60, "Medium risk",
+                                           ifelse(SEX=="Male" & alcgpd_new>60 & alcgpd_new<=100, "High risk",
+                                                  ifelse(SEX=="Male" & alcgpd_new>100, "Very high risk",
+                                                         ifelse(SEX=="Female" & alcgpd_new>0 & alcgpd_new<=20, "Low risk",
+                                                                ifelse(SEX=="Female" & alcgpd_new>20 & alcgpd_new<=40, "Medium risk",
+                                                                       ifelse(SEX=="Female" & alcgpd_new>40 & alcgpd_new<=60, "High risk",
+                                                                              ifelse(SEX=="Female" & alcgpd_new>60, "Very high risk", NA))))))
+                                    ))),
+         microsim.init.sex = ifelse(SEX=="Female","Women","Men"),
+         microsim.init.education = ifelse(EDUCATION==1, "High school degree or less",
+                                          ifelse(EDUCATION==2, "Some college",
+                                                 ifelse(EDUCATION==3, "College degree or more", NA))),
+         microsim.init.education = factor(microsim.init.education,
+                                          levels=c("High school degree or less",
+                                                   "Some college",
+                                                   "College degree or more")),
+         drinkercat = factor(drinkercat, levels=c("Abstainer","Low risk","Medium risk","High risk","Very high risk")))
+
 # in percentages
 summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% 
   mutate(percent=n/sum(n)*100) 
 summary$drinkercat <- fct_rev(summary$drinkercat)
+
+# summarise brfss data - mean prevalence by education and sex
+summarybrfss <- brfss %>% group_by(microsim.init.sex, microsim.init.education) %>% 
+  mutate(DRINKINGSTATUS_NEW = ifelse(alcgpd_new==0, 0, DRINKINGSTATUS_NEW),
+         prevalence=mean(DRINKINGSTATUS_NEW)*100,
+         se = std.error(DRINKINGSTATUS_NEW)*100) %>% 
+  select(drinkercat, microsim.init.sex, microsim.init.education, prevalence, se) %>% 
+  distinct() %>% filter(drinkercat!="Abstainer")
+
+summary <- left_join(summary, summarybrfss)
 
 col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
 col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
@@ -57,8 +93,11 @@ addline_format <- function(x,...){
   gsub('\\s','\n',x)
 }
 
+# plot graph
 ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) + 
+  geom_point(aes(x=microsim.init.education, y=prevalence, colour="black"), fill=NA) + 
+  geom_errorbar(aes(x=microsim.init.education, ymin=prevalence-se*1.96, ymax=prevalence+se*1.96), width=0.5) +
   facet_grid(cols=vars(microsim.init.sex)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
@@ -70,29 +109,12 @@ ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat))
         legend.title = element_blank()) +
   ylab("Prevalence (%)")+ xlab("") + 
   scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,72)) +
+  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
   scale_x_discrete(breaks=unique(summary$microsim.init.education), 
                    labels=addline_format(c("High school degree or less", 
-                                           "Some college", "College degree or more")))
+                                           "Some college", "College degree or more"))) + 
+  scale_colour_manual(values="black", labels="BRFSS")
 
 ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
-
-# per 100,000 population (calculated on 1 million so divide by 10 for per 100,000)
-summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
-  ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% mutate(n=n*(1/percentpop),
-                                                                                n=n/100000)
-col.vec <- c('#808080', '#132268','#447a9e','#93aebf','#d72c40')
-
-ggplot(data=summary, aes(x=microsim.init.education, y=n, fill=drinkercat)) + geom_col(position=position_stack(reverse=T)) + 
-  facet_grid(cols=vars(microsim.init.sex)) +
-  theme_light() + 
-  theme(strip.background = element_rect(fill = "white"), 
-        strip.text = element_text(colour = 'black'), 
-        text = element_text(size = 14),
-        axis.text = element_text(size = 12), legend.position="bottom", 
-        legend.title = element_blank()) + ylab("100,000 population")+ xlab("") + 
-  scale_fill_manual(values=col.vec) + scale_y_continuous(expand=c(0,0), limits=c(0,500))
-ggsave("graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 27, height = 20, units = "cm")
-
 
