@@ -5,7 +5,7 @@ library(ggplot2)
 library(forcats)
 
 
-k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 

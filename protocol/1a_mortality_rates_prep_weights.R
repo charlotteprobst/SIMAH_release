@@ -1,3 +1,8 @@
+# SIMAH - protocol paper. June 2021
+# This code generates population weights for the year 2018 using 
+# the microsimulation population as well as CPS target data
+
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)

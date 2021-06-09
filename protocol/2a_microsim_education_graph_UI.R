@@ -1,9 +1,13 @@
+# SIMAH - protocol paper. June 2021
+# This code reads in data on the microsimulation and respective uncertainty estimates
+# to plot educational groups over time for the microsimulation and three data sources
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(zoo)
 
-k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/Protocol_paper")
+k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
@@ -34,7 +38,7 @@ uncertainty$edclass <- factor(uncertainty$edclass, levels=c("High school degree 
                                                             "Some college",
                                                             "College degree or more"))
 #uncertainty$edclass <- factor(uncertainty$edclass, levels = c("High school degree or less", "Some college", "College degree or more"))
-
+# warning because we do not have a ribbon around the observed data
 ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
   geom_ribbon(aes(ymin=min, ymax=max), alpha=0.25, colour=NA) + 
   geom_line(aes(color=datatype, size=datatype), alpha= .75) +
@@ -56,7 +60,7 @@ ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=data
   labs(x = "Year ", y = "Proportion (%)", color = "Data Type", size = "Data Type", shape = "Data Type") +
   theme(panel.spacing = unit(1.2, "lines"))
 
-ggsave("SIMAH_workplace/protocol/output_data/2_microsim_education_graph_uncertaintysex.jpeg", dpi = 600, width = 22, height = 20, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/2_microsim_education_graph_uncertaintysex.jpeg", dpi = 600, width = 22, height = 20, units = "cm")
 
 ##### plot for uncertainty BY RACE 
 uncertainty <- read.csv("SIMAH_workplace/protocol/output_data/2_uncertainty_estimatesrace.csv") %>% rename(race=microsim.init.race,
@@ -105,7 +109,7 @@ ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=data
   labs(x = "Year ", y = "Proportion (%)", color = "Data Type", size = "Data Type", shape = "Data Type") +
   theme(panel.spacing = unit(1.2, "lines"))
 
-ggsave("SIMAH_workplace/protocol/output_data/2_microsim_education_graph_uncertaintyrace.jpeg", dpi = 600, width = 22, height = 20, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/2_microsim_education_graph_uncertaintyrace.jpeg", dpi = 600, width = 22, height = 20, units = "cm")
 
 
 

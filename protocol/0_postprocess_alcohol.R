@@ -42,57 +42,28 @@ basepop <- basepop %>% mutate(drinkercat = ifelse(microsim.init.alc.gpd==0, "Abs
                                                                levels=c("High school degree or less",
                                                                         "Some college",
                                                                         "College degree or more")),
-                              drinkercat = factor(drinkercat, levels=c("Abstainer","Low risk","Medium risk","High risk","Very high risk")),
                               microsim.init.race = factor(microsim.init.race, levels=c("non-Hispanic White","non-Hispanic Black",
                                                                                        "Hispanic", "Other")))
-
-# read in upshifted BRFSS data - commented out because file so big
-# read in summary BRFSS file below instead
-# brfss <- read_csv("SIMAH_workplace/protocol/output_data/BRFSS_upshift_BMIUSA.csv") %>% 
-#   filter(YEAR==2000 & AGE<=79) %>% select(SEX, EDUCATION, alcgpd_new, DRINKINGSTATUS_NEW) %>% 
-#   mutate(drinkercat = ifelse(alcgpd_new==0, "Abstainer",
-#                              ifelse(SEX=="Male" & alcgpd_new>0 & alcgpd_new<=40, "Low risk",
-#                                     ifelse(SEX=="Male" & alcgpd_new>40 & alcgpd_new<=60, "Medium risk",
-#                                            ifelse(SEX=="Male" & alcgpd_new>60 & alcgpd_new<=100, "High risk",
-#                                                   ifelse(SEX=="Male" & alcgpd_new>100, "Very high risk",
-#                                                          ifelse(SEX=="Female" & alcgpd_new>0 & alcgpd_new<=20, "Low risk",
-#                                                                 ifelse(SEX=="Female" & alcgpd_new>20 & alcgpd_new<=40, "Medium risk",
-#                                                                        ifelse(SEX=="Female" & alcgpd_new>40 & alcgpd_new<=60, "High risk",
-#                                                                               ifelse(SEX=="Female" & alcgpd_new>60, "Very high risk", NA))))))
-#                                     ))),
-#          microsim.init.sex = ifelse(SEX=="Female","Women","Men"),
-#          microsim.init.education = ifelse(EDUCATION==1, "High school degree or less",
-#                                           ifelse(EDUCATION==2, "Some college",
-#                                                  ifelse(EDUCATION==3, "College degree or more", NA))),
-#          microsim.init.education = factor(microsim.init.education,
-#                                           levels=c("High school degree or less",
-#                                                    "Some college",
-#                                                    "College degree or more")),
-#          drinkercat = factor(drinkercat, levels=c("Abstainer","Low risk","Medium risk","High risk","Very high risk")))
 
 # in percentages
 summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% 
   mutate(percent=n/sum(n)*100) 
-summary$drinkercat <- fct_rev(summary$drinkercat)
 
-# summarise brfss data - mean prevalence by education and sex
-# summarybrfss <- brfss %>% group_by(microsim.init.sex, microsim.init.education) %>% 
-#   mutate(DRINKINGSTATUS_NEW = ifelse(alcgpd_new==0, 0, DRINKINGSTATUS_NEW),
-#          prevalence=mean(DRINKINGSTATUS_NEW)*100,
-#          se = std.error(DRINKINGSTATUS_NEW)*100) %>% 
-#   select(drinkercat, microsim.init.sex, microsim.init.education, prevalence, se) %>% 
-#   distinct() %>% filter(drinkercat!="Abstainer")
-# write.csv(summarybrfss, "SIMAH_workplace/protocol/output_data/summarybrfss.csv", row.names=FALSE)
 
 # read in the processed brfss data - to save time associated with reading full BRFSS
-summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/summarybrfss.csv")
+summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/0_summarybrfss.csv")
 
 summary <- left_join(summary, summarybrfss)
 summary$microsim.init.education <- factor(summary$microsim.init.education, 
                                           levels=c("High school degree or less",
                                                    "Some college",
                                                    "College degree or more"))
+summary$drinkercat = factor(summary$drinkercat, 
+                            levels=c("Abstainer","Low risk","Medium risk","High risk",
+                                     "Very high risk"))
+summary$drinkercat <- fct_rev(summary$drinkercat)
+
 
 col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
 col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
