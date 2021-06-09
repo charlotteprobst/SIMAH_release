@@ -86,7 +86,7 @@ summary$drinkercat <- fct_rev(summary$drinkercat)
 # write.csv(summarybrfss, "SIMAH_workplace/protocol/output_data/summarybrfss.csv", row.names=FALSE)
 
 # read in the processed brfss data - to save time associated with reading full BRFSS
-summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/summarybrfss.csv")
+summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/0_summarybrfss.csv")
 
 summary <- left_join(summary, summarybrfss)
 summary$microsim.init.education <- factor(summary$microsim.init.education, 
@@ -105,8 +105,11 @@ addline_format <- function(x,...){
 # plot graph
 ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) + 
-  geom_point(aes(x=microsim.init.education, y=prevalence, colour="black"), fill=NA) + 
-  geom_errorbar(aes(x=microsim.init.education, ymin=prevalence-se*1.96, ymax=prevalence+se*1.96), width=0.5) +
+  geom_point(aes(x=microsim.init.education, y=prevalence, colour="black"), 
+             fill=NA, size = 0.9) + 
+  geom_errorbar(aes(x=microsim.init.education, 
+                    ymin=prevalence-se*1.96, ymax=prevalence+se*1.96), 
+                width=0.2) +
   facet_grid(cols=vars(microsim.init.sex)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
