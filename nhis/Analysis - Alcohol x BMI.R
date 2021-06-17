@@ -21,7 +21,7 @@ nhis <-readRDS ("SIMAH_workspace/nhis/Data/nhis.rds")
 nhis_male <- readRDS ("SIMAH_workspace/nhis/Data/nhis_male.rds")
 nhis_female <- readRDS("SIMAH_workspace/nhis/Data/nhis_female.rds")
 
-
+str(nhis)
 
 ### Sensitivity 5: 
           
@@ -42,31 +42,32 @@ table1_alc_bmi <-CreateTableOne(vars= c("allcause_death", "heart_death", "neopla
 # cvd_death
 # diabetes_death
                      
-# Model 1:Adjusted for age (as timescale), education, ethnicity/race, and marital status. 
+# Model 1:Adjusted for age (as timescale), education, ethnicity/race, marital status, and smoking. 
 
                 
         ## All Participants
         bmi_alc_m1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                          const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor,  data = nhis, robust=0)
+                          const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
                 summary(bmi_alc_m1)
+
                 
                 
                 # Joint effects
                 nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
-                bmi_alc_m1b <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(interact) + 
-                    const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor,  data = nhis, robust=0)
+                bmi_alc_m1b <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(interact) + 
+                    const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
                     summary(bmi_alc_m1b)
               
                 
         ## MEN
-        bmi_alc_m1_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + ethnicity.factor,  data = nhis_male, robust=0)
+        bmi_alc_m1_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_male, robust=0)
                 summary(bmi_alc_m1_m)
                 
                 
         ## WOMEN
-        bmi_alc_m1_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + ethnicity.factor,  data = nhis_female, robust=0)
+        bmi_alc_m1_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_female, robust=0)
                 summary(bmi_alc_m1_f)            
                 
                 
@@ -95,29 +96,29 @@ table1_alc_bmi <-CreateTableOne(vars= c("allcause_death", "heart_death", "neopla
 # diabetes_death
                 
                 
-# Model 2:Adjusted for age (as timescale), education, and marital status. 
+# Model 2:Adjusted for age (as timescale), education, marital status, and smoking. 
         ## All Participants
-        bmi_alc_m2 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis, robust=0)
+        bmi_alc_m2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(married.factor) + const(edu.factor) + female.factor + smoking4.factor,  data = nhis, robust=0)
                 summary(bmi_alc_m2)
                 
                 # Joint effects
                 nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
-                bmi_alc_m2b <- aalen(Surv(bl_age, end_age, cvd_death) ~ const(interact) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis, robust=0)
+                bmi_alc_m2b <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(interact) + 
+                    const(married.factor) + const(edu.factor) + female.factor + smoking4.factor,  data = nhis, robust=0)
                 summary(bmi_alc_m2b)
         
                 
         ## MEN
-        bmi_alc_m2_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_male, robust=0)
+        bmi_alc_m2_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_male, robust=0)
                 summary(bmi_alc_m2_m)   
                 
                 
                 
         ## WOMEN
-        bmi_alc_m2_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_female, robust=0)
+        bmi_alc_m2_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female, robust=0)
                 summary(bmi_alc_m2_f)
                 
        
@@ -134,33 +135,33 @@ table1_alc_bmi <-CreateTableOne(vars= c("allcause_death", "heart_death", "neopla
 # diabetes_death            
 
              
-# Model 3: Stratified: Non-Hispanic White Only; Adjusted for age (as timescale), education, and marital status. 
+# Model 3: Stratified: Non-Hispanic White Only; Adjusted for age (as timescale), education, marital status, and smoking. 
        nhis_white <- filter(nhis, ethnicity.factor=="Non-Hispanic White")
        nhis_female_white <- filter(nhis_female, ethnicity.factor=="Non-Hispanic White")
        nhis_male_white <- filter(nhis_male, ethnicity.factor=="Non-Hispanic White")
                 
        
         ## All Participants
-        bmi_alc_m3 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + female.factor,  data = nhis_white, robust=0)
+        bmi_alc_m3 <- aalen(Surv(bl_age, end_age, heart_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_white, robust=0)
                 summary(bmi_alc_m3)
                 
                 
                 # Joint effects
                 nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
                 bmi_alc_m3b <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(interact) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis_white, robust=0)
+                    const(married.factor) + const(edu.factor) + female.factor + smoking4.factor,  data = nhis_white, robust=0)
                 summary(bmi_alc_m3b)
                 
 
         ## MEN
-        bmi_alc_m3_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_male_white, robust=0)
+        bmi_alc_m3_m <- aalen(Surv(bl_age, end_age, heart_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_male_white, robust=0)
                 summary(bmi_alc_m3_m)
                 
                 
         ## WOMEN
-        bmi_alc_m3_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_female_white, robust=0)
+        bmi_alc_m3_f <- aalen(Surv(bl_age, end_age, heart_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
+                    const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female_white, robust=0)
                 summary(bmi_alc_m3_f)                
                 
