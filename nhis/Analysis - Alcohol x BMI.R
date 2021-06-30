@@ -32,9 +32,9 @@ nhis_female$bmi_cat.factor2 <- relevel(nhis_female$bmi_cat.factor, ref = "Obese"
 results <- function(model, x) {
     mu <- model$gamma[x]       
     var <-  model$var.gamma[x,x]
-    confint.lower <- round((mu - (1.96 * sqrt(var)))*100000,2) # CI * 100,000 to get result per 10,000py
-    confint.upper <- round((mu + (1.96 * sqrt(var)))*100000,2) # CI * 100,000 to get result per 10,000py
-    mu <- round(mu*100000,2)                                   # mu * 100,000 to get result per 10,000py 
+    confint.lower <- round((mu - (1.96 * sqrt(var)))*10000,2) # CI * 10,000 to get result per 10,000py
+    confint.upper <- round((mu + (1.96 * sqrt(var)))*10000,2) # CI * 10,000 to get result per 10,000py
+    mu <- round(mu*10000,2)                                   # mu * 10,000 to get result per 10,000py 
     output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
     return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
 
