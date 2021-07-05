@@ -4,6 +4,9 @@
 ### SES x Health Behavior interaction and mediation
 
 
+# LOAD DATA AND SET FILE LOCATIONS ----------------------------------------------------------------------------------
+
+# load libraries
 library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
 library(gmodels)    # CrossTable command
@@ -20,13 +23,38 @@ library(VGAM)       # multinomial regression, needed for causal mediation
 memory.limit(size=1e+13)
 
 
-# Set the working directory and load data
+
+# Set the working directory and other file locations
 kp <- "C:/Users/klajd/OneDrive/SIMAH"
 setwd(kp)
 
+    # Output of descriptives
+    output <- "SIMAH_workspace/nhis/SES x Behavior/SIMAH_workspace/nhis/SES x Behavior/Output/"
+
+    # Output location for the assumption checks
+    alc_int_assump <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/"       
+    bmi_int_assump <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/"       
+    phy_int_assump <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/"       
+    smk_int_assump <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/"   
+    CMed <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CMed/"   
+
+
+    # Output location of the Aalen hazard models   
+    alc_int <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/"       
+    bmi_int <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/"       
+    phy_int <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/"       
+    smk_int <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/"   
+    
+    
+    
+# Load data
 nhis <-readRDS ("SIMAH_workspace/nhis/Data/nhis.rds")
 nhis_male <- readRDS ("SIMAH_workspace/nhis/Data/nhis_male.rds")
 nhis_female <- readRDS("SIMAH_workspace/nhis/Data/nhis_female.rds")
+
+
+# load functions
+source("SIMAH_code/nhis/Function - CasualMed Results.R")
 
 
 
@@ -40,10 +68,10 @@ tab1 <-CreateTableOne(vars= c("yrs_followup","allcause_death.factor", "age",
                                       "alcohol5v2.factor", "smoking4.factor", "bmi_cat.factor", "phy_act3.factor",
                                      "ethnicity.factor",  "married.factor", "employed.factor", "income.factor"), 
                       strata= c("edu.factor", "female.factor"), addOverall = TRUE, data=nhis)
-  table1_v1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)
-  table1_v2 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p")
-  write.csv(table1_v1, file="SIMAH_workspace/nhis/SES x Behavior/SIMAH_workspace/nhis/SES x Behavior/Output/Table1 Demographics_V1.csv")
-  write.csv(table1_v2, file="SIMAH_workspace/nhis/SES x Behavior/SIMAH_workspace/nhis/SES x Behavior/Output/Table1 Demographics_V2.csv")
+  table1_v1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)  # Shows sample size and %
+  table1_v2 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") # shows % only
+  write.csv(table1_v1, file = file.path(output, "Table1 Demographics_V1.csv"))
+  write.csv(table1_v2, file = file.path(output, "Table1 Demographics_V2.csv"))
   kableone(table1_v1)
 
   
@@ -68,10 +96,12 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ edu, data
       survfit(Surv(bl_age, end_age, allcause_death) ~ edu, data = nhis_male)
 
 
+      
+      
 # ASSUMPTIONS: Additive Hazard Models ------------------------------------------------------------------------------------------------------------------
 
-# First, check time-invariant assumption; whether the impact of covariates is time-varying or constant with time (similar to proportional hazard assumption in Cox models).
-# To make a variable constant with time, use the wrapper "const()" around the variable; without this wrapper the varying will be time-varying.
+# First, check time-invariant assumption; whether the effect of covariates is time-varying or constant with time (similar to proportional hazard assumption in Cox models).
+# To make the effect of a variable constant with time, use the wrapper "const()" around the variable; without this wrapper the effect of the variable will be time-varying.
 # Start by fitting the model where all components of the model have time-varying effects (i.e. don't use the const() wrapper)  
 # Then start to simply model by a number of successive tests to making variables age-invariant; those that have a straight line in the plot and/or are not significant in the Kolmogorov-Smirnov / Cramer von Mises test
 # Ultimately, the variables that are part of an interaction have to have a age-invariant effect (use const() wrapper).
@@ -80,34 +110,36 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ edu, data
 # For more details and theoretical justification/description see:
       # Rod et al. 2012 https://doi.org/10.1097/EDE.0b013e31825fa218
       # Scheike TH, Martinussen T. Dynamic Regression models for survival data: Springer, NY.; 2006.
+
+      
       
 # Assumption: Alcohol x Education *********************************************************************************************************************
 # *****************************************************************************************************************************************************
       
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
-aalen_alc_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_female)
-    saveRDS(aalen_alc_f_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1.rds");               # Save model results
-    pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1.pdf"); plot(aalen_alc_f_assump1); dev.off()   # save plot 
-    aalen_alc_f_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1.rds")               # load model results
+aalen_alc_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_female, robust=0)
+    saveRDS(aalen_alc_f_assump1, file.path(alc_int_assump, "aalen_alc_f_assump1.rds"));               # Save model results
+    pdf(file.path(alc_int_assump, "aalen_alc_f_assump1.pdf")); plot(aalen_alc_f_assump1); dev.off()   # save plot 
+    aalen_alc_f_assump1 <-readRDS(file.path(alc_int_assump, "alc/aalen_alc_f_assump1.rds"))           # load model results
     summary(aalen_alc_f_assump1)
     # RESULT: Married should be made age-invariant
 
     
         # Iteration 2 
         aalen_alc_f_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + edu.factor + const(married.factor) + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_alc_f_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump2.pdf"); plot(aalen_alc_f_assump2); dev.off()   # save plot 
-              aalen_alc_f_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump2.rds")               # load model results
+              saveRDS(aalen_alc_f_assump2, file.path(alc_int_assump, "aalen_alc_f_assump2.rds"));               # Save model results
+              pdf(file.path(alc_int_assump, "aalen_alc_f_assump2.pdf")); plot(aalen_alc_f_assump2); dev.off()   # save plot 
+              aalen_alc_f_assump2 <-readRDS(file.path(alc_int_assump, "alc/aalen_alc_f_assump2.rds"))           # load model results
               summary(aalen_alc_f_assump2)
               # RESULT: Education should be made age-invariant
         
             
         # Iteration 3
         aalen_alc_f_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_alc_f_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump3.pdf"); plot(aalen_alc_f_assump3); dev.off()   # save plot 
-              aalen_alc_f_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump3.rds")               # load model results
+              saveRDS(aalen_alc_f_assump3, file.path(alc_int_assump, "aalen_alc_f_assump3.rds"));               # Save model results
+              pdf(file.path(alc_int_assump, "aalen_alc_f_assump3.pdf")); plot(aalen_alc_f_assump3); dev.off()   # save plot 
+              aalen_alc_f_assump3 <-readRDS(file.path(alc_int_assump, "alc/aalen_alc_f_assump3.rds"))           # load model results
               summary(aalen_alc_f_assump3)
               # RESULT: alcohol (former, low risk) and ethnicity should be kept age-varying  
         
@@ -118,29 +150,29 @@ aalen_alc_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.
 ## MEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_alc_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_male)
-        saveRDS(aalen_alc_m_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1.rds");               # Save model results
-        pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1.pdf"); plot(aalen_alc_m_assump1); dev.off()   # save plot 
-        aalen_alc_m_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1.rds")               # load model results
+        saveRDS(aalen_alc_m_assump1, file.path(alc_int_assump, "aalen_alc_m_assump1.rds"));               # Save model results
+        pdf(file.path(alc_int_assump, "aalen_alc_m_assump1.pdf")); plot(aalen_alc_m_assump1); dev.off()   # save plot 
+        aalen_alc_m_assump1 <-readRDS(file.path(alc_int_assump, "aalen_alc_m_assump1.rds"))               # load model results
         summary(aalen_alc_m_assump1)
         # RESULT: Education should be made age-invariant
               
         
               # Iteration 2 
               aalen_alc_m_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_alc_m_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump2.pdf"); plot(aalen_alc_m_assump2); dev.off()   # save plot 
-              aalen_alc_m_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump2.rds")               # load model results
-              summary(aalen_alc_m_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_alc_m_assump2, file.path(alc_int_assump, "aalen_alc_m_assump2.rds"));               # Save model results
+                  pdf(file.path(alc_int_assump, "aalen_alc_m_assump2.pdf")); plot(aalen_alc_m_assump2); dev.off()   # save plot 
+                  aalen_alc_m_assump2 <-readRDS(file.path(alc_int_assump, "aalen_alc_m_assump2.rds"))               # load model results
+                  summary(aalen_alc_m_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_alc_m_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_alc_m_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump3.pdf"); plot(aalen_alc_m_assump3); dev.off()   # save plot 
-              aalen_alc_m_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump3.rds")               # load model results
-              summary(aalen_alc_m_assump3)
-              # RESULT: alcohol (former, low risk) and ethnicity should be kept age-varying 
+                saveRDS(aalen_alc_m_assump3, file.path(alc_int_assump, "aalen_alc_m_assump3.rds"));               # Save model results
+                pdf(file.path(alc_int_assump, "aalen_alc_m_assump3.pdf")); plot(aalen_alc_m_assump3); dev.off()   # save plot 
+                aalen_alc_m_assump3 <-readRDS(file.path(alc_int_assump, "aalen_alc_m_assump3.rds"))               # load model results
+                summary(aalen_alc_m_assump3)
+                # RESULT: alcohol (former, low risk) and ethnicity should be kept age-varying 
               
               
                       
@@ -154,20 +186,20 @@ aalen_alc_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_smk_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_female)
-      saveRDS(aalen_smk_f_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump1.rds");               # Save model results
-      pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump1.pdf"); plot(aalen_smk_f_assump1); dev.off()   # save plot 
-      aalen_smk_f_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump1.rds")               # load model results
+      saveRDS(aalen_smk_f_assump1, file.path(smk_int_assump, "aalen_smk_f_assump1.rds"));               # Save model results
+      pdf(file.path(smk_int_assump, "aalen_smk_f_assump1.pdf")); plot(aalen_smk_f_assump1); dev.off()   # save plot 
+      aalen_smk_f_assump1 <-readRDS(file.path(smk_int_assump, "aalen_smk_f_assump1.rds"))               # load model results
       summary(aalen_smk_f_assump1)
       # RESULT: Married should be made age-invariant
               
       
               # Iteration 2 
               aalen_smk_f_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.factor + edu.factor + const(married.factor) + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_smk_f_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump2.pdf"); plot(aalen_smk_f_assump2); dev.off()   # save plot 
-              aalen_smk_f_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_f_assump2.rds")               # load model results
-              summary(aalen_smk_f_assump2)
-              # RESULT: Smoking, Education (highschool) and ethnicity should be age-varying
+                saveRDS(aalen_smk_f_assump2, file.path(smk_int_assump, "aalen_smk_f_assump2.rds"));               # Save model results
+                pdf(file.path(smk_int_assump, "aalen_smk_f_assump2.pdf")); plot(aalen_smk_f_assump2); dev.off()   # save plot 
+                aalen_smk_f_assump2 <-readRDS(file.path(smk_int_assump, "aalen_smk_f_assump2.rds"))               # load model results
+                summary(aalen_smk_f_assump2)
+                # RESULT: Smoking, Education (highschool) and ethnicity should be age-varying
              
               
               
@@ -176,29 +208,29 @@ aalen_smk_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.fa
 ## MEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_smk_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_male)
-        saveRDS(aalen_smk_m_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump1.rds");               # Save model results
-        pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump1.pdf"); plot(aalen_smk_m_assump1); dev.off()   # save plot 
-        aalen_smk_m_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump1.rds")               # load model results
+        saveRDS(aalen_smk_m_assump1, file.path(smk_int_assump, "aalen_smk_m_assump1.rds"));               # Save model results
+        pdf(file.path(smk_int_assump, "aalen_smk_m_assump1.pdf")); plot(aalen_smk_m_assump1); dev.off()   # save plot 
+        aalen_smk_m_assump1 <-readRDS(file.path(smk_int_assump, "aalen_smk_m_assump1.rds"))               # load model results
         summary(aalen_smk_m_assump1)
         # RESULT: Education should be made age-invariant
 
                       
               # Iteration 2 
               aalen_smk_m_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_smk_m_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump2.pdf"); plot(aalen_smk_m_assump2); dev.off()   # save plot 
-              aalen_smk_m_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump2.rds")               # load model results
-              summary(aalen_smk_m_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_smk_m_assump2, file.path(smk_int_assump, "aalen_smk_m_assump2.rds"));               # Save model results
+                  pdf(file.path(smk_int_assump, "aalen_smk_m_assump2.pdf")); plot(aalen_smk_m_assump2); dev.off()   # save plot 
+                  aalen_smk_m_assump2 <-readRDS(file.path(smk_int_assump, "aalen_smk_m_assump2.rds"))               # load model results
+                  summary(aalen_smk_m_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_smk_m_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_smk_m_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump3.pdf"); plot(aalen_smk_m_assump3); dev.off()   # save plot 
-              aalen_smk_m_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/smk/aalen_smk_m_assump3.rds")               # load model results
-              summary(aalen_smk_m_assump3)
-              # RESULT: Smoking (former, everyday) and ethnicity should be kept age-varying 
+                  saveRDS(aalen_smk_m_assump3, file.path(smk_int_assump, "aalen_smk_m_assump3.rds"));               # Save model results
+                  pdf(file.path(smk_int_assump, "aalen_smk_m_assump3.pdf")); plot(aalen_smk_m_assump3); dev.off()   # save plot 
+                  aalen_smk_m_assump3 <-readRDS(file.path(smk_int_assump, "aalen_smk_m_assump3.rds"))               # load model results
+                  summary(aalen_smk_m_assump3)
+                  # RESULT: Smoking (former, everyday) and ethnicity should be kept age-varying 
               
            
               
@@ -214,29 +246,29 @@ aalen_smk_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ smoking4.fa
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_bmi_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_female)
-      saveRDS(aalen_bmi_f_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1.rds");               # Save model results
-      pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1.pdf"); plot(aalen_bmi_f_assump1); dev.off()   # save plot 
-      aalen_bmi_f_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1.rds")               # load model results
+      saveRDS(aalen_bmi_f_assump1, file.path(bmi_int_assump, "aalen_bmi_f_assump1.rds"));               # Save model results
+      pdf(file.path(bmi_int_assump,"aalen_bmi_f_assump1.pdf")); plot(aalen_bmi_f_assump1); dev.off()    # save plot 
+      aalen_bmi_f_assump1 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_f_assump1.rds"))                # load model results
       summary(aalen_bmi_f_assump1)
       # RESULT: Education should be made age-invariant
               
       
               # Iteration 2 
               aalen_bmi_f_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_bmi_f_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump2.pdf"); plot(aalen_bmi_f_assump2); dev.off()   # save plot 
-              aalen_bmi_f_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump2.rds")               # load model results
-              summary(aalen_bmi_f_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_bmi_f_assump2, file.path(bmi_int_assump, "aalen_bmi_f_assump2.rds"));               # Save model results
+                  pdf(file.path(bmi_int_assump,"aalen_bmi_f_assump2.pdf")); plot(aalen_bmi_f_assump2); dev.off()    # save plot 
+                  aalen_bmi_f_assump2 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_f_assump2.rds"))                # load model results
+                  summary(aalen_bmi_f_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_bmi_f_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_bmi_f_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump3.pdf"); plot(aalen_bmi_f_assump3); dev.off()   # save plot 
-              aalen_bmi_f_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump3.rds")               # load model results
-              summary(aalen_bmi_f_assump3)
-              # RESULT: BMI (Obese, Overweight) can be made age-invariant
+                  saveRDS(aalen_bmi_f_assump3, file.path(bmi_int_assump, "aalen_bmi_f_assump3.rds"));               # Save model results
+                  pdf(file.path(bmi_int_assump,"aalen_bmi_f_assump3.pdf")); plot(aalen_bmi_f_assump3); dev.off()    # save plot 
+                  aalen_bmi_f_assump3 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_f_assump3.rds"))                # load model results
+                  summary(aalen_bmi_f_assump3)
+                  # RESULT: BMI (Obese, Overweight) can be made age-invariant
               
               
               
@@ -245,29 +277,29 @@ aalen_bmi_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.fac
 ## MEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_bmi_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_male)
-      saveRDS(aalen_bmi_m_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1.rds");               # Save model results
-      pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1.pdf"); plot(aalen_bmi_m_assump1); dev.off()   # save plot 
-      aalen_bmi_m_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1.rds")               # load model results
+      saveRDS(aalen_bmi_m_assump1, file.path(bmi_int_assump, "aalen_bmi_m_assump1.rds"));               # Save model results
+      pdf(file.path(bmi_int_assump,"aalen_bmi_m_assump1.pdf")); plot(aalen_bmi_m_assump1); dev.off()    # save plot 
+      aalen_bmi_m_assump1 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_m_assump1.rds"))                # load model results
       summary(aalen_bmi_m_assump1)
       # RESULT: Education should be made age-invariant
 
                     
               # Iteration 2 
               aalen_bmi_m_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_bmi_m_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump2.pdf"); plot(aalen_bmi_m_assump2); dev.off()   # save plot 
-              aalen_bmi_m_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump2.rds")               # load model results
-              summary(aalen_bmi_m_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_bmi_m_assump2, file.path(bmi_int_assump, "aalen_bmi_m_assump2.rds"));               # Save model results
+                  pdf(file.path(bmi_int_assump,"aalen_bmi_m_assump2.pdf")); plot(aalen_bmi_m_assump2); dev.off()    # save plot 
+                  aalen_bmi_m_assump2 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_m_assump2.rds"))                # load model results
+                  summary(aalen_bmi_m_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_bmi_m_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_bmi_m_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump3.pdf"); plot(aalen_bmi_m_assump3); dev.off()   # save plot 
-              aalen_bmi_m_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump3.rds")               # load model results
-              summary(aalen_bmi_m_assump3)
-              # RESULT: BMI (Obese) can be made age-invariant
+                  saveRDS(aalen_bmi_m_assump3, file.path(bmi_int_assump, "aalen_bmi_m_assump3.rds"));               # Save model results
+                  pdf(file.path(bmi_int_assump,"aalen_bmi_m_assump3.pdf")); plot(aalen_bmi_m_assump3); dev.off()    # save plot 
+                  aalen_bmi_m_assump3 <-readRDS(file.path(bmi_int_assump,"aalen_bmi_m_assump3.rds"))                # load model results
+                  summary(aalen_bmi_m_assump3)
+                  # RESULT: BMI (Obese) can be made age-invariant
               
               
            
@@ -284,28 +316,28 @@ aalen_bmi_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.fac
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_phy_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_female)
-      saveRDS(aalen_phy_f_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1.rds");               # Save model results
-      pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1.pdf"); plot(aalen_phy_f_assump1); dev.off()   # save plot 
-      aalen_phy_f_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1.rds")               # load model results
+      saveRDS(aalen_phy_f_assump1, file.path(phy_int_assump,"aalen_phy_f_assump1.rds"));               # Save model results
+      pdf(file.path(phy_int_assump,"aalen_phy_f_assump1.pdf")); plot(aalen_phy_f_assump1); dev.off()   # save plot 
+      aalen_phy_f_assump1 <-readRDS(file.path(phy_int_assump,"aalen_phy_f_assump1.rds"))               # load model results
       summary(aalen_phy_f_assump1)
       # RESULT: Education should be made age-invariant
               
               # Iteration 2 
               aalen_phy_f_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_phy_f_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump2.pdf"); plot(aalen_phy_f_assump2); dev.off()   # save plot 
-              aalen_phy_f_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump2.rds")               # load model results
-              summary(aalen_phy_f_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_phy_f_assump2, file.path(phy_int_assump,"aalen_phy_f_assump2.rds"));               # Save model results
+                  pdf(file.path(phy_int_assump,"aalen_phy_f_assump2.pdf")); plot(aalen_phy_f_assump2); dev.off()   # save plot 
+                  aalen_phy_f_assump2 <-readRDS(file.path(phy_int_assump,"aalen_phy_f_assump2.rds"))               # load model results
+                  summary(aalen_phy_f_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_phy_f_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_female)
-              saveRDS(aalen_phy_f_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump3.pdf"); plot(aalen_phy_f_assump3); dev.off()   # save plot 
-              aalen_phy_f_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump3.rds")               # load model results
-              summary(aalen_phy_f_assump3)
-              # RESULT: Physical activity should be made age-invariant
+                  saveRDS(aalen_phy_f_assump3, file.path(phy_int_assump,"aalen_phy_f_assump3.rds"));               # Save model results
+                  pdf(file.path(phy_int_assump,"aalen_phy_f_assump3.pdf")); plot(aalen_phy_f_assump3); dev.off()   # save plot 
+                  aalen_phy_f_assump3 <-readRDS(file.path(phy_int_assump,"aalen_phy_f_assump3.rds"))               # load model results
+                  summary(aalen_phy_f_assump3)
+                  # RESULT: Physical activity should be made age-invariant
               
               
               
@@ -313,29 +345,29 @@ aalen_phy_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.fa
 ## MEN: Checking assumptions for Alcohol x Education model 
 # Start with all variables as age-varying
 aalen_phy_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu.factor + married.factor + ethnicity.factor, data = nhis_male)
-      saveRDS(aalen_phy_m_assump1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1.rds");               # Save model results
-      pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1.pdf"); plot(aalen_phy_m_assump1); dev.off()   # save plot 
-      aalen_phy_m_assump1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1.rds")               # load model results
+      saveRDS(aalen_phy_m_assump1, file.path(phy_int_assump,"aalen_phy_m_assump1.rds"));               # Save model results
+      pdf(file.path(phy_int_assump,"aalen_phy_m_assump1.pdf")); plot(aalen_phy_m_assump1); dev.off()   # save plot 
+      aalen_phy_m_assump1 <-readRDS(file.path(phy_int_assump,"aalen_phy_m_assump1.rds"))               # load model results
       summary(aalen_phy_m_assump1)
       # RESULT: Education should be made age-invariant
               
       
               # Iteration 2 
               aalen_phy_m_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + married.factor + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_phy_m_assump2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump2.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump2.pdf"); plot(aalen_phy_m_assump2); dev.off()   # save plot 
-              aalen_phy_m_assump2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump2.rds")               # load model results
-              summary(aalen_phy_m_assump2)
-              # RESULT: Marital Status should be made age-invariant
+                  saveRDS(aalen_phy_m_assump2, file.path(phy_int_assump,"aalen_phy_m_assump2.rds"));               # Save model results
+                  pdf(file.path(phy_int_assump,"aalen_phy_m_assump2.pdf")); plot(aalen_phy_m_assump2); dev.off()   # save plot 
+                  aalen_phy_m_assump2 <-readRDS(file.path(phy_int_assump,"aalen_phy_m_assump2.rds"))               # load model results
+                  summary(aalen_phy_m_assump2)
+                  # RESULT: Marital Status should be made age-invariant
               
               
               # Iteration 3
               aalen_phy_m_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, data = nhis_male)
-              saveRDS(aalen_phy_m_assump3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump3.rds");               # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump3.pdf"); plot(aalen_phy_m_assump3); dev.off()   # save plot 
-              aalen_phy_m_assump3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump3.rds")               # load model results
-              summary(aalen_phy_m_assump3)
-              # RESULT: Physical Activity (Sedentary) and ethnicity should be kept age-varying 
+                  saveRDS(aalen_phy_m_assump3, file.path(phy_int_assump,"aalen_phy_m_assump3.rds"));               # Save model results
+                  pdf(file.path(phy_int_assump,"aalen_phy_m_assump3.pdf")); plot(aalen_phy_m_assump3); dev.off()   # save plot 
+                  aalen_phy_m_assump3 <-readRDS(file.path(phy_int_assump,"aalen_phy_m_assump3.rds"))               # load model results
+                  summary(aalen_phy_m_assump3)
+                  # RESULT: Physical Activity (Sedentary) and ethnicity should be kept age-varying 
               
              
               
@@ -351,53 +383,53 @@ aalen_phy_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.fa
 
 
 # FEMALES
-CM_allcause_f_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
-                bmi_cat.factor + phy_act3.factor + married.factor + ethnicity.factor, data=nhis_female)    
-        saveRDS(CM_allcause_f_assump_1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_1.rds")                      # Save model results
-        pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_1_plot.pdf"); plot(CM_allcause_f_assump_1); dev.off()    # save plot
-        CM_allcause_f_assump_1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_1.rds")                     # load model results
-        summary(CM_allcause_f_assump_1)
+CMed_f_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
+                                                  bmi_cat.factor + phy_act3.factor + married.factor + ethnicity.factor, data=nhis_female)    
+        saveRDS(CMed_f_assump1, file.path(CMed,"CMed_f_assump1.rds"))                      # Save model results
+        pdf(file.path(CMed,"CMed_f_assump1_plot.pdf")); plot(CMed_f_assump1); dev.off()    # save plot
+        CMed_f_assump1 <- readRDS(file.path(CMed,"CMed_f_assump1.rds"))                     # load model results
+        summary(CMed_f_assump1)
         # Result: Marital status should be made age-invariant
         
         
         # Iteration 2 
-        CM_allcause_f_assump_2 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
-              bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
-              saveRDS(CM_allcause_f_assump_2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_2.rds")                     # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_2_plot.pdf"); plot(CM_allcause_f_assump_2); dev.off()   # save plot
-              CM_allcause_f_assump_2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_2.rds")                    # load model results
-              summary(CM_allcause_f_assump_2)
+        CMed_f_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
+                                                  bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
+              saveRDS(CMed_f_assump2, file.path(CMed,"CMed_f_assump2.rds"))                      # Save model results
+              pdf(file.path(CMed,"CMed_f_assump2_plot.pdf")); plot(CMed_f_assump2); dev.off()    # save plot
+              CMed_f_assump2 <- readRDS(file.path(CMed,"CMed_f_assump2.rds"))                     # load model results
+              summary(CMed_f_assump2)
               # Result: education should be made age-invariant
         
         
         
         # Iteration 3
-        CM_allcause_f_assump_3 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
-                        bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
-                saveRDS(CM_allcause_f_assump_3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_3.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_3_plot.pdf"); plot(CM_allcause_f_assump_3); dev.off()  # save plot
-                CM_allcause_f_assump_3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_3.rds")                   # load model results
-                summary(CM_allcause_f_assump_3)
+        CMed_f_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
+                                                  bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
+                saveRDS(CMed_f_assump3, file.path(CMed,"CMed_f_assump3.rds"))                      # Save model results
+                pdf(file.path(CMed,"CMed_f_assump3_plot.pdf")); plot(CMed_f_assump3); dev.off()    # save plot
+                CMed_f_assump3 <- readRDS(file.path(CMed,"CMed_f_assump3.rds"))                     # load model results
+                summary(CMed_f_assump3)
                 # Result: BMI should be made age-invariant
         
         
         # Iteration 4 
-        CM_allcause_f_assump_4 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
-                              const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
-                saveRDS(CM_allcause_f_assump_4, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_4.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_4_plot.pdf"); plot(CM_allcause_f_assump_4); dev.off()  # save plot
-                CM_allcause_f_assump_4 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_4.rds")                   # load model results
-                summary(CM_allcause_f_assump_4)
+        CMed_f_assump4 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
+                                              const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
+                saveRDS(CMed_f_assump4, file.path(CMed,"CMed_f_assump4.rds"))                      # Save model results
+                pdf(file.path(CMed,"CMed_f_assump4_plot.pdf")); plot(CMed_f_assump4); dev.off()    # save plot
+                CMed_f_assump4 <- readRDS(file.path(CMed,"CMed_f_assump4.rds"))                     # load model results
+                summary(CMed_f_assump4)
                 # Result: alcohol should be made age-invariant
         
         
         # Iteration 5
-        CM_allcause_f_assump_5 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + const(alcohol5v2.factor) + smoking4.factor +
+        CMed_f_assump5 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + const(alcohol5v2.factor) + smoking4.factor +
                                   const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_female)
-                saveRDS(CM_allcause_f_assump_5, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_5.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_5_plot.pdf"); plot(CM_allcause_f_assump_5); dev.off()  # save plot
-                CM_allcause_f_assump_5 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_f_assump_5.rds")                   # load model results
-                summary(CM_allcause_f_assump_5)
+                saveRDS(CMed_f_assump5, file.path(CMed,"CMed_f_assump5.rds"))                      # Save model results
+                pdf(file.path(CMed,"CMed_f_assump5_plot.pdf")); plot(CMed_f_assump5); dev.off()    # save plot
+                CMed_f_assump5 <- readRDS(file.path(CMed,"CMed_f_assump5.rds"))                     # load model results
+                summary(CMed_f_assump5)
         
         
         # Final result: 
@@ -408,54 +440,54 @@ CM_allcause_f_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
 
 
 # MALES
-CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
-                            bmi_cat.factor + phy_act3.factor + married.factor + ethnicity.factor, data=nhis_male)
-        saveRDS(CM_allcause_m_assump_1, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_1.rds")                    # Save model results
-        pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_1_plot.pdf"); plot(CM_allcause_m_assump_1); dev.off()  # save plot
-        CM_allcause_m_assump_1 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_1.rds")                   # load model results
-        summary(CM_allcause_m_assump_1)
+CMed_m_assump1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
+                                            bmi_cat.factor + phy_act3.factor + married.factor + ethnicity.factor, data=nhis_male)
+        saveRDS(CMed_m_assump1, file.path(CMed,"CMed_m_assump1.rds"))                      # Save model results
+        pdf(file.path(CMed,"CMed_m_assump1_plot.pdf")); plot(CMed_m_assump1); dev.off()    # save plot
+        CMed_m_assump1 <- readRDS(file.path(CMed,"CMed_m_assump1.rds"))                     # load model results
+        summary(CMed_m_assump1)
         # Result: marital status should be made age-invariant
         
         
         # Iteration 2 
-        CM_allcause_m_assump_2 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
-                   bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
-                saveRDS(CM_allcause_m_assump_2, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_2.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_2_plot.pdf"); plot(CM_allcause_m_assump_2); dev.off()  # save plot
-                CM_allcause_m_assump_2 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_2.rds")                   # load model results
-                summary(CM_allcause_m_assump_2)
+        CMed_m_assump2 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.factor + alcohol5v2.factor + smoking4.factor +
+                                                bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
+                saveRDS(CMed_m_assump2, file.path(CMed,"CMed_m_assump2.rds"))                      # Save model results
+                pdf(file.path(CMed,"CMed_m_assump2_plot.pdf")); plot(CMed_m_assump2); dev.off()    # save plot
+                CMed_m_assump2 <- readRDS(file.path(CMed,"CMed_m_assump2.rds"))                     # load model results
+                summary(CMed_m_assump2)
                 # Result: Education should be made age-invariant
         
         
         
         # Iteration 3   
-        CM_allcause_m_assump_3 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
-                  bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
-              saveRDS(CM_allcause_m_assump_3, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_3.rds")                    # Save model results
-              pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_3_plot.pdf"); plot(CM_allcause_m_assump_3); dev.off()  # save plot
-              CM_allcause_m_assump_3 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_3.rds")                   # load model results
-              summary(CM_allcause_m_assump_3)
+        CMed_m_assump3 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
+                                                 bmi_cat.factor + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
+              saveRDS(CMed_m_assump3, file.path(CMed,"CMed_m_assump3.rds"))                      # Save model results
+              pdf(file.path(CMed,"CMed_m_assump3_plot.pdf")); plot(CMed_m_assump3); dev.off()    # save plot
+              CMed_m_assump3 <- readRDS(file.path(CMed,"CMed_m_assump3.rds"))                     # load model results
+              summary(CMed_m_assump3)
               # Result: BMI should be made age-invariant
         
         
               
         # Iteration 4 
-        CM_allcause_m_assump_4 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
-                      const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
-                saveRDS(CM_allcause_m_assump_4, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_4.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_4_plot.pdf"); plot(CM_allcause_m_assump_4); dev.off()  # save plot
-                CM_allcause_m_assump_4 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_4.rds")                   # load model results
-                summary(CM_allcause_m_assump_4)
+        CMed_m_assump4 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + alcohol5v2.factor + smoking4.factor +
+                                                  const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
+                saveRDS(CMed_m_assump4, file.path(CMed,"CMed_m_assump4.rds"))                      # Save model results
+                pdf(file.path(CMed,"CMed_m_assump4_plot.pdf")); plot(CMed_m_assump4); dev.off()    # save plot
+                CMed_m_assump4 <- readRDS(file.path(CMed,"CMed_m_assump4.rds"))                     # load model results
+                summary(CMed_m_assump4)
                 # Result: Alcohol should be made age-invariant
         
         
         # Iteration 5  
-        CM_allcause_m_assump_5 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + const(alcohol5v2.factor) + smoking4.factor +
-                        const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
-                saveRDS(CM_allcause_m_assump_5, "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_5.rds")                    # Save model results
-                pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_5_plot.pdf"); plot(CM_allcause_m_assump_5); dev.off()  # save plot
-                CM_allcause_m_assump_5 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/CM_allcause_m_assump_5.rds")                   # load model results
-                summary(CM_allcause_m_assump_5)
+        CMed_m_assump5 <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu.factor) + const(alcohol5v2.factor) + smoking4.factor +
+                                                  const(bmi_cat.factor) + phy_act3.factor + const(married.factor) + ethnicity.factor, data=nhis_male)
+              saveRDS(CMed_m_assump5, file.path(CMed,"CMed_m_assump5.rds"))                      # Save model results
+              pdf(file.path(CMed,"CMed_m_assump5_plot.pdf")); plot(CMed_m_assump5); dev.off()    # save plot
+              CMed_m_assump5 <- readRDS(file.path(CMed,"CMed_m_assump5.rds"))                     # load model results
+              summary(CMed_m_assump5)
         
                 
         # Final result: 
@@ -473,25 +505,27 @@ CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
             # Rod et al. 2012 https://doi.org/10.1097/EDE.0b013e31825fa218
             # Scheike TH, Martinussen T. Dynamic Regression models for survival data: Springer, NY.; 2006.         
                 
-                
+            
+        
+                            
 ## Education * Alcohol 
     ## WOMEN
     aalen_alc_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + 
                                 const(married.factor) + ethnicity.factor,  data = nhis_female)
-             saveRDS(aalen_alc_f, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_f.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_f.pdf"); plot(aalen_alc_f); dev.off()  # Save plot
-             aalen_alc_f <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_f.rds")              # Load model results
+             saveRDS(aalen_alc_f, file.path(alc_int_assump, "aalen_alc_f.rds"))               # Save model results
+             pdf(file.path(alc_int_assump, "aalen_alc_f.pdf")); plot(aalen_alc_f); dev.off()  # Save plot
+             aalen_alc_f <-readRDS(file.path(alc_int_assump, "aalen_alc_f.rds"))              # Load model results
              summary(aalen_alc_f)
              
              
     ## MEN
    aalen_alc_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + 
                               const(married.factor) + ethnicity.factor,  data = nhis_male)
-             saveRDS(aalen_alc_m, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_m.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_m.pdf"); plot(aalen_alc_m); dev.off()  # Save plot
-             aalen_alc_m <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/alc/aalen_alc_m.rds")              # Load model results
+             saveRDS(aalen_alc_m, file.path(alc_int_assump, "aalen_alc_m.rds"))               # Save model results
+             pdf(file.path(alc_int_assump, "aalen_alc_m.pdf")); plot(aalen_alc_m); dev.off()  # Save plot
+             aalen_alc_m <-readRDS(file.path(alc_int_assump, "aalen_alc_m.rds"))              # Load model results
              summary(aalen_alc_m)
-     
+               
    
              
                            
@@ -500,18 +534,18 @@ CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
       ## WOMEN
       aalen_smk_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_female)
-             saveRDS(aalen_smk_f, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_f.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_f.pdf"); plot(aalen_smk_f); dev.off()  # Save plot
-             aalen_smk_f <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_f.rds")              # Load model results
+             saveRDS(aalen_smk_f, file.path(smk_int_assump, "aalen_smk_f.rds"))               # Save model results
+             pdf(file.path(smk_int_assump, "aalen_smk_f.pdf")); plot(aalen_smk_f); dev.off()  # Save plot
+             aalen_smk_f <-readRDS(file.path(smk_int_assump, "aalen_smk_f.rds"))              # Load model results
              summary(aalen_smk_f)
              
              
       ## MEN
       aalen_smk_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_male)
-             saveRDS(aalen_smk_m, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_m.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_m.pdf"); plot(aalen_smk_m); dev.off()  # Save plot
-             aalen_smk_m <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/smk/aalen_smk_m.rds")              # Load model results
+             saveRDS(aalen_smk_m, file.path(smk_int_assump, "aalen_smk_m.rds"))               # Save model results
+             pdf(file.path(smk_int_assump, "aalen_smk_m.pdf")); plot(aalen_smk_m); dev.off()  # Save plot
+             aalen_smk_m <-readRDS(file.path(smk_int_assump, "aalen_smk_m.rds"))              # Load model results
              summary(aalen_smk_m)
     
 
@@ -523,18 +557,18 @@ CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
       ## WOMEN
       aalen_bmi_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_female)
-             saveRDS(aalen_bmi_f, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_f.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_f.pdf"); plot(aalen_bmi_f); dev.off()  # Save plot
-             aalen_bmi_f <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_f.rds")              # Load model results
+             saveRDS(aalen_bmi_f, file.path(bmi_int_assump, "aalen_bmi_f.rds"))               # Save model results
+             pdf(file.path(bmi_int_assump, "aalen_bmi_f.pdf")); plot(aalen_bmi_f); dev.off()  # Save plot
+             aalen_bmi_f <-readRDS(file.path(bmi_int_assump, "aalen_bmi_f.rds"))              # Load model results
              summary(aalen_bmi_f)
              
              
       ## MEN
       aalen_bmi_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_male)
-             saveRDS(aalen_bmi_m, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_m.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_m.pdf"); plot(aalen_bmi_m); dev.off()  # Save plot
-             aalen_bmi_m <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/bmi/aalen_bmi_m.rds")              # Load model results
+             saveRDS(aalen_bmi_m, file.path(bmi_int_assump, "aalen_bmi_m.rds"))               # Save model results
+             pdf(file.path(bmi_int_assump, "aalen_bmi_m.pdf")); plot(aalen_bmi_m); dev.off()  # Save plot
+             aalen_bmi_m <-readRDS(file.path(bmi_int_assump, "aalen_bmi_m.rds"))              # Load model results
              summary(aalen_bmi_m)
              
              
@@ -546,18 +580,18 @@ CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
       ## WOMEN
       aalen_phy_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_female)
-             saveRDS(aalen_phy_f, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_f.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_f.pdf"); plot(aalen_phy_f); dev.off()  # Save plot
-             aalen_phy_f <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_f.rds")              # Load model results
+             saveRDS(aalen_phy_f, file.path(phy_int_assump, "aalen_phy_f.rds"))               # Save model results
+             pdf(file.path(phy_int_assump, "aalen_phy_f.pdf")); plot(aalen_phy_f); dev.off()  # Save plot
+             aalen_phy_f <-readRDS(file.path(phy_int_assump, "aalen_phy_f.rds"))             # Load model results
              summary(aalen_phy_f)
              
              
       ## MEN
       aalen_phy_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + 
                  const(married.factor) + ethnicity.factor,  data = nhis_male)
-             saveRDS(aalen_phy_m, "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_m.rds")               # Save model results
-             pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_m.pdf"); plot(aalen_phy_m); dev.off()  # Save plot
-             aalen_phy_m <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/phy/aalen_phy_m.rds")              # Load model results
+             saveRDS(aalen_phy_m, file.path(phy_int_assump, "aalen_phy_m.rds"))               # Save model results
+             pdf(file.path(phy_int_assump, "aalen_phy_m.pdf")); plot(aalen_phy_m); dev.off()  # Save plot
+             aalen_phy_m <-readRDS(file.path(phy_int_assump, "aalen_phy_m.rds"))              # Load model results
              summary(aalen_phy_m)
       
              
@@ -571,7 +605,7 @@ CM_allcause_m_assump_1 <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu.fac
     # Lange et al. 2011 https//doi.org/10.1097/EDE.0b013e31821c680c
              
              
-### Step 0: Select data and load functions **************************************************************************************************************
+### Step 0: Select data to use **************************************************************************************************************************
 # *******************************************************************************************************************************************************
 mydata <- nhis %>%
   mutate(A.edu = edu,
@@ -580,8 +614,7 @@ mydata <- nhis %>%
     M3.bmi = bmi_cat,
     M4.phy = phy_act3) %>%
   filter (female.factor=="Female") %>%
-  dplyr::select(A.edu, M1.alc, M2.smk, M3.bmi, M4.phy,
-    allcause_death, bl_age, end_age, married, ethnicity)
+  dplyr::select(A.edu, M1.alc, M2.smk, M3.bmi, M4.phy, allcause_death, bl_age, end_age, married, ethnicity)
 
     # specifies the reference category
     mydata$A.edu <- factor(mydata$A.edu, levels=c(1,2,3), labels = c("Low", "Med", "High"))
@@ -716,7 +749,7 @@ rm(fitM1, fitM2, fitM3, fitM4,
 
 
 ## save expanded data
-saveRDS(newMyData, "data/expandedData_fem.rds") 
+saveRDS(newMyData, "SIMAH_workspace/nhis/Data/expandedData_fem.rds") 
 
 
 
@@ -726,7 +759,7 @@ saveRDS(newMyData, "data/expandedData_fem.rds")
 # *************************************************************************************************************************************************
 
 ## FEMALES
-expandedData <-readRDS("data/expandedData_fem.rds")
+expandedData <-readRDS("SIMAH_workspace/nhis/Data/expandedData_fem.rds")
 CMed_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(eduSTAR1) + 
                                                           const(A.edu) * const(eduSTAR2) +
                                                           const(A.edu) * const(eduSTAR3) +
@@ -737,80 +770,12 @@ CMed_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                   CMed_model <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/causal mediation/CMed_f.rds")  # Load model results
 
 
-# Direct, indirect and mediated interactive effects and standard errors are derived directly from the summary() command below
-# Total effect is obtained by the sum of the three separate effects
-# Confidence intervals for total effects and mediated proportions are computed using the code below:
-
-### Load functions
-# Function to obtain 95% CI of total effect and mediated proportion
-getTE <- function(CMed_model, v)
-{
-                    TE <- sum(CMed_model$gamma[v])
-                    mu <- CMed_model$gamma[v]
-                    # Omega <- CMed_model$robvar.gamma[v,v] # To obtain robust estimates
-                    Omega <- CMed_model$var.gamma[v,v]    # To obtain non-robust estimates
-                    temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                    temp_TE <- apply(temp,1,sum)
-                    med_prop <- c(mu/TE,1)
-                    med_prop_CI <- rbind(t(apply(temp/temp_TE, 2, quantile, c(0.025, 0.975))), c(1,1))
-                    output <- cbind(c(mu,TE), c(apply(temp,2,sd),sd(temp_TE)), med_prop, med_prop_CI)
-                    colnames(output) <- c("Est.", "SE", "med_prop", "lowerCI", "UpperCI")
-                    rownames(output) <- c(rownames(CMed_model$gamma)[v],"TE")
-                    return(output)
-                  }
-                  
-# Function to obtain SE for indirect effect
-getIE <- function(CMed_model, v)
-{
-                    IE <- sum(CMed_model$gamma[v])
-                    mu <- CMed_model$gamma[v]
-                    # Omega <- CMed_model$robvar.gamma[v,v] # To obtain robust estimates
-                    Omega <- CMed_model$var.gamma[v,v]    # To obtain non-robust estimates
-                    require(MASS)
-                    temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                    temp_IE <- apply(temp,1,sum)
-                    med_prop <- c(mu/IE,1)
-                    med_prop_CI <- rbind(t(apply(temp/temp_IE, 2, quantile, c(0.025, 0.975))), c(1,1))
-                    output <- cbind(c(mu,IE), c(apply(temp,2,sd),sd(temp_IE)), med_prop, med_prop_CI)
-                    colnames(output) <- c("Est.", "SE", "med_prop", "lowerCI", "UpperCI")
-                    rownames(output) <- c(rownames(CMed_model$gamma)[v],"IE")
-                    return(output)
-                  }
-                  
-# Function to obtain 95% CI of mediated proportion of the indirect effect
-getTE_IE <- function(CMed_model, v, z)
-{
-                    #total effect
-                    TE <- sum(CMed_model$gamma[v])
-                    mu <- CMed_model$gamma[v]
-                    # Omega <- CMed_model$robvar.gamma[v,v]  # To obtain robust estimates
-                    Omega <- CMed_model$var.gamma[v,v]     # To obtain non-robust estimates
-                    require(MASS)
-                    temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                    temp_TE <- apply(temp,1,sum)
-                    IE <- sum(CMed_model$gamma[z])
-                    muIE <- CMed_model$gamma[z]
-                    #OmegaIE <- CMed_model$robvar.gamma[z,z] # To obtain robust estimates
-                    OmegaIE <- CMed_model$var.gamma[z,z]    # To obtain non-robust estimates
-                    require(MASS)
-                    tempIE <- mvrnorm(n=10^4, mu=muIE, Sigma=OmegaIE)
-                    temp_IE <- apply(tempIE,1,sum)
-                    med_prop <- c(IE/TE,1)
-                    med_prop_CI <- (temp_IE/temp_TE)
-                    output <- cbind(IE, med_prop, quantile)
-                    quantile <- quantile(med_prop_CI, c(0.025, 0.975))
-                    output <- cbind(IE, med_prop, quantile)
-                    return(output)
-                  }
-                  
-                  
-                  
                   
 # Get final results. NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
 summary(CMed_model)   #Estimates and SE
-getTE(CMed_model, c(1,3,5,7,9,12,16,20,24))  # Simulated estimate and SE for total effect and mediated proportions for other effects
-getIE(CMed_model, c(3,5,7,9,12,16,20,24))    # Estimate and simulated SE for indirect combined effect
-getTE_IE(CMed_model, c(1,3,5,7,9,12,16,20,24), c(3,5,7,9,12,16,20,24)) # Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
+getTE_NotRobust(CMed_model, c(1,3,5,7,9,12,16,20,24))  # Simulated estimate and SE for total effect and mediated proportions for other effects
+getIE_NotRobust(CMed_model, c(3,5,7,9,12,16,20,24))    # Estimate and simulated SE for indirect combined effect
+getTE_IE_NotRobust(CMed_model, c(1,3,5,7,9,12,16,20,24), c(3,5,7,9,12,16,20,24)) # Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
 
 
 
@@ -969,7 +934,7 @@ rm(fitM1, fitM2, fitM3, fitM4,
 
 
 ## save expanded data
-saveRDS(newMyData, "data/expandedData_male.rds") 
+saveRDS(newMyData, "SIMAH_workspace/nhis/Data/expandedData_male.rds") 
 
 
 
@@ -979,7 +944,7 @@ saveRDS(newMyData, "data/expandedData_male.rds")
 # *************************************************************************************************************************************************
 
 ## MALES
-expandedData <-readRDS("data/expandedData_male.rds")
+expandedData <-readRDS("SIMAH_workspace/nhis/Data/expandedData_male.rds")
 CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(eduSTAR1) +
                                                           const(A.edu) * const(eduSTAR2) +
                                                           const(A.edu) * const(eduSTAR3) +
@@ -989,75 +954,10 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                       saveRDS(CMed_m, "SIMAH_workspace/nhis/SES x Behavior/Output/causal mediation/CMed_m.rds")       # Save model results
                       CMed_model <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/causal mediation/CMed_m.rds")  # Load model results
 
-
-# Direct, indirect and mediated interactive effects and standard errors are derived directly from the summary() command
-# Total effect is obtained by the sum of the three separate effects
-# Confidence intervals for total effects and mediated proportions are computed using the code below:
-
-### Load functions
-# Function to obtain 95% CI of total effect and mediated proportion
-getTE <- function(CMed_model, v)
-{
-                        TE <- sum(CMed_model$gamma[v])
-                        mu <- CMed_model$gamma[v]
-                        # Omega <- CMed_model$robvar.gamma[v,v] # To obtain robust estimates
-                        Omega <- CMed_model$var.gamma[v,v]    # To obtain non-robust estimates
-                        temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                        temp_TE <- apply(temp,1,sum)
-                        med_prop <- c(mu/TE,1)
-                        med_prop_CI <- rbind(t(apply(temp/temp_TE, 2, quantile, c(0.025, 0.975))), c(1,1))
-                        output <- cbind(c(mu,TE), c(apply(temp,2,sd),sd(temp_TE)), med_prop, med_prop_CI)
-                        colnames(output) <- c("Est.", "SE", "med_prop", "lowerCI", "UpperCI")
-                        rownames(output) <- c(rownames(CMed_model$gamma)[v],"TE")
-                        return(output)
-                      }
-                      
-# Function to obtain SE for indirect effect
-getIE <- function(CMed_model, v)
-{
-                        IE <- sum(CMed_model$gamma[v])
-                        mu <- CMed_model$gamma[v]
-                        # Omega <- CMed_model$robvar.gamma[v,v] # To obtain robust estimates
-                        Omega <- CMed_model$var.gamma[v,v]    # To obtain non-robust estimates
-                        require(MASS)
-                        temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                        temp_IE <- apply(temp,1,sum)
-                        med_prop <- c(mu/IE,1)
-                        med_prop_CI <- rbind(t(apply(temp/temp_IE, 2, quantile, c(0.025, 0.975))), c(1,1))
-                        output <- cbind(c(mu,IE), c(apply(temp,2,sd),sd(temp_IE)), med_prop, med_prop_CI)
-                        colnames(output) <- c("Est.", "SE", "med_prop", "lowerCI", "UpperCI")
-                        rownames(output) <- c(rownames(CMed_model$gamma)[v],"IE")
-                        return(output)
-                      }
-                      
-# Function to obtain 95% CI of mediated proportion of the indirect effect
-getTE_IE <- function(CMed_model, v, z)
-{
-                        #total effect
-                        TE <- sum(CMed_model$gamma[v])
-                        mu <- CMed_model$gamma[v]
-                        # Omega <- CMed_model$robvar.gamma[v,v]  # To obtain robust estimates
-                        Omega <- CMed_model$var.gamma[v,v]     # To obtain non-robust estimates
-                        require(MASS)
-                        temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-                        temp_TE <- apply(temp,1,sum)
-                        IE <- sum(CMed_model$gamma[z])
-                        muIE <- CMed_model$gamma[z]
-                        #OmegaIE <- CMed_model$robvar.gamma[z,z] # To obtain robust estimates
-                        OmegaIE <- CMed_model$var.gamma[z,z]    # To obtain non-robust estimates
-                        require(MASS)
-                        tempIE <- mvrnorm(n=10^4, mu=muIE, Sigma=OmegaIE)
-                        temp_IE <- apply(tempIE,1,sum)
-                        med_prop <- c(IE/TE,1)
-                        med_prop_CI <- (temp_IE/temp_TE)
-                        output <- cbind(IE, med_prop, quantile)
-                        quantile <- quantile(med_prop_CI, c(0.025, 0.975))
-                        output <- cbind(IE, med_prop, quantile)
-                        return(output)
-                      }
                       
                       
-# Get final results. NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
+# Get final results (ensure that the Causal Mediation Functions are loaded). 
+# NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
 summary(CMed_model)   #Estimates and SE
 getTE(CMed_model, c(1,3,5,7,9,12,16,20,24))  #Simulated estimate and SE for total effect and mediated proportions for other effects
 getIE(CMed_model, c(3,5,7,9,12,16,20,24))    #Estimate and simulated SE for indirect combined effect
@@ -1647,144 +1547,3 @@ aalen_allcause_phy_edu <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(ed
                 print(cox_phy_weights_check)
                 plot(cox_phy_weights_check, col = "red")
 
-### Sensitivity 5: Alcohol x BMI ----------------------------------------------------------------------
-          
-# Desctiptives 
-table1_alc_bmi <-CreateTableOne(vars= c("allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"),
-                  factorVars = c("allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"), 
-                  strata= c("alcohol5v2.factor","bmi_cat.factor"), addOverall = TRUE, data=nhis)
-    table1_alc_bmi <- print(table1_alc_bmi, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)
-    write.csv(table1_alc_bmi, file="SIMAH_workspace/nhis/SES x Behavior/Output/Table1 Alcohol x BMI.csv")
-                
-
-
-
-# Change the death type and re-run analyses; causes of death:
-# allcause_death 
-# heart_death 
-# neoplasm_death
-# cvd_death
-# diabetes_death
-                     
-# Model 1:Adjusted for age (as timescale), education, ethnicity/race, and marital status. 
-
-                
-        ## All Participants
-        bmi_alc_m1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                          const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor,  data = nhis, robust=0)
-                summary(bmi_alc_m1)
-                
-                
-                # Joint effects
-                nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
-                bmi_alc_m1b <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(interact) + 
-                    const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor,  data = nhis, robust=0)
-                    summary(bmi_alc_m1b)
-              
-                
-        ## MEN
-        bmi_alc_m1_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + ethnicity.factor,  data = nhis_male, robust=0)
-                summary(bmi_alc_m1_m)
-                
-                
-        ## WOMEN
-        bmi_alc_m1_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + ethnicity.factor,  data = nhis_female, robust=0)
-                summary(bmi_alc_m1_f)            
-                
-                
-                
-                ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor, data = nhis), 
-                  data=nhis, facet.by="alcohol5v2.factor", censor = FALSE,xlim = c(25, 100), 
-                  conf.int = TRUE, 
-                  xlab = "Age (years)", 
-                  ylab = "Overall survival probability") 
-                
-                
-                ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ alcohol5v2.factor, data = nhis), 
-                  data=nhis, facet.by="bmi_cat.factor", censor = FALSE,xlim = c(25, 100), 
-                  conf.int = TRUE, 
-                  xlab = "Age (years)", 
-                  ylab = "Overall survival probability") 
-                
-
-                
-                
-# Change the death type and re-run analyses; causes of death:
-# allcause_death 
-# heart_death 
-# neoplasm_death
-# cvd_death
-# diabetes_death
-                
-                
-# Model 2:Adjusted for age (as timescale), education, and marital status. 
-        ## All Participants
-        bmi_alc_m2 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis, robust=0)
-                summary(bmi_alc_m2)
-                
-                # Joint effects
-                nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
-                bmi_alc_m2b <- aalen(Surv(bl_age, end_age, cvd_death) ~ const(interact) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis, robust=0)
-                summary(bmi_alc_m2b)
-        
-                
-        ## MEN
-        bmi_alc_m2_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_male, robust=0)
-                summary(bmi_alc_m2_m)   
-                
-                
-                
-        ## WOMEN
-        bmi_alc_m2_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_female, robust=0)
-                summary(bmi_alc_m2_f)
-                
-       
-                
-     
-                
-                           
-                
-# Change the death type and re-run analyses; causes of death:
-# allcause_death 
-# heart_death 
-# neoplasm_death
-# cvd_death
-# diabetes_death            
-
-             
-# Model 3: Stratified: Non-Hispanic White Only; Adjusted for age (as timescale), education, and marital status. 
-       nhis_white <- filter(nhis, ethnicity.factor=="Non-Hispanic White")
-       nhis_female_white <- filter(nhis_female, ethnicity.factor=="Non-Hispanic White")
-       nhis_male_white <- filter(nhis_male, ethnicity.factor=="Non-Hispanic White")
-                
-       
-        ## All Participants
-        bmi_alc_m3 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor) + female.factor,  data = nhis_white, robust=0)
-                summary(bmi_alc_m3)
-                
-                
-                # Joint effects
-                nhis$interact <- interaction(nhis$bmi_cat.factor, nhis$alcohol5v2.factor)
-                bmi_alc_m3b <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(interact) + 
-                    const(married.factor) + const(edu.factor) + female.factor,  data = nhis_white, robust=0)
-                summary(bmi_alc_m3b)
-                
-
-        ## MEN
-        bmi_alc_m3_m <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_male_white, robust=0)
-                summary(bmi_alc_m3_m)
-                
-                
-        ## WOMEN
-        bmi_alc_m3_f <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol5v2.factor) + 
-                    const(edu.factor) + const(married.factor),  data = nhis_female_white, robust=0)
-                summary(bmi_alc_m3_f)                
-                
