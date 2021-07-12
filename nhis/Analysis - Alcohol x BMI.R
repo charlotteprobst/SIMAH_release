@@ -53,20 +53,21 @@ results_10x <- function(model, x) {
 
 
 ## DESCRIPTIVES ----------------------------------------------------------------------
+# All Participants
 table1_alc_bmi <-CreateTableOne(vars= c("alcohol_daily_grams", "allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"),
                   factorVars = c("allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"), 
                   strata= c("bmi_cat.factor"), addOverall = TRUE, data=nhis)
     table1_alc_bmi <- print(table1_alc_bmi, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)
     write.csv(table1_alc_bmi, file="SIMAH_workspace/nhis/Alcohol x BMI/Output/Table1 Alcohol x BMI.csv")
    
-    
+# Low SES
 table1_alc_bmi <-CreateTableOne(vars= c("alcohol_daily_grams", "allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"),
       factorVars = c("allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"), 
       strata= c("bmi_cat.factor"), addOverall = TRUE, data=nhis_lowSES)
     table1_alc_bmi <- print(table1_alc_bmi, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)
     write.csv(table1_alc_bmi, file="SIMAH_workspace/nhis/Alcohol x BMI/Output/Table1 Alcohol x BMI low SES.csv")
     
-    
+# High SES
 table1_alc_bmi <-CreateTableOne(vars= c("alcohol_daily_grams", "allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"),
       factorVars = c("allcause_death", "heart_death", "neoplasm_death", "cvd_death", "diabetes_death"), 
       strata= c("bmi_cat.factor"), addOverall = TRUE, data=nhis_highSES)
@@ -79,6 +80,26 @@ table1_alc_bmi <-CreateTableOne(vars= c("alcohol_daily_grams", "allcause_death",
         group_by(alcohol5v2.factor) %>%
         skim(alcohol_daily_grams)
                  
+    
+# Survival plot 
+nhis_plot <- filter(nhis, bmi_cat.factor == c("Healthy weight", "Obese"))
+nhis_plot <- filter(nhis_plot, alcohol4.factor == c("Abstinence", "High risk"))
+
+ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor, data = nhis_plot), 
+   data=nhis_plot, facet.by="alcohol4.factor", censor = FALSE, xlim = c(25, 100), 
+   conf.int = TRUE, 
+   xlab = "Age (years)", 
+   ylab = "Overall survival probability") 
+     
+
+ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ alcohol4.factor, data = nhis_plot), 
+  data=nhis_plot, facet.by="bmi_cat.factor", censor = FALSE, xlim = c(25, 100), 
+  conf.int = TRUE, 
+  xlab = "Age (years)", 
+  ylab = "Overall survival probability") 
+    
+
+
 
 # Additive Hazard Models  -----------------------------------------------------------------------------------------------------------
                      
@@ -92,8 +113,7 @@ table1_alc_bmi <-CreateTableOne(vars= c("alcohol_daily_grams", "allcause_death",
   # cvd_death
   # diabetes_death  
     
-                
-    
+
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis, robust=0)
@@ -135,8 +155,8 @@ model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*c
   # neoplasm_death
   # cvd_death
   # diabetes_death  
+       
           
-            
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
