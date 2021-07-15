@@ -30,26 +30,8 @@ nhis$bmi_cat.factor2 <- relevel(nhis$bmi_cat.factor, ref = "Obese")
 nhis_male$bmi_cat.factor2 <- relevel(nhis_male$bmi_cat.factor, ref = "Obese")  
 nhis_female$bmi_cat.factor2 <- relevel(nhis_female$bmi_cat.factor, ref = "Obese")  
 
-
-# Function to extract results
-results <- function(model, x) {
-    mu <- model$gamma[x]       
-    var <-  model$var.gamma[x,x]
-    confint.lower <- round((mu - (1.96 * sqrt(var)))*10000,2) # CI * 10,000 to get result per 10,000py
-    confint.upper <- round((mu + (1.96 * sqrt(var)))*10000,2) # CI * 10,000 to get result per 10,000py
-    mu <- round(mu*10000,2)                                   # mu * 10,000 to get result per 10,000py 
-    output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
-    return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
-
-results_10x <- function(model, x) {
-  mu <- model$gamma[x]       
-  var <-  model$var.gamma[x,x]
-  confint.lower <- round((mu - (1.96 * sqrt(var)))*10000*10,2) # CI * 10,000 to get result per 10,000py x 10 unit increase
-  confint.upper <- round((mu + (1.96 * sqrt(var)))*10000*10,2) # CI * 10,000 to get result per 10,000py x 10 unit increase
-  mu <- round(mu*10000*10,2)                                   # mu * 10,000 to get result per 10,000py x 10 unit increase
-  output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
-  return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
-
+# load functions
+source("SIMAH_code/nhis/Function_Formatted_results.R")
 
 
 ## DESCRIPTIVES ----------------------------------------------------------------------
@@ -117,31 +99,31 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ alcohol4.
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis, robust=0)
-      results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 7)
+      aalen_aalen_10000py_10000py(model1, 3); aalen_aalen_10000py_10000py_10x(model1, 4); aalen_aalen_10000py_10000py_10x(model2, 4); aalen_aalen_10000py_10000py_10x(model1, 7)
 
          
       ## MEN
       model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis_male, robust=0)
       model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis_male, robust=0)
-         results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 7)
+         aalen_aalen_10000py_10000py(model1, 3); aalen_aalen_10000py_10000py_10x(model1, 4); aalen_aalen_10000py_10000py_10x(model2, 4); aalen_aalen_10000py_10000py_10x(model1, 7)
                 
                 
       ## WOMEN
       model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis_female, robust=0)
       model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis_female, robust=0)
-          results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 7) 
+          aalen_aalen_10000py_10000py(model1, 3); aalen_aalen_10000py_10000py_10x(model1, 4); aalen_aalen_10000py_10000py_10x(model2, 4); aalen_aalen_10000py_10000py_10x(model1, 7) 
                 
                 
       ## Low SES
       model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis_lowSES, robust=0)
       model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis_lowSES, robust=0)
-          results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 7)          
+          aalen_aalen_10000py_10000py(model1, 3); aalen_aalen_10000py_10000py_10x(model1, 4); aalen_aalen_10000py_10000py_10x(model2, 4); aalen_aalen_10000py_10000py_10x(model1, 7)          
           
           
       ## High SES
       model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams),  data = nhis_highSES, robust=0)
       model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams),  data = nhis_highSES, robust=0)
-          results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 7)          
+          aalen_aalen_10000py_10000py(model1, 3); aalen_aalen_10000py_10000py_10x(model1, 4); aalen_aalen_10000py_10000py_10x(model2, 4); aalen_aalen_10000py_10000py_10x(model1, 7)          
             
      
           
@@ -160,30 +142,30 @@ model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*c
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis, robust=0)
-      results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)        
+      aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)        
 
           ## MEN
           model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_male, robust=0)
           model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_male, robust=0)
-                  results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)        
+                  aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)        
                 
                     
           ## WOMEN
           model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_female, robust=0)
           model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + ethnicity.factor + smoking4.factor,  data = nhis_female, robust=0)
-                  results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)     
+                  aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)     
 
                                   
           ## Low SES
           model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis_lowSES, robust=0)
           model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis_lowSES, robust=0)
-                  results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)        
+                  aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)        
                 
                   
           ## High SES
           model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis_highSES, robust=0)
           model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + ethnicity.factor + smoking4.factor,  data = nhis_highSES, robust=0)
-                  results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)        
+                  aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)        
                   
                   
 
@@ -204,32 +186,32 @@ model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*c
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + smoking4.factor,  data = nhis, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + smoking4.factor,  data = nhis, robust=0)
-      results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)        
+      aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)        
                 
                 
               
         ## MEN
         model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_male, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) +const(married.factor) + smoking4.factor,  data = nhis_male, robust=0)
-                results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)        
+                aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)        
                 
                 
         ## WOMEN
         model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female, robust=0)
-                results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)     
+                aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)     
                 
                         
         ## Low SES
         model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_lowSES, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_lowSES, robust=0)
-                results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)        
+                aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)        
                 
                 
         ## High SES
         model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_highSES, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_highSES, robust=0)
-                results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)        
+                aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)        
                 
           
 
@@ -254,29 +236,29 @@ nhis_highSES_white <- filter(nhis_highSES, ethnicity.factor=="Non-Hispanic White
 ### All Participants
 model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_white, robust=0)
 model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_white, robust=0)
-       results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)     
+       aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)     
        
        
        ## MEN
        model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_male_white, robust=0)
        model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_male_white, robust=0)
-             results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1,10)     
+             aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1,10)     
        
        
        ## WOMEN
        model1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female_white, robust=0)
        model2 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(edu.factor) + const(married.factor) + smoking4.factor,  data = nhis_female_white, robust=0)
-              results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 10)     
+              aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 10)     
        
               
         ### Low SES
         model1 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_lowSES_white, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_lowSES_white, robust=0)
-              results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)     
+              aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)     
 
         ### High SES
         model1 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_highSES_white, robust=0)
         model2 <- aalen(Surv(bl_age, end_age, diabetes_death) ~ const(bmi_cat.factor2)*const(alcohol_daily_grams) + const(married.factor) + female.factor + smoking4.factor,  data = nhis_highSES_white, robust=0)
-              results(model1, 3); results_10x(model1, 4); results_10x(model2, 4); results_10x(model1, 8)     
+              aalen_10000py(model1, 3); aalen_10000py_10x(model1, 4); aalen_10000py_10x(model2, 4); aalen_10000py_10x(model1, 8)     
               
        
