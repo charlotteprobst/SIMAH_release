@@ -27,3 +27,16 @@ aalen_10000py_10x <- function(model, x) {
   output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
   return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
 
+
+
+
+# Function to extract and format HR results
+cox_HR <- function(model, x) {
+  mu <- model$coefficients[x]       
+  var <-  model$var[x,x]
+  confint.lower <- round((exp(mu - (1.96 * sqrt(var)))),2) # Exp() lower CI and round it to 2 decimals
+  confint.upper <- round((exp(mu + (1.96 * sqrt(var)))),2) # Exp() upper CI and round it to 2 decimals
+  mu <- round(exp(mu),2)                                   # Exp() estimate and round it to 2 decimals
+  output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
+  return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
+
