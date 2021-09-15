@@ -24,30 +24,32 @@ memory.limit(size=1e+13)
 
 # Set the working directory and other file locations
 
-# Personal Computer:
+
+
+# Set the working directory and other file locations
+
+# # Personal Computer:
 kp <- "C:/Users/klajd/OneDrive/SIMAH"
 setwd(kp)
 data    <- "SIMAH_workspace/nhis/Data"
 output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/"
+source("SIMAH_code/nhis/Function_CausalMed_Results.R")
+source("SIMAH_code/nhis/Function_Formatted_results.R")
 
-    
+
 # HCC Server:
-# kp <- "/external/mgmt3/imaging/scratch/Imhpr/kpuka/NHIS/"
+# kp <- "/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/"
 # setwd(kp)
 # data    <- "Data"
 # output  <- "Output/" 
-    
-    
+# source("Function_CausalMed_Results.R")
+
     
 # Load data
 nhis        <- readRDS (file.path(data, "nhis.rds"))
 nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
-
-# load functions
-source("SIMAH_code/nhis/Function_CausalMed_Results.R")
-source("SIMAH_code/nhis/Function_Formatted_results.R")
 
 
 # DESCRIPTIVES -----------------------------------------------------------------------------------------------------------
@@ -803,8 +805,8 @@ mydata <- nhis %>%
     
 
 # Select random subset of the sample (if needed to improve speed of analyses)
-set.seed(1234)
-mydata <- sample_frac(mydata, .50) # selects X% of sample at random
+# set.seed(1234)
+# mydata <- sample_frac(mydata, .10) # selects X% of sample at random
 
 
 
@@ -944,7 +946,7 @@ CMed_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                                                           const(A.edu) * const(edu_M3.bmi) +
                                                           const(A.edu) * const(edu_M4.phy) +
                                                           const(married) + factor(ethnicity) + const(factor(srvy_yr)),
-                            data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)  # robust=0 is set for now to speed processing time; remember to change function below if this setting is changed
+                            data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID)
                   saveRDS(CMed_f, file.path(output, "CausMed/CMed_f.rds"))       # Save model results
                   CMed_model <-readRDS(file.path(output, "CausMed/CMed_f.rds"))  # Load model results
 
@@ -952,9 +954,9 @@ CMed_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                   
 # Get final results. NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
 summary(CMed_model)   #Estimates and SE
-getTE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41))  # Simulated estimate and SE for total effect and mediated proportions for other effects
-getIE_NotRobust(CMed_model, c(3,5,7,9,29,33,37,41))    # Estimate and simulated SE for indirect combined effect
-getTE_IE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41)) # Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
+getTE_Robust(CMed_model, c(1,3,5,7,9,29,33,37,41))  # Simulated estimate and SE for total effect and mediated proportions for other effects
+getIE_Robust(CMed_model, c(3,5,7,9,29,33,37,41))    # Estimate and simulated SE for indirect combined effect
+getTE_IE_Robust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41)) # Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
 
 
 
@@ -987,8 +989,8 @@ mydata$A.edu <- relevel(mydata$A.edu, ref = "High")
 
 
 # Select random subset of the sample
-set.seed(1234)
-mydata <- sample_frac(mydata, .50) # selects X% of sample at random
+# set.seed(1234)
+# mydata <- sample_frac(mydata, .10) # selects X% of sample at random
 
 
 
@@ -1129,7 +1131,7 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                                                           const(A.edu) * const(edu_M3.bmi) +
                                                           const(A.edu) * const(edu_M4.phy) +
                                                           const(married) + factor(ethnicity) + const(factor(srvy_yr)),
-                                data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)  # robust=0 is set for now to speed processing time; remember to change function below if this setting is changed
+                                data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID)
                       saveRDS(CMed_m, file.path(output, "CausMed/CMed_m.rds"))       # Save model results
                       CMed_model <-readRDS(file.path(output, "CausMed/CMed_m.rds"))  # Load model results
 
@@ -1138,9 +1140,9 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
 # Get final results (ensure that the Causal Mediation Functions are loaded). 
 # NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
 summary(CMed_model)   #Estimates and SE
-getTE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41))  #Simulated estimate and SE for total effect and mediated proportions for other effects
-getIE_NotRobust(CMed_model, c(3,5,7,9,29,33,37,41))    #Estimate and simulated SE for indirect combined effect
-getTE_IE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41)) #Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
+getTE_Robust(CMed_model, c(1,3,5,7,9,29,33,37,41))  #Simulated estimate and SE for total effect and mediated proportions for other effects
+getIE_Robust(CMed_model, c(3,5,7,9,29,33,37,41))    #Estimate and simulated SE for indirect combined effect
+getTE_IE_Robust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41)) #Mediated proportion and simulated 95% CI for mediated proportion of indirect combined effect
 
 
 
