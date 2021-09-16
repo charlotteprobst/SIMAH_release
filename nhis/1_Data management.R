@@ -13,6 +13,7 @@ library(survey)     # to accomodate survey weights
 ## Set the working directory
 kp <- "C:/Users/klajd/OneDrive/SIMAH"
 setwd(kp)
+data  <- "SIMAH_workspace/nhis/Data/"
 
 
 # Import data form SAS and edit/recategorize variables 
@@ -55,8 +56,10 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         # Exposures
         nhis_all$edu.factor <- factor(nhis_all$edu, levels=c(1,2,3),
                                   labels = c("Highschool", "Some college", "Bachelors"))
-                                  nhis_all$edu.factor <- relevel(nhis_all$edu.factor, ref = "Bachelors")    # specifies the reference category      
+                  nhis_all$edu.factor <- relevel(nhis_all$edu.factor, ref = "Bachelors")    # specifies the reference category      
         
+        nhis_all$income.factor <- factor(nhis_all$income, levels=c(1,2,3,4,5), labels = c("Poor","Near poor","Middle income", "High income", "Missing"))
+                  nhis_all$income.factor <- relevel(nhis_all$income.factor, ref = "High income")    # specifies the reference category 
         
         # Mediator 1 - Alcohol
         nhis_all$alcohol5.factor <- factor(nhis_all$alcohol5, levels=c(1,2,3,4,5),
@@ -76,6 +79,10 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         nhis_all$drink_hist.factor <- factor(nhis_all$drink_hist, levels=c(0,1,2),
                                          labels = c("Never Drinker", "Former Drinker", "Current Drinker"))
          
+        
+        nhis_all$hed.factor <- factor(nhis_all$hed, levels=c(1,2,3,4),
+                                  labels = c("No HED", "HED <1/month", "HED >1/month, <1/week", "HED >=1/week"))
+        
         
         # Mediator 2 - BMI
         nhis_all$bmi_cat.factor <- factor(nhis_all$bmi_cat, levels=c(1,2,3,4),
@@ -119,7 +126,6 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         nhis_all$diabet.factor <- factor(nhis_all$diabet, levels=c(0,1,2),
                                      labels = c("No","Borderline","Yes"))
         
-        nhis_all$income.factor <- factor(nhis_all$income, levels=c(0, 1,2,3,4), labels = c("Missing", "Poor","Near poor","Middle income", "Higher income"))
         
         
         
@@ -147,6 +153,20 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
                                          labels = c("Alive","Accidental", "Other death"))
         
         
+        # Create an 'interaction' variable, combining the SES and Health behavior variables
+        # For main analyses
+        nhis_all$edu.alc <- interaction(nhis_all$edu.factor, nhis_all$alcohol5v2.factor)
+        nhis_all$edu.smk <- interaction(nhis_all$edu.factor, nhis_all$smoking4.factor)
+        nhis_all$edu.bmi <- interaction(nhis_all$edu.factor, nhis_all$bmi_cat.factor)
+        nhis_all$edu.phy <- interaction(nhis_all$edu.factor, nhis_all$phy_act3.factor)
+        
+        # For sensitivity analyses
+        nhis_all$inc.alc <- interaction(nhis_all$income.factor, nhis_all$alcohol5v2.factor)
+        nhis_all$inc.smk <- interaction(nhis_all$income.factor, nhis_all$smoking4.factor)
+        nhis_all$inc.bmi <- interaction(nhis_all$income.factor, nhis_all$bmi_cat.factor)
+        nhis_all$inc.phy <- interaction(nhis_all$income.factor, nhis_all$phy_act3.factor)
+        
+        nhis_all$edu.hed <- interaction(nhis_all$edu.factor, nhis_all$hed.factor)
         
         
        
@@ -180,17 +200,24 @@ nhis_svyWeights_all <- svydesign(id = ~new_psu,
                             !is.na(alcohol5v2) & !is.na(bmi_cat) & !is.na(smoking4) & !is.na(phy_act3) &
                             !is.na(edu) & !is.na(age) & !is.na(female) & !is.na(married) & !is.na(ethnicity) & 
                             (age>=25 & age <85))
-
-        
   
+  
+  # Create subset with males or females only
+  nhis_svyWeights_female <- subset(nhis_svyWeights,  female==1)
+  nhis_svyWeights_male <- subset(nhis_svyWeights,  female==0)
+  
+  
+
   
 
 # Save copy of final datasets  
-saveRDS(nhis_all, "SIMAH_workspace/nhis/Data/nhis_all.rds")         # NHIS data with all participants
-saveRDS(nhis, "SIMAH_workspace/nhis/Data/nhis.rds")                 # NHIS data to be analyzed
-saveRDS(nhis_male, "SIMAH_workspace/nhis/Data/nhis_male.rds")       # NHIS data to be analyzed (males only)
-saveRDS(nhis_female, "SIMAH_workspace/nhis/Data/nhis_female.rds")   # NHIS data to be analyzed (females only)
-saveRDS(nhis_svyWeights_all, "SIMAH_workspace/nhis/Data/nhis_svyWeights_all.rds")   # NHIS data with all participants (using survey weights)
-saveRDS(nhis_svyWeights, "SIMAH_workspace/nhis/Data/nhis_svyWeights.rds")           # NHIS data to be analyzed (using survey weights)
+saveRDS(nhis_all, paste0(data, "nhis_all.rds"))         # NHIS data with all participants
+saveRDS(nhis, paste0(data, "nhis.rds"))                 # NHIS data to be analyzed
+saveRDS(nhis_male, paste0(data, "nhis_male.rds"))       # NHIS data to be analyzed (males only)
+saveRDS(nhis_female, paste0(data, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
+saveRDS(nhis_svyWeights_all, paste0(data, "nhis_svyWeights_all.rds"))   # NHIS data with all participants (using survey weights)
+saveRDS(nhis_svyWeights, paste0(data, "nhis_svyWeights.rds"))           # NHIS data to be analyzed (using survey weights)
+saveRDS(nhis_svyWeights_female, paste0(data, "nhis_svyWeights_female.rds"))           # NHIS data to be analyzed (using survey weights)
+saveRDS(nhis_svyWeights_male, paste0(data, "nhis_svyWeights_male.rds"))           # NHIS data to be analyzed (using survey weights)
 
 
