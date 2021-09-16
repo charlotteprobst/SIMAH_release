@@ -1,5 +1,6 @@
 
-### SIMAH - NESARC Data Analysis
+# SIMAH - NESARC Alcohol Transitions
+# Data Analysis
 
 library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
@@ -32,6 +33,25 @@ kableone(table1)                             # view in R; R Markdown friendly ve
 
 # Transition probabilities -------------------------------------------------------------------------------
 
-# Descriptives of transitions
-statetable.msm(alc4.factor, idnum, data=nesarc)
+# Count of transitions 
+statetable.msm(alc4, idnum, data=nesarc)
 
+
+# Specify transition intensity matrix (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
+# Will only allow transitions to an adjacent state 
+
+Q <- rbind ( c(0,     0.25, 0,     0),
+             c(0.25,  0,    0.25,  0),
+             c(0,     0.25, 0,     0.25),
+             c(0,     0,    0.25,  0) )
+ 
+# Specify initial values 
+Q.crude <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc, qmatrix=Q)
+
+ 
+# Running MSM model
+alc4.msm1 <- msm (alc4 ~ years, subject=idnum, data = nesarc, qmatrix = Q, control = list(fnscale = 50000))
+alc4.msm1
+ 
+ 
+ 
