@@ -61,10 +61,25 @@ alc5.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded,
                  control = list(trace=1, maxit=500, fnscale = 3000000),
                  covariates = ~ female_wave1 + age_scaled + edu3.factor + race_wave1.factor)
 
-# Save Results
-saveRDS(alc5.msm, paste0(output, "alc5.msm.RDS"))
+    # Save Results
+    saveRDS(alc5.msm, paste0(output, "alc5.msm.RDS"))
 
 
+# Run MSM model with interaction
+alc5.msm_int <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+  qmatrix = Q, center=FALSE,
+  control = list(trace=1, maxit=1000, fnscale = 3000000),
+  covariates = ~ female_wave1 + age_scaled + edu3.factor*race_wave1.factor)
+
+
+    # Save Results
+    saveRDS(alc5.msm_int, paste0(output, "alc5.msm_int.RDS"))
+    
+    
+# Compare the two models
+AIC(alc5.msm, alc5.msm_int)
+    
+    
 # Load Model and View Results -----------------------------------------------------------------------------------------------
 alc5.msm <- readRDS(paste0(output, "alc5.msm.RDS"))
 
@@ -138,7 +153,7 @@ edu <- unique(nesarc_expanded$edu3_wave1.factor)
 
 
 # Run function to extract TP
-prob_alc5 <- extractTP(alc5.msm, age, distinct_ages, sex, race, edu)
+prob_alc5 <- extractTP(alc5.msm, age, distinct_ages, sex, race, edu) 
 
   write_csv(prob_alc5, paste0(output, "Transition Probabilities.csv"))
 
