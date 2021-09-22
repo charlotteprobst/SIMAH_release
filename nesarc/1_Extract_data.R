@@ -28,7 +28,8 @@ nesarc2_orig <- read_dta(paste0(data_orig, "NESARCWave2.dta")) %>% zap_formats()
 nesarc1 <- nesarc1_orig %>%
   
   # Select the variables of interest 
-  select(idnum, psu, stratum, weight, sex, olds1q1c, olds1q1d3, olds1q1d5, MARITAL, S1Q6A, olds1q11b, CONSUMER,
+  select(idnum, psu, stratum, weight, CDAY, CMON, CYEAR, 
+    sex, olds1q1c, olds1q1d3, olds1q1d5, MARITAL, S1Q6A, olds1q11b, CONSUMER,
     S2AQ4A, S2AQ4B, s2aq4cr, S2AQ4D, S2AQ4E, S2AQ4F, S2AQ4G, coolecf, 
     S2AQ5A, S2AQ5B, s2aq5cr, S2AQ5D, S2AQ5E, S2AQ5F, S2AQ5G, beerecf, 
     S2AQ6A, S2AQ6B, s2aq6cr, S2AQ6D, S2AQ6E, S2AQ6F, S2AQ6G, wineecf, 
@@ -37,8 +38,8 @@ nesarc1 <- nesarc1_orig %>%
   # recode / create new variables
   mutate (
     wave = 1,
-    years = 0, # follow-up years
-    age = NA,  # placeholder variable - age as NA since it will be extracted from Wave 2
+    age_diff = 0, # age difference from wave 1
+    age = NA,    # placeholder variable - age as NA since it will be extracted from Wave 2
     nw1age = NA, # Placeholder variable - matches  age1 from wave 2
     female = recode(sex, `1` = 0, `2` = 1),
     race = case_when(olds1q1d5==1 & olds1q1d3 ==2 & olds1q1c==2  ~ 1, # white, non-hispanic
@@ -68,7 +69,8 @@ nesarc1 <- nesarc1_orig %>%
 nesarc2 <- nesarc2_orig %>%
     
   # Select the variables of interest 
-  select(idnum, w2psu, w2stratum, w2weight, nw1age, w2AGE, w2SEX, w2ethrace, W2MARITAL, w2s1q15ar, w2s1q19br, w2CONSUMER, 
+  select(idnum, w2psu, w2stratum, w2weight, w2cday, w2cmon, w2cyear, 
+    nw1age, w2AGE, w2SEX, w2ethrace, W2MARITAL, w2s1q15ar, w2s1q19br, w2CONSUMER, 
     w2S2AQ5A, w2S2AQ5B, w2s2aq5cr, w2S2AQ5D, w2S2AQ5E, w2S2AQ5F, w2S2AQ5G, w2coolecf, 
     w2S2AQ6A, w2S2AQ6B, w2s2aq6cr, w2S2AQ6D, w2S2AQ6E, w2S2AQ6F, w2S2AQ6G, w2beerecf, 
     w2S2AQ7A, w2S2AQ7B, w2s2aq7cr, w2S2AQ7D, w2S2AQ7E, w2S2AQ7F, w2S2AQ7G, W2WINEECF, 
@@ -77,13 +79,14 @@ nesarc2 <- nesarc2_orig %>%
   # recode / create new variables
   mutate (
     wave = 2,
-    years = w2AGE - nw1age, # follow-up years
+    age_diff = w2AGE - nw1age, # follow-up years
     female = recode(w2SEX, `1` = 0, `2` = 1),
     race = recode(w2ethrace, `1`=1, `2`=2, `3`=4, `4`=4, `5`=3)) %>%
   
   # rename variables to align with Wave 1
   rename(
-    psu = w2psu, stratum = w2stratum, weight = w2weight, age = w2AGE, marital_stat = W2MARITAL, edu = w2s1q15ar,
+    psu = w2psu, stratum = w2stratum, weight = w2weight, CDAY = w2cday, CMON = w2cmon, CYEAR = w2cyear, 
+    age = w2AGE, marital_stat = W2MARITAL, edu = w2s1q15ar,
     fam_income = w2s1q19br, drinking_stat = w2CONSUMER, 
     S2AQ4A = w2S2AQ5A,  S2AQ4B = w2S2AQ5B,  s2aq4cr = w2s2aq5cr,  S2AQ4D = w2S2AQ5D,  S2AQ4E = w2S2AQ5E,  S2AQ4F = w2S2AQ5F,  S2AQ4G = w2S2AQ5G,  coolecf = w2coolecf,  
     S2AQ5A = w2S2AQ6A,  S2AQ5B = w2S2AQ6B,  s2aq5cr = w2s2aq6cr,  S2AQ5D = w2S2AQ6D,  S2AQ5E = w2S2AQ6E,  S2AQ5F = w2S2AQ6F,  S2AQ5G = w2S2AQ6G,  beerecf = w2beerecf,  
