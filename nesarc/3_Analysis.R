@@ -68,14 +68,14 @@ alc5.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded,
 # Run MSM model with interaction
 alc5.msm_int <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
   qmatrix = Q, center=FALSE,
-  control = list(trace=1, maxit=1000, fnscale = 3000000),
+  control = list(trace=1, maxit=1500, fnscale = 3000000),
   covariates = ~ female_wave1 + age_scaled + edu3.factor*race_wave1.factor)
 
 
     # Save Results
     saveRDS(alc5.msm_int, paste0(output, "alc5.msm_int.RDS"))
     
-    
+    alc5.msm_int
 # Compare the two models
 AIC(alc5.msm, alc5.msm_int)
     
