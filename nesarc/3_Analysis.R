@@ -7,7 +7,6 @@ library(skimr)      # descriptive statistics
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 
-
 ## Set the working directory
 setwd("C:/Users/klajd/OneDrive/SIMAH")
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
@@ -16,7 +15,6 @@ output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
 # Load data / functions
 nesarc <- readRDS(paste0(data, "nesarc_clean.rds")) 
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
-source("SIMAH_code/nesarc/0_Extract TP function.R")
 
 # Descriptives ------------------------------------------------------------------------------------------
 
@@ -59,7 +57,7 @@ Q <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
 alc5.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
                  qmatrix = Q, center=FALSE,
                  control = list(trace=1, maxit=500, fnscale = 3000000),
-                 covariates = ~ female_wave1 + age_scaled + edu3.factor + race_wave1.factor)
+                 covariates = ~ female_wave1.factor + age_scaled + edu3.factor + race_wave1.factor)
 
     # Save Results
     saveRDS(alc5.msm, paste0(output, "alc5.msm.RDS"))
@@ -75,6 +73,7 @@ alc5.msm_int <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded,
     # Save Results
     saveRDS(alc5.msm_int, paste0(output, "alc5.msm_int.RDS"))
     
+    alc5.msm_int <- readRDS(paste0(output, "alc5.msm_int.RDS"))
     alc5.msm_int
 # Compare the two models
 AIC(alc5.msm, alc5.msm_int)
@@ -88,7 +87,7 @@ alc5.msm <- readRDS(paste0(output, "alc5.msm.RDS"))
       
       # Hazard ratios for transition
       hazard.msm(alc5.msm)
-      
+
 
 
 # Table 2 - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
@@ -144,26 +143,73 @@ HR.results <- data.frame(hazard.msm(alc5.msm))%>%
   
 # Extract and Plot TP --------------------------------------------------------------------------------------------------
 
-  # Specify the covariate values
-age <- sort(unique(nesarc_expanded$age_scaled))
-distinct_ages <- select(nesarc_expanded, age_scaled) %>% distinct() # Identify the unique ages
-sex <- c(0,1)
-race <- unique(nesarc_expanded$race_wave1.factor)
-edu <- unique(nesarc_expanded$edu3_wave1.factor)
+# Function to extract TP over over multiple years
+extract_TP <- function(model, age_z, sex, race, edu) {
+  probs <- list()
+  for (i in age_z){
+    for (j in sex){
+      for (l in race){
+        for (k in edu){
+          # extract the probabilities
+          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=1, 
+            covariates = list(age_scaled = i,   female_wave1.factor = j, 
+                              race_wave1.factor = l, edu3.factor = k)))) %>%
+            
+            # modify the output presentation
+            mutate(From = row.names(.)) %>%
+            pivot_longer(cols = -From, names_to = "To") %>%
+            rename(Probability = value) %>%
+            mutate(
+              # Recode values
+              From = recode(From, "State 1" = "Lifetime abstainer", 
+                "State 2" = "Former drinker",
+                "State 3" = "Low risk",
+                "State 4" = "Medium risk",
+                "State 5" = "High risk"), 
+              To = recode(To, "State.1" = "Lifetime abstainer", 
+                "State.2" = "Former drinker",
+                "State.3" = "Low risk",
+                "State.4" = "Medium risk",
+                "State.5" = "High risk"),
+              Transition = paste(From, To, sep = " -> "),
+              age_z = i,
+              age = (age_z * 16.9995) + 46.28592,   # SD of original age variable: 16.9995; mean: 46.28592 
+              sex = j, 
+              race = l,
+              edu = k) 
+        }
+      }
+    }
+  }
+  
+  probs <- do.call(rbind,probs)
+  row.names(probs) <- NULL  # remove row names
+  return(probs)
+  
+}
 
+# First, specify the covariate values
+age_z <- sort(unique(nesarc_expanded$age_scaled))
+sex <- unique(nesarc_expanded$female_wave1.factor)
+race <- unique(nesarc_expanded$race_wave1.factor)
+edu <- unique(nesarc_expanded$edu3.factor)
 
 # Run function to extract TP
-prob_alc5 <- extractTP(alc5.msm, age, distinct_ages, sex, race, edu) 
+aTP <- extract_TP(alc5.msm, age_z, sex, race, edu)
+  
+# Save TP
+write_csv(aTP, paste0(output, "Transition Probabilities.csv"))
 
-  write_csv(prob_alc5, paste0(output, "Transition Probabilities.csv"))
+# Load TP
+aTP <- read_csv(paste0(output, "Transition Probabilities.csv"))
 
 
 # Plot Transition probabilities *******************************************************************
 # 'Poor' Transitions, among non-Hispanic Whites 
-prob_alc5 %>%
-  filter(Transition %in%c("Abstainer -> Low risk", "Former -> Low risk",  "Low risk -> Medium risk", "Medium risk -> High risk")) %>%
+aTP %>%
+  filter(Transition %in%c("Lifetime abstainer -> Low risk", "Former drinker -> Low risk",  "Low risk -> Medium risk", "Medium risk -> High risk")) %>%
   filter(race=="White, non-Hispanic") %>%
-  ggplot(aes(x=as.numeric(age), y=Probability, color=edu, linetype=edu)) + geom_line(size=1.5)+
+  ggplot(aes(x=age, y=Probability, color=edu, linetype=edu)) + geom_line(size=1)+
   facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
   scale_x_continuous(limits=c(18, 85), breaks=seq(20, 85, by= 5)) + 
   labs(title= "'Poor' Transitions", subtitle="White, non-Hispanic", x = "age", y="Transition probability") + 
@@ -171,11 +217,71 @@ prob_alc5 %>%
 
 
 # 'Better' Transitions, among non-Hispanic Whites 
-prob_alc5 %>%
-  filter(Transition %in%c("High risk -> Medium risk", "Medium risk -> Low risk", "Low risk -> Former")) %>%
+aTP %>%
+  filter(Transition %in%c("High risk -> Medium risk", "Medium risk -> Low risk", "Low risk -> Former drinker")) %>%
   filter(race=="White, non-Hispanic") %>%
   ggplot(aes(x=as.numeric(age), y=Probability, color=edu, linetype=edu)) + geom_line(size=1.5)+
   facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 85), breaks=seq(20, 85, by= 5)) + 
+  # scale_x_continuous(limits=c(18, 85), breaks=seq(20, 85, by= 5)) + 
   labs(title= "'Better' Transitions", subtitle="White, non-Hispanic", x = "age", y="Transition probability") + 
   theme_bw() + theme(legend.position="bottom")
+
+
+# TP over over multiple years ---------------------------------------------------------------------------------------------
+
+# Function to extract TP over over multiple years
+extract_TP_over_yrs <- function(model, max_years) {
+  probs <- list()
+  for (i in 1:max_years){    
+    # extract the probabilities
+    probs[[i]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm"))) %>%
+      
+      # modify the output presentation
+      mutate(From = row.names(.)) %>%
+      pivot_longer(cols = -From, names_to = "To") %>%
+      separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
+      mutate(
+        # Update CI to use original sample size
+        SE = (Upper - Lower) / 3.92,
+        SD = SE * sqrt(4061624),  # sample size of expanded data
+        newSE = SD / sqrt(68168), # sample size of original data
+        newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
+        newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
+        Estimate = round(Estimate*100, digits=1),
+        
+        # Recode values
+        From = recode(From, "State 1" = "Lifetime abstainer", 
+                            "State 2" = "Former drinker",
+                            "State 3" = "Low risk",
+                            "State 4" = "Medium risk",
+                            "State 5" = "High risk"), 
+        To = recode(To, "State.1" = "Lifetime abstainer", 
+                        "State.2" = "Former drinker",
+                        "State.3" = "Low risk",
+                        "State.4" = "Medium risk",
+                        "State.5" = "High risk"), 
+        Year = i) %>%
+      select (From, To, Year, Estimate, newLower, newUpper) %>%
+      na.omit() # remove NAs - transitions back to 'Abstainer'
+  }
+  
+  probs <- do.call(rbind,probs)
+  return(probs)
+}
+
+# Extract TP over multiple years and save reults 
+TP_years <- extract_TP_over_yrs(alc5.msm, 10)
+write_csv(TP_years, paste0(output, "TP over time.csv"))
+
+# Load TP over multiple years and plot
+TP_years <- read_csv(paste0(output, "TP over time.csv"))
+TP_years %>%
+  ggplot(aes(x=Year, y=Estimate, ymin=newLower, ymax=newUpper, color=To, fill=To)) + 
+  geom_line(size=1) + geom_ribbon(alpha=0.1) +
+  facet_wrap(~From) +
+  theme_bw() + labs(x = "Years Follow-up", y="Transition probability", color="Transition To", fill="Transition To") +
+  theme(legend.position = c(.85, 0.25))
+
+
+
+

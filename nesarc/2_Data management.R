@@ -221,9 +221,6 @@ nesarc_clean <- nesarc %>%
   filter(!any(is.na(alc4))) %>%
   ungroup() 
 
-# Scale age - needed for MSM model
-nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc_clean$age)
-    
 
 # label values
 
@@ -245,6 +242,11 @@ nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc
 
 
     # Covariates 
+    nesarc_clean$female.factor <- factor(nesarc_clean$female, levels=c(0,1), labels=c("Men", "Women"))
+    
+        nesarc_clean$female_wave1.factor <- factor(nesarc_clean$female_wave1, levels=c(0,1), labels=c("Men", "Women"))
+    
+           
     nesarc_clean$race.factor <- factor(nesarc_clean$race, levels=c(1,2,3,4), 
       labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
       nesarc_clean$race.factor <- relevel(nesarc_clean$race.factor, ref = "White, non-Hispanic")  # specifies the reference category
@@ -253,20 +255,16 @@ nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc
             labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
           nesarc_clean$race_wave1.factor <- relevel(nesarc_clean$race_wave1.factor, ref = "White, non-Hispanic")  # specifies the reference category
       
-    nesarc_clean$married.factor <- factor(nesarc_clean$married, levels=c(1,0), 
-      labels=c("Married/cohab.", "Single"))
+    nesarc_clean$married.factor <- factor(nesarc_clean$married, levels=c(1,0), labels=c("Married/cohab.", "Single"))
       nesarc_clean$married.factor <- relevel(nesarc_clean$married.factor, ref = "Married/cohab.")  # specifies the reference category
     
-    nesarc_clean$edu3.factor <- factor(nesarc_clean$edu3, levels=c(1,2,3), 
-      labels=c("Low", "Med", "High"))
+    nesarc_clean$edu3.factor <- factor(nesarc_clean$edu3, levels=c(1,2,3), labels=c("Low", "Med", "High"))
       nesarc_clean$edu3.factor <- relevel(nesarc_clean$edu3.factor, ref = "High")  # specifies the reference category
     
-            nesarc_clean$edu3_wave1.factor <- factor(nesarc_clean$edu3_wave1, levels=c(1,2,3), 
-              labels=c("Low", "Med", "High"))
+            nesarc_clean$edu3_wave1.factor <- factor(nesarc_clean$edu3_wave1, levels=c(1,2,3), labels=c("Low", "Med", "High"))
             nesarc_clean$edu3_wave1.factor <- relevel(nesarc_clean$edu3_wave1.factor, ref = "High")  # specifies the reference category
       
-    nesarc_clean$income3.factor <- factor(nesarc_clean$income3, levels=c(1,2,3), 
-      labels=c("Low", "Med", "High"))
+    nesarc_clean$income3.factor <- factor(nesarc_clean$income3, levels=c(1,2,3), labels=c("Low", "Med", "High"))
       nesarc_clean$income3.factor <- relevel(nesarc_clean$income3.factor, ref = "High")  # specifies the reference category
     
 
@@ -283,6 +281,11 @@ nesarc_clean_expanded <- nesarc_clean %>%
       idnum = as.numeric(paste0(idnum, iter))) %>%
   ungroup() %>%
   arrange(idnum, wave) # order data by ID then wave (needed for the MSM model)
+
+
+# Scale age - needed for MSM model
+nesarc_clean_expanded$age_scaled <- (nesarc_clean_expanded$age - mean(nesarc_clean_expanded$age))/sd(nesarc_clean_expanded$age)
+nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc_clean$age)
 
   
 # Save data
