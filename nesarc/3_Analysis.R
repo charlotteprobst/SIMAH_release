@@ -30,6 +30,10 @@ write.csv(table1, file=paste0(output,"Table1-Descriptives.csv"))  # export to ex
 kableone(table1)                             # view in R; R Markdown friendly version
 
 
+# HED with missing data
+nesarc %>% filter(wave==1) %>% count (hed.factor)
+
+
 # years follow-up
 nesarc %>%
   filter(wave==2) %>%
@@ -359,11 +363,11 @@ aTP_atmean_edu %>%
   ggplot(aes(x=age, y=Probability, color=race, linetype=race)) + geom_line(size=1)+
   facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
   scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Better' Transitions", subtitle="",
+  labs(title= "'Poor' Transitions", subtitle="",
     color="Race/Ethnicity:", linetype="Race/Ethnicity:",
     x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.7, 1.1), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
-ggsave(paste0(output, "TP by race 1.tiff"), dpi=600, width=7.5)
+  theme_bw() + theme(legend.position=c(0.7, 1.085), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
+ggsave(paste0(output, "TP by race 1.tiff"), dpi=600, width=7.5, height = 8)
 
 
 
@@ -376,8 +380,8 @@ aTP_atmean_edu %>%
   labs(title= "'Better' Transitions", subtitle="",
     color="Race/Ethnicity:", linetype="Race/Ethnicity:",
     x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.7, 1.1), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
-ggsave(paste0(output, "TP by race 2.tiff"), dpi=600, width=7.5)
+  theme_bw() + theme(legend.position=c(0.7, 1.085), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
+ggsave(paste0(output, "TP by race 2.tiff"), dpi=600, width=7.5, height = 8)
 
 
 
