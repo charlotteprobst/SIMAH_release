@@ -7,9 +7,9 @@ cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_I
 percentpop <- PopulationSize / rowSums(cons)
 percentpop <- ifelse(percentpop>1, 1, percentpop)
 
-# if(State=="USA" | State=="California"){
-# cons <- cons*0.3
-# }
+if(State=="USA" | State=="California"){
+cons <- cons*0.3
+}
 
 ##reading in and processing individual level data
 ###read in BRFSS data 

@@ -14,7 +14,7 @@ microsim <- microsim %>% select(microsim.init.age, microsim.init.race, microsim.
          microsim.init.sex = as.character(microsim.init.sex),
          microsim.init.race = as.character(microsim.init.race),
          microsim.init.spawn.year = as.integer(microsim.init.spawn.year),
-         formerdrinker = ifelse(drinkingstatus_2==1, 1,0)) %>% 
+        formerdrinker = ifelse(drinkingstatus_2==1, 1,0)) %>% 
   dplyr::select(-c(drinkingstatus_2))
 
 microsim <- data.frame(microsim)  
