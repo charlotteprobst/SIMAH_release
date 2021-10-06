@@ -439,10 +439,10 @@ TP_years %>%
   ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
   geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
   facet_wrap(~From) +
-  theme_bw() + labs(x = "Years Follow-up", y="Transition probability", color="Transition To", fill="Transition To") +
+  theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
   theme(legend.position = c(.85, 0.25)) +
   scale_y_continuous(breaks=seq(0, 100, by= 10)) + 
   scale_x_continuous(breaks=seq(0, 10, by= 2))
-ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=7.5)
+ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=7.5, height = 5)
 
 
