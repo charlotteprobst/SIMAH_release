@@ -53,7 +53,7 @@ df$raceeth <- recode(df$raceeth, "BLA"="Non-Hispanic Black","WHI"="Non-Hispanic 
                      "OTH"="Non-Hispanic Other", "SPA"="Hispanic")
 
 ## Prepare for race/ethnicity graph
-sum <- df %>% ungroup() %>% group_by(year, datatype, cause, agecat, sex, raceeth, .drop=FALSE) %>% 
+sum <- df %>% ungroup() %>% group_by(year, datatype, cause, agecat, sex, edclass, raceeth, .drop=FALSE) %>% 
   summarise(deaths=sum(totaldeaths), population=sum(n))
 
 # join 2018 age percentages with data for all years - to only use age splits for 2018
@@ -66,11 +66,11 @@ sum$rate <- (sum$deaths/sum$population)*100000
 sum$weighted_rate <- sum$rate*sum$percent
 
 # calculate age-standardised rates - sum of age-weighted rates (i.e. weighted sum)
-sum <- sum %>% group_by(year, sex, raceeth, cause, datatype) %>% 
+sum <- sum %>% group_by(year, sex, edclass, raceeth, cause, datatype) %>% 
   summarise(rate = sum(weighted_rate))
 
 # Specifications for the SES graph
-data_graph <- subset(sum, cause!="Rest")
+data_graph <- subset(sum, cause!="Rest") %>% filter(edclass=="High school degree or less")
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF", "#FFF000")
 ggplot(data=data_graph, aes(x=year, y=(rate), colour=raceeth)) + 
