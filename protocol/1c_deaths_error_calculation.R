@@ -19,6 +19,23 @@ sum <- sum %>% mutate(rate = (deaths/population)*100000,
   group_by(year, sex, edclass, cause, datatype) %>% 
   summarise(rate=sum(weighted_rate))
 
+# for in text reporting - RMSE for each cause of death
+table <- sum %>% mutate(rate = round(rate, digits=1)) %>% 
+                          pivot_wider(names_from=datatype, values_from=rate) %>% 
+  mutate(abserror = abs(microsim-target)) %>% 
+  dplyr::select(year, sex, edclass, cause, abserror) %>% 
+  pivot_wider(names_from=edclass, values_from=abserror)
+
+# for in text reporting - inequalities between educational groups 
+table<- sum %>% pivot_wider(names_from=edclass, values_from=rate) %>% 
+  filter(datatype=="target") %>% filter(cause!="REST") %>% 
+  mutate(absdiff = round(abs(LEHS-College),digits=1),
+         ratio = round(LEHS/College,digits=1))
+
+table %>% filter(year==2015) %>% filter(cause=="DM")
+
+table %>% filter(year==2018) %>% filter(cause=="DM")
+
 # recalculate error - just split by education 
 sum <- sum %>% pivot_wider(names_from=datatype, values_from=rate) %>% 
   mutate(error=microsim-target,
@@ -73,4 +90,7 @@ sum <- sum %>%
   select(edclass, cause, WHI, BLA, SPA, OTH) %>% 
   mutate(cause= factor(cause, levels=c("AUD","LVDC","IJ","MVACC","UIJ","IHD","HYPHD","ISTR","DM","REST"))) %>% 
   ungroup() %>% group_by(edclass) %>% arrange(cause, .by_group=T) %>% filter(cause!="REST")
+sum %>% group_by(edclass) %>% summarise(meanWHI=mean(WHI), meanBLA=mean(BLA),meanSPA=mean(SPA),meanOTH=mean(OTH))
 write.csv(sum, "SIMAH_workplace/protocol/output_data/1_SuppTable5.csv", row.names=FALSE)
+
+

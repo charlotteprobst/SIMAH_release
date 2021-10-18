@@ -37,6 +37,13 @@ uncertainty$datatype <- factor(uncertainty$datatype, levels = c("Microsimulation
 uncertainty$edclass <- factor(uncertainty$edclass, levels=c("High school degree or less",
                                                             "Some college",
                                                             "College degree or more"))
+# for in-text reporting of UIs
+summary <- uncertainty %>% filter(year==2000 | year==2018) %>% 
+  dplyr::select(year, sex, edclass, percent, min, max, datatype) %>% 
+  distinct() %>% 
+  mutate(percent = round(percent*100, digits=1),
+         min = round(min*100, digits=1),
+         max = round(max*100, digits=1))
 #uncertainty$edclass <- factor(uncertainty$edclass, levels = c("High school degree or less", "Some college", "College degree or more"))
 # warning because we do not have a ribbon around the observed data
 ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
