@@ -40,10 +40,14 @@ recode_education <- function(data){
 
 recode_race <- function(data){
   data <- data %>% 
-    mutate(Hispanic = ifelse(HISPANIC==1, 1,
-                             ifelse(HISPANIC==2, 0, NA)),
-           race_comb = ifelse(YEAR<2001, ORACE,
-                              ifelse(YEAR>=2001 & YEAR<=2012, RACE2, 
-                                     ifelse(YEAR>=2013, RACE, NA))))
+    mutate(hispanic_comb = ifelse(YEAR<=2000, HISPANIC,
+                                  ifelse(YEAR>=2001 & YEAR<=2012, HISPANC2,
+                                         ifelse(YEAR>=2013, X.HISPANC, NA))),
+      hispanic_comb = ifelse(hispanic_comb==1, 1,
+                             ifelse(hispanic_comb==2, 0, NA)),
+      race_comb = ifelse(YEAR<2001, ORACE,
+                              ifelse(YEAR>=2001 & YEAR<=2012, RACE2,
+                                     ifelse(YEAR>=2013, X.RACE, NA))),
+      race_eth = ifelse(race_comb==)
   return(data)
 }

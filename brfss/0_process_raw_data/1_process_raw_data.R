@@ -30,16 +30,11 @@ dataFiles <- lapply(dataFiles, recode_education)
 
 # recode race / ethnicity 
 dataFiles <- lapply(dataFiles, recode_race)
+
 for(i in years){
   print(i)
-  print(summary(as.factor(dataFiles[[paste(i)]]$HISPANIC)))
-  print(summary(as.factor(dataFiles[[paste(i)]]$HISPANC2)))
-  print(summary(as.factor(dataFiles[[paste(i)]]$HISPANC3)))
-  print(summary(as.factor(dataFiles[[paste(i)]]$X.HISPANC)))
-  
-  
-  
-  
-  }
+  # print(summary(as.factor(dataFiles[[paste(i)]]$hispanic_comb)))
+  print(summary(as.factor(dataFiles[[paste(i)]]$race_comb)))
+}
 
 
