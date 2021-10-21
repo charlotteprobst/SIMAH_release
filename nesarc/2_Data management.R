@@ -27,9 +27,11 @@ nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
     income3 = case_when(fam_income %in% c(1,2,3,4,5,6) ~ 1, # split into evenly sized groups based on Wave 1 data
                         fam_income %in% c(7,8,9,10,11) ~ 2,
                         fam_income %in% c(12,13,14,15,16,17,18,19,20,21) ~ 3),
+    age3.factor = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
     
     # Calculate follow-up time and baseline version of age, sex, and edu
     intv_date = make_date(year=CYEAR, month=CMON, day=CDAY)) %>%
+  
   arrange(idnum, wave) %>%
   group_by(idnum) %>%
       mutate (prev_intv_date = lag(intv_date, 1),
@@ -145,21 +147,25 @@ nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
         female==1 & alc_daily_g >60 ~ 6),                    # very high risk
       
       alc5 = recode(alc6, `6`=5),       # merge high-risk and very-high-risk categories
-      alc4 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4), # absteiners/former and high/very-high categories
+      alc4 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4), # merge absteiners/former and merge high/very-high categories
 
          
     # Calculate heavy episodic drinking (HED)
     hed = case_when(
                     # Men:
-                    female==0 & drank5plus_freq %in% c(1,2,3,4,5) ~ 4, # HED >= 1/week
-                    female==0 & drank5plus_freq %in% c(6,7) ~ 3,       # HED >= 1/month but < 1/week
-                    female==0 & drank5plus_freq %in% c(8,9,10) ~ 2,    # HED < 1 / month
-                    female==0 & drank5plus_freq %in% c(11) ~ 1,        # No HED in last year
+                    female==0 & drank5plus_freq %in% c(1,2,3,4,5) ~ 5, # HED >= 1/week
+                    female==0 & drank5plus_freq %in% c(6,7) ~ 4,       # HED >= 1/month but < 1/week
+                    female==0 & drank5plus_freq %in% c(8,9,10) ~ 3,    # HED < 1 / month
+                    female==0 & drank5plus_freq %in% c(11) ~ 2,        # No HED in last year
+                    
                     # Women:
-                    female==1 & drank4plus_freq %in% c(1,2,3,4,5) ~ 4, # HED >= 1/week
-                    female==1 & drank4plus_freq %in% c(6,7) ~ 3,       # HED >= 1/month but < 1/week
-                    female==1 & drank4plus_freq %in% c(8,9,10) ~ 2,    # HED < 1 / month
-                    female==1 & drank4plus_freq %in% c(11) ~ 1))       # No HED in last year
+                    female==1 & drank4plus_freq %in% c(1,2,3,4,5) ~ 5, # HED >= 1/week
+                    female==1 & drank4plus_freq %in% c(6,7) ~ 4,       # HED >= 1/month but < 1/week
+                    female==1 & drank4plus_freq %in% c(8,9,10) ~ 3,    # HED < 1 / month
+                    female==1 & drank4plus_freq %in% c(11) ~ 2),       # No HED in last year
+    
+    hed = ifelse(alc5 %in% c(1,2), 1, hed)) #Non-drinker
+
 
   
   # Check  
@@ -182,7 +188,7 @@ nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
   #       S2AQ6A, S2AQ6B, s2aq6cr, S2AQ6D, S2AQ6E, S2AQ6F, S2AQ6G, wineecf, 
   #       S2AQ7A, S2AQ7B, s2aq7cr, S2AQ7D, S2AQ7E, S2AQ7F, S2AQ7G, liqrecf) %>% write.csv(paste0(data_orig, "check_alc.csv", na = ""))
   # count(nesarc, alc4_nesarc)
-   # count(nesarc, alc6, alc5, alc4)
+  # count(nesarc, alc6, alc5, alc4)
   #check if anyone who's previously drank is coded as a lifetime abstainer in wave 2
         # nesarc %>%
         #   select(idnum, wave, alc5, alc_daily_g) %>%
@@ -194,6 +200,7 @@ nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
         #   filter(is.na(alc6)) %>%
         #   select (idnum, wave, alc6, drinking_stat, drinking_stat_wave1, alc_daily_g) %>%
         #   view()
+    # filter(nesarc, wave==1) %>% count(hed)
 
 
 # Create clean copy of data
@@ -203,7 +210,7 @@ nesarc_clean <- nesarc %>%
   arrange(idnum, wave) %>% 
   
   # Identify the variables to keep
-  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_wave1, female, female_wave1, race, race_wave1, 
+  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_wave1, age3.factor, female, female_wave1, race, race_wave1, 
          married, edu3, edu3_wave1, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc4, hed) %>%
   
   # remove those with data at one time point (8,440 observations removed; n=69,306)
@@ -226,19 +233,19 @@ nesarc_clean <- nesarc %>%
 
     # Alcohol variables  
     nesarc_clean$alc6.factor <- factor(nesarc_clean$alc6, levels=c(1,2,3,4,5,6), 
-      labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium rism", "High risk", "Very high risk"))
+      labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium risk", "High risk", "Very high risk"))
     
     nesarc_clean$alc5.factor <- factor(nesarc_clean$alc5, levels=c(1,2,3,4,5), 
-      labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium rism", "High risk"))
+      labels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))
     
     nesarc_clean$alc4.factor <- factor(nesarc_clean$alc4, levels=c(1,2,3,4), 
-      labels=c("Abstinence", "Low risk", "Medium rism", "High risk"))
+      labels=c("Abstinence", "Low risk", "Medium risk", "High risk"))
     
     nesarc_clean$alc4_nesarc.factor <- factor(nesarc_clean$alc4_nesarc, levels=c(1,2,3, 4), 
       labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker"))
     
-    nesarc_clean$hed.factor <- factor(nesarc_clean$hed, levels=c(1,2,3, 4), 
-      labels=c("No HED", "HED <1/month", "HED <1/week", "HED >=1/week"))
+    nesarc_clean$hed.factor <- factor(nesarc_clean$hed, levels=c(1,2,3,4,5), 
+      labels=c("Non-drinker", "Drinker, but no HED", "HED <1/month", "HED <1/week", "HED >=1/week"))
 
 
     # Covariates 
@@ -286,6 +293,9 @@ nesarc_clean_expanded <- nesarc_clean %>%
 # Scale age - needed for MSM model
 nesarc_clean_expanded$age_scaled <- (nesarc_clean_expanded$age - mean(nesarc_clean_expanded$age))/sd(nesarc_clean_expanded$age)
 nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc_clean$age)
+
+filter(nesarc_clean, wave==1) %>% count(hed)
+
 
   
 # Save data
