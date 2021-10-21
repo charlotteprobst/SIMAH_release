@@ -79,4 +79,3 @@ dataFiles <- lapply(dataFiles, recode_sample_weights)
 dataFilesSubset <- lapply(dataFiles, subset_data)
 
 saveRDS(dataFilesSubset, "SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
-
