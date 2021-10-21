@@ -4,9 +4,9 @@ This is the source code for the manuscript: "Lifestyle risk factors  and socioec
 
 The data used is publically available from the National Center for Health Statistics.
 
-The 1997-2014 National Health Interview Survey (NHIS) survey are available here: https://www.cdc.gov/nchs/nhis/1997-2018.htm
+- The 1997-2014 National Health Interview Survey (NHIS) survey are available here: https://www.cdc.gov/nchs/nhis/1997-2018.htm
 
-The 2015 Public-Use Linked Mortality Files are available here: https://www.cdc.gov/nchs/data-linkage/mortality-public.htm
+- The 2015 Public-Use Linked Mortality Files are available here: https://www.cdc.gov/nchs/data-linkage/mortality-public.htm
 
 The data files were extracted and initially manipuated using SAS. All analyses were completed in R. The SAS and R code are available in this repository. The key variables included in the analyses are listed below.
 
