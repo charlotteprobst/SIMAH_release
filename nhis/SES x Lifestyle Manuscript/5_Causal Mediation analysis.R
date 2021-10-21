@@ -12,20 +12,19 @@ library(VGAM)       # multinomial regression, needed for causal mediation
 library(MASS)       # needed for causal mediation functions
 
 
-# Set the working directory and other file locations
+# Specify the data and output file locations
 
-# Personal Computer:
-setwd("C:/Users/klajd/OneDrive/SIMAH")
-data    <- "SIMAH_workspace/nhis/Data"
-output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/CausMed/"
-source("SIMAH_code/nhis/0_Function_CausalMed_Results.R")
-
-# HCC Server:
-# kp <- "/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/"
-# setwd(kp)
-# data    <- "Data/"
-# output  <- "Output/"
-# source("0_Function_CausalMed_Results.R")
+    #Personal computer
+    data    <- "SIMAH_workspace/nhis/Data"
+    output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/CausMed/"
+    source("Function - Format Results.R")
+    source("Function - CausalMed Results.R")
+    
+    # HCC Server:
+    # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
+    # data    <- "Data/"
+    # output  <- "Output/"
+    # source("Function - CausalMed Results.R")
 
 
 # Load data

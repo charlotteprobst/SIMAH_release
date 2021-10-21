@@ -14,11 +14,10 @@ library(timereg)    # additive survival models
 memory.limit(size=1e+13)
 
 
-# Set the working directory and other file locations
-setwd("C:/Users/klajd/OneDrive/SIMAH")
+# Specify the data and output file locations
 data    <- "SIMAH_workspace/nhis/Data"
 output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/"
-source("SIMAH_code/nhis/0_Function_Formatted_results.R")
+source("Function - Format Results.R")
 
     
 # Load data

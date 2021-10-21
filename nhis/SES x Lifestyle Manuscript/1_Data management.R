@@ -9,9 +9,8 @@ library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
 
 
-## Set the working directory
-setwd("C:/Users/klajd/OneDrive/SIMAH")
-data  <- "SIMAH_workspace/nhis/Data/"
+# Specify the data file location
+data  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
 
 
 # Import data form SAS and edit/recategorize variables 

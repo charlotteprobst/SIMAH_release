@@ -17,8 +17,7 @@ library(survey)     # for survey weighted cox model
 library(biostat3)   # survRate command
 
 
-# Set the working directory and other file locations
-setwd("C:/Users/klajd/OneDrive/SIMAH")
+# Specify the data and output file locations
 data    <- "SIMAH_workspace/nhis/Data"
 output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/"
 
