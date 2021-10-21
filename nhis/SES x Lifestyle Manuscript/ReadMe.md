@@ -28,4 +28,4 @@ The data files were extracted and initially manipuated using SAS. All analyses w
 | srvy_yr        	    | Survey year                           	| Integer: 1997 to 2014                                                                                    	|
 | hed            	    | Heavy episodic drinking               	| 1 (No HED); 2 (HED <1/month); 3 (HED >1/month, <1/week); 4 (HED >=1/week)                                	|
 
-*Note: in the R script below variables with the suffix ".factor" use the value label noted above, whereas variables without the suffix use the numeric value noted above*
+*Note: in the R scripts variables with the suffix ".factor" use the value label noted above, whereas variables without the suffix use the numeric value noted above*
