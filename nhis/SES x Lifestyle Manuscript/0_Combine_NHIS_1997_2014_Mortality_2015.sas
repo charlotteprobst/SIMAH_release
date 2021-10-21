@@ -3,33 +3,32 @@
 /******************SAS SYNTAX TO EXTRACT AND COMBINE NHIS 1997-2014 and Mortality 2015 DATA *************************/
 /********************************************************************************************************************/
 
-
 /*Location of individual data files*/
-libname lib1997 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\1997";
-libname lib1998 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\1998";
-libname lib1999 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\1999";
-libname lib2000 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2000";
-libname lib2001 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2001";
-libname lib2002 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2002";
-libname lib2003 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2003";
-libname lib2004 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2004";
-libname lib2005 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2005";
-libname lib2006 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2006";
-libname lib2007 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2007";
-libname lib2008 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2008";
-libname lib2009 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2009";
-libname lib2010 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2010";
-libname lib2011 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2011";
-libname lib2012 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2012";
-libname lib2013 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2013";
-libname lib2014 "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\NHIS Raw Data\2014";
-libname mort    "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\Mortality Data\1997-2014";
+libname lib1997 "C:\...\NHIS Data\NHIS Raw Data\1997";
+libname lib1998 "C:\...\NHIS Data\NHIS Raw Data\1998";
+libname lib1999 "C:\...\NHIS Data\NHIS Raw Data\1999";
+libname lib2000 "C:\...\NHIS Data\NHIS Raw Data\2000";
+libname lib2001 "C:\...\NHIS Data\NHIS Raw Data\2001";
+libname lib2002 "C:\...\NHIS Data\NHIS Raw Data\2002";
+libname lib2003 "C:\...\NHIS Data\NHIS Raw Data\2003";
+libname lib2004 "C:\...\NHIS Data\NHIS Raw Data\2004";
+libname lib2005 "C:\...\NHIS Data\NHIS Raw Data\2005";
+libname lib2006 "C:\...\NHIS Data\NHIS Raw Data\2006";
+libname lib2007 "C:\...\NHIS Data\NHIS Raw Data\2007";
+libname lib2008 "C:\...\NHIS Data\NHIS Raw Data\2008";
+libname lib2009 "C:\...\NHIS Data\NHIS Raw Data\2009";
+libname lib2010 "C:\...\NHIS Data\NHIS Raw Data\2010";
+libname lib2011 "C:\...\NHIS Data\NHIS Raw Data\2011";
+libname lib2012 "C:\...\NHIS Data\NHIS Raw Data\2012";
+libname lib2013 "C:\...\NHIS Data\NHIS Raw Data\2013";
+libname lib2014 "C:\...\NHIS Data\NHIS Raw Data\2014";
+libname mort    "C:\...\NHIS Data\Mortality Data\1997-2014";
 
 /*Location of combined, cleaned data file */
-libname combined "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data";
+libname combined "C:\...\NHIS Data";
 
 OPTIONS nofmterr;    /*needed since we're not loading the format for each NHIS data file*/
-options nonotes;	   /*suppress notes in log - too many notes about missing formats*/
+options nonotes;	 /*suppress notes in log - too many notes about missing formats*/
 
 
 
@@ -1173,9 +1172,3 @@ run;
 			        bmi_cat smoking hypertension diabet phy_act3 income health_stat us_born ELIGSTAT MORTSTAT K6SCALE3;
 	run;
 
-
-
-/*Export to STATA file*/
-proc export data=combined.nhis_mort_clean replace
-		outfile= "C:\Users\klajd\Documents\2021-Present CAMH\NHIS Data\nhis_mort_clean.dta";
-run;
