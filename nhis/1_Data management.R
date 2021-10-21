@@ -1,6 +1,6 @@
 
-### SIMAH - NHIS Data Management Syntax
-
+# SES x Lifestyle Differential Vulnerability & Exposure Project
+# Data Management File
 
 library(haven)      # Read SAS file
 library(tidyverse)  # data management
@@ -9,10 +9,8 @@ library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
 
 
-
 ## Set the working directory
-kp <- "C:/Users/klajd/OneDrive/SIMAH"
-setwd(kp)
+setwd("C:/Users/klajd/OneDrive/SIMAH")
 data  <- "SIMAH_workspace/nhis/Data/"
 
 
@@ -24,6 +22,7 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
   # Recode and create variables
   mutate (bl_age = age,                  # Baseline age
           end_age = age + yrs_followup,  # Age at death/censor
+          income4 = recode(income, `1`=1, `2`=2, `3`=2, `4`=3, `5`=4),              # merge the two middle categories
           alcohol4 = recode(alcohol5, `1`=1, `2`=2, `3`=3, `4`=4, `5`=4),           # merge high risk and very high risk group
           alcohol5v2 = recode(alcohol6, `1`=1, `2`=2, `3`=3, `4`=4, `5`=5, `6`=5),  # separate former/never drinkers and merge high risk and very high risk group
           smoking4 = recode(smoking, `0`=1, `1`=2, `2`=3, `3`=4),                   # recoded such that '1' is the first/smallest category
@@ -61,6 +60,10 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         nhis_all$income.factor <- factor(nhis_all$income, levels=c(1,2,3,4,5), labels = c("Poor","Near poor","Middle income", "High income", "Missing"))
                   nhis_all$income.factor <- relevel(nhis_all$income.factor, ref = "High income")    # specifies the reference category 
         
+        nhis_all$income4.factor <- factor(nhis_all$income4, levels=c(1,2,3,4), labels = c("Low","Medium", "High", "Missing"))
+                  nhis_all$income4.factor <- relevel(nhis_all$income4.factor, ref = "High")    # specifies the reference category 
+                  
+                  
         # Mediator 1 - Alcohol
         nhis_all$alcohol5.factor <- factor(nhis_all$alcohol5, levels=c(1,2,3,4,5),
                                        labels = c("Abstinence", "Low risk","Medium risk","High risk","Very high risk")) 
@@ -153,6 +156,7 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
                                          labels = c("Alive","Accidental", "Other death"))
         
         
+        
         # Create an 'interaction' variable, combining the SES and Health behavior variables
         # For main analyses
         nhis_all$edu.alc <- interaction(nhis_all$edu.factor, nhis_all$alcohol5v2.factor)
@@ -161,10 +165,10 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         nhis_all$edu.phy <- interaction(nhis_all$edu.factor, nhis_all$phy_act3.factor)
         
         # For sensitivity analyses
-        nhis_all$inc.alc <- interaction(nhis_all$income.factor, nhis_all$alcohol5v2.factor)
-        nhis_all$inc.smk <- interaction(nhis_all$income.factor, nhis_all$smoking4.factor)
-        nhis_all$inc.bmi <- interaction(nhis_all$income.factor, nhis_all$bmi_cat.factor)
-        nhis_all$inc.phy <- interaction(nhis_all$income.factor, nhis_all$phy_act3.factor)
+        nhis_all$inc.alc <- interaction(nhis_all$income4.factor, nhis_all$alcohol5v2.factor)
+        nhis_all$inc.smk <- interaction(nhis_all$income4.factor, nhis_all$smoking4.factor)
+        nhis_all$inc.bmi <- interaction(nhis_all$income4.factor, nhis_all$bmi_cat.factor)
+        nhis_all$inc.phy <- interaction(nhis_all$income4.factor, nhis_all$phy_act3.factor)
         
         nhis_all$edu.hed <- interaction(nhis_all$edu.factor, nhis_all$hed.factor)
         
@@ -207,7 +211,6 @@ nhis_svyWeights_all <- svydesign(id = ~new_psu,
   nhis_svyWeights_male <- subset(nhis_svyWeights,  female==0)
   
   
-
   
 
 # Save copy of final datasets  

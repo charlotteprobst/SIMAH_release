@@ -7,8 +7,7 @@
 # Total effect is obtained by the sum of the three separate effects
 # Confidence intervals for total effects and mediated proportions are computed using the code below:
 
-
-# Total Effect (Not-Robust) - function to obtain 95% CI of total effect and mediated proportion
+# Function to get the (Not-Robust) total effect and proportion mediated
 getTE_NotRobust <- function(CMed_model, v){
   TE <- sum(CMed_model$gamma[v])
   mu <- CMed_model$gamma[v]
@@ -24,7 +23,7 @@ getTE_NotRobust <- function(CMed_model, v){
 
 
 
-        # Total Effect (Robust) - function to obtain 95% CI of total effect and mediated proportion
+        # # Function to get the (Robust) total effect and proportion mediated
         getTE_Robust <- function(CMed_model, v){
           TE <- sum(CMed_model$gamma[v])
           mu <- CMed_model$gamma[v]
@@ -42,7 +41,7 @@ getTE_NotRobust <- function(CMed_model, v){
 
 
 
-# Indirect Effect (Not Robust) - function to obtain SE for indirect effect 
+# Function to get the (Not-Robust) total combined indirect effect  
 getIE_NotRobust <- function(CMed_model, v){
   IE <- sum(CMed_model$gamma[v])
   mu <- CMed_model$gamma[v]
@@ -59,7 +58,7 @@ getIE_NotRobust <- function(CMed_model, v){
 
 
 
-        # Indirect Effect (Robust) - function to obtain SE for indirect effect 
+        # Function to get the (Robust) total combined indirect effect  
         getIE_Robust <- function(CMed_model, v){
           IE <- sum(CMed_model$gamma[v])
           mu <- CMed_model$gamma[v]
@@ -77,8 +76,7 @@ getIE_NotRobust <- function(CMed_model, v){
 
 
 
-
-# Indirect Effect (Not Robust) - function to obtain 95% CI of mediated proportion of the indirect effect
+# Function to get the (Not Robust)  proportion mediated of the combined indirect effect
 getTE_IE_NotRobust <- function(CMed_model, v, z){
   #total effect
   TE <- sum(CMed_model$gamma[v])
@@ -104,7 +102,8 @@ getTE_IE_NotRobust <- function(CMed_model, v, z){
 
 
       
-      # Indirect Effect (Not Robust) - function to obtain 95% CI of mediated proportion of the indirect effect
+
+      # Function to get the (Not Robust)  proportion mediated of the combined indirect effect
       getTE_IE_Robust <- function(CMed_model, v, z){
         #total effect
         TE <- sum(CMed_model$gamma[v])

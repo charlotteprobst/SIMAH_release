@@ -1,7 +1,6 @@
 
-
-### SIMAH - NHIS Data
-### SES x Health Behavior interaction and mediation
+# SES x Lifestyle Differential Vulnerability & Exposure Project
+# Objective 1: Aalen additive hazard models file
 
 
 # LOAD DATA AND SET FILE LOCATIONS
@@ -16,8 +15,7 @@ memory.limit(size=1e+13)
 
 
 # Set the working directory and other file locations
-kp <- "C:/Users/klajd/OneDrive/SIMAH"
-setwd(kp)
+setwd("C:/Users/klajd/OneDrive/SIMAH")
 data    <- "SIMAH_workspace/nhis/Data"
 output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/Interaction/"
 source("SIMAH_code/nhis/0_Function_Formatted_results.R")
@@ -29,13 +27,17 @@ nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 
-
 # OBJECTIVE 1: Joint Effects, Hazard Models - Stratified by Sex --------------------------------------------------
 
 # The effect estimates from the model can be directly interpreted as the number of additional events (deaths) per 1 person year at risk
-    # Two different versions of the model were ran identify the interaction effect (model with the interaction term) and the joint effect (model with interacting variable) 
-    # A "aalen_10000py" function was created to extract the coefficients and multiple them by 10,000 to get estimes per 10,000 person years
-    # The results from each model pertain to the effect of "Low SES & healthy behavior", "Bad behavior & high SES", "Low SES & Bad behavior", "Interaction effect"
+# Two different versions of the model were ran identify the interaction effect (model with the interaction term) and the joint effect (model with interacting variable) 
+
+# A "aalen_10000py" function was created to extract the coefficients and multiple them by 10,000 to get estimates per 10,000 person years
+# The results from the function to extract results (as written below) pertain to the effect of:
+    # "Low SES & 'best' lifestyle", 
+    # "High SES & 'poor' lifestyle", 
+    # "Low SES & 'poor' behavior", 
+    # "Interaction effect"
      
 
 
@@ -167,6 +169,15 @@ aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(p
 
 # Second: Load and view model results  ***************************************************************************************
 
+  # A "aalen_10000py" function was created to extract the coefficients and multiple them by 10,000 to get estimates per 10,000 person years
+  # The results from the function to extract results (as written below) pertain to the effect of:
+      # "Low SES & 'best' lifestyle", 
+      # "High SES & 'poor' lifestyle", 
+      # "Low SES & 'poor' behavior", 
+      # "Interaction effect"
+  
+      
+      
 ### WOMEN: Education * Alcohol 
 model <- "_alc_f" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))      # Name and load the interaction model         
 model <- "_alc_f2" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))    # Name and load the joint effect model  

@@ -1,10 +1,10 @@
 
 
-### SIMAH - NHIS Data
-### SES x Health Behavior interaction and mediation
+# SES x Lifestyle Differential Vulnerability & Exposure Project
+# Assumptions of Aalen Models File
 
 
-# LOAD DATA AND SET FILE LOCATIONS ----------------------------------------------------------------------------------
+# LOAD DATA AND SET FILE LOCATIONS 
 
 # load libraries
 library(tidyverse)  # data management
@@ -21,16 +21,9 @@ library(MASS)       # needed for causal mediation functions
 memory.limit(size=1e+13)
 
 
-
 # Set the working directory and other file locations
-
-
-
-# Set the working directory and other file locations
-
-# # Personal Computer:
-kp <- "C:/Users/klajd/OneDrive/SIMAH"
-setwd(kp)
+# Personal Computer:
+setwd("C:/Users/klajd/OneDrive/SIMAH")
 data    <- "SIMAH_workspace/nhis/Data"
 output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/"
 source("SIMAH_code/nhis/0_Function_Formatted_results.R")
@@ -42,15 +35,16 @@ nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 
-
 # ASSUMPTIONS, Additive Hazard Models ------------------------------------------------------------------------------------------------------------------
 
-# First, check time-invariant assumption; whether the effect of covariates is time-varying or constant with time (similar to proportional hazard assumption in Cox models).
-# To make the effect of a variable constant with time, use the wrapper "const()" around the variable; without this wrapper the effect of the variable will be time-varying.
-# Start by fitting the model where all components of the model have time-varying effects (i.e. don't use the const() wrapper)  
-# Then start to simply model by a number of successive tests to making variables age-invariant; those that have a straight line in the plot and/or are not significant in the Kolmogorov-Smirnov / Cramer von Mises test
-# Ultimately, the variables that are part of an interaction have to have a age-invariant effect (use const() wrapper).
-      # and sensitivity analyses (stratifying by age group) will be ran to examine the potential impact of violating the assumption (if the assumption was violated)
+# First, check the time-invariant assumption (in our case, referred to as 'age-invariant'); whether the effect of covariates 
+# is age-varying or constant with time (similar to proportional hazard assumption in Cox models). The "const()" wrapper is 
+# used to make the effect of a variable age-invariant; without this wrapper the effect of the variable will be age-varying. 
+# Start by fitting the model where all components of the model have age-varying effects, then iteratively simplify the model 
+# by making the variables age-invariant one at a time (based on the plot and the Kolmogorov-Smirnov / Cramer von Mises tests). 
+
+# Ultimately, the variables that are part of an interaction have to have a age-invariant effect, and sensitivity analyses 
+# (stratifying by age group) were  ran to examine the potential impact if the assumption was violated. 
 
 # For more details and theoretical justification/description see:
       # Rod et al. 2012 https://doi.org/10.1097/EDE.0b013e31825fa218
@@ -612,7 +606,7 @@ saveRDS(aalen_alc_f_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1_tvc2565.pdf"); plot(aalen_alc_f_assump1_tvc2565); dev.off()   # save plot 
 aalen_alc_f_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1_tvc2565.rds")               # load model results
 summary(aalen_alc_f_assump1_tvc2565)
-# RESULT: ??  
+   
 
 
 # Iteration 1 - Ages 65+
@@ -622,7 +616,7 @@ saveRDS(aalen_alc_f_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1_tvc65up.pdf"); plot(aalen_alc_f_assump1_tvc65up); dev.off()   # save plot 
 aalen_alc_f_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_f_assump1_tvc65up.rds")               # load model results
 summary(aalen_alc_f_assump1_tvc65up)
-# RESULT: ??  
+   
     
     
   
@@ -636,7 +630,7 @@ saveRDS(aalen_alc_m_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1_tvc2565.pdf"); plot(aalen_alc_m_assump1_tvc2565); dev.off()   # save plot 
 aalen_alc_m_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1_tvc2565.rds")               # load model results
 summary(aalen_alc_m_assump1_tvc2565)
-# RESULT: ??  
+   
 
 
 # Iteration 1 - Ages 65+
@@ -646,7 +640,7 @@ saveRDS(aalen_alc_m_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1_tvc65up.pdf"); plot(aalen_alc_m_assump1_tvc65up); dev.off()   # save plot 
 aalen_alc_m_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_alc_m_assump1_tvc65up.rds")               # load model results
 summary(aalen_alc_m_assump1_tvc65up)
-# RESULT: ??  
+   
     
     
     
@@ -662,7 +656,7 @@ saveRDS(aalen_smk_f_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_f_assump1_tvc2565.pdf"); plot(aalen_smk_f_assump1_tvc2565); dev.off()   # save plot 
 aalen_smk_f_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_f_assump1_tvc2565.rds")               # load model results
 summary(aalen_smk_f_assump1_tvc2565)
-# RESULT: ??  
+   
 
 
 # Iteration 1 - Ages 65+
@@ -672,7 +666,7 @@ saveRDS(aalen_smk_f_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_f_assump1_tvc65up.pdf"); plot(aalen_smk_f_assump1_tvc65up); dev.off()   # save plot 
 aalen_smk_f_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_f_assump1_tvc65up.rds")               # load model results
 summary(aalen_smk_f_assump1_tvc65up)
-# RESULT: ??  
+   
     
     
     
@@ -685,7 +679,7 @@ saveRDS(aalen_smk_m_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_m_assump1_tvc2565.pdf"); plot(aalen_smk_m_assump1_tvc2565); dev.off()   # save plot 
 aalen_smk_m_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_m_assump1_tvc2565.rds")               # load model results
 summary(aalen_smk_m_assump1_tvc2565)
-# RESULT: ??  
+   
 
 
 # Iteration 1 - Ages 65+
@@ -695,7 +689,7 @@ saveRDS(aalen_smk_m_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_m_assump1_tvc65up.pdf"); plot(aalen_smk_m_assump1_tvc65up); dev.off()   # save plot 
 aalen_smk_m_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/alc/aalen_smk_m_assump1_tvc65up.rds")               # load model results
 summary(aalen_smk_m_assump1_tvc65up)
-# RESULT: ??  
+   
     
     
     
@@ -712,7 +706,7 @@ saveRDS(aalen_bmi_f_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1_tvc2565.pdf"); plot(aalen_bmi_f_assump1_tvc2565); dev.off()   # save plot 
 aalen_bmi_f_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1_tvc2565.rds")               # load model results
 summary(aalen_bmi_f_assump1_tvc2565)  
-# RESULT: ??
+ 
 
 
 # Iteration 1 - Ages 65+
@@ -722,7 +716,7 @@ saveRDS(aalen_bmi_f_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1_tvc65up.pdf"); plot(aalen_bmi_f_assump1_tvc65up); dev.off()   # save plot 
 aalen_bmi_f_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_f_assump1_tvc65up.rds")               # load model results
 summary(aalen_bmi_f_assump1_tvc65up) 
-# RESULT: ??
+ 
     
     
 
@@ -736,7 +730,7 @@ saveRDS(aalen_bmi_m_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1_tvc2565.pdf"); plot(aalen_bmi_m_assump1_tvc2565); dev.off()   # save plot 
 aalen_bmi_m_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1_tvc2565.rds")               # load model results
 summary(aalen_bmi_m_assump1_tvc2565)
-# RESULT: ??
+ 
 
 # Iteration 1 - Ages 65+
 aalen_bmi_m_assump1_tvc65up <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi_cat.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, 
@@ -745,7 +739,7 @@ saveRDS(aalen_bmi_m_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1_tvc65up.pdf"); plot(aalen_bmi_m_assump1_tvc65up); dev.off()   # save plot 
 aalen_bmi_m_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/bmi/aalen_bmi_m_assump1_tvc65up.rds")               # load model results
 summary(aalen_bmi_m_assump1_tvc65up)
-# RESULT: ??
+ 
 
 
 
@@ -760,7 +754,7 @@ saveRDS(aalen_phy_f_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1_tvc2565.pdf"); plot(aalen_phy_f_assump1_tvc2565); dev.off()   # save plot 
 aalen_phy_f_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1_tvc2565.rds")               # load model results
 summary(aalen_phy_f_assump1_tvc2565)
-# RESULT: ??
+ 
 
 # Iteration 1 - Ages 65+
 aalen_phy_f_assump1_tvc65up <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, 
@@ -769,7 +763,7 @@ saveRDS(aalen_phy_f_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1_tvc65up.pdf"); plot(aalen_phy_f_assump1_tvc65up); dev.off()   # save plot 
 aalen_phy_f_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_f_assump1_tvc65up.rds")               # load model results
 summary(aalen_phy_f_assump1_tvc65up)
-# RESULT: ??
+ 
 
 
 
@@ -781,7 +775,7 @@ saveRDS(aalen_phy_m_assump1_tvc2565, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1_tvc2565.pdf"); plot(aalen_phy_m_assump1_tvc2565); dev.off()   # save plot 
 aalen_phy_m_assump1_tvc2565 <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1_tvc2565.rds")               # load model results
 summary(aalen_phy_m_assump1_tvc2565)
-# RESULT: ??
+ 
 
 # Iteration 1 - Ages 65+
 aalen_phy_m_assump1_tvc65up <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu.factor) + const(married.factor) + ethnicity.factor, 
@@ -790,7 +784,7 @@ saveRDS(aalen_phy_m_assump1_tvc65up, "SIMAH_workspace/nhis/SES x Behavior/Output
 pdf("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1_tvc65up.pdf"); plot(aalen_phy_m_assump1_tvc65up); dev.off()   # save plot 
 aalen_phy_m_assump1_tvc65up <-readRDS("SIMAH_workspace/nhis/SES x Behavior/Output/Assumptions/Interaction/phy/aalen_phy_m_assump1_tvc65up.rds")               # load model results
 summary(aalen_phy_m_assump1_tvc65up)
-# RESULT: ??
+ 
 
 
 

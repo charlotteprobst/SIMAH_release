@@ -6,32 +6,31 @@ library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
+library(irr)        # calculate kappa for true and predicted alcohol use
+# options(scipen=999) # prevent the use of scientific notation
 
-## Set the working directory
+
+# Set working directory
 setwd("C:/Users/klajd/OneDrive/SIMAH")
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
+
 
 # Load data / functions
 nesarc <- readRDS(paste0(data, "nesarc_clean.rds")) 
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
 
+
+
 # Descriptives ------------------------------------------------------------------------------------------
 
-# At baseline
-nesarc_wave1 <- filter(nesarc, wave==1)
-
-tab1 <-CreateTableOne(vars= c("female", "age", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
-                      factorVars = c("female", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
-                      data=nesarc_wave1)
+tab1 <-CreateTableOne(vars= c("female", "age", "age3.factor", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
+                      factorVars = c("female", "age3.factor", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
+                      strata="wave", data=nesarc)
 summary(tab1)
 table1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE)   
 write.csv(table1, file=paste0(output,"Table1-Descriptives.csv"))  # export to excel, to copy/paste into manuscript
 kableone(table1)                             # view in R; R Markdown friendly version
-
-
-# HED with missing data
-nesarc %>% filter(wave==1) %>% count (hed.factor)
 
 
 # years follow-up
@@ -40,52 +39,260 @@ nesarc %>%
   select (years) %>% 
   skim()
 
-# Run MSM Model ------------------------------------------------------------------------------------------------
+
+
+# ALCOHOL CONSUMPTION  ------------------------------------------------------------------------------------------------
+## Run AlcUse MSM Model (9 models; least to most restrained, sequentally) ------------------------------------------------------------------------------------------------
 # Count of transitions 
 statetable.msm(alc5, idnum, data=nesarc)
+statetable.msm(alc5, idnum, data=nesarc_expanded)
 
 
-# Specify transition intensity matrix (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
-# Will only allow transitions to an adjacent state , except for transitions back to lifetime abstainers, and abstainer->former drinker
+# Run different models using different transition intensity matrixes (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
+# Start with the full model and gradually restricted the allowed transitions beginning with the most remote transitions;
 
-Q <- rbind ( c(0,     0,    0.25,  0,    0),
-             c(0,     0,    0.25,  0,    0),
-             c(0,     0.25, 0,     0.25, 0),
-             c(0,     0,    0.25,  0,    0.25),
-             c(0,     0,    0,     0.25, 0))
+# Model 1: allow all transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
+Q1<- rbind ( c(0,     0,    0.25,  0.25, 0.25),
+             c(0,     0,    0.25,  0.25, 0.25),
+             c(0,     0.25, 0,     0.25, 0.25),
+             c(0,     0.25, 0.25,  0,    0.25),
+             c(0,     0.25, 0.25,  0.25, 0))
 
-# Specify initial values 
-Q <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
+    # Run MSM model
+    Q1 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q1)   # Specifies initial values; change Q value here, if needed
+    alc5.msm1 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                       qmatrix = Q1, center=FALSE,                                # Change Q value here, if needed
+                       control = list(trace=1, maxit=1000, fnscale = 3100000),    # the value of 3100000 was obtained from running the same model earlier (not shown) but also including the statement: fixedpars=TRUE 
+                       covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+    saveRDS(alc5.msm1, paste0(output, "alc5.msm1.RDS")) # Save Results
+
+
+    
+# Model 2: remove Abstinence --> Category III
+Q2<- rbind (c(0,     0,    0.25,  0.25, 0),
+            c(0,     0,    0.25,  0.25, 0.25),
+            c(0,     0.25, 0,     0.25, 0.25),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0.25, 0.25,  0.25, 0))
+    
+      # Run MSM model
+      Q2 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q2)   # Specifies initial values; change Q value here, if needed
+      alc5.msm2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q2, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm2, paste0(output, "alc5.msm2.RDS")) # Save Results
+      
+      
+      
+      
+      
+# Model 3: remove Former --> Category III
+Q3<- rbind (c(0,     0,    0.25,  0.25, 0),
+            c(0,     0,    0.25,  0.25, 0),
+            c(0,     0.25, 0,     0.25, 0.25),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0.25, 0.25,  0.25, 0))
+    
+      # Run MSM model
+      Q3 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q3)   # Specifies initial values; change Q value here, if needed
+      alc5.msm3 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q3, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm3, paste0(output, "alc5.msm3.RDS")) # Save Results
+
+    
+
+      
+          
+# Model 4: remove Category III --> Former
+Q4<- rbind (c(0,     0,    0.25,  0.25, 0),
+            c(0,     0,    0.25,  0.25, 0),
+            c(0,     0.25, 0,     0.25, 0.25),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0,    0.25,  0.25, 0))
+  
+      # Run MSM model
+      Q4 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q4)   # Specifies initial values; change Q value here, if needed
+      alc5.msm4 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q4, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm4, paste0(output, "alc5.msm4.RDS")) # Save Results
+
+
+
+      
+      
+      
+# Model 5: remove Abstainer --> Category II
+Q5<- rbind (c(0,     0,    0.25,  0,    0),
+            c(0,     0,    0.25,  0.25, 0),
+            c(0,     0.25, 0,     0.25, 0.25),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0,    0.25,  0.25, 0))
+
+      # Run MSM model
+      Q5 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q5)   # Specifies initial values; change Q value here, if needed
+      alc5.msm5 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q5, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm5, paste0(output, "alc5.msm5.RDS")) # Save Results
+
+
+      
+      
+    
+# Model 6: remove Former --> Category II
+Q6<- rbind (c(0,     0,    0.25,  0,    0),
+            c(0,     0,    0.25,  0,    0),
+            c(0,     0.25, 0,     0.25, 0.25),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0,    0.25,  0.25, 0))
+
+      # Run MSM model
+      Q6 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q6)   # Specifies initial values; change Q value here, if needed
+      alc5.msm6 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q6, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm6, paste0(output, "alc5.msm6.RDS")) # Save Results
+
+
+      
+      
+
+# Model 7: remove Category I --> III
+Q7<- rbind (c(0,     0,    0.25,  0,    0),
+            c(0,     0,    0.25,  0,    0),
+            c(0,     0.25, 0,     0.25, 0),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0,    0.25,  0.25, 0))
+
+      # Run MSM model
+      Q7 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q7)   # Specifies initial values; change Q value here, if needed
+      alc5.msm7 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q7, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm7, paste0(output, "alc5.msm7.RDS")) # Save Results
+
+
+      
+      
+
+# Model 8: remove Category III --> I
+Q8<- rbind (c(0,     0,    0.25,  0,    0),
+            c(0,     0,    0.25,  0,    0),
+            c(0,     0.25, 0,     0.25, 0),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0,    0,  0.25, 0))
+
+
+      # Run MSM model
+      Q8 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q8)   # Specifies initial values; change Q value here, if needed
+      alc5.msm8 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q8, center=FALSE,                                # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+      saveRDS(alc5.msm8, paste0(output, "alc5.msm8.RDS")) # Save Results
+
+
+      
+      
+
+# Model 9: remove Category II --> Former
+# Only allows transitions to an adjacent state, except for transitions back to lifetime abstainers, and abstainer->former drinker
+Q9 <- rbind ( c(0,     0,    0.25,  0,    0),
+              c(0,     0,    0.25,  0,    0),
+              c(0,     0.25, 0,     0.25, 0),
+              c(0,     0,    0.25,  0,    0.25),
+              c(0,     0,    0,     0.25, 0))
+    
+
+    # Run MSM model
+    Q9 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q9)  # Specifies initial values; Change Q value here, if needed
+    alc5.msm9 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                        qmatrix = Q9, center=FALSE,                             # Change Q value here, if needed
+                        control = list(trace=1, maxit=1000, fnscale = 3000000),
+                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+    saveRDS(alc5.msm9, paste0(output, "alc5.msm9.RDS")) # Save Results
+    
+
+    
+# Load the models
+alc5.msm1 <- readRDS(paste0(output, "alc5.msm1.RDS"))
+alc5.msm9 <- readRDS(paste0(output, "alc5.msm9.RDS"))
+    
+# Compare models
+AIC(alc5.msm1, alc5.msm9)
+AIC(alc5.msm1, alc5.msm2, alc5.msm3, alc5.msm4, alc5.msm5, alc5.msm6, alc5.msm7, alc5.msm8, alc5.msm9)
+    
+
+    
+## Run AlcUse MSM Model (3 models; therory based) ------------------------------------------------------------------------------------------------
+# Count of transitions 
+statetable.msm(alc5, idnum, data=nesarc)
+statetable.msm(alc5, idnum, data=nesarc_expanded)
+
+# Run different models using different transition intensity matrixes (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
+# Start with the full model (no restrictions), then remove non-adjacent worsening transitions (allow non-adjacent recovery transitions), then only allow adjacent transitions
+
+
+# Model 1: allow all transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
+Q1<- rbind ( c(0,     0,    0.25,  0.25, 0.25),
+  c(0,     0,    0.25,  0.25, 0.25),
+  c(0,     0.25, 0,     0.25, 0.25),
+  c(0,     0.25, 0.25,  0,    0.25),
+  c(0,     0.25, 0.25,  0.25, 0))
 
 # Run MSM model
-alc5.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                 qmatrix = Q, center=FALSE,
-                 control = list(trace=1, maxit=500, fnscale = 3000000),
-                 covariates = ~ female_wave1.factor + age_scaled + edu3.factor + race_wave1.factor)
-
-    # Save Results
-    saveRDS(alc5.msm, paste0(output, "alc5.msm.RDS"))
-
-
-# Run MSM model with interaction
-alc5.msm_int <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-  qmatrix = Q, center=FALSE,
-  control = list(trace=1, maxit=1500, fnscale = 3000000),
-  covariates = ~ female_wave1 + age_scaled + edu3.factor*race_wave1.factor)
+Q1 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q1)   # Specifies initial values; change Q value here, if needed
+alc5.msm1_v2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                      qmatrix = Q1, center=FALSE,                                # Change Q value here, if needed
+                      control = list(trace=1, maxit=1000, fnscale = 3100000),    # the value of 3100000 was obtained from running the same model earlier (not shown) but also including the statement: fixedpars=TRUE 
+                      covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+saveRDS(alc5.msm1_v2, paste0(output, "alc5.msm1_v2.RDS")) # Save Results
 
 
-    # Save Results
-    saveRDS(alc5.msm_int, paste0(output, "alc5.msm_int.RDS"))
-    
-    alc5.msm_int <- readRDS(paste0(output, "alc5.msm_int.RDS"))
-    alc5.msm_int
-# Compare the two models
-AIC(alc5.msm, alc5.msm_int)
-    
-    
-# Load Model and View Results -----------------------------------------------------------------------------------------------
-alc5.msm <- readRDS(paste0(output, "alc5.msm.RDS"))
 
+# Model 2: remove non-adjacent 'worsening' transitions
+Q1<- rbind (c(0,     0,    0.25,  0,    0),
+            c(0,     0,    0.25,  0,    0),
+            c(0,     0.25, 0,     0.25, 0),
+            c(0,     0.25, 0.25,  0,    0.25),
+            c(0,     0.25, 0.25,  0.25, 0))
+
+# Run MSM model
+Q2 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q2)   # Specifies initial values; change Q value here, if needed
+alc5.msm2_v2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
+                      qmatrix = Q2, center=FALSE,                                # Change Q value here, if needed
+                      control = list(trace=1, maxit=1000, fnscale = 3000000),
+                      covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+saveRDS(alc5.msm2_v2, paste0(output, "alc5.msm2_v2.RDS")) # Save Results
+
+
+
+
+
+# Model 3: remove all non-adjacent transitions; its the same as the model above
+
+
+# Load Models:
+alc5.msm1_v2 <- readRDS(paste0(output, "alc5.msm1_v2.RDS"))
+alc5.msm3_v2 <- readRDS(paste0(output, "alc5.msm9.RDS"))
+
+
+# Compare models
+AIC(alc5.msm1_v2, alc5.msm3_v2)
+
+
+
+## Load Model and View Results -----------------------------------------------------------------------------------------------
+alc5.msm <- readRDS(paste0(output, "alc5.msm9.RDS"))
+alc5.msm
       # Transition probabilities at year = t; covariates set to their mean value
       pmatrix.msm(alc5.msm, t=1, ci="norm") # CI based on drawing random samples, default size=1000
       
@@ -93,7 +300,7 @@ alc5.msm <- readRDS(paste0(output, "alc5.msm.RDS"))
       hazard.msm(alc5.msm)
 
 
-# Table 2 - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
+# Table 2a - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
 aTP.results <- data.frame(print(pmatrix.msm(alc5.msm, t=1, ci="norm"))) %>%
   mutate(From = row.names(.)) %>%
   pivot_longer(cols = -From, names_to = "To") %>%
@@ -110,7 +317,7 @@ aTP.results <- data.frame(print(pmatrix.msm(alc5.msm, t=1, ci="norm"))) %>%
   pivot_wider(names_from = "To", values_from = "EstimateCI")
 
   # save results for paper
-  write_csv(aTP.results, paste0(output, "Table2-Annual TP.csv"))
+  write_csv(aTP.results, paste0(output, "Table2a-Annual TP.csv"))
 
 
 # Table 3 - Extract HR results, rearrange, and correct CI to original sample size 
@@ -144,18 +351,21 @@ HR.results <- data.frame(hazard.msm(alc5.msm))%>%
   
   
   
-# Extract and Plot TP at each level of each covariate --------------------------------------------------------------------------------------------------
+## Save Transition Probabilities (TP) --------------------------------------------------------------------------------------------------
 
-# Function to extract TP 
-extract_TP <- function(model, age_z, sex, race, edu) {
+# 1) Annual TP for each level of the covariates******************************************************** 
+# *****************************************************************************************************
+  
+# Function to extract annual TP 
+alc5_annual_TP <- function(model, age_cat, sex, race, edu) {
   probs <- list()
-  for (i in age_z){
+  for (i in age_cat){
     for (j in sex){
       for (l in race){
         for (k in edu){
           # extract the probabilities
           probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=1, 
-            covariates = list(age_scaled = i,   female_wave1.factor = j, 
+            covariates = list(age3.factor = i,   female_wave1.factor = j, 
                               race_wave1.factor = l, edu3.factor = k)))) %>%
             
             # modify the output presentation
@@ -165,21 +375,20 @@ extract_TP <- function(model, age_z, sex, race, edu) {
             mutate(
               # Recode values
               From = recode(From, "State 1" = "Abstainer", 
-                "State 2" = "Former",
-                "State 3" = "Category I",
-                "State 4" = "Category II",
-                "State 5" = "Category III"), 
+                                  "State 2" = "Former",
+                                  "State 3" = "Category I",
+                                  "State 4" = "Category II",
+                                  "State 5" = "Category III"), 
               To = recode(To, "State.1" = "Abstainer", 
-                "State.2" = "Former",
-                "State.3" = "Category I",
-                "State.4" = "Category II",
-                "State.5" = "Category III"),
+                              "State.2" = "Former",
+                              "State.3" = "Category I",
+                              "State.4" = "Category II",
+                              "State.5" = "Category III"),
               Transition = paste(From, To, sep = "->"),
               Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
                 "Former->Category I",	"Category I->Category II",	"Category II->Category III",
                 "Category III->Category II",	"Category II->Category I",	"Category I->Former"),
-              age_z = i,
-              age = round((age_z * 16.9995) + 46.28592, digits = 0),   # SD of original age variable: 16.9995; mean: 46.28592 
+              age_cat = i,
               sex = j, 
               race = l,
               edu = k) 
@@ -188,61 +397,39 @@ extract_TP <- function(model, age_z, sex, race, edu) {
     }
   }
   
-  probs <- do.call(rbind,probs)
+  probs <- do.call(rbind, probs)
   row.names(probs) <- NULL  # remove row names
   return(probs)
-  
 }
-extract_TP_atmean_race <- function(model, age_z, sex, edu) {
-    probs <- list()
-    for (i in age_z){
-      for (j in sex){
-        for (k in edu){
-            # extract the probabilities
-            probs[[paste(i,j,k)]] <- data.frame(print(pmatrix.msm(model, t=1, 
-              covariates = list(age_scaled = i,   female_wave1.factor = j, edu3.factor = k)))) %>%
-              
-              # modify the output presentation
-              mutate(From = row.names(.)) %>%
-              pivot_longer(cols = -From, names_to = "To") %>%
-              rename(Probability = value) %>%
-              mutate(
-                # Recode values
-                From = recode(From, "State 1" = "Abstainer", 
-                  "State 2" = "Former",
-                  "State 3" = "Category I",
-                  "State 4" = "Category II",
-                  "State 5" = "Category III"), 
-                To = recode(To, "State.1" = "Abstainer", 
-                  "State.2" = "Former",
-                  "State.3" = "Category I",
-                  "State.4" = "Category II",
-                  "State.5" = "Category III"),
-                Transition = paste(From, To, sep = "->"),
-                Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
-                  "Former->Category I",	"Category I->Category II",	"Category II->Category III",
-                  "Category III->Category II",	"Category II->Category I",	"Category I->Former"),
-                age_z = i,
-                age = round((age_z * 16.9995) + 46.28592, digits = 0),   # SD of original age variable: 16.9995; mean: 46.28592 
-                sex = j, 
-                edu = k) 
-        }
-      }
-    }
+
+# Extract annual TP
+    # First, specify the covariate values
+    age_cat <- unique(nesarc_expanded$age3.factor)
+    sex <- unique(nesarc_expanded$female_wave1.factor)
+    race <- unique(nesarc_expanded$race_wave1.factor)
+    edu <- unique(nesarc_expanded$edu3.factor)
     
-    probs <- do.call(rbind,probs)
-    row.names(probs) <- NULL  # remove row names
-    return(probs)
-    
-}
-extract_TP_atmean_edu <- function(model, age_z, sex, race) {
+    # Run function to extract TP
+    alc5_annual_TP <- alc5_annual_TP(alc5.msm, age_cat, sex, race, edu)
+
+# Save TP
+write_csv(alc5_annual_TP, paste0(output, "Transition Probs - AlcUse Annual.csv"))
+
+
+# 2) Annual TP after 3 years (to compare predicted and true)******************************************* 
+# *****************************************************************************************************
+
+# Function to extract annual TP 
+alc5_TP_at3yrs <- function(model, age_cat, sex, race, edu) {
   probs <- list()
-  for (i in age_z){
+  for (i in age_cat){
     for (j in sex){
       for (l in race){
+        for (k in edu){
           # extract the probabilities
-          probs[[paste(i,j,l)]] <- data.frame(print(pmatrix.msm(model, t=1, 
-            covariates = list(age_scaled = i,   female_wave1.factor = j, race_wave1.factor = l)))) %>%
+          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=3, 
+            covariates = list(age3.factor = i,   female_wave1.factor = j, 
+              race_wave1.factor = l, edu3.factor = k)))) %>%
             
             # modify the output presentation
             mutate(From = row.names(.)) %>%
@@ -264,131 +451,40 @@ extract_TP_atmean_edu <- function(model, age_z, sex, race) {
               Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
                 "Former->Category I",	"Category I->Category II",	"Category II->Category III",
                 "Category III->Category II",	"Category II->Category I",	"Category I->Former"),
-              age_z = i,
-              age = round((age_z * 16.9995) + 46.28592, digits = 0),   # SD of original age variable: 16.9995; mean: 46.28592 
+              age_cat = i,
               sex = j, 
-              race = l) 
+              race = l,
+              edu = k) 
+        }
       }
     }
   }
   
-  probs <- do.call(rbind,probs)
+  probs <- do.call(rbind, probs)
   row.names(probs) <- NULL  # remove row names
   return(probs)
-  
 }
 
-  
-
+# Extract annual TP
 # First, specify the covariate values
-age_z <- sort(unique(nesarc_expanded$age_scaled))
+age_cat <- unique(nesarc_expanded$age3.factor)
 sex <- unique(nesarc_expanded$female_wave1.factor)
 race <- unique(nesarc_expanded$race_wave1.factor)
 edu <- unique(nesarc_expanded$edu3.factor)
 
 # Run function to extract TP
-aTP <- extract_TP(alc5.msm, age_z, sex, race, edu)
-aTP_atmean_race <- extract_TP_atmean_race(alc5.msm, age_z, sex, edu) # TP at mean value of race (for plots)
-aTP_atmean_edu <- extract_TP_atmean_edu(alc5.msm, age_z, sex, race) # TP at mean value of edu (for plots)
-
+alc5_TP_at3yrs <- alc5_TP_at3yrs(alc5.msm, age_cat, sex, race, edu)
 
 # Save TP
-write_csv(aTP, paste0(output, "Transition Probabilities.csv"))
+write_csv(alc5_TP_at3yrs, paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
 
 
 
-### Plot Transition probabilities --------------------------------------------------------------------------
-# 'Poor' Transitions, among non-Hispanic Whites 
-aTP %>%
-  filter(Transition %in% c("Abstainer->Category I", "Former->Category I",  "Category I->Category II", "Category II->Category III")) %>%
-  filter(race=="White, non-Hispanic") %>%
-  ggplot(aes(x=age, y=Probability, color=edu, linetype=edu)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Poor' Transitions", subtitle="White, non-Hispanic", 
-        color="Education:", linetype="Education:",
-        x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.8, 1.1), legend.direction="horizontal")
-ggsave(paste0(output, "Figure 1a.tiff"), dpi=600, width=7.5)
 
-
-
-# 'Better' Transitions, among non-Hispanic Whites 
-aTP %>%
-  filter(Transition %in% c("Category III->Category II", "Category II->Category I", "Category I->Former")) %>%
-  filter(race=="White, non-Hispanic") %>%
-  ggplot(aes(x=age, y=Probability, color=edu, linetype=edu)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Poor' Transitions", subtitle="White, non-Hispanic", 
-    color="Education:", linetype="Education:",
-    x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.8, 1.1), legend.direction="horizontal")
-ggsave(paste0(output, "Figure 1b.tiff"), dpi=600, width=7.5)
-
-
-### Plot Transition probabilities at mean race --------------------------------------------------------------------------
-
-# 'Poor' Transitions
-aTP_atmean_race %>%
-  filter(Transition %in% c("Abstainer->Category I", "Former->Category I",  "Category I->Category II", "Category II->Category III")) %>%
-  ggplot(aes(x=age, y=Probability, color=edu, linetype=edu)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Poor' Transitions", 
-    color="Education:", linetype="Education:",
-    x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.8, 1.075), legend.direction="horizontal")
-ggsave(paste0(output, "TP by edu 1.tiff"), dpi=600, width=7.5)
-
-
-# 'Better' Transitions 
-aTP_atmean_race %>%
-  filter(Transition %in% c("Category III->Category II", "Category II->Category I", "Category I->Former")) %>%
-  ggplot(aes(x=age, y=Probability, color=edu, linetype=edu)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Better' Transitions", 
-    color="Education:", linetype="Education:",
-    x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.8, 1.075), legend.direction="horizontal")
-ggsave(paste0(output, "TP by edu 2.tiff"), dpi=600, width=7.5)
-
-
-
-### Plot Transition probabilities at mean edu --------------------------------------------------------------------------
-# 'Poor' Transitions
-aTP_atmean_edu %>%
-  filter(Transition %in% c("Abstainer->Category I", "Former->Category I",  "Category I->Category II", "Category II->Category III")) %>%
-  ggplot(aes(x=age, y=Probability, color=race, linetype=race)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Poor' Transitions", subtitle="",
-    color="Race/Ethnicity:", linetype="Race/Ethnicity:",
-    x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.7, 1.085), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
-ggsave(paste0(output, "TP by race 1.tiff"), dpi=600, width=7.5, height = 8)
-
-
-
-# 'Better' Transitions 
-aTP_atmean_edu %>%
-  filter(Transition %in% c("Category III->Category II", "Category II->Category I", "Category I->Former")) %>%
-  ggplot(aes(x=age, y=Probability, color=race, linetype=race)) + geom_line(size=1)+
-  facet_grid(cols=vars(sex), rows=vars(Transition), scale="free") +
-  scale_x_continuous(limits=c(18, 90), breaks=seq(20, 90, by= 5)) + 
-  labs(title= "'Better' Transitions", subtitle="",
-    color="Race/Ethnicity:", linetype="Race/Ethnicity:",
-    x = "Age (years)", y="Transition probability") + 
-  theme_bw() + theme(legend.position=c(0.7, 1.085), legend.direction="horizontal") + guides(color = guide_legend(nrow = 2))
-ggsave(paste0(output, "TP by race 2.tiff"), dpi=600, width=7.5, height = 8)
-
-
-
-# TP over over multiple years ---------------------------------------------------------------------------------------------
-
-# Function to extract TP over over multiple years
-extract_TP_over_yrs <- function(model, max_years) {
+# 3) TP over multiple years at the mean level of each covariate ***************************************
+# *****************************************************************************************************
+# Function to extract TP over multiple years
+alc5_yearly_TP <- function(model, max_years) {
   probs <- list()
   for (i in 1:max_years){    
     # extract the probabilities
@@ -432,10 +528,16 @@ extract_TP_over_yrs <- function(model, max_years) {
 }
 
 # Extract TP over multiple years and save reults 
-TP_years <- extract_TP_over_yrs(alc5.msm, 10)
+acl5_yearly_TP <- alc5_yearly_TP(alc5.msm, 10)
 
-# Load TP over multiple years and plot
-TP_years %>%
+# Save TP
+write_csv(acl5_yearly_TP, paste0(output, "Transition Probs - AlcUse Yearly.csv"))
+
+# Load TP 
+acl5_yearly_TP <- read_csv(paste0(output, "Transition Probs - AlcUse Yearly.csv"))
+
+# Plot TP
+acl5_yearly_TP %>%
   ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
   geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
   facet_wrap(~From) +
@@ -446,3 +548,247 @@ TP_years %>%
 ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=7.5, height = 5)
 
 
+
+
+# 4) TP over multiple years for each age category *****************************************************
+# *****************************************************************************************************
+
+# Function to extract TP over multiple years for each age category
+acl5_yearly_TP2 <- function(model, max_years, age_cat){
+  probs <- list()
+  for (i in 1:max_years){
+    for (j in age_cat){
+      # extract the probabilities
+      probs[[paste(i,j)]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm", covariates = list(age3.factor = j)))) %>%
+          
+          # modify the output presentation
+          mutate(From = row.names(.)) %>%
+          pivot_longer(cols = -From, names_to = "To") %>%
+          separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
+          mutate(
+            # Update CI to use original sample size
+            SE = (Upper - Lower) / 3.92,
+            SD = SE * sqrt(4061624),  # sample size of expanded data
+            newSE = SD / sqrt(68168), # sample size of original data
+            newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
+            newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
+            Estimate = round(Estimate*100, digits=1),
+            
+            # Recode values
+            From = recode(From, "State 1" = "Initial State: Abstainer", 
+              "State 2" = "Initial State: Former",
+              "State 3" = "Initial State: Category I",
+              "State 4" = "Initial State: Category II",
+              "State 5" = "Initial State: Category III"), 
+            To = recode(To, "State.1" = "Abstainer", 
+              "State.2" = "Former",
+              "State.3" = "Category I",
+              "State.4" = "Category II",
+              "State.5" = "Category III"), 
+            # Re-arrange order
+            From = fct_relevel(From, "Initial State: Abstainer",  "Initial State: Former",	"Initial State: Category I",	"Initial State: Category II", "Initial State: Category III"),
+            To = fct_relevel(To, "Abstainer",  "Former",	"Category I",	"Category II", "Category III"),
+            
+            Year = i,
+            age_cat = j) %>%
+          select (From, To, Year, age_cat, Estimate, newLower, newUpper) %>%
+          na.omit() # remove NAs - transitions back to 'Abstainer'
+    }
+  }
+  
+  probs <- do.call(rbind,probs)
+  return(probs)
+}
+
+
+# Extract Yearly TP for each age category 
+      # First, specify the covariate values
+      age_cat <- unique(nesarc_expanded$age3.factor)
+      
+      # Extract TP
+      acl5_yearly_TP2 <- acl5_yearly_TP2(alc5.msm, 10, age_cat)
+
+      
+# Plot yearly TP for each age category
+acl5_yearly_TP2 %>%
+  mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", "30-49" = "Ages 30-49 years", "50+" = "Ages 50+ years")) %>%
+  ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
+  geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
+  facet_grid(age_cat~From) +
+  theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
+  theme(legend.position = "top") +
+  scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
+  scale_x_continuous(breaks=seq(0, 10, by= 1))
+ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=12, height = 7)
+
+
+
+
+
+## Check Model Fit--------------------------------------------------------------------------------------
+
+# Load transition probabilities
+alc5_TP_anual <- read_csv(paste0(output, "Transition Probs - AlcUse Annual.csv"))
+alc5_TP_at3yrs <- read_csv(paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
+
+#Use 3 year TP
+transitions <- alc5_TP_at3yrs %>%
+    mutate(cat = paste(sex, age_cat, edu, race, From, sep="_")) %>% 
+  dplyr::select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+# Function to apply alcohol consumption transition probabilities
+transition_alcohol <- function(data, transitions){
+  selected <- unique(data$cat)
+  rates <- transitions %>% filter(cat == selected)
+  data$AlcUse_2_pred <- ifelse(data$prob<=rates$cumsum[1], "Abstainer",
+    ifelse(data$prob<=rates$cumsum[2] & data$prob>rates$cumsum[1], "Former",
+      ifelse(data$prob<=rates$cumsum[3] & data$prob>rates$cumsum[2],"Category I",
+        ifelse(data$prob<=rates$cumsum[4] & data$prob>rates$cumsum[3],"Category II",
+          ifelse(data$prob<=rates$cumsum[5] & data$prob>rates$cumsum[4],"Category III",NA)))))
+  
+  return(data)
+}
+
+
+set.seed(555) # to get consistent results (there is a random # generated in the code below)
+
+# Simulation
+pop <- nesarc %>%
+  # Rename variables
+  select(idnum, wave, years, age3.factor, female.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%
+  rename(age_cat = age3.factor,
+         sex = female.factor, 
+         race = race_wave1.factor,
+         edu = edu3.factor,
+         AlcUse = alc5.factor) %>%
+  
+  # Tranform to wide format
+  pivot_wider(names_from="wave", values_from=c("AlcUse", "years", "age_cat", "edu")) %>%
+  
+  # Create variable combing level of each covariate and the state at baseline
+  mutate(cat = paste(sex, age_cat_1, edu_1, race, AlcUse_1, sep="_"),
+         prob = runif(nrow(.))) %>%  # generate random prob
+  
+  # Apply transition function
+  group_by(cat) %>%
+    do(transition_alcohol(., transitions)) %>% # use 'do( )' to run the function defined earlier
+  ungroup() %>% 
+  select(-cat, - prob, -years_1)
+
+
+# Compare the predicted and true values
+select(pop, AlcUse_2, AlcUse_2_pred) %>%  agree()   # Agreement
+select(pop, AlcUse_2, AlcUse_2_pred) %>%  kappa2()  # Cohen's kappa
+
+
+
+
+# HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
+## Run HED MSM Model ------------------------------------------------------------------------------------------------
+# First, remove the small handful with missing HED data
+nesarc_hed <- nesarc %>%
+  group_by(idnum) %>%
+  filter(!any(is.na(hed))) %>%
+  ungroup()
+
+nesarc_expanded_hed <- nesarc_expanded %>%
+  group_by(idnum) %>%
+  filter(!any(is.na(hed)))%>%
+  ungroup()
+
+
+# Count of transitions 
+statetable.msm(hed, idnum, data=nesarc_hed)
+
+
+# Specify transition intensity matrix (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
+# Will only allow transitions to an adjacent state 
+
+Q <- rbind ( c(0,     0.25,    0,     0,    0),
+             c(0.25,  0,       0.25,  0,    0),
+             c(0,     0.25,    0,     0.25, 0),
+             c(0,     0,       0.25,  0,    0.25),
+             c(0,     0,       0,     0.25, 0))
+
+# Specify initial values 
+Q <- crudeinits.msm(hed ~ years, idnum, data=nesarc_expanded_hed, qmatrix=Q)
+
+
+
+
+# Run MSM model
+hed.msm <- msm (hed ~ years, subject=idnum, data = nesarc_expanded_hed, 
+  qmatrix = Q, center=FALSE,
+  control = list(trace=1, maxit=500, fnscale = 3000000),
+  covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+
+# Save Results
+saveRDS(hed.msm, paste0(output, "hed.msm.RDS"))
+
+
+
+
+## Load Model and View Results -----------------------------------------------------------------------------------------------
+hed.msm<- readRDS(paste0(output, "hed.msm.RDS"))
+hed.msm
+
+# Transition probabilities at year = t; covariates set to their mean value
+pmatrix.msm(hed.msm, t=1, ci="norm") # CI based on drawing random samples, default size=1000
+
+# Hazard ratios for transition
+hazard.msm(hed.msm)
+
+
+# Table 2b - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
+aTP.results <- data.frame(print(pmatrix.msm(hed.msm, t=1, ci="norm"))) %>%
+  mutate(From = row.names(.)) %>%
+  pivot_longer(cols = -From, names_to = "To") %>%
+  separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
+  mutate(
+    SE = (Upper - Lower) / 3.92,
+    SD = SE * sqrt(4051908),  # sample size of expanded data
+    newSE = SD / sqrt(68004), # sample size of original data
+    newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
+    newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
+    Estimate = round(Estimate*100, digits=1), 
+    EstimateCI = paste0(Estimate, " (", newLower, ", ", newUpper, ")")) %>%
+  select (From, To, EstimateCI) %>%
+  pivot_wider(names_from = "To", values_from = "EstimateCI")
+
+# save results for paper
+write_csv(aTP.results, paste0(output, "Table2b-Annual TP.csv"))
+
+
+# Table 4 - Extract HR results, rearrange, and correct CI to original sample size 
+HED_HR.results <- data.frame(hazard.msm(hed.msm))%>%
+  mutate(transition = row.names(.)) %>%
+  pivot_longer(cols=-transition) %>%
+  extract(name, into=c("Variable","Type"), regex="(.*)\\.(.*)") %>%   # Separate the string (name) into the variable and type of estimate (HR, Upper, Lower), separate at last occuring period .
+  pivot_wider(names_from="Type", values_from = "value") %>%
+  mutate(
+    SE=(log(U) - log(L))/3.92, 
+    SD = SE * sqrt(4051908),  # sample size of expanded data
+    newSE = SD / sqrt(68004), # sample size of original data
+    newLower = round(exp((log(HR)) - (newSE * 1.96)), digits=2), 
+    newUpper = round(exp((log(HR)) + (newSE * 1.96)), digits=2), 
+    HR = round(HR, digits=2),
+    EstimateCI = paste0(HR, " (", newLower, ", ", newUpper, ")")) %>%
+  select(transition, Variable, EstimateCI) %>%
+  pivot_wider(names_from = "transition", values_from = EstimateCI) %>%
+  rename( "Non-drinker->Drinker, no HED"     = "State 1 - State 2",
+          "Drinker, no HED->Non-drinker"     = "State 2 - State 1",
+          "Drinker, no HED->Occasional HED"  = "State 2 - State 3",
+          "Occasional HED->Drinker, no HED" = "State 3 - State 2",
+          "Occasional HED->Monthly HED"     = "State 3 - State 4",
+          "Monthly HED->Occasional HED"     = "State 4 - State 3",
+          "Monthly HED->Weekly HED"     = "State 4 - State 5",
+          "Weekly HED->Monthly HED"     = "State 5 - State 4") %>%
+  select(Variable,  "Non-drinker->Drinker, no HED", "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
+    "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", "Drinker, no HED->Non-drinker")
+    
+# save results for paper
+write_csv(HED_HR.results, paste0(output, "Table4-HR.csv"))
