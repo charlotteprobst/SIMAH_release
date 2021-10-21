@@ -4,13 +4,13 @@ This is the source code for the manuscript: "Lifestyle risk factors  and socioec
 
 The data used is publically available from the National Center for Health Statistics.
 
-The 1997-2014 National Health Interview Survey (NHIS) survey are available here: https://www.cdc.gov/nchs/nhis/1997-2018.htm
+- The 1997-2014 National Health Interview Survey (NHIS) survey are available here: https://www.cdc.gov/nchs/nhis/1997-2018.htm
 
-The 2015 Public-Use Linked Mortality Files are available here: https://www.cdc.gov/nchs/data-linkage/mortality-public.htm
+- The 2015 Public-Use Linked Mortality Files are available here: https://www.cdc.gov/nchs/data-linkage/mortality-public.htm
 
 The data files were extracted and initially manipuated using SAS. All analyses were completed in R. The SAS and R code are available in this repository. The key variables included in the analyses are listed below.
 
-# Data Structure
+# Key Variables:
 
 | Variable           	| Label                                 	| Values (Value Labels)                                                                                   	|
 |-------------------	|---------------------------------------	|----------------------------------------------------------------------------------------------------------	|
@@ -21,8 +21,8 @@ The data files were extracted and initially manipuated using SAS. All analyses w
 | phy_act3          	| Physical activity                     	| 1 (Sedentary); 2 (Somewhat active); 3 (Active; reference)                                                	|
 | edu            	    | Educational attainment                	| 1 (Highschool); 2 (Some college); 3 (Bachelors; reference)                                               	|
 | female            	| Sex                                   	| 0 (Men); 1 (Women)                                                                                       	|
-| bl_age         	    | Age (years) at baseline 	              | Continuous: 25 to 85                                                                                     	|
-| end_age        	    | Age (years) at last follow-up/death   	| Continuous: 25 to 85                                                                                     	|
+| bl_age         	    | Age (years) at baseline 	              | Continuous                                                                                               	|
+| end_age        	    | Age (years) at last follow-up/death   	| Continuous                                                                                              	|
 | ethnicity      	    | Ethnicity                             	| 1 (Non-Hispanic White; referebce); 2 (Non-Hispanic Black); 3 (Hispanic); 4 (Other)                       	|
 | married        	    | Marital status                        	| 0 (Not married/living together); 1 (Married/cohabitating)                                                	|
 | srvy_yr        	    | Survey year                           	| Integer: 1997 to 2014                                                                                    	|
