@@ -9,9 +9,7 @@ library(lubridate)       # to work with dates/calculate follow-up time
 library(splitstackshape) # To replicate data based on sampling weight
 
 
-
-## Set the working directory
-setwd("C:/Users/klajd/OneDrive/SIMAH")
+# Specify the data file locations
 data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 
 

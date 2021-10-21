@@ -10,8 +10,7 @@ library(irr)        # calculate kappa for true and predicted alcohol use
 # options(scipen=999) # prevent the use of scientific notation
 
 
-# Set working directory
-setwd("C:/Users/klajd/OneDrive/SIMAH")
+# Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
 
@@ -21,8 +20,7 @@ nesarc <- readRDS(paste0(data, "nesarc_clean.rds"))
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
 
 
-
-# Descriptives ------------------------------------------------------------------------------------------
+# 1) Descriptives ------------------------------------------------------------------------------------------
 
 tab1 <-CreateTableOne(vars= c("female", "age", "age3.factor", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
                       factorVars = c("female", "age3.factor", "race.factor", "married.factor", "edu3.factor", "alc5.factor", "hed.factor"), 
@@ -41,8 +39,8 @@ nesarc %>%
 
 
 
-# ALCOHOL CONSUMPTION  ------------------------------------------------------------------------------------------------
-## Run AlcUse MSM Model (9 models; least to most restrained, sequentally) ------------------------------------------------------------------------------------------------
+# 2) ALCOHOL CONSUMPTION  ------------------------------------------------------------------------------------------------
+## 2.1.1) Run AlcUse MSM Model (9 models; least to most restrained, sequentally) ------------------------------------------------------------------------------------------------
 # Count of transitions 
 statetable.msm(alc5, idnum, data=nesarc)
 statetable.msm(alc5, idnum, data=nesarc_expanded)
@@ -232,7 +230,7 @@ AIC(alc5.msm1, alc5.msm2, alc5.msm3, alc5.msm4, alc5.msm5, alc5.msm6, alc5.msm7,
     
 
     
-## Run AlcUse MSM Model (3 models; therory based) ------------------------------------------------------------------------------------------------
+## 2.1.2) Run AlcUse MSM Model (3 models; therory based) ------------------------------------------------------------------------------------------------
 # Count of transitions 
 statetable.msm(alc5, idnum, data=nesarc)
 statetable.msm(alc5, idnum, data=nesarc_expanded)
@@ -290,9 +288,10 @@ AIC(alc5.msm1_v2, alc5.msm3_v2)
 
 
 
-## Load Model and View Results -----------------------------------------------------------------------------------------------
+## 2.2) Load Model and View Results -----------------------------------------------------------------------------------------------
 alc5.msm <- readRDS(paste0(output, "alc5.msm9.RDS"))
 alc5.msm
+
       # Transition probabilities at year = t; covariates set to their mean value
       pmatrix.msm(alc5.msm, t=1, ci="norm") # CI based on drawing random samples, default size=1000
       
@@ -351,7 +350,7 @@ HR.results <- data.frame(hazard.msm(alc5.msm))%>%
   
   
   
-## Save Transition Probabilities (TP) --------------------------------------------------------------------------------------------------
+## 2.3) Save Transition Probabilities (TP) --------------------------------------------------------------------------------------------------
 
 # 1) Annual TP for each level of the covariates******************************************************** 
 # *****************************************************************************************************
@@ -625,14 +624,15 @@ ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=12, height = 7)
 
 
 
-## Check Model Fit--------------------------------------------------------------------------------------
+## 2.4) Check Model Fit--------------------------------------------------------------------------------------
 
-# Load transition probabilities
+# Transition probabilities
 alc5_TP_anual <- read_csv(paste0(output, "Transition Probs - AlcUse Annual.csv"))
 alc5_TP_at3yrs <- read_csv(paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
 
-#Use 3 year TP
-transitions <- alc5_TP_at3yrs %>%
+
+# Load transition probabilities (TP) of interest
+transitions <- alc5_TP_at3yrs %>%   # Use 3 year TP
     mutate(cat = paste(sex, age_cat, edu, race, From, sep="_")) %>% 
   dplyr::select(cat, To, Probability) %>% 
   group_by(cat) %>% 
@@ -656,8 +656,9 @@ transition_alcohol <- function(data, transitions){
 
 set.seed(555) # to get consistent results (there is a random # generated in the code below)
 
-# Simulation
-pop <- nesarc %>%
+
+# Get predicted alcohol use at wave 3
+alc5_data <- nesarc %>%
   # Rename variables
   select(idnum, wave, years, age3.factor, female.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%
   rename(age_cat = age3.factor,
@@ -677,18 +678,20 @@ pop <- nesarc %>%
   group_by(cat) %>%
     do(transition_alcohol(., transitions)) %>% # use 'do( )' to run the function defined earlier
   ungroup() %>% 
+  mutate(AlcUse_2_pred = factor(AlcUse_2_pred, levels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))) %>%
   select(-cat, - prob, -years_1)
 
 
 # Compare the predicted and true values
-select(pop, AlcUse_2, AlcUse_2_pred) %>%  agree()   # Agreement
-select(pop, AlcUse_2, AlcUse_2_pred) %>%  kappa2()  # Cohen's kappa
+select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  agree()   # Agreement
+select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2()  # Cohen's kappa (categorical data)
+select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2(., "equal")    # Cohen's kappa (ordinal data; each category difference considered equally important)
+select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2(., "squared")  # Cohen's kappa (ordinal data; more appropriate here)
 
+view(count(alc5_data, AlcUse_2, AlcUse_2_pred))
 
-
-
-# HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
-## Run HED MSM Model ------------------------------------------------------------------------------------------------
+# 3) HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
+## 3.1) Run HED MSM Model ------------------------------------------------------------------------------------------------
 # First, remove the small handful with missing HED data
 nesarc_hed <- nesarc %>%
   group_by(idnum) %>%
@@ -732,7 +735,7 @@ saveRDS(hed.msm, paste0(output, "hed.msm.RDS"))
 
 
 
-## Load Model and View Results -----------------------------------------------------------------------------------------------
+## 3.2) Load Model and View Results -----------------------------------------------------------------------------------------------
 hed.msm<- readRDS(paste0(output, "hed.msm.RDS"))
 hed.msm
 

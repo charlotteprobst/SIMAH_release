@@ -9,9 +9,8 @@ library(survey)     # to accomodate survey weights
 
 
 
-## Set the working directory
-setwd("C:/Users/klajd/OneDrive/SIMAH")
-data_new <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
+# Specify the data and output file locations
+data_new   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 data_orig  <- "C:/Users/klajd/Documents/2021-Present CAMH/NESARC Data/"
 
 # Load data 
