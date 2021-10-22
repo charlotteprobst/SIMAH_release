@@ -14,6 +14,7 @@ setwd(wd)
 
 # read in datafiles 
 gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-education-StandardRates-25plus.dta")
+color.vec <- c("#132268", "#447a9e", "#93AEBF")
 
 gendereducation <- gendereducation %>% remove_all_labels() %>% 
   zap_formats() %>% 
@@ -40,7 +41,9 @@ Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) +
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18)) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_brewer(palette="Set1")
+  xlab("Year") + scale_colour_manual(values=color.vec)
+  
+  # scale_colour_brewer(palette="Set1")
 Fig1
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_differentscale.png",
        Fig1, width=33, height=19, units="cm", dpi=300)
@@ -75,42 +78,41 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
                                       "Hispanic",
                                       "Non-Hispanic Others")))
 
-Fig2p1 <- ggplot(data=subset(gendereducationrace, type=="Alcohol"), 
+Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(race), rows=vars(sex), scales="free") +
+  geom_line() + facet_grid(cols=vars(race), rows=vars(type), scales="free") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18)) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_brewer(palette="Set1") + 
-  ggtitle("Alcohol")
+  xlab("Year") +  ggtitle("Men") +
+  scale_colour_manual(values=color.vec)
+
+  
+  # scale_colour_brewer(palette="Set1") + 
 Fig2p1
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Men.png",
+       Fig2p1, width=33, height=19, units="cm", dpi=300)
 
-Fig2p2 <- ggplot(data=subset(gendereducationrace, type=="Opioid"), 
+Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(race), rows=vars(sex), scales="free") +
+  geom_line() + facet_grid(cols=vars(race), rows=vars(type), scales="free") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18)) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_brewer(palette="Set1") + 
-  ggtitle("Opioid")
+  xlab("Year") + scale_colour_manual(values=color.vec) + 
+  ggtitle("Women")
 Fig2p2
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Women.png",
+       Fig2p2, width=33, height=19, units="cm", dpi=300)
 
-Fig2p3 <- ggplot(data=subset(gendereducationrace, type=="Alcohol and Opioid"), 
-                 aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(race), rows=vars(sex), scales="free") +
-  ylab("Mortality rate per 100,000 population") + 
-  theme_bw() + theme(legend.title=element_blank(),
-                     legend.position="bottom",
-                     strip.background = element_rect(fill="white"),
-                     text = element_text(size=18)) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_brewer(palette="Set1") + 
-  ggtitle("Alcohol and Opioid")
-Fig2p3
+# combine fig2p1 and fig2p2 
+library(gridExtra)
+library(ggpubr)
 
-
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_differentscale.png",
-       Fig1, width=33, height=19, units="cm", dpi=300)
+combined <- ggarrange(Fig2p1, Fig2p2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_combined.png",
+       combined, width=33, height=40, units="cm", dpi=300)
