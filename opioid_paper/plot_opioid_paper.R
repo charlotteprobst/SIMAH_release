@@ -34,13 +34,14 @@ gendereducation <- gendereducation %>% remove_all_labels() %>%
                        "opioid_only"="Opioid",
                        "alc_opioid"="Alcohol and Opioid"),
          type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid")))
+
 Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(sex), rows=vars(type), scales="free") +
+  geom_line(size=1) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18)) + ylim(0,NA) + 
+                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") + scale_colour_manual(values=color.vec)
   
   # scale_colour_brewer(palette="Set1")
@@ -80,12 +81,12 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
 
 Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(race), rows=vars(type), scales="free") +
+  geom_line(size=1) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18)) + ylim(0,NA) + 
+                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Men") +
   scale_colour_manual(values=color.vec)
 
@@ -97,12 +98,12 @@ ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Men.png",
 
 Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line() + facet_grid(cols=vars(race), rows=vars(type), scales="free") +
+  geom_line(size=1) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18)) + ylim(0,NA) + 
+                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
   ggtitle("Women")
 Fig2p2
@@ -116,3 +117,20 @@ library(ggpubr)
 combined <- ggarrange(Fig2p1, Fig2p2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_combined.png",
        combined, width=33, height=40, units="cm", dpi=300)
+
+# alternative method of combining
+gendereducationrace$typesex <- paste(gendereducationrace$sex, gendereducationrace$type, 
+                                     sep=": ")
+
+Fig2alternative <- ggplot(data=gendereducationrace, 
+                 aes(x=year, y=rate, colour=edclass)) + 
+  geom_line(size=1) + facet_grid(cols=vars(race), rows=vars(typesex), switch="y", scales="free") +
+  ylab("Mortality rate per 100,000 population") + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
+  xlab("Year") + scale_colour_manual(values=color.vec)
+Fig2alternative
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_alternative.png",
+       Fig2alternative, width=33, height=40, units="cm", dpi=300)
