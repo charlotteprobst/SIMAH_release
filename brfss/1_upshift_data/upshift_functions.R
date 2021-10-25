@@ -1,8 +1,11 @@
 subset_SIMAH_states <- function(data){
-# subset for SIMAH states 
+# subset for SIMAH states and create new "STATE" for USA 
+USA <- data %>% mutate(State="USA", sample_weight=final_sample_weight/1000) %>% 
+  expandRows(.,"sample_weight")
+data <- rbind(data, USA)
 SIMAH_states <- c("California","Colorado","Florida","Indiana","Kentucky",
-                  "Louisiana","Massachustts","Michigan","Minnesota","Missouri",
-                  "New York","Oregon","Pennsylvania","Tennessee","Texas")
+                  "Louisiana","Massachusetts","Michigan","Minnesota","Missouri",
+                  "New York","Oregon","Pennsylvania","Tennessee","Texas","USA")
 data <- data %>% ungroup() %>% filter(State %in% SIMAH_states)
 return(data)
 }
@@ -53,7 +56,8 @@ process_APC <- function(data){
                           "42"="Pennsylvania","47"="Tennessee","48"="Texas",
                           "USA"="USA", .default="NA"),
            State = ifelse(State=="NA",NA,State)) %>% 
-    drop_na() %>% filter(Year>=min(data$YEAR)) %>% 
+    drop_na() %>% 
+    # filter(Year>=min(data$YEAR)) %>% 
     rename(Gallons = 'Gallons per capita') %>% 
     mutate(litrespercapita = Gallons*3.78541)
     
@@ -67,8 +71,9 @@ process_APC <- function(data){
     fill(Gallons,litrespercapita) %>% mutate(Gallons=as.numeric(Gallons),
                                              litrespercapita=as.numeric(litrespercapita)) %>% 
     mutate(gramsperday = (litrespercapita*785.06)/365,
-           gramsperday_adj = gramsperday - (gramsperday*0.0098)) %>% 
-    dplyr::select(Year, State, gramsperday_adj) %>% 
+           gramsperday_adj1 = gramsperday - (gramsperday*0.0098),
+           gramsperday_adj2 = gramsperday - (gramsperday*0.0098*1.5)) %>% 
+    dplyr::select(Year, State, gramsperday_adj1) %>% 
     rename(YEAR=Year)
   return(APC)
 }

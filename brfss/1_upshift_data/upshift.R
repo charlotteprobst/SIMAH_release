@@ -23,7 +23,7 @@ gc()
 source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 
 SIMAH_states <- c("California","Colorado","Florida","Indiana","Kentucky",
-                  "Louisiana","Massachustts","Michigan","Minnesota","Missouri",
+                  "Louisiana","Massachusetts","Michigan","Minnesota","Missouri",
                   "New York","Oregon","Pennsylvania","Tennessee","Texas")
 # first subset for selected SIMAH states 
 dataFiles <- lapply(dataFiles, subset_SIMAH_states)
@@ -36,11 +36,11 @@ summary <- lapply(dataFiles, summariseprevalence)
 summary <- do.call(rbind,summary) %>% filter(drinkingstatus==1) %>% 
   drop_na()
 ggplot(data=summary, aes(x=YEAR, y=percentage, colour=sex_recode)) + 
-  geom_line() + facet_wrap(~agecat+State) + theme_bw()
+  geom_line() + facet_wrap(~agecat+State) + theme_bw() + ylim(0,NA)
 # reassign the list such that each state is one element of the list 
 data <- do.call(rbind, dataFiles)
 
-test <- data %>% filter(drinkingstatus==1 & gramsperday==0)
+data %>% filter(drinkingstatus==1 & gramsperday==0)
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
 data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
@@ -51,11 +51,13 @@ summary(data$gramsperday)
 # put cap of 200gpd
 data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
-dataFiles <- list()
+USA <- data %>% mutate(State=="USA")
 
-for(i in SIMAH_states){
-  dataFiles[[paste(i)]] <- data %>% filter(State==i)
-}
+# dataFiles <- list()
+# 
+# for(i in SIMAH_states){
+#   dataFiles[[paste(i)]] <- data %>% filter(State==i)
+# }
 
 # allocate individuals to be monthly/yearly/former drinkers or lifetime abstainers
 data <- impute_yearly_drinking(data)
@@ -103,29 +105,33 @@ data <- left_join(data,tally)
 data <- data %>% group_by(YEAR, State) %>% 
   mutate(BRFSS_APC = mean(gramsperday),
          adj_brfss_apc = BRFSS_APC/percentdrinkers,
-         quotient = (gramsperday_adj*0.9)/adj_brfss_apc,
-         cr_quotient = quotient^(1/3),
-         gramsperday_upshifted = gramsperday*(quotient))
+         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc,
+         cr_quotient = (quotient^(1/3)),
+         gramsperday_upshifted_quotient = gramsperday*(quotient),
+         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2))
 
 # now compare up-shifted to per capita mean data for each state 
 compare <- data %>% 
-  dplyr::select(YEAR, State, gramsperday_adj, adj_brfss_apc, BRFSS_APC, gramsperday_upshifted) %>% 
+  dplyr::select(YEAR, State, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, gramsperday_upshifted_quotient,
+                gramsperday_upshifted_crquotient) %>% 
   group_by(YEAR, State) %>% 
-  summarise(SALES=mean(gramsperday_adj), BASELINE=mean(adj_brfss_apc))
+  summarise(SALES=mean(gramsperday_adj1), BASELINE=mean(adj_brfss_apc))
 
 percapita_adjusted <- data %>% 
   filter(drinkingstatus_updated==1) %>% 
   group_by(YEAR,State) %>% 
-  summarise(ADJUSTED=mean(gramsperday_upshifted, na.rm=T))
+  summarise(QUOTIENT=mean(gramsperday_upshifted_quotient, na.rm=T),
+            CR_QUOTIENT=mean(gramsperday_upshifted_crquotient, na.rm=T))
 
 compare <- left_join(compare, percapita_adjusted) %>% 
-  pivot_longer(cols=SALES:ADJUSTED)
+  pivot_longer(cols=SALES:CR_QUOTIENT)
 
-ggplot(data=compare, aes(x=YEAR, y=value, colour=name)) + geom_line() +
-  facet_wrap(~State) + theme_bw() + theme(legend.title=element_blank(),
+ggplot(data=compare, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
+  facet_wrap(~State, scales="free") + theme_bw() + theme(legend.title=element_blank(),
                                           legend.position="bottom") + 
-  ylim(0,NA)
-ggsave("SIMAH_Workplace/brfss/upshifted_plots.png", dpi=300, width=33, height=19, units="cm")
+  ylim(0,NA) + xlim(2000,2020)
+ggsave("SIMAH_Workplace/brfss/upshifted_plots_quotientcompare.png", dpi=300, width=33, height=19, units="cm")
 
-
+# save the upshifted data 
+saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS")
 
