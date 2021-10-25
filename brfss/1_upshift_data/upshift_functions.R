@@ -125,3 +125,28 @@ impute_yearly_drinking <- function(data){
                                                          ifelse(drinkingstatus_detailed=="Lifetime abstainer",0,NA)))))
   return(data)
 }  
+
+add_brfss_regions <- function(data){
+  division1 <- c("Connecticut","Maine","Massachusetts","New Hampshire","Rhode Island","Vermont")
+  division2 <- c("New Jersey","New York","Pennsylvania")
+  division3 <- c("Illinois","Indiana","Michigan","Ohio","Wisconsin")
+  division4 <- c("Iowa","Kansas","Minnesota","Missouri","Nebraska","North Dakota","South Dakota")
+  division5 <- c("Delaware","Florida","Georgia","Maryland","North Carolina","South Carolina","Virginia","DC","West Virginia")
+  division6 <- c("Alabama","Kentucky","Mississippi","Tennessee")
+  division7 <- c("Arkansas","Louisiana","Oklahoma","Texas")
+  division8 <- c("Arizona","Colorado","Idaho","Montana","Nevada","New Mexico","Utah","Wyoming")
+  division9 <- c("Alaska","California","Hawaii","Oregon","Washington")
+  data$region <- ifelse(!is.na(match(data$State,division1)), "division1",
+                                                ifelse(!is.na(match(data$State,division2)),"division2",
+                                                       ifelse(!is.na(match(data$State,division3)),"division3",
+                                                              ifelse(!is.na(match(data$State,division4)),"division4",
+                                                                     ifelse(!is.na(match(data$State,division5)),"division5",
+                                                                            ifelse(!is.na(match(data$State,division6)),"division6",
+                                                                                   ifelse(!is.na(match(data$State,division7)),"division7",
+                                                                                          ifelse(!is.na(match(data$State,division8)),"division8",
+                                                                                                 ifelse(!is.na(match(data$State,division9)),"division9",
+                                                                                                        ifelse(data$State=="USA","USA",
+                                                                                                        NA))))))))))
+  
+  return(data)
+}

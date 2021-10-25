@@ -1,23 +1,21 @@
 #script for IPF 
 
 # read in constraints 
-cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_final.csv") %>% filter(STATE==State) %>% 
+cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_final.csv") %>% 
+  filter(STATE==SelectedState) %>% 
   dplyr::select(-STATE)
 # select the appropriate state 
 percentpop <- PopulationSize / rowSums(cons)
 percentpop <- ifelse(percentpop>1, 1, percentpop)
 
-if(State=="USA" | State=="California"){
+# if one of the big states or USA - use 30% of the constraints (otherwise CPU overload)
+if(SelectedState=="USA" | SelectedState=="California"){
 cons <- cons*0.3
 }
 
 ##reading in and processing individual level data
 ###read in BRFSS data 
-if(State=="USA"){
-  source("SIMAH_code/microsim/1_generate_baseline_population/scripts/BRFSS_processing.R")
-}else{
-  source("SIMAH_code/microsim/1_generate_baseline_population/scripts/BRFSS_processing_states.R")
-}
+source("SIMAH_code/microsim/1_generate_baseline_population/scripts/BRFSS_processing.R")
 
 ##tidy up
 gc()
@@ -88,44 +86,24 @@ gc()
 ints_df <- inner_join(ints_df, brfss.raw)
 
 ###postprocessing - names of variables etc.
-if(State=="USA"){
-microsim <- data.frame(microsim.init.id=ints_df$id, 
+microsim <- data.frame(microsim.init.id=1:nrow(ints_df), 
                        microsim.init.sex=ints_df$SEX, 
-                       microsim.init.age=ints_df$AGE, 
+                       microsim.init.age=ints_df$age_var, 
                        microsim.init.race=ints_df$RACE, 
                        microsim.roles.employment.status=ints_df$EMPLOYED, 
-                       microsim.roles.parenthood.status=ints_df$CHILDREN,
-                       microsim.roles.marital.status=ints_df$MARRIED, 
                        microsim.init.education=ints_df$EDUCATION, 
                        microsim.init.BMI=ints_df$BMI, 
-                       microsim.init.income=ints_df$INCOMENEW, 
-                       microsim.init.drinkingstatus=ints_df$DRINKINGSTATUS_NEW, 
-                       drinkingstatus_2=ints_df$imputeddrinking, 
-                       microsim.init.alc.gpd=ints_df$alcgpd_new, 
+                       microsim.init.income=ints_df$household_income, 
+                       microsim.init.drinkingstatus=ints_df$drinkingstatus, 
+                       microsim.init.alc.gpd=ints_df$gramsperday, 
                        agecat=ints_df$agecat, 
-                       alcdays=ints_df$ALCDAYS2_shifted)
-}else{
-  microsim <- data.frame(microsim.init.id=ints_df$id, 
-                         microsim.init.sex=ints_df$SEX, 
-                         microsim.init.age=ints_df$AGE, 
-                         microsim.init.race=ints_df$RACE, 
-                         microsim.roles.employment.status=ints_df$EMPLOYED, 
-                         microsim.roles.parenthood.status=ints_df$CHILDREN,
-                         microsim.roles.marital.status=ints_df$MARRIED, 
-                         microsim.init.education=ints_df$EDUCATION, 
-                         microsim.init.BMI=ints_df$BMI, 
-                         microsim.init.income=ints_df$INCOMENEW, 
-                         microsim.init.drinkingstatus=ints_df$DRINKINGSTATUS, 
-                         microsim.init.alc.gpd=ints_df$ALCGPD, 
-                         agecat=ints_df$agecat, 
-                         alcdays=ints_df$ALCDAYS2)
-}
+                       alcdays=ints_df$frequency)
 
 rm(list=setdiff(ls(), c("microsim", "cons", c(tokeep))))
 
 ####sample to get desired population size 
 if(percentpop<1){
-microsim <- sample_n(microsim, PopulationSize)
+microsim <- sample_n(microsim, PopulationSize, replace=F)
 }
 
 #  script to sample age to ensure the correct age distribution when wide cats used

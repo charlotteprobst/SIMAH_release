@@ -108,7 +108,10 @@ data <- data %>% group_by(YEAR, State) %>%
          quotient = (gramsperday_adj1*0.9)/adj_brfss_apc,
          cr_quotient = (quotient^(1/3)),
          gramsperday_upshifted_quotient = gramsperday*(quotient),
-         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2))
+         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),
+         frequency_upshifted = alc_frequency*(cr_quotient^2),
+         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted),
+         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted)
 
 # now compare up-shifted to per capita mean data for each state 
 compare <- data %>% 
@@ -132,6 +135,20 @@ ggplot(data=compare, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
   ylim(0,NA) + xlim(2000,2020) + ylab("grams per day")
 ggsave("SIMAH_Workplace/brfss/upshifted_plots_quotientcompare.png", dpi=300, width=33, height=19, units="cm")
 
-# save the upshifted data 
+# adding the regions to the BRFSS 
+data <- add_brfss_regions(data)
+
+# select variables and save the upshifted data 
+data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var, employment, 
+                               education_summary, household_income, BMI, drinkingstatus_updated,
+                               drinkingstatus_detailed, gramsperday_upshifted_crquotient,
+                               frequency_upshifted, quantity_per_occasion_upshifted,
+                               hed) %>% 
+  rename(drinkingstatus = drinkingstatus_updated,
+         gramsperday = gramsperday_upshifted_crquotient,
+         frequency = frequency_upshifted,
+         quantity_per_occasion = quantity_per_occasion_upshifted)
+
+
 saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS")
 
