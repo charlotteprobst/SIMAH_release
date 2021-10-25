@@ -129,7 +129,7 @@ compare <- left_join(compare, percapita_adjusted) %>%
 ggplot(data=compare, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
   facet_wrap(~State, scales="free") + theme_bw() + theme(legend.title=element_blank(),
                                           legend.position="bottom") + 
-  ylim(0,NA) + xlim(2000,2020)
+  ylim(0,NA) + xlim(2000,2020) + ylab("grams per day")
 ggsave("SIMAH_Workplace/brfss/upshifted_plots_quotientcompare.png", dpi=300, width=33, height=19, units="cm")
 
 # save the upshifted data 
