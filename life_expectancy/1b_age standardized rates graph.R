@@ -10,16 +10,10 @@ library("epitools")
 setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 #load aggregated mortality data:
-dMort <- read.csv("Mortality/3_out data/allethn_rates_0019_final.csv")
+dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_rates_0019_final.csv")
 
 class(dMort$edclass)
 dMort$edclass <- as.factor(dMort$edclass)
-
-test <- aggregate(.~ year , data =  dMort, FUN=sum)
-test <- test %>% mutate(sumrow= LVDCmort + PANCmort + DMmort + IHDmort + 
-                           ISTRmort + HSTRmort + HYPHDmort + 
-                           AUDmort + UIJmort + MVACCmort + IJmort + CANmort + RESTmort) %>%
-   mutate(prop = sumrow/Tmort)
 
 ## To aggregate some cause of death categories
 dMort$RESTmort <- dMort$RESTmort + dMort$CANmort
@@ -34,8 +28,9 @@ dMort <- dMort %>% select(-c(CANmort, PANCmort, ISTRmort, HSTRmort))
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
+lapply(dMort, class)
+dMort$race <- as.factor(dMort$race)
 dMort <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
-
 dDescStat <- aggregate(.~ year , data =  dMort, FUN=sum)
 dDescStat <- dDescStat %>% mutate(sumrow= LVDCmort + DMmort + IHDmort + HYPHDmort + AUDmort + UIJmort + MVACCmort + IJmort) %>% 
    mutate(propInd = sumrow/Tmort, propRest = RESTmort/Tmort)  %>% mutate(test = propInd + propRest)
@@ -113,7 +108,7 @@ ggplot(data=data_graph[which(data_graph$cause != "IHD & ischemic stroke"),], aes
       ylim(0, NA) +
       scale_color_manual(values = color.vec) +
       labs(color="Cause of death")
-ggsave("LE/4_graphs/1b_as mortality rates_by ses and sex.jpeg", dpi=600, width=23, height=15, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/1b_as mortality rates_by ses and sex.jpeg", dpi=600, width=23, height=15, units="cm")
 
 color.vec <- c("#cf82a6", "#a14d72", "#732946")
 color.vec <- c("#69AA9E", "#447a9e",  "#d72c40") # high  middle low
@@ -124,11 +119,11 @@ ggplot(data=data_graph[data_graph$sex == "Men",], aes(x=year, y=rate, colour=edc
       theme_light() +
       theme(strip.background = element_rect(fill = "white"), legend.position = "bottom") +
       theme(strip.text = element_text(colour = 'black'), text = element_text(size = 16), strip.text.y = element_text(angle = 0, hjust = 0)) +
-      ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
+      ylab("Age-standardized mortality rate per 100,000") + xlab("Year") +
       ylim(0, NA) +
       scale_color_manual(values = color.vec) +
       labs(color="SES")
-ggsave("LE/4_graphs/1b_as mortality rates by cause and sex_men.jpeg", dpi=600, width=20, height=23, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/1b_as mortality rates by cause and sex_men.jpeg", dpi=600, width=20, height=23, units="cm")
 
 ggplot(data=data_graph[data_graph$sex == "Women",], aes(x=year, y=rate, colour=edclass)) + 
    facet_grid(rows = vars(cause), scales = "free") +
@@ -137,10 +132,10 @@ ggplot(data=data_graph[data_graph$sex == "Women",], aes(x=year, y=rate, colour=e
    theme_light() +
    theme(strip.background = element_rect(fill = "white"), legend.position = "bottom") +
    theme(strip.text = element_text(colour = 'black'), text = element_text(size = 16), strip.text.y = element_text(angle = 0, hjust = 0)) +
-   ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
+   ylab("Age-standardized mortality rate per 100,000") + xlab("Year") +
    ylim(0, NA) +
    scale_color_manual(values = color.vec) +
    labs(color="SES")
-ggsave("LE/4_graphs/1b_as mortality rates by cause and sex_women.jpeg", dpi=600, width=20, height=23, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/1b_as mortality rates by cause and sex_women.jpeg", dpi=600, width=20, height=23, units="cm")
 
-write.csv(data_graph, "LE/3_out data/age_stand_mortality_rates.csv")
+write.csv(data_graph, "SIMAH_workplace/life_expectancy/2_out_data/age_stand_mortality_rates.csv")
