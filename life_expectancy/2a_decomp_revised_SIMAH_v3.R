@@ -17,17 +17,13 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 #setwd("~/Documents/Promotion/Mortality US")
 
 ## Load the functions that go with this code
-source("LE/2_do/2b_decomp_functions.R")
+source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 
 #############################################################################################################
 #before starting with the decomposition, we have to get the mortality data into the right format
 
 #load aggregated mortality data:
-dMort <- read.csv("Mortality/3_out data/allethn_rates_0019_final.csv")
-#dCensus <- read.csv("Demography/population_counts_census_ACS.csv")
-
-#dMort <- select(dMort, -"TPop")
-#dMort <- merge(dMort, dCensus, by = c("year", "edclass", "sex", "age_gp", "race"))
+dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_rates_0019_final.csv")
 
 # variable type should be factor and not character
 class(dMort$race)
@@ -59,10 +55,6 @@ v.totals <- c("Tmort", "LVDCmort", "DMmort", "IHDmort",
 
 ## these are the original rate variable names. You could also introduce the "mx_" 
 ## nomenclature here 
-#v.rates <- c("Trate", "mx_LVDCrate", "mx_PANCrate", "mx_DMrate", "mx_IHDrate", 
-#             "mx_ISTRrate", "mx_HSTRrate", 
-#             "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
-#             "mx_IJrate", "mx_CANrate",  "mx_RESTrate")
 v.rates <- c("Trate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
              "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
              "mx_IJrate",  "mx_RESTrate") 
@@ -81,7 +73,7 @@ setnames(dMort_pop, old = c('edclass', 'sex', 'year'), new = c('SES','Sex', 'Yea
 dMort_pop$SES <- recode(dMort_pop$SES, "College" = "High", "SomeC" = "Middle",  "LEHS" = "Low")
 dMort_pop$Sex <- as.factor(dMort_pop$Sex)
 dMort_pop$Sex <- recode(dMort_pop$Sex, "1" = "Men", "2" = "Women")
-write.csv(dMort_pop, "LE/3_out data/proportion_SES.csv")
+write.csv(dMort_pop, "SIMAH_workplace/life_expectancy/2_out_data/proportion_SES.csv")
 
 ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
   facet_grid(cols = vars(Sex)) +
@@ -94,7 +86,7 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
   scale_color_manual(name = "SES", breaks = c("High", "Middle", "Low"), values = color.vec, 
                      labels = c("High", "Middle", "Low")) +   
   geom_point(size = 1, aes(color = SES)) 
-ggsave("LE/4_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
 
 
 # Calculate the rates for all relevant causes of death
@@ -172,4 +164,5 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
-write.csv(dResults_contrib,paste0("LE/3_out data/dResults_contrib_", v.year1[1], "_", max(v.year2), "CPS_v3.csv") )
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "CPS_v3.csv") )
+write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0018.csv")
