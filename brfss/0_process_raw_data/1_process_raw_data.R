@@ -11,7 +11,7 @@ library(sjlabelled)
 # CB laptop directory
 wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
-wd <- "G:/My Drive/SIMAH Sheffield/"
+# wd <- "G:/My Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 

@@ -28,13 +28,13 @@ setwd(WorkingDirectory)
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee, Washington
 
-State <- "USA"
+SelectedState <- "Texas"
 
 PopulationSize <- 1000000
 
 ####EDIT ONLY ABOVE HERE ##
 
-tokeep <- c("State", "PopulationSize", "WorkingDirectory", "microsim", "tokeep",
+tokeep <- c("SelectedState", "PopulationSize", "WorkingDirectory", "microsim", "tokeep",
             "wholepopsize", "percentpop", "adjusting")
 
 ###generate a base population - IPF from NSDUH data to PSID / Census constraints 

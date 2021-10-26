@@ -289,8 +289,9 @@ recode_sample_weights <- function(data){
 
 subset_data <- function(data){
   data <- data %>% 
-    dplyr::select(YEAR, State, final_sample_weight, race_eth, sex_recode, age_var, employment,
+    dplyr::select(YEAR, State, final_sample_weight, race_eth, sex_recode, age_var,
+                  education_summary, employment,
                   household_income, height_cm, weight_kg, BMI, drinkingstatus, 
-                  alc_frequency, quantity_per_occasion, gramsperday, hed)#
+                  alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)
 }

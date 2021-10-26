@@ -1,8 +1,8 @@
 # select variables needed for microsim only
-microsim <- microsim %>% select(microsim.init.age, microsim.init.race, microsim.init.sex,
+microsim <- microsim %>% dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex,
                                 microsim.init.education,
                                 microsim.init.drinkingstatus, microsim.init.alc.gpd,
-                                microsim.init.income, drinkingstatus_2) %>% 
+                                microsim.init.income) %>% 
   mutate(microsim.init.spawn.year=2000,
          agecat = cut(microsim.init.age,
                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,100),
@@ -13,8 +13,5 @@ microsim <- microsim %>% select(microsim.init.age, microsim.init.race, microsim.
                                     ifelse(microsim.init.sex=="M","m",microsim.init.sex)),
          microsim.init.sex = as.character(microsim.init.sex),
          microsim.init.race = as.character(microsim.init.race),
-         microsim.init.spawn.year = as.integer(microsim.init.spawn.year),
-        formerdrinker = ifelse(drinkingstatus_2==1, 1,0)) %>% 
-  dplyr::select(-c(drinkingstatus_2))
-
+         microsim.init.spawn.year = as.integer(microsim.init.spawn.year))
 microsim <- data.frame(microsim)  
