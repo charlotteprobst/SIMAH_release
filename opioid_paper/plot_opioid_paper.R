@@ -134,3 +134,42 @@ Fig2alternative <- ggplot(data=gendereducationrace,
 Fig2alternative
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_alternative.png",
        Fig2alternative, width=33, height=40, units="cm", dpi=300)
+
+
+# Supplementary Figure 1 - poisonings by race/ethnicity and NOT education
+genderrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-StandardRates-25plus.dta")
+
+genderrace <- genderrace %>% remove_all_labels() %>% 
+  zap_formats() %>% 
+  dplyr::select(year, race, sex, alc_only_fin_StdRate,
+                opioid_only_fin_StdRate, alc_opioid_fin_StdRate) %>% 
+  pivot_longer(cols=c(alc_only_fin_StdRate:alc_opioid_fin_StdRate),
+               names_to="type", values_to="rate") %>% 
+  mutate(type=gsub("_fin_StdRate","",type),
+         race = recode(race, "1"="Non-Hispanic White",
+                       "2"="Non-Hispanic Black",
+                       "3"="Hispanic",
+                       "4"="Non-Hispanic Others"),
+         race = factor(race, levels=c("Non-Hispanic White",
+                                      "Non-Hispanic Black",
+                                      "Hispanic",
+                                      "Non-Hispanic Others")),
+         sex = ifelse(sex==1, "Men","Women"),
+         type = recode(type, "alc_only"="Alcohol",
+                       "opioid_only"="Opioid",
+                       "alc_opioid"="Alcohol and Opioid"),
+         type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid")))
+
+color.vec <- c("#132268", "#447a9e", "#93AEBF", "#000000")
+
+Fig1Supp <- ggplot(data=genderrace, aes(x=year, y=rate, colour=race)) + 
+  geom_line(size=1) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
+  ylab("Mortality rate per 100,000 population") + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
+  xlab("Year") + scale_colour_brewer(palette="Set1")
+Fig1Supp
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_supplementary.png",
+       Fig1Supp, width=33, height=40, units="cm", dpi=300)
