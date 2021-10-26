@@ -4,6 +4,7 @@
 
 library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
+library(janitor)    # data management
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 library(irr)        # calculate kappa for true and predicted alcohol use
@@ -13,6 +14,7 @@ library(irr)        # calculate kappa for true and predicted alcohol use
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
+source("0_Functions.R")
 
 
 # Load data / functions
@@ -221,11 +223,19 @@ Q9 <- rbind ( c(0,     0,    0.25,  0,    0),
 
     
 # Load the models
+memory.limit(size=1e+13)
 alc5.msm1 <- readRDS(paste0(output, "alc5.msm1.RDS"))
+alc5.msm2 <- readRDS(paste0(output, "alc5.msm2.RDS"))
+alc5.msm3 <- readRDS(paste0(output, "alc5.msm3.RDS"))
+alc5.msm4 <- readRDS(paste0(output, "alc5.msm4.RDS"))
+alc5.msm5 <- readRDS(paste0(output, "alc5.msm5.RDS"))
+alc5.msm6 <- readRDS(paste0(output, "alc5.msm6.RDS"))
+alc5.msm7 <- readRDS(paste0(output, "alc5.msm7.RDS"))
+alc5.msm8 <- readRDS(paste0(output, "alc5.msm8.RDS"))
 alc5.msm9 <- readRDS(paste0(output, "alc5.msm9.RDS"))
     
+
 # Compare models
-AIC(alc5.msm1, alc5.msm9)
 AIC(alc5.msm1, alc5.msm2, alc5.msm3, alc5.msm4, alc5.msm5, alc5.msm6, alc5.msm7, alc5.msm8, alc5.msm9)
     
 
@@ -280,11 +290,15 @@ saveRDS(alc5.msm2_v2, paste0(output, "alc5.msm2_v2.RDS")) # Save Results
 
 # Load Models:
 alc5.msm1_v2 <- readRDS(paste0(output, "alc5.msm1_v2.RDS"))
+alc5.msm2_v2 <- readRDS(paste0(output, "alc5.msm2_v2.RDS"))
 alc5.msm3_v2 <- readRDS(paste0(output, "alc5.msm9.RDS"))
 
+alc5.msm1_v2
+alc5.msm2_v2
+alc5.msm3_v2
 
 # Compare models
-AIC(alc5.msm1_v2, alc5.msm3_v2)
+AIC(alc5.msm1_v2, alc5.msm2_v2, alc5.msm3_v2)
 
 
 
@@ -299,334 +313,159 @@ alc5.msm
       hazard.msm(alc5.msm)
 
 
-# Table 2a - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
-aTP.results <- data.frame(print(pmatrix.msm(alc5.msm, t=1, ci="norm"))) %>%
-  mutate(From = row.names(.)) %>%
-  pivot_longer(cols = -From, names_to = "To") %>%
-  separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-  mutate(
-    SE = (Upper - Lower) / 3.92,
-    SD = SE * sqrt(4061624),  # sample size of expanded data
-    newSE = SD / sqrt(68168), # sample size of original data
-    newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-    newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-    Estimate = round(Estimate*100, digits=1), 
-    EstimateCI = paste0(Estimate, " (", newLower, ", ", newUpper, ")")) %>%
-  select (From, To, EstimateCI) %>%
-  pivot_wider(names_from = "To", values_from = "EstimateCI")
-
-  # save results for paper
-  write_csv(aTP.results, paste0(output, "Table2a-Annual TP.csv"))
+# Table 2a - Function to extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
+alc5_annual_tp <- predicted_TP(model=alc5.msm, year=1, original_n = 68168, expanded_n = 4061624)
+alc5_annual_tp
+write_csv(alc5_annual_tp, paste0(output, "Table2a-Annual TP.csv")) # save results for paper
 
 
-# Table 3 - Extract HR results, rearrange, and correct CI to original sample size 
-HR.results <- data.frame(hazard.msm(alc5.msm))%>%
-  mutate(transition = row.names(.)) %>%
-  pivot_longer(cols=-transition) %>%
-  extract(name, into=c("Variable","Type"), regex="(.*)\\.(.*)") %>%   # Separate the string (name) into the variable and type of estimate (HR, Upper, Lower), separate at last occuring period .
-  pivot_wider(names_from="Type", values_from = "value") %>%
-  mutate(
-    SE=(log(U) - log(L))/3.92, 
-    SD = SE * sqrt(4061624),  # sample size of expanded data
-    newSE = SD / sqrt(68168), # sample size of original data
-    newLower = round(exp((log(HR)) - (newSE * 1.96)), digits=2), 
-    newUpper = round(exp((log(HR)) + (newSE * 1.96)), digits=2), 
-    HR = round(HR, digits=2),
-    EstimateCI = paste0(HR, " (", newLower, ", ", newUpper, ")")) %>%
-  select(transition, Variable, EstimateCI) %>%
-  pivot_wider(names_from = "transition", values_from = EstimateCI) %>%
-  rename("Abstainer->LowRisk"   = "State 1 - State 3",
-         "Former->LowRisk"      = "State 2 - State 3",
-         "LowRisk->Former"      = "State 3 - State 2",
-         "LowRisk->MediumRisk"  = "State 3 - State 4",
-         "MediumRisk->LowRisk"  = "State 4 - State 3",
-         "MediumRisk->HighRisk" = "State 4 - State 5",
-         "HighRisk->MediumRisk" = "State 5 - State 4") %>%
+
+
+# Table 3 - Function to extract HR results, rearrange, and correct CI to original sample size 
+HR_alc5 <- HR_table(alc5.msm, original_n = 68168, expanded_n = 4061624)  %>%
+  rename( "Abstainer->LowRisk"   = "State 1 - State 3",
+          "Former->LowRisk"      = "State 2 - State 3",
+          "LowRisk->Former"      = "State 3 - State 2",
+          "LowRisk->MediumRisk"  = "State 3 - State 4",
+          "MediumRisk->LowRisk"  = "State 4 - State 3",
+          "MediumRisk->HighRisk" = "State 4 - State 5",
+          "HighRisk->MediumRisk" = "State 5 - State 4") %>%
   select(Variable, "Abstainer->LowRisk", "Former->LowRisk", "LowRisk->MediumRisk", "MediumRisk->HighRisk", "HighRisk->MediumRisk", "MediumRisk->LowRisk", "LowRisk->Former")
 
-  # save results for paper
-  write_csv(HR.results, paste0(output, "Table3-HR.csv"))
-
+HR_alc5
+write_csv(HR.results, paste0(output, "Table3-HR.csv")) # save results for paper
   
   
-  
-## 2.3) Save Transition Probabilities (TP) --------------------------------------------------------------------------------------------------
+## 2.3) Extract Transition Probabilities (TP)  --------------------------------------------------------------------------------------------------
 
-# 1) Annual TP for each level of the covariates******************************************************** 
-# *****************************************************************************************************
-  
-# Function to extract annual TP 
-alc5_annual_TP <- function(model, age_cat, sex, race, edu) {
-  probs <- list()
-  for (i in age_cat){
-    for (j in sex){
-      for (l in race){
-        for (k in edu){
-          # extract the probabilities
-          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=1, 
-            covariates = list(age3.factor = i,   female_wave1.factor = j, 
-                              race_wave1.factor = l, edu3.factor = k)))) %>%
-            
-            # modify the output presentation
-            mutate(From = row.names(.)) %>%
-            pivot_longer(cols = -From, names_to = "To") %>%
-            rename(Probability = value) %>%
-            mutate(
-              # Recode values
-              From = recode(From, "State 1" = "Abstainer", 
-                                  "State 2" = "Former",
-                                  "State 3" = "Category I",
-                                  "State 4" = "Category II",
-                                  "State 5" = "Category III"), 
-              To = recode(To, "State.1" = "Abstainer", 
-                              "State.2" = "Former",
-                              "State.3" = "Category I",
-                              "State.4" = "Category II",
-                              "State.5" = "Category III"),
-              Transition = paste(From, To, sep = "->"),
-              Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
-                "Former->Category I",	"Category I->Category II",	"Category II->Category III",
-                "Category III->Category II",	"Category II->Category I",	"Category I->Former"),
-              age_cat = i,
-              sex = j, 
-              race = l,
-              edu = k) 
-        }
-      }
-    }
-  }
-  
-  probs <- do.call(rbind, probs)
-  row.names(probs) <- NULL  # remove row names
-  return(probs)
-}
-
-# Extract annual TP
-    # First, specify the covariate values
-    age_cat <- unique(nesarc_expanded$age3.factor)
-    sex <- unique(nesarc_expanded$female_wave1.factor)
-    race <- unique(nesarc_expanded$race_wave1.factor)
-    edu <- unique(nesarc_expanded$edu3.factor)
-    
-    # Run function to extract TP
-    alc5_annual_TP <- alc5_annual_TP(alc5.msm, age_cat, sex, race, edu)
-
-# Save TP
-write_csv(alc5_annual_TP, paste0(output, "Transition Probs - AlcUse Annual.csv"))
-
-
-# 2) Annual TP after 3 years (to compare predicted and true)******************************************* 
-# *****************************************************************************************************
-
-# Function to extract annual TP 
-alc5_TP_at3yrs <- function(model, age_cat, sex, race, edu) {
-  probs <- list()
-  for (i in age_cat){
-    for (j in sex){
-      for (l in race){
-        for (k in edu){
-          # extract the probabilities
-          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=3, 
-            covariates = list(age3.factor = i,   female_wave1.factor = j, 
-              race_wave1.factor = l, edu3.factor = k)))) %>%
-            
-            # modify the output presentation
-            mutate(From = row.names(.)) %>%
-            pivot_longer(cols = -From, names_to = "To") %>%
-            rename(Probability = value) %>%
-            mutate(
-              # Recode values
-              From = recode(From, "State 1" = "Abstainer", 
-                "State 2" = "Former",
-                "State 3" = "Category I",
-                "State 4" = "Category II",
-                "State 5" = "Category III"), 
-              To = recode(To, "State.1" = "Abstainer", 
-                "State.2" = "Former",
-                "State.3" = "Category I",
-                "State.4" = "Category II",
-                "State.5" = "Category III"),
-              Transition = paste(From, To, sep = "->"),
-              Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
-                "Former->Category I",	"Category I->Category II",	"Category II->Category III",
-                "Category III->Category II",	"Category II->Category I",	"Category I->Former"),
-              age_cat = i,
-              sex = j, 
-              race = l,
-              edu = k) 
-        }
-      }
-    }
-  }
-  
-  probs <- do.call(rbind, probs)
-  row.names(probs) <- NULL  # remove row names
-  return(probs)
-}
-
-# Extract annual TP
 # First, specify the covariate values
 age_cat <- unique(nesarc_expanded$age3.factor)
 sex <- unique(nesarc_expanded$female_wave1.factor)
 race <- unique(nesarc_expanded$race_wave1.factor)
 edu <- unique(nesarc_expanded$edu3.factor)
-
-# Run function to extract TP
-alc5_TP_at3yrs <- alc5_TP_at3yrs(alc5.msm, age_cat, sex, race, edu)
+    
+# Function to extract annual TP 
+alc5_annual_TP2 <- predicted_TP_covs (alc5.msm, 1, age_cat, sex, race, edu) %>%
+    mutate(From = recode(From,"State 1" = "Abstainer",  # Rename states
+                              "State 2" = "Former",
+                              "State 3" = "Category I",
+                              "State 4" = "Category II",
+                              "State 5" = "Category III"),
+              To = recode(To, "State.1" = "Abstainer",
+                              "State.2" = "Former",
+                              "State.3" = "Category I",
+                              "State.4" = "Category II",
+                              "State.5" = "Category III"),
+            Transition = paste(From, To, sep = "->"),
+            Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
+              "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+              "Category III->Category II",	"Category II->Category I",	"Category I->Former"))
 
 # Save TP
-write_csv(alc5_TP_at3yrs, paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
+write_csv(alc5_annual_TP, paste0(output, "Transition Probs - AlcUse Annual.csv"))
 
 
-
-
-# 3) TP over multiple years at the mean level of each covariate ***************************************
-# *****************************************************************************************************
-# Function to extract TP over multiple years
-alc5_yearly_TP <- function(model, max_years) {
-  probs <- list()
-  for (i in 1:max_years){    
-    # extract the probabilities
-    probs[[i]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm"))) %>%
-      
-      # modify the output presentation
-      mutate(From = row.names(.)) %>%
-      pivot_longer(cols = -From, names_to = "To") %>%
-      separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-      mutate(
-        # Update CI to use original sample size
-        SE = (Upper - Lower) / 3.92,
-        SD = SE * sqrt(4061624),  # sample size of expanded data
-        newSE = SD / sqrt(68168), # sample size of original data
-        newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-        newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-        Estimate = round(Estimate*100, digits=1),
-        
-        # Recode values
-        From = recode(From, "State 1" = "Initial State: Abstainer", 
-                            "State 2" = "Initial State: Former",
-                            "State 3" = "Initial State: Category I",
-                            "State 4" = "Initial State: Category II",
-                            "State 5" = "Initial State: Category III"), 
-        To = recode(To, "State.1" = "Abstainer", 
+# Function to extract TP after 3 years 
+alc5_TP_3yrs <- predicted_TP_covs (alc5.msm, 3, age_cat, sex, race, edu) %>%
+  mutate(From = recode(From, "State 1" = "Abstainer",  # Rename states
+                        "State 2" = "Former",
+                        "State 3" = "Category I",
+                        "State 4" = "Category II",
+                        "State 5" = "Category III"),
+        To = recode(To, "State.1" = "Abstainer",
                         "State.2" = "Former",
                         "State.3" = "Category I",
                         "State.4" = "Category II",
-                        "State.5" = "Category III"), 
-        # Re-arrange order
-        From = fct_relevel(From, "Initial State: Abstainer",  "Initial State: Former",	"Initial State: Category I",	"Initial State: Category II", "Initial State: Category III"),
-        To = fct_relevel(To, "Abstainer",  "Former",	"Category I",	"Category II", "Category III"),
-        
-        Year = i) %>%
-      select (From, To, Year, Estimate, newLower, newUpper) %>%
-      na.omit() # remove NAs - transitions back to 'Abstainer'
-  }
-  
-  probs <- do.call(rbind,probs)
-  return(probs)
-}
-
-# Extract TP over multiple years and save reults 
-acl5_yearly_TP <- alc5_yearly_TP(alc5.msm, 10)
+                        "State.5" = "Category III"),
+        Transition = paste(From, To, sep = "->"),
+        Transition = fct_relevel(Transition, "Abstainer->Category I",     # re-arrange order of transition variable
+          "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+          "Category III->Category II",	"Category II->Category I",	"Category I->Former"))
 
 # Save TP
-write_csv(acl5_yearly_TP, paste0(output, "Transition Probs - AlcUse Yearly.csv"))
-
-# Load TP 
-acl5_yearly_TP <- read_csv(paste0(output, "Transition Probs - AlcUse Yearly.csv"))
-
-# Plot TP
-acl5_yearly_TP %>%
-  ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
-  geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
-  facet_wrap(~From) +
-  theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
-  theme(legend.position = c(.85, 0.25)) +
-  scale_y_continuous(breaks=seq(0, 100, by= 10)) + 
-  scale_x_continuous(breaks=seq(0, 10, by= 2))
-ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=7.5, height = 5)
+write_csv(alc5_TP_3yrs, paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
 
 
 
 
-# 4) TP over multiple years for each age category *****************************************************
-# *****************************************************************************************************
 
-# Function to extract TP over multiple years for each age category
-acl5_yearly_TP2 <- function(model, max_years, age_cat){
-  probs <- list()
-  for (i in 1:max_years){
-    for (j in age_cat){
-      # extract the probabilities
-      probs[[paste(i,j)]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm", covariates = list(age3.factor = j)))) %>%
-          
-          # modify the output presentation
-          mutate(From = row.names(.)) %>%
-          pivot_longer(cols = -From, names_to = "To") %>%
-          separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-          mutate(
-            # Update CI to use original sample size
-            SE = (Upper - Lower) / 3.92,
-            SD = SE * sqrt(4061624),  # sample size of expanded data
-            newSE = SD / sqrt(68168), # sample size of original data
-            newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-            newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-            Estimate = round(Estimate*100, digits=1),
-            
-            # Recode values
-            From = recode(From, "State 1" = "Initial State: Abstainer", 
-              "State 2" = "Initial State: Former",
-              "State 3" = "Initial State: Category I",
-              "State 4" = "Initial State: Category II",
-              "State 5" = "Initial State: Category III"), 
-            To = recode(To, "State.1" = "Abstainer", 
-              "State.2" = "Former",
-              "State.3" = "Category I",
-              "State.4" = "Category II",
-              "State.5" = "Category III"), 
-            # Re-arrange order
-            From = fct_relevel(From, "Initial State: Abstainer",  "Initial State: Former",	"Initial State: Category I",	"Initial State: Category II", "Initial State: Category III"),
-            To = fct_relevel(To, "Abstainer",  "Former",	"Category I",	"Category II", "Category III"),
-            
-            Year = i,
-            age_cat = j) %>%
-          select (From, To, Year, age_cat, Estimate, newLower, newUpper) %>%
-          na.omit() # remove NAs - transitions back to 'Abstainer'
-    }
-  }
-  
-  probs <- do.call(rbind,probs)
-  return(probs)
-}
+# Function to extract TP over 10 years  
+alc5_yearly_TP <- predicted_TP_overtime (alc5.msm, 10, 68168, 4061624) %>%
+  mutate(
+    From = recode(From, "State 1" = "Initial State: Abstainer",
+                        "State 2" = "Initial State: Former",
+                        "State 3" = "Initial State: Category I",
+                        "State 4" = "Initial State: Category II",
+                        "State 5" = "Initial State: Category III"),
+    To = recode(To, "State.1" = "Abstainer",
+                    "State.2" = "Former",
+                    "State.3" = "Category I",
+                    "State.4" = "Category II",
+                    "State.5" = "Category III"),
+    # Re-arrange order
+    From = fct_relevel(From, "Initial State: Abstainer",  "Initial State: Former",	"Initial State: Category I",	"Initial State: Category II", "Initial State: Category III"),
+    To = fct_relevel(To, "Abstainer",  "Former",	"Category I",	"Category II", "Category III"))
+
+# Save TP
+write_csv(alc5_yearly_TP, paste0(output, "Transition Probs - AlcUse Yearly.csv"))
+        
+        
+        # Plot TP Over time
+        alc5_yearly_TP %>%
+          ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
+          geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
+          facet_wrap(~From) +
+          theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
+          theme(legend.position = c(.85, 0.25)) +
+          scale_y_continuous(breaks=seq(0, 100, by= 10)) + 
+          scale_x_continuous(breaks=seq(0, 10, by= 2))
+        ggsave(paste0(output, "AlcUse TP over time 1.tiff"), dpi=600, width=7.5, height = 5)
 
 
-# Extract Yearly TP for each age category 
-      # First, specify the covariate values
-      age_cat <- unique(nesarc_expanded$age3.factor)
-      
-      # Extract TP
-      acl5_yearly_TP2 <- acl5_yearly_TP2(alc5.msm, 10, age_cat)
+
+# Function to extract TP over 10 years for each age category
+
+alc5_yearly_TP2 <- predicted_TP_overtime_age (alc5.msm, 10, age_cat, 68168, 4061624) %>%
+  mutate(
+        From = recode(From, "State 1" = "Initial State: Abstainer",
+                            "State 2" = "Initial State: Former",
+                            "State 3" = "Initial State: Category I",
+                            "State 4" = "Initial State: Category II",
+                            "State 5" = "Initial State: Category III"),
+        To = recode(To, "State.1" = "Abstainer",
+                        "State.2" = "Former",
+                        "State.3" = "Category I",
+                        "State.4" = "Category II",
+                        "State.5" = "Category III"),
+        # Re-arrange order
+        From = fct_relevel(From, "Initial State: Abstainer",  "Initial State: Former",	"Initial State: Category I",	"Initial State: Category II", "Initial State: Category III"),
+        To = fct_relevel(To, "Abstainer",  "Former",	"Category I",	"Category II", "Category III"))
+
 
       
-# Plot yearly TP for each age category
-acl5_yearly_TP2 %>%
-  mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", "30-49" = "Ages 30-49 years", "50+" = "Ages 50+ years")) %>%
-  ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
-  geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
-  facet_grid(age_cat~From) +
-  theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
-  theme(legend.position = "top") +
-  scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
-  scale_x_continuous(breaks=seq(0, 10, by= 1))
-ggsave(paste0(output, "TP over time.tiff"), dpi=600, width=12, height = 7)
-
+        # Plot yearly TP for each age category
+        alc5_yearly_TP2 %>%
+          mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", "30-49" = "Ages 30-49 years", "50+" = "Ages 50+ years")) %>%
+          ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
+          geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
+          facet_grid(age_cat~From) +
+          theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
+          theme(legend.position = "top") +
+          scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
+          scale_x_continuous(breaks=seq(0, 10, by= 1))
+        ggsave(paste0(output, "AlcUse TP over time 2.tiff"), dpi=600, width=12, height = 7)
+        
 
 
 
 
 ## 2.4) Check Model Fit--------------------------------------------------------------------------------------
 
-# Transition probabilities
+# Load model
+alc5.msm <- readRDS(paste0(output, "alc5.msm9.RDS"))
+
+
+# Load Transition probabilities
 alc5_TP_anual <- read_csv(paste0(output, "Transition Probs - AlcUse Annual.csv"))
 alc5_TP_at3yrs <- read_csv(paste0(output, "Transition Probs - AlcUse after 3 years.csv"))
 
@@ -654,8 +493,6 @@ transition_alcohol <- function(data, transitions){
 }
 
 
-set.seed(555) # to get consistent results (there is a random # generated in the code below)
-
 
 # Get predicted alcohol use at wave 3
 alc5_data <- nesarc %>%
@@ -680,15 +517,28 @@ alc5_data <- nesarc %>%
   ungroup() %>% 
   mutate(AlcUse_2_pred = factor(AlcUse_2_pred, levels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))) %>%
   select(-cat, - prob, -years_1)
+  
 
-
-# Compare the predicted and true values
+# Compare observed and predicted at the individual level
 select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  agree()   # Agreement
 select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2()  # Cohen's kappa (categorical data)
 select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2(., "equal")    # Cohen's kappa (ordinal data; each category difference considered equally important)
 select(alc5_data, AlcUse_2, AlcUse_2_pred) %>%  kappa2(., "squared")  # Cohen's kappa (ordinal data; more appropriate here)
 
-view(count(alc5_data, AlcUse_2, AlcUse_2_pred))
+
+
+# Compare observed and predicted at the group
+observed <- count(alc5_data, AlcUse_2) %>% rename(observed = n, AlcUse = AlcUse_2) 
+predicted <- count(alc5_data, AlcUse_2_pred) %>% rename(predicted = n, AlcUse = AlcUse_2_pred)  
+comparison <- full_join (observed, predicted, by="AlcUse") %>%
+  mutate(difference = abs(predicted-observed),  
+         error_percent = difference/observed * 100) %>%
+  adorn_totals("row") %>%  # Add row totals
+  mutate(error_percent = ifelse(AlcUse=="Total", difference/predicted * 100, error_percent),
+         error_percent = round(error_percent, 2))
+
+comparison
+
 
 # 3) HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
 ## 3.1) Run HED MSM Model ------------------------------------------------------------------------------------------------
@@ -747,51 +597,150 @@ hazard.msm(hed.msm)
 
 
 # Table 2b - Extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
-aTP.results <- data.frame(print(pmatrix.msm(hed.msm, t=1, ci="norm"))) %>%
-  mutate(From = row.names(.)) %>%
-  pivot_longer(cols = -From, names_to = "To") %>%
-  separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-  mutate(
-    SE = (Upper - Lower) / 3.92,
-    SD = SE * sqrt(4051908),  # sample size of expanded data
-    newSE = SD / sqrt(68004), # sample size of original data
-    newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-    newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-    Estimate = round(Estimate*100, digits=1), 
-    EstimateCI = paste0(Estimate, " (", newLower, ", ", newUpper, ")")) %>%
-  select (From, To, EstimateCI) %>%
-  pivot_wider(names_from = "To", values_from = "EstimateCI")
-
-# save results for paper
-write_csv(aTP.results, paste0(output, "Table2b-Annual TP.csv"))
+hed_annual_TP <- predicted_TP(model=hed.msm, year=1, original_n = 68004, expanded_n = 4051908)
+hed_annual_TP
+write_csv(hed_annual_TP, paste0(output, "Table2b-Annual TP.csv")) # save results for paper
 
 
-# Table 4 - Extract HR results, rearrange, and correct CI to original sample size 
-HED_HR.results <- data.frame(hazard.msm(hed.msm))%>%
-  mutate(transition = row.names(.)) %>%
-  pivot_longer(cols=-transition) %>%
-  extract(name, into=c("Variable","Type"), regex="(.*)\\.(.*)") %>%   # Separate the string (name) into the variable and type of estimate (HR, Upper, Lower), separate at last occuring period .
-  pivot_wider(names_from="Type", values_from = "value") %>%
-  mutate(
-    SE=(log(U) - log(L))/3.92, 
-    SD = SE * sqrt(4051908),  # sample size of expanded data
-    newSE = SD / sqrt(68004), # sample size of original data
-    newLower = round(exp((log(HR)) - (newSE * 1.96)), digits=2), 
-    newUpper = round(exp((log(HR)) + (newSE * 1.96)), digits=2), 
-    HR = round(HR, digits=2),
-    EstimateCI = paste0(HR, " (", newLower, ", ", newUpper, ")")) %>%
-  select(transition, Variable, EstimateCI) %>%
-  pivot_wider(names_from = "transition", values_from = EstimateCI) %>%
-  rename( "Non-drinker->Drinker, no HED"     = "State 1 - State 2",
-          "Drinker, no HED->Non-drinker"     = "State 2 - State 1",
-          "Drinker, no HED->Occasional HED"  = "State 2 - State 3",
+
+
+# Table 4 - Function to extract HR results, rearrange, and correct CI to original sample size 
+HR_hed <- HR_table(hed.msm, original_n = 68004, expanded_n = 4051908)  %>%
+  rename( "Non-drinker->Drinker, no HED"    = "State 1 - State 2",
+          "Drinker, no HED->Non-drinker"    = "State 2 - State 1",
+          "Drinker, no HED->Occasional HED" = "State 2 - State 3",
           "Occasional HED->Drinker, no HED" = "State 3 - State 2",
           "Occasional HED->Monthly HED"     = "State 3 - State 4",
           "Monthly HED->Occasional HED"     = "State 4 - State 3",
-          "Monthly HED->Weekly HED"     = "State 4 - State 5",
-          "Weekly HED->Monthly HED"     = "State 5 - State 4") %>%
+          "Monthly HED->Weekly HED"         = "State 4 - State 5",
+          "Weekly HED->Monthly HED"         = "State 5 - State 4") %>%
   select(Variable,  "Non-drinker->Drinker, no HED", "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
     "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", "Drinker, no HED->Non-drinker")
-    
-# save results for paper
-write_csv(HED_HR.results, paste0(output, "Table4-HR.csv"))
+
+HR_hed
+write_csv(HR_hed, paste0(output, "Table4-HR.csv")) # save results for paper
+
+
+## 3.3) Extract Transition Probabilities (TP)  --------------------------------------------------------------------------------------------------
+
+hed.msm<- readRDS(paste0(output, "hed.msm.RDS"))
+
+# First, specify the covariate values
+age_cat <- unique(nesarc_expanded$age3.factor)
+sex <- unique(nesarc_expanded$female_wave1.factor)
+race <- unique(nesarc_expanded$race_wave1.factor)
+edu <- unique(nesarc_expanded$edu3.factor)
+
+# Function to extract annual TP 
+hed_annual_TP2 <- predicted_TP_covs (hed.msm, 1, age_cat, sex, race, edu) %>%
+  mutate(From = recode(From,"State 1" = "Non-drinker",  # Rename states
+                            "State 2" = "Drinker, no HED",
+                            "State 3" = "Occasional HED",
+                            "State 4" = "Monthly HED",
+                            "State 5" = "Weekly HED"),
+    To = recode(To, "State.1" = "Non-drinker",
+                    "State.2" = "Drinker, no HED",
+                    "State.3" = "Occasional HED",
+                    "State.4" = "Monthly HED",
+                    "State.5" = "Weekly HED"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition, "Non-drinker->Drinker, no HED",    # re-arrange order of transition variable
+      "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
+      "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", 
+      "Drinker, no HED->Non-drinker"))
+
+# Save TP
+write_csv(hed_annual_TP2, paste0(output, "Transition Probs - HED Annual.csv"))
+
+
+
+# Function to extract TP after 3 years 
+hed_TP_3yrs <- predicted_TP_covs (hed.msm, 3, age_cat, sex, race, edu) %>%
+  mutate(From = recode(From, "State 1" = "Non-drinker",  # Rename states
+                              "State 2" = "Drinker, no HED",
+                              "State 3" = "Occasional HED",
+                              "State 4" = "Monthly HED",
+                              "State 5" = "Weekly HED"),
+                      To = recode(To, "State.1" = "Non-drinker",
+                        "State.2" = "Drinker, no HED",
+                        "State.3" = "Occasional HED",
+                        "State.4" = "Monthly HED",
+                        "State.5" = "Weekly HED"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition, "Non-drinker->Drinker, no HED",    # re-arrange order of transition variable
+      "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
+      "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", 
+      "Drinker, no HED->Non-drinker"))
+
+# Save TP
+write_csv(hed_TP_3yrs, paste0(output, "Transition Probs - HED after 3 years.csv"))
+
+
+
+# Function to extract TP over 10 years  
+hed_yearly_TP <- predicted_TP_overtime (hed.msm, 10, 68004, 4051908) %>%
+  mutate(
+    From = recode(From, "State 1" = "Initial State: Non-drinker",
+      "State 2" = "Initial State: Drinker, no HED",
+      "State 3" = "Initial State: Occasional HED",
+      "State 4" = "Initial State: Monthly HED",
+      "State 5" = "Initial State: Weekly HED"),
+    To = recode(To, "State.1" = "Non-drinker",
+      "State.2" = "Drinker, no HED",
+      "State.3" = "Occasional HED",
+      "State.4" = "Monthly HED",
+      "State.5" = "Weekly HED"),
+    # Re-arrange order
+    From = fct_relevel(From, "Initial State: Non-drinker",  "Initial State: Drinker, no HED",	"Initial State: Occasional HED",	"Initial State: Monthly HED", "Initial State: Weekly HED"),
+    To = fct_relevel(To, "Non-drinker",  "Drinker, no HED",	"Occasional HED",	"Monthly HED", "Weekly HED"))
+
+# Save TP
+write_csv(hed_yearly_TP, paste0(output, "Transition Probs - HED Yearly.csv"))
+
+
+      # Plot TP Over time
+      hed_yearly_TP %>%
+        ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
+        geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
+        facet_wrap(~From) +
+        theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
+        theme(legend.position = c(.85, 0.25)) +
+        scale_y_continuous(breaks=seq(0, 100, by= 10)) + 
+        scale_x_continuous(breaks=seq(0, 10, by= 2))
+      ggsave(paste0(output, "HED TP over time 1.tiff"), dpi=600, width=7.5, height = 5)
+
+
+
+# Function to extract TP over 10 years for each age category
+
+hed_yearly_TP2 <- predicted_TP_overtime_age (hed.msm, 10, age_cat, 68004, 4051908) %>%
+  mutate(
+    From = recode(From, "State 1" = "Initial State: Non-drinker",
+                        "State 2" = "Initial State: Drinker, no HED",
+                        "State 3" = "Initial State: Occasional HED",
+                        "State 4" = "Initial State: Monthly HED",
+                        "State 5" = "Initial State: Weekly HED"),
+    To = recode(To, "State.1" = "Non-drinker",
+                    "State.2" = "Drinker, no HED",
+                    "State.3" = "Occasional HED",
+                    "State.4" = "Monthly HED",
+                    "State.5" = "Weekly HED"),
+    # Re-arrange order
+    From = fct_relevel(From, "Initial State: Non-drinker",  "Initial State: Drinker, no HED",	"Initial State: Occasional HED",	"Initial State: Monthly HED", "Initial State: Weekly HED"),
+    To = fct_relevel(To, "Non-drinker",  "Drinker, no HED",	"Occasional HED",	"Monthly HED", "Weekly HED"))
+
+
+
+          # Plot yearly TP for each age category
+        hed_yearly_TP2 %>%
+            mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", "30-49" = "Ages 30-49 years", "50+" = "Ages 50+ years")) %>%
+            ggplot(aes(x=Year, y=Estimate, group=To)) + geom_line(aes(color=To), size=0.5) + 
+            geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
+            facet_grid(age_cat~From) +
+            theme_bw() + labs(x = "Years Follow-up", y="Transition probability (%)", color="Transition To", fill="Transition To") +
+            theme(legend.position = "top") +
+            scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
+            scale_x_continuous(breaks=seq(0, 10, by= 1))
+          ggsave(paste0(output, "HED TP over time 2.tiff"), dpi=600, width=12, height = 7)
+
+

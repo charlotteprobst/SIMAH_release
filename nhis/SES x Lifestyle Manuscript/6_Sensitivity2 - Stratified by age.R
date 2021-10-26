@@ -20,7 +20,7 @@ library(MASS)       # needed for causal mediation functions
 
 # Specify the data and output file locations
 data    <- "SIMAH_workspace/nhis/Data/"
-output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/Sensitivity/"
+output  <- "C:/Users/klajd/Documents/2021-Present CAMH/NHIS Data/Model Outputs - SES x Lifestyle manuscript/Sensitivity/"
 source("Function - Format Results.R")
 source("Function - CausalMed Results.R")
 
