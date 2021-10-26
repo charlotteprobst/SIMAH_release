@@ -173,3 +173,4 @@ Fig1Supp <- ggplot(data=genderrace, aes(x=year, y=rate, colour=race)) +
 Fig1Supp
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_supplementary.png",
        Fig1Supp, width=33, height=40, units="cm", dpi=300)
+# adding some comments about the code
