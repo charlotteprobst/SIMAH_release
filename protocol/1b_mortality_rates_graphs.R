@@ -71,6 +71,32 @@ sum <- sum %>% group_by(year, sex, edclass, cause, datatype) %>%
 # Specifications for the SES graph
 data_graph <- subset(sum, cause!="Rest")
 
+# recode the causes of death to change order on plot 
+data_graph <- data_graph %>% 
+  mutate(cause = factor(cause, levels=c("AUD","HHD","Stroke",
+                                        "Liver C.","Suicide","Other UI", "MVA",
+                                        "Diabetes",
+                                        "IHD")))
+
+# create dummy data for custom scale 
+cause <- unique(data_graph$cause)
+sex <- unique(data_graph$sex)
+edclass <- unique(data_graph$edclass)
+facet_bounds <- expand.grid(cause,sex,edclass)
+facet_bounds$ymin <- 0
+facet_bounds$ymax <- ifelse(facet_bounds$Var1=="IHD", 300,
+                            ifelse(facet_bounds$Var1=="AUD" | facet_bounds$Var1=="HHD" |
+                                     facet_bounds$Var1=="Stroke", 25,
+                                   50))
+names(facet_bounds) <- c("cause","sex","edclass","ymin","ymax")
+
+ff <- with(facet_bounds,
+           data.frame(rate=c(ymin,ymax),
+                      cause=c(cause,cause),
+                      sex =c(sex,sex),
+                      edclass=c(edclass,edclass)))
+
+
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 ggplot(data=data_graph, aes(x=year, y=(rate), colour=edclass)) + 
   facet_grid(rows = vars(cause), cols = vars(sex), scales = "free") +
@@ -85,7 +111,9 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=edclass)) +
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
   labs(color="Education", linetype = "Data type", size = "Data type") +
-  guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2))
+  guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) + 
+  geom_point(data=ff,x=NA, colour=NA)
+
 ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
 
 

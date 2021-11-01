@@ -40,12 +40,11 @@ ggplot(data=summary, aes(x=YEAR, y=percentage, colour=sex_recode)) +
 # reassign the list such that each state is one element of the list 
 data <- do.call(rbind, dataFiles)
 
-data %>% filter(drinkingstatus==1 & gramsperday==0)
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
 data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
                                      0.01, data$quantity_per_occasion)
-data$gramsperday <- data$quantity_per_occasion*data$alc_frequency/30*14
+data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
 summary(data$gramsperday)
 
 # put cap of 200gpd
@@ -118,7 +117,7 @@ compare <- data %>%
   dplyr::select(YEAR, State, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, gramsperday_upshifted_quotient,
                 gramsperday_upshifted_crquotient) %>% 
   group_by(YEAR, State) %>% 
-  summarise(SALES=mean(gramsperday_adj1), BASELINE=mean(adj_brfss_apc))
+  summarise(SALES=mean(gramsperday_adj1), BASELINE=mean(BRFSS_APC))
 
 percapita_adjusted <- data %>% 
   filter(drinkingstatus_updated==1) %>% 
