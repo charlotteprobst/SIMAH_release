@@ -1,5 +1,5 @@
 ######FUNCTION FOR RUNNING MICROSIMULATION 
-run_microsim <- function(seed,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+run_microsim <- function(seed,samplenum,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                          updatingeducation, education_setup, transitionroles,
                          calculate_migration_rates, outward_migration, inward_migration, 
                          brfss,Rates,AlctransitionProbability,
@@ -18,9 +18,9 @@ if(y>=2001){
   
 if(y>=2000){
 basepop <- apply_death_rates(basepop, deathrates, y)
-DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
+DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
                                               dead, cause) %>% mutate(year=y)
-basepop <- basepop %>% filter(dead==0) %>% select(-c(dead, cause, cat))
+basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, cat))
 }
 basepop$cat <- NULL
 # transition education for individuals aged 34 and under
@@ -36,7 +36,7 @@ if(updatingeducation==1 & y>2000){
                                                                ifelse(totransition$microsimnewED=="SomeC3","SomeC",
                                                                       ifelse(totransition$microsimnewED=="College","College",NA)
                                                                       ))))
-  totransition <- totransition %>% ungroup() %>% select(-c(prob, state, year, cat, newED))
+  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, cat, newED))
   basepop <- rbind(totransition, tostay)
 }
 if(updatingalcohol==1 & y>2000){
@@ -61,14 +61,14 @@ basepop <- subset(basepop, microsim.init.age<=79)
 
 
 }
-# for(i in names(PopPerYear)){
-# Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, microsim.init.race, 
-#                                                              microsim.init.sex, 
-#                                                              microsim.init.education) %>% tally() %>% 
-#     mutate(year=i)
-# }
-# Summary <- do.call(rbind,Summary)
-Summary <- list(PopPerYear, DeathSummary)
+for(i in names(PopPerYear)){
+Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, microsim.init.race,
+                                                             microsim.init.sex,
+                                                             microsim.init.education) %>% tally() %>%
+    mutate(year=i, samplenum=samplenum)
+}
+Summary <- do.call(rbind,Summary)
+# Summary <- list(PopPerYear, DeathSummary)
 return(Summary)
 }
 

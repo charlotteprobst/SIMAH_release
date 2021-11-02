@@ -33,7 +33,25 @@ gendereducation <- gendereducation %>% remove_all_labels() %>%
          type = recode(type, "alc_only"="Alcohol",
                        "opioid_only"="Opioid",
                        "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid")))
+         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid")))
+devtools::install_github("zeehio/facetscales")
+library(g)
+library(facetscales)
+
+type <- c("Alcohol","Opioid","Alcohol and Opioid")
+sex <- c("Men","Women")
+edclass <- c("High school degree or less", "Some college",
+             "College degree or more")
+facet_bounds <- expand.grid(type,sex,edclass)
+facet_bounds$ymin <- 0
+facet_bounds$ymax <- ifelse(facet_bounds$Var1=="Opioid", 40, 9)
+names(facet_bounds) <- c("type","sex","edclass","ymin","ymax")
+
+ff <- with(facet_bounds,
+           data.frame(rate=c(ymin,ymax),
+                      type=c(type,type),
+                      sex =c(sex,sex),
+                      edclass=c(edclass,edclass)))
 
 Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) + 
   geom_line(size=1) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
@@ -41,9 +59,9 @@ Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) +
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_manual(values=color.vec)
-  
+                     text = element_text(size=18, family="serif")) + 
+  xlab("Year") + scale_colour_manual(values=color.vec) + 
+  geom_point(data=ff,x=NA, colour=NA)
   # scale_colour_brewer(palette="Set1")
 Fig1
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_differentscale.png",
@@ -69,7 +87,7 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
          type = recode(type, "alc_only"="Alcohol",
                        "opioid_only"="Opioid",
                        "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid")),
+         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid")),
          race = recode(race, "1"="Non-Hispanic White",
                        "2"="Non-Hispanic Black",
                        "3"="Hispanic",
@@ -78,6 +96,27 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
                                       "Non-Hispanic Black",
                                       "Hispanic",
                                       "Non-Hispanic Others")))
+
+type <- c("Alcohol","Opioid","Alcohol and Opioid")
+sex <- c("Men","Women")
+edclass <- c("High school degree or less", "Some college",
+             "College degree or more")
+race <- c("Non-Hispanic White","Non-Hispanic Black","Hispanic",
+          "Non-Hispanic Others")
+facet_bounds <- expand.grid(type,sex,edclass,race)
+facet_bounds$ymin <- 0
+facet_bounds$ymax <- ifelse(facet_bounds$Var1=="Opioid" & facet_bounds$Var2=="Men", 60,
+                            ifelse(facet_bounds$Var1!="Opioid" & facet_bounds$Var2=="Men",13,
+                                   ifelse(facet_bounds$Var1=="Opioid" & facet_bounds$Var2=="Women",40,
+                                          ifelse(facet_bounds$Var1!="Opioid" & facet_bounds$Var2=="Women",4,NA))))
+names(facet_bounds) <- c("type","sex","edclass","race","ymin","ymax")
+
+ff <- with(facet_bounds,
+           data.frame(rate=c(ymin,ymax),
+                      type=c(type,type),
+                      sex =c(sex,sex),
+                      edclass=c(edclass,edclass),
+                      race=c(race,race)))
 
 Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"), 
                  aes(x=year, y=rate, colour=edclass)) + 
@@ -88,13 +127,14 @@ Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"),
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Men") +
-  scale_colour_manual(values=color.vec)
+  scale_colour_manual(values=color.vec) + geom_point(data=ff,x=NA, colour=NA)
 
-  
-  # scale_colour_brewer(palette="Set1") + 
+
 Fig2p1
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Men.png",
        Fig2p1, width=33, height=19, units="cm", dpi=300)
+
+ff <- ff %>% filter(sex=="Women")
 
 Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"), 
                  aes(x=year, y=rate, colour=edclass)) + 
@@ -104,8 +144,8 @@ Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_manual(values=color.vec) + 
-  ggtitle("Women")
+  xlab("Year") + scale_colour_manual(values=color.vec) +
+  ggtitle("Women") + geom_point(data=ff,x=NA, colour=NA)
 Fig2p2
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Women.png",
        Fig2p2, width=33, height=19, units="cm", dpi=300)

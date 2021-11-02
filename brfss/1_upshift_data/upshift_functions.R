@@ -18,7 +18,8 @@ remove_missing <- function(data){
                                  BMI, drinkingstatus,
                                  alc_frequency, quantity_per_occasion,
                                  gramsperday,
-                                 hed) %>% drop_na()
+                                 hed) %>% drop_na() %>% 
+    filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% filter(State!="territories")
   return(data)
 }
 
@@ -49,12 +50,20 @@ process_APC <- function(data){
   APC <- rbind(APC,USA)
   APC <- APC %>% 
     mutate(State = recode(State,
-                          "6"="California", "8"="Colorado", "12"="Florida",
-                          "18"="Indiana", "21"="Kentucky", "22"="Louisiana",
-                          "25"="Massachusetts", "26"="Michigan", "27"="Minnesota",
-                          "29"="Missouri","36"="New York","41"="Oregon",
-                          "42"="Pennsylvania","47"="Tennessee","48"="Texas",
-                          "USA"="USA", .default="NA"),
+                          "1"="Alabama", "2"="Alaska", "4"="Arizona","5"="Arkansas",
+                          "6"="California", "8"="Colorado", "9"="Connecticut", "10"="Delaware",
+                          "11"="DC", "12"="Florida", "13"="Georgia", "15"="Hawaii",
+                          "16"="Idaho", "17"= "Illinois", "18"="Indiana", "19"="Iowa",
+                          "20"="Kansas", "21"="Kentucky", "22"="Louisiana",
+                          "23"="Maine","24"="Maryland","25"="Massachusetts", "26"="Michigan", "27"="Minnesota",
+                          "28"="Mississippi","29"="Missouri","30"="Montana","31"="Nebraska",
+                          "32"="Nevada", "33"="New Hampshire", "34"="New Jersey", "35"="New Mexico",
+                          "36"="New York","37"="North Carolina","38"="North Dakota","39"="Ohio",
+                          "40"="Oklahoma", "41"="Oregon", 
+                          "42"="Pennsylvania","44"="Rhode Island", "45"="South Carolina", "46"="South Dakota",
+                          "47"="Tennessee","48"="Texas", "49"="Utah", "50"="Vermont", "51"="Virginia",
+                          "53"="Washington", "54"="West Virginia", "55"="Wisconsin","56"="Wyoming",
+                          "99"="USA", .default="NA"),
            State = ifelse(State=="NA",NA,State)) %>% 
     drop_na() %>% 
     # filter(Year>=min(data$YEAR)) %>% 

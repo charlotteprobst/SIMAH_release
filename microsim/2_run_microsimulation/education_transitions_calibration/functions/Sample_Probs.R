@@ -1,0 +1,38 @@
+Sample_Probs <- function(data, model, nsamples, TimePeriod){
+  estimates <- model$estimates.t
+  covmat <- data.frame(model$covmat)
+  samples <- mvrnorm(n=nsamples, estimates, covmat)
+  x <- model
+  age <- sort(unique(data$age))
+  sex <- c(0,1)
+  race <- unique(data$racefinal)
+  # every age sex race combination
+  combinations <- expand.grid(age,sex,race)
+  names(combinations) <- c("age","sex","race")
+  combinations <- data.frame(combinations)
+  options(digits=3)
+  combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, sep="_")
+  # plist <- list()
+  # plist <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
+  #                                msm.parse.covariates, MatrixExp)
+  options(scipen=999)
+  
+  sampleList <- as.list(as.data.frame(t(samples)))
+  names(sampleList) <- 1:nrow(samples)
+  allsamples <- list()
+  for(k in 1:nrow(samples)){
+    estimates <- sampleList[[k]]
+    allsamples[[paste(k)]] <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
+                                                    msm.parse.covariates, MatrixExp)
+    allsamples[[paste(k)]]$SampleNum <- k
+  }
+  allsamples <- do.call(rbind,allsamples)
+  allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo),
+                                      sex = ifelse(sex==1,"female","male"),
+                                      time = TimePeriod) %>% 
+    dplyr::select(SampleNum, StateFrom, StateTo, time, age, sex, race, prob)
+  SampleNum <- 1:nrow(samples)
+  samples <- data.frame(cbind(SampleNum, TimePeriod, samples))
+  list <- list(allsamples, samples)
+  return(list)
+}

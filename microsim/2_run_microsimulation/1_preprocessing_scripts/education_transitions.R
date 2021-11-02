@@ -3,7 +3,7 @@ if(SelectedState=="USA"){
 somec <- read.csv("SIMAH_workplace/microsim/1_input_data/somecollege_ACS.csv")
 }else{
 somec <- read.csv("SIMAH_workplace/microsim/1_input_data/somecollege_ACS_states.csv") %>% filter(STATE==SelectedState) %>% 
-  select(-STATE)
+  dplyr::select(-STATE)
 }
 
 somec <- somec %>% rename(microsim.init.sex=SEX,
@@ -15,7 +15,7 @@ somec <- somec %>% rename(microsim.init.sex=SEX,
                       labels=c("18","19","20","21","22-24","25-29","30-34","35-39","40-44","45-49",
                                "50-54","55-59","60-64","65+")),
          cat=paste(microsim.init.sex,agecat,microsim.init.race, sep="")) %>%
-  select(cat, EDUCdetailed, percent)
+  dplyr::select(cat, EDUCdetailed, percent)
 
 toimpute <- basepop %>% filter(microsim.init.education=="SomeC") %>% 
   mutate(agecat = cut(microsim.init.age,
@@ -103,7 +103,7 @@ transitionProbability$StateTo <- parse_number(transitionProbability$StateTo)
 
 transitionProbability %>% group_by(age, sex, racefinal, StateFrom, Time) %>% summarise(sum(Upper))
 
-summary <- transitionProbability %>% select(Time, Prob, Lower, Upper, age, sex, racefinal, Transition)
+summary <- transitionProbability %>% dplyr::select(Time, Prob, Lower, Upper, age, sex, racefinal, Transition)
 
 transitions1 <- transitionProbability %>% filter(Time=="1999-2005") %>% group_by(age, sex, racefinal, StateFrom) %>%
   mutate(cumsum=cumsum(Prob),
@@ -122,7 +122,7 @@ rm(transitions1, transitions2, transitions3, cats, i, somec, toimpute, neweduc, 
 
 
 transitions <- data.frame(transitions)
-transitions <- transitions %>% select(cat, StateTo, Prob) %>% 
+transitions <- transitions %>% dplyr::select(cat, StateTo, Prob) %>% 
   arrange(cat, StateTo) %>% 
-  group_by(cat) %>% mutate(cumsum=cumsum(Prob)) %>% ungroup() %>% select(-c(Prob))
+  group_by(cat) %>% mutate(cumsum=cumsum(Prob)) %>% ungroup() %>% dplyr::select(-c(Prob))
 transitions$cumsum <- ifelse(transitions$cumsum>=0.9999, 1, transitions$cumsum)
