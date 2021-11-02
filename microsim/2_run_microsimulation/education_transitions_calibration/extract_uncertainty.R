@@ -33,6 +33,13 @@ estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 
 probs <- rbind(Samples1[[1]], Samples2[[1]], Samples3[[1]])
 
-for(i in 1:length(unique(estimates$SampleNum)))
+transitionsList <- list()
+for(i in 1:length(unique(estimates$SampleNum))){
+  transitionsList[[paste(i)]] <- probs %>% filter(SampleNum==i) %>% 
+    mutate(sex = ifelse(sex=="male", "m","f"),
+           cat = paste(time,age, sex, race, "STATEFROM", StateFrom, sep="_")) %>% 
+    group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>% 
+    dplyr::select(cat, StateTo, cumsum)
+}
 
-rm(data, model1, model2, model3, Samples1, Samples2, Samples3)
+rm(data, model1, model2, model3, Samples1, Samples2, Samples3, probs)

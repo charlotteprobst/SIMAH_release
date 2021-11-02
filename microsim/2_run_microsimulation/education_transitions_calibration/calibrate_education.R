@@ -31,7 +31,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
-SelectedState <- "USA"
+SelectedState <- "Texas"
 
 ####Size of population 
 PopulationSize <- 1000000
@@ -77,11 +77,9 @@ Rates$agecat <- as.character(Rates$agecat)
 # now sample parameters for the education transitions
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 
-
-
 Output <- list()
-Output <- run_microsim(1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+Output <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                        updatingeducation, education_setup, transitionroles,
                        calculate_migration_rates, outward_migration, inward_migration, 
                        brfss,Rates,AlctransitionProbability,
-                       transitions, PopPerYear, 2000, 2018)
+                       transitionsList[[1]], PopPerYear, 2000, 2018)

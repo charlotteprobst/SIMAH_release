@@ -9,7 +9,7 @@ percentpop <- PopulationSize / rowSums(cons)
 percentpop <- ifelse(percentpop>1, 1, percentpop)
 
 # if one of the big states or USA - use 30% of the constraints (otherwise CPU overload)
-if(SelectedState=="USA" | SelectedState=="California"){
+if(SelectedState=="USA" | SelectedState=="California" | SelectedState=="Texas"){
 cons <- cons*0.3
 }
 
