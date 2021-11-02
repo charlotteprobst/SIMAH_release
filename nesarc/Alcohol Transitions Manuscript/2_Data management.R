@@ -216,16 +216,17 @@ nesarc_clean <- nesarc %>%
   filter(n()>1) %>%
   ungroup() %>%
 
-  # remove those aged >85 at wave 1 (given that ages >=90 are coded as 90; 711 observations removed; n=68,592)
-  filter(!(wave==1 & age>85)) %>% 
+  # remove those aged >=90 then remove those with data at one time points; 552 observations removed; n=68,784)
+  filter(!(age==90)) %>% 
   group_by(idnum) %>%
   filter(n()>1) %>%
     
-  # remove those with missing alcohol data in either time point (424 observations removed; n=68,168)
-  group_by(idnum) %>% 
-  filter(!any(is.na(alc4))) %>%
+  # remove those with missing alcohol data in either time point (454 observations removed; n=68,168)
+  group_by(idnum) %>%
+  filter(!any(is.na(alc5))) %>%
   ungroup() 
 
+table(nesarc_clean$age)
 
 # label values
 
@@ -243,9 +244,9 @@ nesarc_clean <- nesarc %>%
       labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker"))
     
     nesarc_clean$hed.factor <- factor(nesarc_clean$hed, levels=c(1,2,3,4,5), 
-      labels=c("Non-drinker", "Drinker, but no HED", "HED <1/month", "HED <1/week", "HED >=1/week"))
+      labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED"))
 
-
+ 
     # Covariates 
     nesarc_clean$female.factor <- factor(nesarc_clean$female, levels=c(0,1), labels=c("Men", "Women"))
     
@@ -292,7 +293,8 @@ nesarc_clean_expanded <- nesarc_clean %>%
 nesarc_clean_expanded$age_scaled <- (nesarc_clean_expanded$age - mean(nesarc_clean_expanded$age))/sd(nesarc_clean_expanded$age)
 nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc_clean$age)
 
-filter(nesarc_clean, wave==1) %>% count(hed)
+# check
+# filter(nesarc_clean, wave==1) %>% count(hed)
 
 
   
