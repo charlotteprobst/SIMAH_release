@@ -97,7 +97,8 @@ microsim <- data.frame(microsim.init.id=1:nrow(ints_df),
                        microsim.init.drinkingstatus=ints_df$drinkingstatus, 
                        microsim.init.alc.gpd=ints_df$gramsperday, 
                        agecat=ints_df$agecat, 
-                       alcdays=ints_df$frequency)
+                       alcdays=ints_df$frequency,
+                       formerdrinker = ints_df$formerdrinker)
 
 rm(list=setdiff(ls(), c("microsim", "cons", c(tokeep))))
 

@@ -1,6 +1,7 @@
 Sample_Probs <- function(data, model, nsamples, TimePeriod){
   estimates <- model$estimates.t
   covmat <- data.frame(model$covmat)
+  covmat <- covmat + covmat*0.2
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   age <- sort(unique(data$age))

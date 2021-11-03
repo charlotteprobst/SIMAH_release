@@ -7,7 +7,7 @@ library(tidyr)
 library(MASS)
 
 # how many samples to take from the prior? 
-nsamples <- 100
+nsamples <- 10
 
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msmparsecovariates.R")
@@ -25,9 +25,9 @@ model1 <- readRDS("SIMAH_workplace/education_transitions/educMSM1_tunnelstates.R
 model2 <- readRDS("SIMAH_workplace/education_transitions/educMSM2_tunnelstates.RDS")
 model3 <- readRDS("SIMAH_workplace/education_transitions/educMSM3_tunnelstates.RDS")
 
-Samples1 <- Sample_Probs(data, model1, 10, "1999-2005")
-Samples2 <- Sample_Probs(data, model2, 10, "2006-2011")
-Samples3 <- Sample_Probs(data, model3, 10, "2012-2017")
+Samples1 <- Sample_Probs(data, model1, nsamples, "1999-2005")
+Samples2 <- Sample_Probs(data, model2, nsamples, "2006-2011")
+Samples3 <- Sample_Probs(data, model3, nsamples, "2012-2017")
 
 estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 

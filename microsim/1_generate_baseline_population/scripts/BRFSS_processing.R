@@ -9,11 +9,14 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
          EDUCATION = education_summary,
          agecat = cut(age_var,
                       breaks=c(0,24,34,44,54,64,79),
-                      labels=c("18.24","25.34","35.44","45.54","55.64","65.79")))
+                      labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
+         frequency = ifelse(frequency==0 & gramsperday>0, 1, frequency),
+         quantity_per_occasion = (gramsperday/14 * 30) / frequency,
+         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion))
 
 selected <- brfss %>% filter(State==SelectedState) %>% 
   dplyr::select(region, SEX, RACE, age_var, agecat, EDUCATION, household_income, BMI, drinkingstatus, drinkingstatus_detailed,
-                         gramsperday, frequency, quantity_per_occasion, hed)
+                formerdrinker,gramsperday, frequency, quantity_per_occasion, hed)
 
 # check that there is at least one BRFSS individual in each category in 2000 
 nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())==144
@@ -56,7 +59,7 @@ if(dropping==T){
     dplyr::select(cat, n) %>% filter(n==0)
   missingcats <- unique(missing$cat)
   if(length(missingcats>=1)){
-    toreplace <- brfss %>% drop_na() %>% mutate(cat=paste(RACE,SEX,agecat,EDUCATION,sep="")) %>% 
+    toreplace <- brfss %>% drop_na() %>% filter(region==unique(selected$region)) %>% mutate(cat=paste(RACE,SEX,agecat,EDUCATION,sep="")) %>% 
       filter(cat %in% missingcats) %>% dplyr::select(-c(cat)) %>% sample_n(10, replace=T)
     selected <- rbind(toreplace, selected)
   }
