@@ -28,7 +28,7 @@ setwd(WorkingDirectory)
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee, Washington
 
-SelectedState <- "Texas"
+SelectedState <- "Indiana"
 
 PopulationSize <- 1000000
 
