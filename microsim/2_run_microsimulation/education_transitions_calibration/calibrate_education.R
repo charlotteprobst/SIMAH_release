@@ -102,9 +102,9 @@ Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
                        calculate_migration_rates, outward_migration, inward_migration, 
                        brfss,Rates,AlctransitionProbability,
                        transitionsList[[i]], PopPerYear, 2000, 2018)
-                     }
-
-
+                       }
+                       
+        
 # get target data 
 source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/process_education_compare.R")
 
@@ -123,7 +123,11 @@ error <- left_join(Output,target) %>% ungroup() %>%
   group_by(samplenum) %>% 
   summarise(RMSE = sqrt(mean(errorsq)))
 
-write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_RMSE.csv")
+write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_RMSE.csv", row.names=F)
+
+final <- error[which(error$RMSE==min(error$RMSE)),]$samplenum
+transitions <- transitionsList[[final]]
+saveRDS(transitions, paste0("SIMAH_workplace/microsim/2_output_data/final_ed_transitions", SelectedState, ".RDS"))
 
 # graph <- Output %>% pivot_longer(cols=microsimpercent:targetpercent, values_to="percent") %>% 
 #   mutate(samplenum = ifelse(name=="targetpercent", "target", samplenum))
@@ -147,5 +151,17 @@ ggplot(data=Output, aes(x=year, y=microsimpercent, colour=as.factor(samplenum)))
         legend.title=element_blank()) + 
   ylab("percentage in category")
 ggsave("SIMAH_workplace/microsim/2_output_data/plots/education_states_compare.png",
+       dpi=300, width=33, height=19, units="cm")
+
+
+bestrate <- Output %>% filter(samplenum==final)
+ggplot(data=bestrate, aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
+  geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
+  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.education), scales="free") + 
+  theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
+  theme(legend.position="bottom",
+        legend.title=element_blank()) + 
+  ylab("percentage in category")
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/education_states_bestrate.png",
        dpi=300, width=33, height=19, units="cm")
 
