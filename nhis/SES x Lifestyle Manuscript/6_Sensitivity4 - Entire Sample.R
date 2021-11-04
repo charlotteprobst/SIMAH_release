@@ -1,6 +1,5 @@
-
 # SES x Lifestyle Differential Vulnerability & Exposure Project
-# Sensitivity Analyses 3: Analysis Among the Entire Sample
+# Sensitivity Analyses 4: Analysis Among the Entire Sample
 
 # LOAD DATA AND SET FILE LOCATIONS
 
@@ -18,7 +17,7 @@ library(MASS)       # needed for causal mediation functions
 
 
 # Specify the data and output file locations
-data    <- "SIMAH_workspace/nhis/Data/"
+data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
 output  <- "C:/Users/klajd/Documents/2021-Present CAMH/NHIS Data/Model Outputs - SES x Lifestyle manuscript/Sensitivity/"
 source("Function - Format Results.R")
 source("Function - CausalMed Results.R")
@@ -48,94 +47,73 @@ write.csv(table_e1_v2, file = file.path(output, "Table_e1 Demographics_V2.csv"))
 kableone(table_e1_v1)
 
 
-# Aalen Models (Entire sample) ---------------------------------------------------------------------------------------------------
+# Aalen Models, Entire sample (Objective 1) ---------------------------------------------------------------------------------------------------
+
+# Create function specifying the Aalen models  ------------------------------------------------------------------------------
+interaction_model4 <- function(lifestyle){
+  nhis <- nhis %>%  mutate (lifestyle = {{lifestyle}})
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(lifestyle) + 
+                  const(married.factor) + ethnicity.factor + const(factor(srvy_yr))+ female.factor,  data = nhis)
+  return(model)  
+}
+
+jointeffect_model4 <- function(lifestyle_edu){
+  nhis <- nhis %>%  mutate (lifestyle_edu = {{lifestyle_edu}})
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(lifestyle_edu) + 
+                const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
+  return(model)
+}
 
 
-# FIRST: Run all models and save results  ***************************************************************************************
+## First, Run each model and save results ---------------------------------------------------------------------------------
 
-## Alcohol x Education : Interaction model
-model <- "_alc_all"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
+# Alcohol Use 
+interaction_model4(alcohol5v2.factor) %>% saveRDS(paste0(output, "aalen_alc_all.rds"))
+jointeffect_model4(edu.alc)           %>% saveRDS(paste0(output, "aalen_alc_all2.rds"))
 
-      ## Alcohol x Education: Joint effect model
-      model <- "_alc_all2"   # Used to name the file
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+## Smoking 
+interaction_model4(smoking4.factor) %>% saveRDS(paste0(output, "aalen_smk_all.rds"))
+jointeffect_model4(edu.smk)         %>% saveRDS(paste0(output, "aalen_smk_all2.rds"))
 
-      
+# BMI 
+interaction_model4(bmi_cat.factor) %>% saveRDS(paste0(output, "aalen_bmi_all.rds"))
+jointeffect_model4(edu.bmi)        %>% saveRDS(paste0(output, "aalen_bmi_all2.rds"))
 
-## Smoking x Education : Interaction model
-model <- "_smk_all"   # Used to name the file
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      ## Smoking x Education : Joint effect model
-      model <- "_smk_all2"   # Used to name the file
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-    
-      
-      
-# BMI x Education : Interaction model
-model <- "_bmi_all"   # Used to name the file
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # BMI x Education : Joint effect model
-      model <- "_bmi_all2"   # Used to name the file
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-    
-      
-      
-# Physical Activity x Education : Interaction model
-model <- "_phy_all"   # Used to name the file
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # Physical Activity x Education : Joint effect model
-      model <- "_phy_all2"   # Used to name the file
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)) + female.factor,  data = nhis)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-        
+# Physical Activity 
+interaction_model4(phy_act3.factor) %>% saveRDS(paste0(output, "aalen_phy_all.rds"))
+jointeffect_model4(edu.phy)         %>% saveRDS(paste0(output, "aalen_phy_all2.rds"))
 
 
-## SECOND: Load and view results ***************************************************************************************    
+
+## Second: Load and view results -------------------------------------------------------------------------------------
 
 ## Alcohol x Education: All participants
-model <- "_alc_all" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))  
-model <- "_alc_all2" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+aalen <-readRDS(paste0(output, "aalen_alc_all.rds"))  
+aalen2 <-readRDS(paste0(output, "aalen_alc_all2.rds"))  
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)
 
 
 ## Smoking x Education: All participants 
-model <- "_smk_all" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-model <- "_smk_all2" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))   
+aalen <-readRDS(paste0(output, "aalen_smk_all.rds"))  
+aalen2 <-readRDS(paste0(output, "aalen_smk_all2.rds"))  
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)
 
 
 # BMI x Education: All participants
-model <- "_bmi_all" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-model <- "_bmi_all2" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))             
+aalen <-readRDS(paste0(output, "aalen_bmi_all.rds"))  
+aalen2 <-readRDS(paste0(output, "aalen_bmi_all2.rds"))            
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)
 
 
 # Physical Activity x Education: All participants
-model <- "_phy_all" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-model <- "_phy_all2" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))             
+aalen <-readRDS(paste0(output, "aalen_phy_all.rds"))  
+aalen2 <-readRDS(paste0(output, "aalen_phy_all2.rds"))              
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 3); aalen_10000py(aalen2, 4); aalen_10000py(aalen, 23)
 
     
     
     
-    
-
-
-# Causal Mediation Data Preparation (Entire Sample) -----------------------------------------------------------------------------------------
+# Causal Mediation Data Preparation, Entire Sample (Objective 2)) -----------------------------------------------------------------------------------------
 
 ### Step 0: Select data and load functions **************************************************************************************************************
 # *******************************************************************************************************************************************************
@@ -155,13 +133,6 @@ mydata$A.edu <- relevel(mydata$A.edu, ref = "High")
 # NOTE: For technical reasons, the mediators should be coded as integers starting with 1
 
 
-# Select random subset of the sample
-# mydata <- sample_frac(mydata, .01) # selects X% of sample at random
-
-
-
-
-
 ### Step 1: Fit a model for each mediator ***************************************************************************************************************
 # *******************************************************************************************************************************************************
 
@@ -172,8 +143,6 @@ fitM1 <- vglm(M1.alc ~ ATemp + bl_age + female + married + factor(ethnicity) + f
 fitM2 <- vglm(M2.smk ~ ATemp + bl_age + female + married + factor(ethnicity) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 1))
 fitM3 <- vglm(M3.bmi ~ ATemp + bl_age + female + married + factor(ethnicity) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 2))
 fitM4 <- vglm(M4.phy ~ ATemp + bl_age + female + married + factor(ethnicity) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
-
-
 
 
 
@@ -229,7 +198,6 @@ newMyData_2 <- newMyData[16838443:nrow(newMyData), ]
 
 
 
-
 ### Step 3: Construct weights  *********************************************************************************************************************
 # **************************************************************************************************************************************************
 
@@ -257,8 +225,6 @@ newMyData$weight1 <- tempIndir1/tempDir1
 
 
 
-
-
 #M2: Smoking
 # Part 1
 newMyData_1$ATemp <- newMyData_1$A.edu
@@ -280,7 +246,6 @@ tempDir2 <- c(tempDir2a, tempDir2b)
 tempIndir2 <- c(tempIndir2a, tempIndir2b)
 
 newMyData$weight2 <- tempIndir2/tempDir2
-
 
 
 
@@ -339,6 +304,7 @@ hist(newMyData$weightM)
 
 ## save expanded data
 saveRDS(newMyData, file.path(output, "expandedData_all.rds"))
+
 
 
 # Causal Mediation Analysis (Entire Sample) ----------------------------------------------------------------------------------

@@ -18,8 +18,8 @@ library(biostat3)   # survRate command
 
 
 # Specify the data and output file locations
-data    <- "SIMAH_workspace/nhis/Data"
-output  <- "SIMAH_workspace/nhis/SES x Behavior/Output/"
+data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/"
 
 
 # Load data

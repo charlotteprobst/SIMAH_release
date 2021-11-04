@@ -19,13 +19,12 @@ library(MASS)       # needed for causal mediation functions
 
 
 # Specify the data and output file locations
-data    <- "SIMAH_workspace/nhis/Data/"
+data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
 output  <- "C:/Users/klajd/Documents/2021-Present CAMH/NHIS Data/Model Outputs - SES x Lifestyle manuscript/Sensitivity/"
 source("Function - Format Results.R")
 source("Function - CausalMed Results.R")
 
 
-    
 # Load data
 nhis        <- readRDS (file.path(data, "nhis.rds"))
 nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
@@ -33,491 +32,242 @@ nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 
 
-# Aalen Models (Stratified by age) --------------------------------------------------------------------------------------------------
+# Aalen Models Stratified by age (Objective 1) --------------------------------------------------------------------------------------------------
 
-# FIRST: Run all models and save results  *******************************************************************************************
+## Create function specifying the Aalen models ---------------------------------------------------------------------------------------------------
 
-### ALCOHOL * Education  ************************************************************************************************************
+interaction_model3 <- function(data, lifestyle, start_time, end_time){
+  data <- data %>%  mutate (lifestyle = {{lifestyle}})
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(lifestyle) + 
+                  const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data, start.time=start_time, max.time=end_time)
+  return(model)  
+}
 
-# WOMEN AGES 25-60: Interaction model
-model <- "_alc_f_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
+jointeffect_model3 <- function(data, lifestyle_edu, start_time, end_time){
+  data <- data %>%  mutate (lifestyle_edu = {{lifestyle_edu}})
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(lifestyle_edu) + 
+                  const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data, start.time=start_time, max.time=end_time)
+  return(model)
+}
 
-      # WOMEN AGES 25-60: Joint effect model
-      model <- "_alc_f2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
 
 
-# WOMEN AGES 60-70: Interaction model
-model <- "_alc_f_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-    start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # WOMEN AGES 60-70: joint effects model
-      model <- "_alc_f2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+## First, Run all models and save results -----------------------------------------------------------------------------------------------------------
 
+# Alcohol Use, Women  
+interaction_model3(nhis_female, alcohol5v2.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_alc_f_25_60.rds"))
+jointeffect_model3(nhis_female, edu.alc, 25, 59.999)           %>% saveRDS(paste0(output, "aalen_alc_f2_25_60.rds"))
 
+interaction_model3(nhis_female, alcohol5v2.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_alc_f_60_70.rds"))
+jointeffect_model3(nhis_female, edu.alc, 60, 69.999)           %>% saveRDS(paste0(output, "aalen_alc_f2_60_70.rds"))
 
-# WOMEN AGES 70-85: Interaction model
-model <- "_alc_f_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-    start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
+interaction_model3(nhis_female, alcohol5v2.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_alc_f_70_85.rds"))
+jointeffect_model3(nhis_female, edu.alc, 70, 84.999)           %>% saveRDS(paste0(output, "aalen_alc_f2_70_85.rds"))
 
-      # WOMEN AGES 70-85: joint effects model
-      model <- "_alc_f2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+# Alcohol Use, Men  
+interaction_model3(nhis_male, alcohol5v2.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_alc_m_25_60.rds"))
+jointeffect_model3(nhis_male, edu.alc, 25, 59.999)           %>% saveRDS(paste0(output, "aalen_alc_m2_25_60.rds"))
 
+interaction_model3(nhis_male, alcohol5v2.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_alc_m_60_70.rds"))
+jointeffect_model3(nhis_male, edu.alc, 60, 69.999)           %>% saveRDS(paste0(output, "aalen_alc_m2_60_70.rds"))
 
+interaction_model3(nhis_male, alcohol5v2.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_alc_m_70_85.rds"))
+jointeffect_model3(nhis_male, edu.alc, 70, 84.999)           %>% saveRDS(paste0(output, "aalen_alc_m2_70_85.rds"))
 
 
-# MEN AGES 25-60: Interaction model
-model <- "_alc_m_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-    start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
 
-      # MEN AGES 25-60: Interaction model
-      model <- "_alc_m2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+# Smoking, Women  
+interaction_model3(nhis_female, smoking4.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_smk_f_25_60.rds"))
+jointeffect_model3(nhis_female, edu.smk, 25, 59.999)         %>% saveRDS(paste0(output, "aalen_smk_f2_25_60.rds"))
 
+interaction_model3(nhis_female, smoking4.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_smk_f_60_70.rds"))
+jointeffect_model3(nhis_female, edu.smk, 60, 69.999)         %>% saveRDS(paste0(output, "aalen_smk_f2_60_70.rds"))
 
+interaction_model3(nhis_female, smoking4.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_smk_f_70_85.rds"))
+jointeffect_model3(nhis_female, edu.smk, 70, 84.999)         %>% saveRDS(paste0(output, "aalen_smk_f2_70_85.rds"))
 
-# MEN AGES 60-70: Interaction model
-model <- "_alc_m_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-    start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
+# Smoking, Men  
+interaction_model3(nhis_male, smoking4.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_smk_m_25_60.rds"))
+jointeffect_model3(nhis_male, edu.smk, 25, 59.999)         %>% saveRDS(paste0(output, "aalen_smk_m2_25_60.rds"))
 
-      # MEN AGES 60-70: joint effects model
-      model <- "_alc_m2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+interaction_model3(nhis_male, smoking4.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_smk_m_60_70.rds"))
+jointeffect_model3(nhis_male, edu.smk, 60, 69.999)         %>% saveRDS(paste0(output, "aalen_smk_m2_60_70.rds"))
 
+interaction_model3(nhis_male, smoking4.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_smk_m_70_85.rds"))
+jointeffect_model3(nhis_male, edu.smk, 70, 84.999)         %>% saveRDS(paste0(output, "aalen_smk_m2_70_85.rds"))
 
 
-# MEN AGES 70-85: Interaction model
-model <- "_alc_m_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(alcohol5v2.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-    start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
 
+# BMI, Women  
+interaction_model3(nhis_female, bmi_cat.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_bmi_f_25_60.rds"))
+jointeffect_model3(nhis_female, edu.bmi, 25, 59.999)        %>% saveRDS(paste0(output, "aalen_bmi_f2_25_60.rds"))
 
-      # MEN AGES 70-85: joint effects model
-      model <- "_alc_m2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.alc) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+interaction_model3(nhis_female, bmi_cat.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_bmi_f_60_70.rds"))
+jointeffect_model3(nhis_female, edu.bmi, 60, 69.999)        %>% saveRDS(paste0(output, "aalen_bmi_f2_60_70.rds"))
 
+interaction_model3(nhis_female, bmi_cat.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_bmi_f_70_85.rds"))
+jointeffect_model3(nhis_female, edu.bmi, 70, 84.999)        %>% saveRDS(paste0(output, "aalen_bmi_f2_70_85.rds"))
 
+# BMI, Men  
+interaction_model3(nhis_male, bmi_cat.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_bmi_m_25_60.rds"))
+jointeffect_model3(nhis_male, edu.bmi, 25, 59.999)        %>% saveRDS(paste0(output, "aalen_bmi_m2_25_60.rds"))
 
+interaction_model3(nhis_male, bmi_cat.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_bmi_m_60_70.rds"))
+jointeffect_model3(nhis_male, edu.bmi, 60, 69.999)        %>% saveRDS(paste0(output, "aalen_bmi_m2_60_70.rds"))
 
+interaction_model3(nhis_male, bmi_cat.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_bmi_m_70_85.rds"))
+jointeffect_model3(nhis_male, edu.bmi, 70, 84.999)        %>% saveRDS(paste0(output, "aalen_bmi_m2_70_85.rds"))
 
-### SMOKING * Education ************************************************************************************************************
 
-# WOMEN AGES 25-60: Interaction model
-model <- "_smk_f_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # WOMEN AGES 25-60: joint effects model
-      model <- "_smk_f2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
 
+# Physical Activity, Women  
+interaction_model3(nhis_female, phy_act3.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_phy_f_25_60.rds"))
+jointeffect_model3(nhis_female, edu.phy, 25, 59.999)         %>% saveRDS(paste0(output, "aalen_phy_f2_25_60.rds"))
 
+interaction_model3(nhis_female, phy_act3.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_phy_f_60_70.rds"))
+jointeffect_model3(nhis_female, edu.phy, 60, 69.999)         %>% saveRDS(paste0(output, "aalen_phy_f2_60_70.rds"))
 
-# WOMEN AGES 60-70: Interaction model
-model <- "_smk_f_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
+interaction_model3(nhis_female, phy_act3.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_phy_f_70_85.rds"))
+jointeffect_model3(nhis_female, edu.phy, 70, 84.999)         %>% saveRDS(paste0(output, "aalen_phy_f2_70_85.rds"))
 
-      # WOMEN AGES 60-70: joint effects  model
-      model <- "_smk_f2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
+# Physical Activity, Men  
+interaction_model3(nhis_male, phy_act3.factor, 25, 59.999) %>% saveRDS(paste0(output, "aalen_phy_m_25_60.rds"))
+jointeffect_model3(nhis_male, edu.phy, 25, 59.999)         %>% saveRDS(paste0(output, "aalen_phy_m2_25_60.rds"))
 
+interaction_model3(nhis_male, phy_act3.factor, 60, 69.999) %>% saveRDS(paste0(output, "aalen_phy_m_60_70.rds"))
+jointeffect_model3(nhis_male, edu.phy, 60, 69.999)         %>% saveRDS(paste0(output, "aalen_phy_m2_60_70.rds"))
 
+interaction_model3(nhis_male, phy_act3.factor, 70, 84.999) %>% saveRDS(paste0(output, "aalen_phy_m_70_85.rds"))
+jointeffect_model3(nhis_male, edu.phy, 70, 84.999)         %>% saveRDS(paste0(output, "aalen_phy_m2_70_85.rds"))
 
-# WOMEN AGES 70-85: Interaction model
-model <- "_smk_f_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
 
-      # WOMEN AGES 70-85: joint effects  model
-      model <- "_smk_f2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
 
 
 
-# MEN AGES 25-60: Interaction model
-model <- "_smk_m_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 25-60: joint effects  model
-      model <- "_smk_m2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 60-70: Interaction model
-model <- "_smk_m_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 60-70: joint effects  model
-      model <- "_smk_m2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 70-85: Interaction model
-model <- "_smk_m_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(smoking4.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # MEN AGES 70-85: joint effects  model
-      model <- "_smk_m2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.smk) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-### BMI * Education ************************************************************************************************************
-
-# WOMEN AGES 25-60: Interaction model
-model <- "_bmi_f_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # WOMEN AGES 25-60: joint effects  model
-      model <- "_bmi_f2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# WOMEN AGES 60-70: Interaction model    
-model <- "_bmi_f_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # WOMEN AGES 60-70: joint effects  model    
-      model <- "_bmi_f2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# WOMEN AGES 70-85: Interaction model
-model <- "_bmi_f_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # WOMEN AGES 70-85: joint effects  model
-      model <- "_bmi_f2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-
-
-# MEN AGES 25-60: Interaction model
-model <- "_bmi_m_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 25-60: joint effects  model
-      model <- "_bmi_m2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 60-70: Interaction model
-model <- "_bmi_m_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 60-70: joint effects  model
-      model <- "_bmi_m2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 70-85: Interaction model
-model <- "_bmi_m_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(bmi_cat.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 70-85: joint effects  model
-      model <- "_bmi_m2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.bmi) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-      
-### PHYSICAL ACTIVITY * Education ************************************************************************************************************
-
-# WOMEN AGES 25-60: Interaction model
-model <- "_phy_f_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # WOMEN AGES 25-60: joint effects model
-      model <- "_phy_f2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# WOMEN AGES 60-70: Interaction model
-model <- "_phy_f_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # WOMEN AGES 60-70: joint effects model
-      model <- "_phy_f2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# WOMEN AGES 70-85: Interaction model
-model <- "_phy_f_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # WOMEN AGES 70-85: joint effects model
-      model <- "_phy_f2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_female, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 25-60: Interaction model
-model <- "_phy_m_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-start.time=25, max.time=59.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-
-      # MEN AGES 25-60: joint effects model
-      model <- "_phy_m2_25_60"   # Used to name the files appropriately: specify health behavior and sex strata
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=25, max.time=59.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 60-70: Interaction model
-model <- "_phy_m_60_70"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=60, max.time=69.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # MEN AGES 60-70: joint effects model
-      model <- "_phy_m2_60_70"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=60, max.time=69.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds"))  ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-# MEN AGES 70-85: Interaction model
-model <- "_phy_m_70_85"
-aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.factor)*const(phy_act3.factor) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male,
-  start.time=70, max.time=84.999)
-saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()
-      
-      # MEN AGES 70-85: joint effects model
-      model <- "_phy_m2_70_85"   
-      aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(edu.phy) + const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = nhis_male, 
-        start.time=70, max.time=84.999)
-      saveRDS(aalen, paste0(output, "aalen", model, ".rds")) ; pdf(paste0(output, "aalen", model, ".pdf")); plot(aalen); dev.off()  
-
-
-
-
-
-# Second: Load and view model results  ***************************************************************************************
+## Second: Load and view model results --------------------------------------------------------------------------------------------
 
 # Alcohol, Women
-model <- "_alc_f_25_60"  ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   # Name and load the model            
-model <- "_alc_f2_25_60"  ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))
-aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31) # print results of interest
+aalen <-readRDS(paste0(output, "aalen_alc_f_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_alc_f2_25_60.rds"))
+aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)
 
-      model <- "_alc_f_60_70"  ;   aalen <-readRDS(paste0(output, "aalen", model, ".rds"))                                                      
-      model <- "_alc_f2_60_70"  ;   aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))       
+      aalen <-readRDS(paste0(output, "aalen_alc_f_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_alc_f2_60_70.rds"))       
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)   
       
-      model <- "_alc_f_70_85" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))        
-      model <- "_alc_f2_70_85" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds")) 
+      aalen <-readRDS(paste0(output, "aalen_alc_f_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_alc_f2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)   
 
 
  
 # Smoking, Women
-model <- "_smk_f_25_60"   ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))             
-model <- "_smk_f2_25_60"   ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))                                
+aalen <-readRDS(paste0(output, "aalen_smk_f_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_smk_f2_25_60.rds"))                           
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
 
-      model <- "_smk_f_60_70" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))    
-      model <- "_smk_f2_60_70" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))    
+      aalen <-readRDS(paste0(output, "aalen_smk_f_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_smk_f2_60_70.rds"))   
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
-      model <- "_smk_f_70_85"  ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))      
-      model <- "_smk_f2_70_85"  ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))      
+      aalen <-readRDS(paste0(output, "aalen_smk_f_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_smk_f2_70_85.rds"))    
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
 
 
 # BMI, Women
-model <- "_bmi_f_25_60" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-model <- "_bmi_f2_25_60" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))                                
+aalen <-readRDS(paste0(output, "aalen_bmi_f_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_bmi_f2_25_60.rds"))                              
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
 
-      model <- "_bmi_f_60_70" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))  
-      model <- "_bmi_f2_60_70" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))                                
-            aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
-      
-      model <- "_bmi_f_70_85"  ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))  
-      model <- "_bmi_f2_70_85"  ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_bmi_f_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_bmi_f2_60_70.rds"))                                
+      aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
+
+      aalen <-readRDS(paste0(output, "aalen_bmi_f_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_bmi_f2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
 
 # Physical Activity, Women
-model <- "_phy_f_25_60" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))       
-model <- "_phy_f2_25_60" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))   
+aalen <-readRDS(paste0(output, "aalen_phy_f_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_phy_f2_25_60.rds"))     
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
       
-      model <- "_phy_f_60_70"  ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))    
-      model <- "_phy_f2_60_70"  ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_phy_f_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_phy_f2_60_70.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
       
-      model <- "_phy_f_70_85" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))
-      model <- "_phy_f2_70_85" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_phy_f_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_phy_f2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
 
 
 
-
-
-
-      
-      
-      
 
 # Alcohol, Men
-model <- "_alc_m_25_60" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))    
-model <- "_alc_m2_25_60" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds")) 
-aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)   
+aalen <-readRDS(paste0(output, "aalen_alc_m_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_alc_m2_25_60.rds"))
+aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31) # print results of interest
       
-      model <- "_alc_m_60_70" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds")) 
-      model <- "_alc_m2_60_70" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_alc_m_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_alc_m2_60_70.rds"))       
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)   
       
-      model <- "_alc_m_70_85"  ;   aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-      model <- "_alc_m2_70_85"  ;   aalen2 <-readRDS(paste0(output, "aalen", model, ".rds")) 
+      aalen <-readRDS(paste0(output, "aalen_alc_m_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_alc_m2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 6); aalen_10000py(aalen2, 13); aalen_10000py(aalen, 31)   
       
       
-
+      
 # Smoking, Men
-model <- "_smk_m_25_60" ;  aalen <-readRDS(paste0(output, "aalen", model, ".rds"))        
-model <- "_smk_m2_25_60" ;  aalen2 <-readRDS(paste0(output, "aalen", model, ".rds")) 
+aalen <-readRDS(paste0(output, "aalen_smk_m_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_smk_m2_25_60.rds"))                           
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
-      model <- "_smk_m_60_70" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))             
-      model <- "_smk_m2_60_70" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_smk_m_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_smk_m2_60_70.rds"))   
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
-      model <- "_smk_m_70_85" ;   aalen <-readRDS(paste0(output, "aalen", model, ".rds"))  
-      model <- "_smk_m2_70_85" ;   aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))    
+      aalen <-readRDS(paste0(output, "aalen_smk_m_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_smk_m2_70_85.rds"))    
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
       
 # BMI, Men
-model <- "_bmi_m_25_60" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))
-model <- "_bmi_m2_25_60" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))
-aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)
-
-      model <- "_bmi_m_60_70" ;aalen <-readRDS(paste0(output, "aalen", model, ".rds"))
-      model <- "_bmi_m2_60_70" ;aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))
+aalen <-readRDS(paste0(output, "aalen_bmi_m_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_bmi_m2_25_60.rds"))                              
+aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
+      
+      aalen <-readRDS(paste0(output, "aalen_bmi_m_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_bmi_m2_60_70.rds"))                                
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
-      model <- "_bmi_m_70_85" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))
-      model <- "_bmi_m2_70_85" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))
+      aalen <-readRDS(paste0(output, "aalen_bmi_m_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_bmi_m2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 5); aalen_10000py(aalen2, 10); aalen_10000py(aalen, 28)   
       
       
 # Physical Activity, Men
-model <- "_phy_m_25_60" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))       
-model <- "_phy_m2_25_60" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))      
+aalen <-readRDS(paste0(output, "aalen_phy_m_25_60.rds"))         
+aalen2 <-readRDS(paste0(output, "aalen_phy_m2_25_60.rds"))     
 aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
-
-      model <- "_phy_m_60_70" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))   
-      model <- "_phy_m2_60_70" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))   
+      
+      aalen <-readRDS(paste0(output, "aalen_phy_m_60_70.rds"))                                                      
+      aalen2 <-readRDS(paste0(output, "aalen_phy_m2_60_70.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
       
-      model <- "_phy_m_70_85" ; aalen <-readRDS(paste0(output, "aalen", model, ".rds"))        
-      model <- "_phy_m2_70_85" ; aalen2 <-readRDS(paste0(output, "aalen", model, ".rds"))  
+      aalen <-readRDS(paste0(output, "aalen_phy_m_70_85.rds"))        
+      aalen2 <-readRDS(paste0(output, "aalen_phy_m2_70_85.rds")) 
       aalen_10000py(aalen, 1); aalen_10000py(aalen, 3);aalen_10000py(aalen2, 4);  aalen_10000py(aalen, 23)   
-
+      
+      
 
 
 
 
       
-# WOMEN - Causal Mediation Analysis (Stratified by age) ----------------------------------------------------------------------------------
+# WOMEN - Causal Mediation Analysis Stratified by age (Objective 2) ----------------------------------------------------------------------------------
 
 # Load data (used the same data as that generated from the main analysis)
 expandedData <-readRDS(file.path(output, "expandedData_fem.rds"))
@@ -588,8 +338,8 @@ CMed_f_70_85 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * con
 
 
 
-# MEN - Causal Mediation Analysis (Stratified by age) ----------------------------------------------------------------------------------
-
+# MEN - Causal Mediation Analysis Stratified by age (Objective 2) ----------------------------------------------------------------------------------
+          
 # Load data (used the same data as that generated from the main analysis)
 expandedData <-readRDS(file.path(output, "expandedData_male.rds"))
 

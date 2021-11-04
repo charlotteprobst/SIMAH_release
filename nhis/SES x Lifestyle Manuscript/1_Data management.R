@@ -187,29 +187,7 @@ nhis_age25_85 <- filter (nhis_all, age>=25 & age <85)
         nhis_male <- filter(nhis, female==0)
         
         
-        
-# Create a database utilizing survey weights and design variables
-# See the Survey Desctiption - Appendix III (Variance Estimation Method for Public Use Data) and Appendix IV (Merging Data Files and Combining Years of Data in the NHIS)
-        
-nhis_svyWeights_all <- svydesign(id = ~new_psu,
-                                 strata  = ~new_stratum,
-                                 weights = ~new_weight,
-                                 nest    = TRUE,
-                                 data    = nhis_all)
-        
-  # Create subset with no missing data, correcting for survey weights
-  nhis_svyWeights <- subset(nhis_svyWeights_all, 
-                            !is.na(yrs_followup) & !is.na(mortstat) & 
-                            !is.na(alcohol5v2) & !is.na(bmi_cat) & !is.na(smoking4) & !is.na(phy_act3) &
-                            !is.na(edu) & !is.na(age) & !is.na(female) & !is.na(married) & !is.na(ethnicity) & 
-                            (age>=25 & age <85))
-  
-  
-  # Create subset with males or females only
-  nhis_svyWeights_female <- subset(nhis_svyWeights,  female==1)
-  nhis_svyWeights_male <- subset(nhis_svyWeights,  female==0)
-  
-  
+
   
 
 # Save copy of final datasets  
@@ -217,9 +195,4 @@ saveRDS(nhis_all, paste0(data, "nhis_all.rds"))         # NHIS data with all par
 saveRDS(nhis, paste0(data, "nhis.rds"))                 # NHIS data to be analyzed
 saveRDS(nhis_male, paste0(data, "nhis_male.rds"))       # NHIS data to be analyzed (males only)
 saveRDS(nhis_female, paste0(data, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
-saveRDS(nhis_svyWeights_all, paste0(data, "nhis_svyWeights_all.rds"))   # NHIS data with all participants (using survey weights)
-saveRDS(nhis_svyWeights, paste0(data, "nhis_svyWeights.rds"))           # NHIS data to be analyzed (using survey weights)
-saveRDS(nhis_svyWeights_female, paste0(data, "nhis_svyWeights_female.rds"))           # NHIS data to be analyzed (using survey weights)
-saveRDS(nhis_svyWeights_male, paste0(data, "nhis_svyWeights_male.rds"))           # NHIS data to be analyzed (using survey weights)
-
 
