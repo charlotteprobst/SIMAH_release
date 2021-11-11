@@ -23,9 +23,9 @@ output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Ou
 
 
 # Load data
-nhis        <- readRDS (file.path(data, "nhis.rds"))
-nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
-nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
+nhis        <- readRDS (paste0(data, "nhis.rds"))
+nhis_male   <- readRDS (paste0(data, "nhis_male.rds"))
+nhis_female <- readRDS (paste0(data, "nhis_female.rds"))
 
 
 

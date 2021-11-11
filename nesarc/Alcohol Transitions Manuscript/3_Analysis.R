@@ -360,7 +360,8 @@ age_cat <- unique(nesarc_expanded$age3.factor)
 sex <- unique(nesarc_expanded$female_wave1.factor)
 race <- unique(nesarc_expanded$race_wave1.factor)
 edu <- unique(nesarc_expanded$edu3.factor)
-    
+
+
 
 # Function to extract annual TP (to provide as a supplement)
 alc5_annual_TP_covs <- predicted_TP_covs (alc5.msm, 1, age_cat, sex, race, edu) %>%

@@ -15,7 +15,7 @@ data  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
 
 # Import data form SAS and edit/recategorize variables 
 
-nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
+nhis_all <- read_sas ("C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
   zap_formats() %>% zap_label() %>% clean_names() %>%   # removes labels/formats form SAS and clean names
   filter(!is.na(mortstat) & !is.na(new_weight)) %>%     # remove people for whom mortality data is not available and the one person that doesn't have a mortality weight
   # Recode and create variables
@@ -25,43 +25,27 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
           alcohol4 = recode(alcohol5, `1`=1, `2`=2, `3`=3, `4`=4, `5`=4),           # merge high risk and very high risk group
           alcohol5v2 = recode(alcohol6, `1`=1, `2`=2, `3`=3, `4`=4, `5`=5, `6`=5),  # separate former/never drinkers and merge high risk and very high risk group
           smoking4 = recode(smoking, `0`=1, `1`=2, `2`=3, `3`=4),                   # recoded such that '1' is the first/smallest category
-          smoking3 = recode(smoking, `0`=1, `1`=2, `2`=3, `3`=3),                   # merge current everyday and some day smokers
-          ucod_leading = if_else(mortstat==0, "000",  ucod_leading),                # Assign 'alive' category to the cause of death variable
-          death_type = case_when(ucod_leading=="000" ~ 0,                           # alive
-                                ucod_leading=="004" ~ 1,                            # accident
-                                ucod_leading%in% c("001") ~ 2,                      # Cardiovascular disease (CVD)
-                                ucod_leading=="003" ~ 3,                            # Chronic respiratory diseases (CRDs)
-                                ucod_leading %in% c("002","005", "006", "007", "008", "009", "010") ~ 4), #other deaths
-          allcause_death = mortstat,
-          heart_death = ifelse(ucod_leading=="001", 1, 0),  # death from 'diseases of heart'
-          neoplasm_death = ifelse(ucod_leading=="002", 1, 0),  # death from 'malignant neoplasms'
-          cvd_death = ifelse(ucod_leading=="005", 1, 0),  # death from 'Cerebrovascular diseases'
-          diabetes_death = ifelse(ucod_leading=="007", 1, 0))  # death from 'Diabetes mellitus'
-    
+          allcause_death = mortstat)
                                 
          str(nhis_all)
           # Check recoding                                     
           # count(nhis_all, alcohol5, alcohol4)
           # count(nhis_all, alcohol6, alcohol5_2)
-          # count(nhis_all, smoking, smoking3)
-          # count(nhis_all, mortstat, death_type, accid_death, cvd_death, crd_death, other_death)
 
 
-         
-         
+
 # Label variables 
 
         # Exposures
-        nhis_all$edu.factor <- factor(nhis_all$edu, levels=c(1,2,3),
-                                  labels = c("Highschool", "Some college", "Bachelors"))
-                  nhis_all$edu.factor <- relevel(nhis_all$edu.factor, ref = "Bachelors")    # specifies the reference category      
+        nhis_all$edu.factor <- factor(nhis_all$edu, levels=c(3,1,2), 
+                                  labels = c("Bachelors", "Highschool", "Some college"))
         
-        nhis_all$income.factor <- factor(nhis_all$income, levels=c(1,2,3,4,5), labels = c("Poor","Near poor","Middle income", "High income", "Missing"))
-                  nhis_all$income.factor <- relevel(nhis_all$income.factor, ref = "High income")    # specifies the reference category 
+        nhis_all$income.factor <- factor(nhis_all$income, levels=c(4,1,2,3,5), 
+                                    labels = c("High income", "Poor","Near poor","Middle income", "Missing"))
         
-        nhis_all$income4.factor <- factor(nhis_all$income4, levels=c(1,2,3,4), labels = c("Low","Medium", "High", "Missing"))
-                  nhis_all$income4.factor <- relevel(nhis_all$income4.factor, ref = "High")    # specifies the reference category 
-                  
+        nhis_all$income4.factor <- factor(nhis_all$income4, levels=c(3,1,2,4), 
+                                      labels = c( "High", "Low","Medium", "Missing"))
+
                   
         # Mediator 1 - Alcohol
         nhis_all$alcohol5.factor <- factor(nhis_all$alcohol5, levels=c(1,2,3,4,5),
@@ -73,10 +57,9 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         nhis_all$alcohol4.factor <- factor(nhis_all$alcohol4, levels=c(1,2,3,4),
                                        labels = c("Abstinence", "Low risk","Medium risk","High risk")) 
         
-        nhis_all$alcohol5v2.factor <- factor(nhis_all$alcohol5v2, levels=c(1,2,3,4,5),
-                                        labels = c("Never Drinker", "Former Drinker", "Low risk","Medium risk","High risk")) 
-                                        nhis_all$alcohol5v2.factor <- relevel(nhis_all$alcohol5v2.factor, ref = "Low risk")    # specifies the reference category
-        
+        nhis_all$alcohol5v2.factor <- factor(nhis_all$alcohol5v2, levels=c(3,1,2,4,5),
+                                        labels = c("Low risk","Never Drinker", "Former Drinker", "Medium risk","High risk")) 
+
        
         nhis_all$drink_hist.factor <- factor(nhis_all$drink_hist, levels=c(0,1,2),
                                          labels = c("Never Drinker", "Former Drinker", "Current Drinker"))
@@ -87,34 +70,25 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         
         
         # Mediator 2 - BMI
-        nhis_all$bmi_cat.factor <- factor(nhis_all$bmi_cat, levels=c(1,2,3,4),
-                                      labels = c("Underweight", "Healthy weight","Overweight", "Obese"))
-                                      nhis_all$bmi_cat.factor <- relevel(nhis_all$bmi_cat.factor, ref = "Healthy weight")    # specifies the reference category
-        
+        nhis_all$bmi_cat.factor <- factor(nhis_all$bmi_cat, levels=c(2,1,3,4),
+                                      labels = c("Healthy weight","Underweight", "Overweight", "Obese"))
+                                      
                     
                     
         # Mediator  - Smoking
         nhis_all$smoking4.factor <- factor(nhis_all$smoking4, levels=c(1,2,3,4),
                                       labels = c("Never smoker", "Former smoker", "Current some day smoker", "Current everyday smoker"))
-                                      nhis_all$smoking4.factor <- relevel(nhis_all$smoking4.factor, ref = "Never smoker")    # specifies the reference category
-        
-        nhis_all$smoking3.factor <- factor(nhis_all$smoking3, levels=c(1,2,3),
-                                      labels = c("Never smoker", "Former smoker", "Current smoker"))
-                                      nhis_all$smoking3.factor <- relevel(nhis_all$smoking3.factor, ref = "Never smoker")    # specifies the reference category
-        
-        
+                                     
+       
         # Mediator 4 - Physicial Activity
-        nhis_all$phy_act3.factor <-factor(nhis_all$phy_act3,levels=c(1,2,3),
-                                      labels = c("Sedentary", "Somewhat active", "Active"))
-                                      nhis_all$phy_act3.factor <- relevel(nhis_all$phy_act3.factor, ref = "Active")    # specifies the reference category
-        
-        
+        nhis_all$phy_act3.factor <-factor(nhis_all$phy_act3,levels=c(3,1,2),
+                                      labels = c("Active", "Sedentary", "Somewhat active"))
+
         
         # Covariates
         nhis_all$ethnicity.factor <- factor(nhis_all$ethnicity, levels=c(1,2,3, 4),
                                         labels = c("Non-Hispanic White", "Non-Hispanic Black","Hispanic", "Other"))
-                                         nhis_all$ethnicity.factor <- relevel(nhis_all$ethnicity.factor, ref = "Non-Hispanic White")    # specifies the reference category      
-                                      
+
                                       
         nhis_all$female.factor <- factor(nhis_all$female, levels=c(0,1),
                                     labels = c("Male", "Female"))
@@ -130,30 +104,11 @@ nhis_all <- read_sas ("SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
         
         
         
-        
-        
         # Outcome        
-        nhis_all$mortstat.factor <- factor(nhis_all$mortstat, levels=c(0,1),
-                                       labels = c("Alive","Deceased"))
-        
         nhis_all$allcause_death.factor <- factor(nhis_all$allcause_death, levels=c(0,1),
                                                 labels = c("Alive","Deceased"))
                 
-        nhis_all$ucod_leading <- factor(nhis_all$ucod_leading, levels=c("000", '001', '002', '003', '004', '005', '006', '007', '008', '009', '010'),
-                                    labels = c("Assumed alive",
-                                                "Diseases of heart (I00-I09, I11, I13, I20-I51)",
-                                                "Malignant neoplasms (C00-C97)",
-                                                "Chronic lower respiratory diseases (J40-J47)",
-                                                "Accidents (unintentional injuries) (V01-X59, Y85-Y86)",
-                                                "Cerebrovascular diseases (I60-I69)",
-                                                "Alzheimer's disease (G30)",
-                                                "Diabetes mellitus (E10-E14)",
-                                                "Influenza and pneumonia (J09-J18)",
-                                                "Nephritis, nephrotic syndrome and nephrosis (N00-N07, N17-N19, N25-N27)",
-                                                "All other causes (residual)"))
-        nhis_all$death_type.factor <- factor(nhis_all$death_type, levels=c(0, 1, 2),
-                                         labels = c("Alive","Accidental", "Other death"))
-        
+       
         
         
         # Create an 'interaction' variable, combining the SES and Health behavior variables
