@@ -1,6 +1,6 @@
 # About
 
-This is the source code for the manuscript: "Lifestyle risk factors  and socioeconomic inequality in mortality: Decomposing differential exposure and vulnerability in the United States" by  Puka, Buckley, Mulia, Lasserre, Rehm, and Probst. 
+This is the statistical code for the manuscript: "Lifestyle risk factors  and socioeconomic inequality in mortality: Decomposing differential exposure and vulnerability in the United States" by  Puka, Buckley, Mulia, Lasserre, Rehm, and Probst. 
 
 The data used is publically available from the National Center for Health Statistics.
 
