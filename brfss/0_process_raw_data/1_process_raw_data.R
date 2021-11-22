@@ -72,6 +72,9 @@ dataFiles <- lapply(dataFiles, recode_alc_quantity)
 # hed - number of days with 4+ 5+
 dataFiles <- lapply(dataFiles, recode_hed)
 
+# recode mental health days variable - number of days in past 30 struggle with mental health
+dataFiles <- lapply(dataFiles, recode_menthealth)
+
 # recode the sample weights 
 dataFiles <- lapply(dataFiles, recode_sample_weights)
 

@@ -22,37 +22,48 @@ summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim
 tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
 
 cats <- unique(tojoin$cat)
-# region <- unique(brfss$region)
-# y <- ifelse(y>=2019, 2019, 
-#             ifelse(y==2011 & region=="division7",
-#                    2010, y))
-# if(region=="division7" & y>=2017){
-#   pool <- brfss %>% filter(YEAR>=2017) %>% filter(microsim.init.age<=79) %>% mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,
-#                                                                                                                           64,69,74,79),
-#                                                                                               labels=c("18","19-24","25-29","30-34","35-39",
-#                                                                                                        "40-44","45-49","50-54","55-59","60-64",
-#                                                                                                        "65-69","70-74","75-79")),
-#                                                                                  cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
-#   
-# }else{
 
-if(y>=2017){
-  pool <- brfss %>% filter(YEAR>=2017) %>% filter(microsim.init.age<=79) %>% mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,
-                                                                                                                          64,69,74,79),
-                                                                                              labels=c("18","19-24","25-29","30-34","35-39",
-                                                                                                       "40-44","45-49","50-54","55-59","60-64",
-                                                                                                       "65-69","70-74","75-79")),
-                                                                                 cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
-  
-}else {pool <- brfss %>% filter(YEAR==y) %>% filter(microsim.init.age<=79) %>% mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,
-                                                                                            64,69,74,79),
-                                                                              labels=c("18","19-24","25-29","30-34","35-39",
-                                                                                       "40-44","45-49","50-54","55-59","60-64",
-                                                                                       "65-69","70-74","75-79")),
-                                                                 cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
-}
+windowmin <- y-1
+windowmax <- y+1 
+
+pool <- brfss %>% filter(State==SelectedState) %>% filter(YEAR>=windowmin & YEAR<=windowmax) %>% 
+  mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,79),
+                                                             labels=c("18","19-24","25-29","30-34","35-39",
+                                                                      "40-44","45-49","50-54","55-59",
+                                                                      "60-64","65-69","70-74","75-79")),
+                      cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
 brfsscats <- unique(pool$cat)
 missing <- setdiff(cats, brfsscats)
+print("missing")
+print(y)
+print(paste(length(missing)))
+summary <- tojoin %>% filter(cat %in% missing)
+summary$toadd / sum(tojoin$toadd)
+
+if(length(missing)>0){
+  summarymissing <- data.frame(YEAR = y, 
+                               ncatsmissing = length(missing),
+                               whichcatsmissing = paste(missing),
+                               npopmissing = summary$toadd,
+                               npoptotal = sum(tojoin$toadd),
+                               percentmissing = summary$toadd/sum(tojoin$toadd))
+  supp <- brfss %>% filter(region==unique(pool$region)) %>% filter(YEAR>=windowmin & 
+                                                                     YEAR<=windowmax) %>% 
+    mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,79),
+              labels=c("18","19-24","25-29","30-34","35-39",
+                       "40-44","45-49","50-54","55-59",
+                       "60-64","65-69","70-74","75-79")),
+  cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_")) %>% 
+    filter(cat %in% missing)
+  pool <- rbind(pool, supp)
+}else {
+  summarymissing <- data.frame(YEAR = y, 
+                               ncatsmissing = 0,
+                               whichcatsmissing = 0,
+                               npopmissing = 0,
+                               npoptotal = sum(tojoin$toadd,na.rm=T),
+                               percentmissing = 0)
+}
 
 toadd <- left_join(pool, tojoin) %>% filter(toadd!=0) %>% group_by(cat) %>% sample_n(toadd, replace=T) %>% 
   mutate(microsim.init.spawn.year=y) %>% ungroup() %>% 
@@ -63,6 +74,8 @@ microsim.init.id <- nrow(basepop)+1:nrow(toadd)+nrow(basepop)
 toadd <- cbind(microsim.init.id, toadd)
 basepop <- rbind(basepop, toadd)
 
-return(basepop)
+list <- list(basepop,summarymissing)
+
+return(list)
 }
 

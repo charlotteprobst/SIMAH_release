@@ -15,19 +15,19 @@ k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
-basepop <- read.csv("SIMAH_workplace/protocol/output_data/0_1millionbasepop.csv") %>% select(microsim.init.id, microsim.init.age, microsim.init.sex,
+basepop <- read.csv("SIMAH_workplace/microsim/1_input_data/agent_files/USAbasepop1000000.csv") %>% select(microsim.init.age, microsim.init.sex,
                                                       microsim.init.race, microsim.init.education, microsim.init.drinkingstatus,
                                                       microsim.init.alc.gpd)
 # code each of the drinking categories
 basepop <- basepop %>% mutate(drinkercat = ifelse(microsim.init.alc.gpd==0, "Abstainer",
-                                                  ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=40, "Low risk",
-                                                         ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "Medium risk",
-                                                                ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>60 & microsim.init.alc.gpd<=100, "High risk",
-                                                                       ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>100, "Very high risk",
-                                                                              ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=20, "Low risk",
-                                                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 & microsim.init.alc.gpd<=40, "Medium risk",
-                                                                                            ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "High risk",
-                                                                                                   ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>60, "Very high risk", NA))))))
+                                                  ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=40, "Category I",
+                                                         ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "Category II",
+                                                                ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>60 & microsim.init.alc.gpd<=100, "Category III",
+                                                                       ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>100, "Category IV",
+                                                                              ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=20, "Category I",
+                                                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 & microsim.init.alc.gpd<=40, "Category II",
+                                                                                            ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "Category III",
+                                                                                                   ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>60, "Category IV", NA))))))
                                                                 ))),
                               microsim.init.sex = ifelse(microsim.init.sex=="m","Men","Women"),
                               microsim.init.race = recode(microsim.init.race, "BLA"="non-Hispanic Black",
@@ -48,40 +48,72 @@ basepop <- basepop %>% mutate(drinkercat = ifelse(microsim.init.alc.gpd==0, "Abs
 # in percentages
 summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% 
-  mutate(percent=n/sum(n)*100) 
+  mutate(percent=n/sum(n)*100, data="microsimulation") 
 
 
 # read in the processed brfss data - to save time associated with reading full BRFSS
-summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/0_summarybrfss.csv")
+# summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/0_summarybrfss.csv")
 
-summary <- left_join(summary, summarybrfss)
-summary$microsim.init.education <- factor(summary$microsim.init.education, 
-                                          levels=c("High school degree or less",
-                                                   "Some college",
-                                                   "College degree or more"))
-summary$drinkercat = factor(summary$drinkercat, 
-                            levels=c("Abstainer","Low risk","Medium risk","High risk",
-                                     "Very high risk"))
-summary$drinkercat <- fct_rev(summary$drinkercat)
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
+  filter(age_var<=79) %>% filter(YEAR==1999 | YEAR==2000 | YEAR==2001) %>% 
+  filter(State=="USA") %>% 
+  mutate(microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),
+         microsim.init.education = education_summary,
+         microsim.init.alc.gpd = gramsperday,
+         drinkercat = ifelse(microsim.init.alc.gpd==0, "Abstainer",
+                                    ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=40, "Category I",
+                                           ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "Category II",
+                                                  ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>60 & microsim.init.alc.gpd<=100, "Category III",
+                                                         ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>100, "Category IV",
+                                                                ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>0 & microsim.init.alc.gpd<=20, "Category I",
+                                                                       ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 & microsim.init.alc.gpd<=40, "Category II",
+                                                                              ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>40 & microsim.init.alc.gpd<=60, "Category III",
+                                                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>60, "Category IV", NA))))))))),
+         microsim.init.sex = recode(microsim.init.sex, "m"="Men","f"="Women"),
+         microsim.init.education = recode(microsim.init.education, "LEHS"="High school degree or less",
+                                          "SomeC"="Some college",
+                                          "College" = "College degree or more")) %>% 
+  group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
+  ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% mutate(percent=n/sum(n)*100,
+                                                                                data="brfss")
+
+
+
+# summary <- left_join(summary, summarybrfss)
+summarycompare <- rbind(summary, brfss) %>% 
+  mutate(microsim.init.education = factor(microsim.init.education,
+                                          levels=c(
+                                          "High school degree or less",
+                                          "Some college",
+                                          "College degree or more")),
+         drinkercat = factor(drinkercat,
+                             levels=c("Abstainer","Category I","Category II","Category III",
+                                      "Category IV")),
+         drinkercat = fct_rev(drinkercat))
 
 
 col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
 col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
-summary <- summary[summary$drinkercat != "Abstainer",]
+summarycompare <- summarycompare[summarycompare$drinkercat != "Abstainer",]
 
 addline_format <- function(x,...){
   gsub('\\s','\n',x)
 }
 
+summarycompare$cat <- paste(summarycompare$microsim.init.education, summarycompare$data, sep=" ")
+summarycompare$cat <- factor(summarycompare$cat,
+                             levels=c("High school degree or less microsimulation",
+                                      "High school degree or less brfss",
+                                      "Some college microsimulation",
+                                      "Some college brfss",
+                                      "College degree or more microsimulation",
+                                      "College degree or more brfss"))
+
+
 # plot graph
-ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat)) + 
-  geom_col(position=position_stack(reverse=T), width = 0.7 ) + 
-  geom_point(aes(x=microsim.init.education, y=prevalence, colour="black"), 
-             fill=NA, size = 0.9) + 
-  geom_errorbar(aes(x=microsim.init.education, 
-                    ymin=prevalence-se*1.96, ymax=prevalence+se*1.96), 
-                width=0.2) +
-  facet_grid(cols=vars(microsim.init.sex)) +
+ggplot(data=summarycompare, aes(x=cat, y=percent, fill=drinkercat)) + 
+  geom_col(position=position_stack(reverse=T), width = 0.7 ) +
+  facet_grid(rows=vars(microsim.init.sex)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
         strip.text = element_text(colour = 'black'), 
@@ -92,12 +124,20 @@ ggplot(data=summary, aes(x=microsim.init.education, y=percent, fill=drinkercat))
         legend.title = element_blank()) +
   ylab("Prevalence (%)")+ xlab("") + 
   scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
-  scale_x_discrete(breaks=unique(summary$microsim.init.education), 
-                   labels=addline_format(c("High school degree or less", 
-                                           "Some college", "College degree or more"))) + 
-  scale_colour_manual(values="black", labels="BRFSS")
+  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) + 
+  scale_x_discrete(breaks=c("High school degree or less microsimulation",
+                             "High school degree or less brfss",
+                             "Some college microsimulation",
+                             "Some college brfss",
+                             "College degree or more microsimulation",
+                             "College degree or more brfss"),
+                   labels=addline_format(c("High school degree or less microsimulation",
+                                           "High school degree or less brfss",
+                                           "Some college microsimulation",
+                                           "Some college brfss",
+                                           "College degree or more microsimulation",
+                                           "College degree or more brfss")))
 
-ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V2.jpeg", dpi = 600, width = 17, height = 14, units = "cm")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 

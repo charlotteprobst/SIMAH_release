@@ -276,6 +276,17 @@ recode_hed <- function(data){
   return(data)
 }
 
+recode_menthealth <- function(data){
+  data <- data %>% 
+    mutate(mentalhealth = ifelse(MENTHLTH==88, 0,
+                                 ifelse(MENTHLTH>=77, NA,
+                                        MENTHLTH)),
+           physicalhealth = ifelse(PHYSHLTH==88, 0,
+                                   ifelse(PHYSHLTH>=77, NA,
+                                          PHYSHLTH)))
+  return(data)
+}
+
 # sample weights 
 recode_sample_weights <- function(data){
   data <- data %>% 
@@ -292,6 +303,7 @@ subset_data <- function(data){
     dplyr::select(YEAR, State, final_sample_weight, race_eth, sex_recode, age_var,
                   education_summary, employment,
                   household_income, height_cm, weight_kg, BMI, drinkingstatus, 
+                  mentalhealth, physicalhealth,
                   alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)
 }

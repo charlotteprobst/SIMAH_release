@@ -137,6 +137,8 @@ percapita_adjusted <- data %>%
 compare <- left_join(compare, percapita_adjusted) %>% 
   pivot_longer(cols=SALES:UPSHIFTED)
 
+
+
 for(i in unique(data$region)){
 ggplot(data=subset(compare, region==i), aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
   facet_wrap(~State, scales="fixed") + theme_bw() + theme(legend.title=element_blank(),
@@ -144,13 +146,14 @@ ggplot(data=subset(compare, region==i), aes(x=YEAR, y=value, colour=name)) + geo
                                                          panel.background = element_rect(fill="white"),
                                                          strip.background = element_rect(fill="white"),
                                                          text = element_text(size=18)) + 
-  ylim(0,NA) + xlim(2000,2020) + ylab("grams per day") + ggtitle(paste(i))
+  ylim(0,NA) + xlim(1999,2020) + ylab("grams per day") + ggtitle(paste(i))
 ggsave(paste0("SIMAH_Workplace/brfss/plots/upshift_compare",i,".png"), dpi=300, width=33, height=19, units="cm")
 }
 
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var, employment, 
-                               education_summary, household_income, BMI, drinkingstatus_updated,
+                               education_summary, household_income, BMI, mentalhealth,physicalhealth,
+                               drinkingstatus_updated,
                                drinkingstatus_detailed, gramsperday_upshifted_crquotient,
                                frequency_upshifted, quantity_per_occasion_upshifted,
                                hed) %>% 

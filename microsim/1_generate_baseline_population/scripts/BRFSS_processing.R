@@ -12,7 +12,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
          frequency = ifelse(frequency==0 & gramsperday>0, 1, frequency),
          quantity_per_occasion = (gramsperday/14 * 30) / frequency,
-         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion))
+         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion)) %>% 
+  filter(State!="Utah")
 
 selected <- brfss %>% filter(State==SelectedState) %>% 
   dplyr::select(region, SEX, RACE, age_var, agecat, EDUCATION, household_income, BMI, drinkingstatus, drinkingstatus_detailed,
@@ -58,9 +59,10 @@ if(dropping==T){
     mutate(cat = paste(RACE, SEX, agecat, EDUCATION, sep="")) %>% ungroup() %>% 
     dplyr::select(cat, n) %>% filter(n==0)
   missingcats <- unique(missing$cat)
+  100-round(rowSums(cons[c(missingcats)]) / rowSums(cons)*100,digits=2)
   if(length(missingcats>=1)){
     toreplace <- brfss %>% drop_na() %>% filter(region==unique(selected$region)) %>% mutate(cat=paste(RACE,SEX,agecat,EDUCATION,sep="")) %>% 
-      filter(cat %in% missingcats) %>% dplyr::select(-c(cat)) %>% sample_n(10, replace=T)
+      filter(cat %in% missingcats) %>% dplyr::select(-c(cat))
     selected <- rbind(toreplace, selected)
   }
   brfss <- selected

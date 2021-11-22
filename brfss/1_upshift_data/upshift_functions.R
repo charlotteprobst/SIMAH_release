@@ -17,7 +17,7 @@ remove_missing <- function(data){
                                  household_income,
                                  BMI, drinkingstatus,
                                  alc_frequency, quantity_per_occasion,
-                                 gramsperday,
+                                 gramsperday, mentalhealth,physicalhealth,
                                  hed) %>% drop_na() %>% 
     filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% filter(State!="territories")
   return(data)

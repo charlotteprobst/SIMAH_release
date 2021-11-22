@@ -7,11 +7,16 @@ run_microsim <- function(seed,samplenum,basepop, outwardmigrants, inwardmigrants
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
+SummaryMissing <- list()
+minyear <- 2000
+maxyear <- 2018
 for(y in minyear:maxyear){ 
 ####add the migrants for the year
   
 if(y>=2001){
-  basepop <- inward_migration(basepop,Rates,y, brfss)
+  list <- inward_migration(basepop,Rates,y, brfss)
+  basepop <- list[[1]]
+  SummaryMissing[[paste(y)]] <- list[[2]]
   basepop <- outward_migration(basepop,Rates,y)
 }
   
@@ -61,6 +66,10 @@ basepop <- subset(basepop, microsim.init.age<=79)
 
 
 }
+SummaryMissing <- do.call(rbind,SummaryMissing)
+
+write.csv(SummaryMissing,paste0("SIMAH_workplace/microsim/2_output_data/SummaryMissing", SelectedState, ".csv"))
+
 for(i in names(PopPerYear)){
 Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, microsim.init.race,
                                                              microsim.init.sex,
