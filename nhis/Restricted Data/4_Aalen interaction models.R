@@ -29,6 +29,9 @@ nhis_male   <- readRDS (file.path(data_path, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data_path, "nhis_female.rds"))
 data_file <- sample_frac(nhis_female, 0.05)
 
+
+?coxph
+?aalen
 # OBJECTIVE 1: Joint Effects, Hazard Models - Stratified by Sex
 
 # The effect estimates from the model can be directly interpreted as the number of additional events (deaths) per 1 person year at risk
@@ -175,7 +178,9 @@ table4to9(nhis_all,    death_list, edu3, alc5, "table4a") # All participants
 table4to9(nhis_female, death_list, edu3, alc5, "table4a") # Females
 table4to9(nhis_male,   death_list, edu3, alc5, "table4a") # Males
 
-table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1
+
+# **NOTE**: Need to change to code for this so that the start time and end time is specified
+table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
 table4to9(nhis_fem.age.gp2,  death_list, edu3, alc5, "table4a") # Females, age group 2
 table4to9(nhis_fem.age.gp3,  death_list, edu3, alc5, "table4a") # Females, age group 3
 table4to9(nhis_male.age.gp1, death_list, edu3, alc5, "table4a") # Males, age group 1

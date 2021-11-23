@@ -103,7 +103,7 @@ nesarc2 <- nesarc2_orig %>%
   
 
 # Merge Wave 1 & 2 Data -----------------------------------------------------------------------------------------------------------
-nesarc <- rbind(nesarc1, nesarc2) %>%
+nesarc_raw <- rbind(nesarc1, nesarc2) %>%
     # Fill in age1 data from the nw1age variable from wave2
     arrange (idnum, wave) %>%  
     group_by(idnum) %>%     
@@ -115,7 +115,7 @@ nesarc <- rbind(nesarc1, nesarc2) %>%
   
 
 # Save data -----------------------------------------------------------------------------------------------------------
-saveRDS(nesarc, paste0(data_new, "nesarc.rds"))
+saveRDS(nesarc_raw, paste0(data_new, "nesarc_raw.rds"))
 
 
   

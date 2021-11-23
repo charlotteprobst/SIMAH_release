@@ -14,7 +14,7 @@ data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
 
 
 # Edit data - recode and recategorize variables
-nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
+nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
 
   # Re-code variables
   mutate(
@@ -201,103 +201,91 @@ nesarc <- readRDS(paste0(data, "nesarc.rds")) %>%
     # filter(nesarc, wave==1) %>% count(hed)
 
 
-# Create clean copy of data
-nesarc_clean <- nesarc %>%
+
+# Select variables of interest and identify those lost to follow-up or with incomplete data
+nesarc <- nesarc %>%
   
   # order data by ID, then by wave (timepoint)
   arrange(idnum, wave) %>% 
   
   # Identify the variables to keep
   select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_wave1, age3.factor, female, female_wave1, race, race_wave1, 
-         married, edu3, edu3_wave1, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc4, hed) %>%
+    married, edu3, edu3_wave1, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc4, hed) %>% 
   
-  # remove those with data at one time point (8,440 observations removed; n=69,306)
+  # remove those with missing data 
   group_by(idnum) %>%
-  filter(n()>1) %>%
-  ungroup() %>%
+    mutate(lost = ifelse(n()>1, 0, 1),                    # Identify those with data at one time point (8,440 observations removed; n=69,306)
+           lost = ifelse(any(is.na(alc5)), 1, lost),      # Identify those with missing alcohol data in either time point (424 observations removed; n=68,882)
+           lost = ifelse(any(is.na(hed)), 1, lost)) %>%   # Identify those with missing HED in either time point (166 observations removed; n=68,716)
+    ungroup() 
 
-  # remove those aged >=90 then remove those with data at one time points; 552 observations removed; n=68,784)
-  filter(!(age==90)) %>% 
-  group_by(idnum) %>%
-  filter(n()>1) %>%
-    
-  # remove those with missing alcohol data in either time point (454 observations removed; n=68,168)
-  group_by(idnum) %>%
-  filter(!any(is.na(alc5))) %>%
-  ungroup() 
-
-table(nesarc_clean$age)
+  
 
 # label values
 
     # Alcohol variables  
-    nesarc_clean$alc6.factor <- factor(nesarc_clean$alc6, levels=c(1,2,3,4,5,6), 
-      labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium risk", "High risk", "Very high risk"))
+    nesarc$alc6.factor <- factor(nesarc$alc6, levels=c(1,2,3,4,5,6), 
+                          labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium risk", "High risk", "Very high risk"))
     
-    nesarc_clean$alc5.factor <- factor(nesarc_clean$alc5, levels=c(1,2,3,4,5), 
-      labels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))
+    nesarc$alc5.factor <- factor(nesarc$alc5, levels=c(1,2,3,4,5), 
+                          labels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))
     
-    nesarc_clean$alc4.factor <- factor(nesarc_clean$alc4, levels=c(1,2,3,4), 
-      labels=c("Abstinence", "Low risk", "Medium risk", "High risk"))
+    nesarc$alc4.factor <- factor(nesarc$alc4, levels=c(1,2,3,4), 
+                          labels=c("Abstinence", "Low risk", "Medium risk", "High risk"))
     
-    nesarc_clean$alc4_nesarc.factor <- factor(nesarc_clean$alc4_nesarc, levels=c(1,2,3, 4), 
-      labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker"))
+    nesarc$alc4_nesarc.factor <- factor(nesarc$alc4_nesarc, levels=c(1,2,3, 4), 
+                                  labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker"))
     
-    nesarc_clean$hed.factor <- factor(nesarc_clean$hed, levels=c(1,2,3,4,5), 
-      labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED"))
+    nesarc$hed.factor <- factor(nesarc$hed, levels=c(1,2,3,4,5), 
+                          labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED"))
 
  
-    # Covariates 
-    nesarc_clean$female.factor <- factor(nesarc_clean$female, levels=c(0,1), labels=c("Men", "Women"))
-    
-        nesarc_clean$female_wave1.factor <- factor(nesarc_clean$female_wave1, levels=c(0,1), labels=c("Men", "Women"))
+    # Covariates (first listed category is the reference)
+    nesarc$female.factor <- factor(nesarc$female, levels=c(0,1), labels=c("Men", "Women"))
+    nesarc$female_wave1.factor <- factor(nesarc$female_wave1, levels=c(0,1), labels=c("Men", "Women"))
     
            
-    nesarc_clean$race.factor <- factor(nesarc_clean$race, levels=c(1,2,3,4), 
-      labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
-      nesarc_clean$race.factor <- relevel(nesarc_clean$race.factor, ref = "White, non-Hispanic")  # specifies the reference category
+    nesarc$race.factor <- factor(nesarc$race, levels=c(1,2,3,4), 
+                          labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
+    nesarc$race_wave1.factor <- factor(nesarc$race_wave1, levels=c(1,2,3,4), 
+                            labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
+
+    nesarc$married.factor <- factor(nesarc$married, levels=c(1,0), labels=c("Married/cohab.", "Single"))
+
+    nesarc$edu3.factor <- factor(nesarc$edu3, levels=c(3,1,2), labels=c("High", "Low", "Med"))
+    nesarc$edu3_wave1.factor <- factor(nesarc$edu3_wave1, levels=c(3,1,2), labels=c("High", "Low", "Med"))
+
+    nesarc$income3.factor <- factor(nesarc$income3, levels=c(3,1,2), labels=c("High", "Low", "Med"))
     
-          nesarc_clean$race_wave1.factor <- factor(nesarc_clean$race_wave1, levels=c(1,2,3,4), 
-            labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
-          nesarc_clean$race_wave1.factor <- relevel(nesarc_clean$race_wave1.factor, ref = "White, non-Hispanic")  # specifies the reference category
-      
-    nesarc_clean$married.factor <- factor(nesarc_clean$married, levels=c(1,0), labels=c("Married/cohab.", "Single"))
-      nesarc_clean$married.factor <- relevel(nesarc_clean$married.factor, ref = "Married/cohab.")  # specifies the reference category
-    
-    nesarc_clean$edu3.factor <- factor(nesarc_clean$edu3, levels=c(1,2,3), labels=c("Low", "Med", "High"))
-      nesarc_clean$edu3.factor <- relevel(nesarc_clean$edu3.factor, ref = "High")  # specifies the reference category
-    
-            nesarc_clean$edu3_wave1.factor <- factor(nesarc_clean$edu3_wave1, levels=c(1,2,3), labels=c("Low", "Med", "High"))
-            nesarc_clean$edu3_wave1.factor <- relevel(nesarc_clean$edu3_wave1.factor, ref = "High")  # specifies the reference category
-      
-    nesarc_clean$income3.factor <- factor(nesarc_clean$income3, levels=c(1,2,3), labels=c("Low", "Med", "High"))
-      nesarc_clean$income3.factor <- relevel(nesarc_clean$income3.factor, ref = "High")  # specifies the reference category
-    
+    nesarc$wave.factor <- factor(nesarc$wave, levels=c(1,2), labels=c("Wave 1", "Wave 2"))
+    nesarc$lost.factor <- factor(nesarc$lost, levels=c(0,1), labels=c("Completed Follow-up", "Lost to Follow-up"))
+
 
     
+# Create dataframe with complete data at both time points (cc=complete case)
+nesarc_cc <- nesarc %>% 
+  filter(lost==0)  # Remove those with missing data
+      
+      
+      
 # Replicate data (and create unique ID variable) to adjust for sampling weight
-nesarc_clean_expanded <- nesarc_clean %>%
+nesarc_cc_expanded <- nesarc_cc %>%
   mutate (new_weight = weight_wave2 / 100) %>%  # because original weight variable ranged from 455 to 73,192
   expandRows(., "new_weight") %>%  # replicates data
   
   # Generate unique ID
   group_by(idnum, wave) %>%
-    mutate(
-      iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
-      idnum = as.numeric(paste0(idnum, iter))) %>%
+    mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
+           idnum = as.numeric(paste0(idnum, iter))) %>%
   ungroup() %>%
   arrange(idnum, wave) # order data by ID then wave (needed for the MSM model)
 
-
-# Scale age - needed for MSM model
-nesarc_clean_expanded$age_scaled <- (nesarc_clean_expanded$age - mean(nesarc_clean_expanded$age))/sd(nesarc_clean_expanded$age)
-nesarc_clean$age_scaled <- (nesarc_clean$age - mean(nesarc_clean$age))/sd(nesarc_clean$age)
-
 # check
-# filter(nesarc_clean, wave==1) %>% count(hed)
+# filter(nesarc_cc, wave==1) %>% count(hed)
 
 
   
 # Save data
-saveRDS(nesarc_clean, paste0(data, "nesarc_clean.rds"))
-saveRDS(nesarc_clean_expanded, paste0(data, "nesarc_clean_expanded.rds"))
+saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
+saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
+saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))

@@ -1,10 +1,11 @@
 
 # SIMAH - NESARC Alcohol Transitions
-# Data Extraction (and minor edits)
+# Functions used
 
 
 
-# Table 2 - Extract Transition Probabilities (aTP) and correct CI to original sample size 
+
+# Table 2 - Extract Transition Probabilities (TP) and correct CI to original sample size 
 
 predicted_TP <- function(model, year, original_n, expanded_n) {
   
@@ -88,65 +89,69 @@ predicted_TP_covs <- function(model, year, age_cat, sex, race, edu) {
 
 
 
-# Extract Transition Probability over multiple years at the mean level of each covariate
-predicted_TP_overtime <- function(model, max_years, original_n, expanded_n) {
-  
-  probs <- list()
-  for (i in 1:max_years){    
-    
-    # extract the probabilities
-    probs[[i]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm"))) %>%
+
+
+# Function to apply alcohol consumption transition probabilities
+transition_alc5 <- function(data, transitions){
+  selected <- unique(data$cat)
+  rates <- transitions %>% filter(cat == selected)
+  data$AlcUse_pred <- ifelse(data$prob<=rates$cumsum[1], "Abstainer",
+    ifelse(data$prob<=rates$cumsum[2] & data$prob>rates$cumsum[1], "Former",
+      ifelse(data$prob<=rates$cumsum[3] & data$prob>rates$cumsum[2],"Category I",
+        ifelse(data$prob<=rates$cumsum[4] & data$prob>rates$cumsum[3],"Category II",
+          ifelse(data$prob<=rates$cumsum[5] & data$prob>rates$cumsum[4],"Category III",NA)))))
+  return(data)
+}
+
+      # Alcohol Use Simulate transitions 
+      alc_sim <- function(years) {
+        for (i in 1:years) {
+          AlcUse_basepop <- AlcUse_basepop %>% 
+            mutate(year= i,
+              age = age + 1,
+              age_cat = case_when(age < 30 ~ "18-29",
+                age >=30 & age < 50 ~ "30-49",
+                age >= 50 ~ "50+"),
+              cat = paste(sex, age_cat, edu, race, AlcUse_pred, sep="_"),
+              prob = runif(nrow(.))) %>%  # generate random prob
+            group_by(cat) %>%
+              do(transition_alc5(., aTP_alc5)) %>% # use 'do( )' to run the function defined earlier
+            ungroup() %>% 
+            select (-cat, -prob) 
+        }
+        return(AlcUse_basepop)
+      }
+
       
-      # modify the output presentation
-      mutate(From = row.names(.)) %>%
-      pivot_longer(cols = -From, names_to = "To") %>%
-      separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-      mutate(
-        # Update CI to use original sample size
-        SE = (Upper - Lower) / 3.92,
-        SD = SE * sqrt(expanded_n),  # sample size of expanded data
-        newSE = SD / sqrt(original_n), # sample size of original data
-        newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-        newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-        Estimate = round(Estimate*100, digits=1),
-        
-         Year = i) %>%
-      select (From, To, Year, Estimate, newLower, newUpper) %>%
-      na.omit() # remove NAs - transitions back to 'Abstainer'
-  }
-  
-  probs <- do.call(rbind, probs)
-  return(probs)
-}
 
 
-# Extract Transition Probability over multiple years for each age category, at the mean level of other covariates
-predicted_TP_overtime_age <- function(model, max_years, age_cat, original_n, expanded_n){
-  probs <- list()
-  for (i in 1:max_years){
-    for (j in age_cat){
-      # extract the probabilities
-      probs[[paste(i,j)]] <- data.frame(print(pmatrix.msm(model, t=i, ci="norm", covariates = list(age3.factor = j)))) %>%
-        
-        # modify the output presentation
-        mutate(From = row.names(.)) %>%
-        pivot_longer(cols = -From, names_to = "To") %>%
-        separate(value, into=c("Estimate","Lower","Upper", NA), sep="\\(|\\,|\\)", convert=TRUE) %>%  # separated based on "(" "," and  ")"  convert=TRUE names variables numeric
-        mutate(
-          # Update CI to use original sample size
-          SE = (Upper - Lower) / 3.92,
-          SD = SE * sqrt(expanded_n),  # sample size of expanded data
-          newSE = SD / sqrt(original_n), # sample size of original data
-          newLower = round((Estimate - (newSE * 1.96))*100, digits=1),
-          newUpper = round((Estimate + (newSE * 1.96))*100, digits=1),
-          Estimate = round(Estimate*100, digits=1),
-          Year = i,
-          age_cat = j) %>%
-        select (From, To, Year, age_cat, Estimate, newLower, newUpper) %>%
-        na.omit() # remove NAs - transitions back to 'Abstainer'
-    }
-  }
-  
-  probs <- do.call(rbind,probs)
-  return(probs)
+# Function to apply HED transition probabilities
+transition_hed <- function(data, transitions){
+  selected <- unique(data$cat)
+  rates <- transitions %>% filter(cat == selected)
+  data$hed_pred <- ifelse(data$prob <= rates$cumsum[1], "Non-drinker",
+    ifelse(data$prob <= rates$cumsum[2] & data$prob > rates$cumsum[1], "Drinker, no HED",
+      ifelse(data$prob <= rates$cumsum[3] & data$prob > rates$cumsum[2],"Occasional HED",
+        ifelse(data$prob <= rates$cumsum[4] & data$prob > rates$cumsum[3],"Monthly HED",
+          ifelse(data$prob <= rates$cumsum[5] & data$prob > rates$cumsum[4],"Weekly HED",NA)))))
+  return(data)
 }
+
+      # HED Simulate transitions 
+      hed_sim <- function(years) {
+        for (i in 1:years) {
+          hed_basepop <- hed_basepop %>% 
+            mutate( year= i,
+                    age = age + 1,
+                    age_cat = case_when(age < 30 ~ "18-29",
+                                        age >=30 & age < 50 ~ "30-49",
+                                        age >= 50 ~ "50+"),
+                    cat = paste(sex, age_cat, edu, race, hed_pred, sep="_"),
+                    prob = runif(nrow(.))) %>%  # generate random prob
+            group_by(cat) %>%
+            do(transition_hed(., aTP_hed)) %>% # use 'do( )' to run the function defined earlier
+            ungroup() %>% 
+            select (-cat, -prob) 
+        }
+        return(hed_basepop)
+      }
