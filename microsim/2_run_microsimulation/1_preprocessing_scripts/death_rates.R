@@ -7,7 +7,8 @@ fun <- function(x){
 }
 
 if(SelectedState=="USA"){
-deathrates <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_sumCOD_0019_final.csv") %>% mutate(Sex=recode(sex, "1"="m","2"="f"),
+deathrates <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_sumCOD_0019_final.csv") %>% 
+  mutate(Sex=recode(sex, "1"="m","2"="f"),
                       agecat = recode(age_gp, "18"="18-24","25"="25-29",
                                          "30"="30-34","35"="35-39","40"="40-44",
                                          "45"="45-49","50"="50-54","55"="55-59",

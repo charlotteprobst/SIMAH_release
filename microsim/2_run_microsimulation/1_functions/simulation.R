@@ -8,8 +8,6 @@ set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
 SummaryMissing <- list()
-minyear <- 2000
-maxyear <- 2018
 for(y in minyear:maxyear){ 
 ####add the migrants for the year
   
@@ -66,9 +64,9 @@ basepop <- subset(basepop, microsim.init.age<=79)
 
 
 }
-SummaryMissing <- do.call(rbind,SummaryMissing)
-
-write.csv(SummaryMissing,paste0("SIMAH_workplace/microsim/2_output_data/SummaryMissing", SelectedState, ".csv"))
+# SummaryMissing <- do.call(rbind,SummaryMissing)
+# 
+# write.csv(SummaryMissing,paste0("SIMAH_workplace/microsim/2_output_data/SummaryMissing", SelectedState, ".csv"))
 
 for(i in names(PopPerYear)){
 Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, microsim.init.race,
@@ -77,7 +75,7 @@ Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, mi
     mutate(year=i, samplenum=samplenum)
 }
 Summary <- do.call(rbind,Summary)
-# Summary <- list(PopPerYear, DeathSummary)
+Summary <- list(PopPerYear, DeathSummary)
 return(Summary)
 }
 

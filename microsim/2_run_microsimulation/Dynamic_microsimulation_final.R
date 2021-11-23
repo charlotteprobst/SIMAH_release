@@ -27,7 +27,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
-SelectedState <- "Texas"
+SelectedState <- "USA"
 
 ####Size of population 
 PopulationSize <- 1000000
@@ -62,7 +62,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_functions/simulation.R")
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 0
+updatingeducation <- 1
 
 # switch on and off alcohol updates
 updatingalcohol <- 0
@@ -71,7 +71,7 @@ Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/fi
 Rates$agecat <- as.character(Rates$agecat)
 
 Output <- list()
-Output <- run_microsim(1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+Output <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                        updatingeducation, education_setup, transitionroles,
                        calculate_migration_rates, outward_migration, inward_migration, 
                        brfss,Rates,AlctransitionProbability,

@@ -300,7 +300,7 @@ recode_sample_weights <- function(data){
 
 subset_data <- function(data){
   data <- data %>% 
-    dplyr::select(YEAR, State, final_sample_weight, race_eth, sex_recode, age_var,
+    dplyr::select(YEAR, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
                   education_summary, employment,
                   household_income, height_cm, weight_kg, BMI, drinkingstatus, 
                   mentalhealth, physicalhealth,

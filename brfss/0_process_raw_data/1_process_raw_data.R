@@ -18,6 +18,7 @@ setwd(wd)
 dataFiles <- readRDS("SIMAH_workplace/brfss/raw_data/data/brfss_full.RDS")
 gc()
 
+# read in R script with the functions
 source("SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
 years <- 1999:2020
@@ -25,6 +26,7 @@ for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
 
+# remove the labels from the BRFSS raw data files (stata format etc.)
 dataFiles <- lapply(dataFiles, remove_all_labels)
 gc()
 options(memory.limit=10000000)
@@ -51,7 +53,7 @@ dataFiles <- lapply(dataFiles, recode_employment)
 # recode income 
 dataFiles <- lapply(dataFiles, recode_income)
 
-# recode BMI
+# recode BMI - weight, then height, then BMI
 dataFiles <- lapply(dataFiles, recode_weight)
 
 dataFiles <- lapply(dataFiles, recode_height)
@@ -78,7 +80,9 @@ dataFiles <- lapply(dataFiles, recode_menthealth)
 # recode the sample weights 
 dataFiles <- lapply(dataFiles, recode_sample_weights)
 
-# select the variables needed and save the output - adjust this in the function "subset_data"
+# select the variables needed and save the output - 
+# to select new / different variables adjust this in the function "subset_data" in functions script 
 dataFilesSubset <- lapply(dataFiles, subset_data)
 
+# save an RDS of the processed data
 saveRDS(dataFilesSubset, "SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")

@@ -30,15 +30,15 @@ source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 # # first subset for selected SIMAH states 
 # dataFiles <- lapply(dataFiles, subset_SIMAH_states)
 
-# now remove any missing data for key variables 
+# remove any missing data for key variables 
 dataFiles <- lapply(dataFiles, remove_missing)
 
 # first exploring the data for our selected states and for the US current prevalence and quantity (monthly)
-summary <- lapply(dataFiles, summariseprevalence)
-summary <- do.call(rbind,summary) %>% filter(drinkingstatus==1) %>% 
-  drop_na()
-ggplot(data=summary, aes(x=YEAR, y=percentage, colour=sex_recode)) + 
-  geom_line() + facet_wrap(~agecat+State) + theme_bw() + ylim(0,NA)
+# summary <- lapply(dataFiles, summariseprevalence)
+# summary <- do.call(rbind,summary) %>% filter(drinkingstatus==1) %>% 
+#   drop_na()
+# ggplot(data=summary, aes(x=YEAR, y=percentage, colour=sex_recode)) + 
+#   geom_line() + facet_wrap(~agecat+State) + theme_bw() + ylim(0,NA)
 # reassign the list such that each state is one element of the list 
 data <- do.call(rbind, dataFiles)
 
@@ -49,9 +49,10 @@ data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
 summary(data$gramsperday)
 
-# put cap of 200gpd
+# put cap of 200gpd on drinking 
 data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
+# create a new dataset with all states - label the state USA and join back with original data
 USA <- data %>% mutate(State="USA")
 data <- rbind(data, USA)
 
@@ -65,13 +66,13 @@ data <- rbind(data, USA)
 data <- impute_yearly_drinking(data)
 
 # check imputation has worked
-summary <- data %>% group_by(YEAR, State, drinkingstatus_detailed) %>% 
-  tally() %>% ungroup() %>% 
-  group_by(YEAR, State) %>% 
-  mutate(percent = n/sum(n))
-ggplot(data=summary, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) + 
-  geom_bar(stat="identity",position="stack") + 
-  facet_wrap(~State)
+# summary <- data %>% group_by(YEAR, State, drinkingstatus_detailed) %>% 
+#   tally() %>% ungroup() %>% 
+#   group_by(YEAR, State) %>% 
+#   mutate(percent = n/sum(n))
+# ggplot(data=summary, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) + 
+#   geom_bar(stat="identity",position="stack") + 
+#   facet_wrap(~State)
 
 # impute the gpd for the non-30 day drinkers from the NAS data
 NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") %>% 
@@ -92,6 +93,8 @@ APC <- process_APC(data)
 # now join this up with the data
 data <- left_join(data, APC)
 
+# tally of drinkers in the BRFSS in each year in each State 
+
 tally <- data %>% group_by(YEAR, State, drinkingstatus_updated) %>% 
   tally() %>% ungroup() %>% 
   group_by(YEAR, State) %>% 
@@ -103,15 +106,14 @@ data <- left_join(data,tally)
 
 # perform the up-shift 
 data <- data %>% group_by(YEAR, State) %>% 
-  mutate(BRFSS_APC = mean(gramsperday),
-         adj_brfss_apc = BRFSS_APC/percentdrinkers,
-         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc,
-         cr_quotient = (quotient^(1/3)),
-         gramsperday_upshifted_quotient = gramsperday*(quotient),
-         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),
-         frequency_upshifted = alc_frequency*(cr_quotient^2),
-         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted),
-         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted)
+  mutate(BRFSS_APC = mean(gramsperday), #calculate BRFSS APC as mean grams per day
+         adj_brfss_apc = BRFSS_APC/percentdrinkers, #adjust the BRFSS APC value based on % of current drinkers
+         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc, #adjust to 90% of the APC data
+         cr_quotient = (quotient^(1/3)), #calculate cube root of quotient 
+         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2), #apply cube root quotient to gpd
+         frequency_upshifted = alc_frequency*(cr_quotient^2), #apply cube root quotient to frequency
+         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), #cap frequency at 30 days
+         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) #recalculate drinks per occasion based on upshifted data 
 
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
@@ -123,7 +125,8 @@ GPDsummary <- data %>% group_by(YEAR, State, region) %>% filter(drinkingstatus==
 data <- left_join(data, GPDsummary)
 
 compare <- data %>% 
-  dplyr::select(YEAR, State, region, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, gramsperday_upshifted_quotient,
+  dplyr::select(YEAR, State, region, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, 
+                gramsperday_upshifted_quotient,
                 meanGPD,
                 gramsperday_upshifted_crquotient) %>% 
   group_by(YEAR, State,region) %>% 
@@ -137,8 +140,7 @@ percapita_adjusted <- data %>%
 compare <- left_join(compare, percapita_adjusted) %>% 
   pivot_longer(cols=SALES:UPSHIFTED)
 
-
-
+# loop through and draw upshift plots for each region 
 for(i in unique(data$region)){
 ggplot(data=subset(compare, region==i), aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
   facet_wrap(~State, scales="fixed") + theme_bw() + theme(legend.title=element_blank(),
@@ -164,6 +166,6 @@ data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_va
   mutate(formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0),
          gramsperday = ifelse(gramsperday>200, 200, gramsperday))
 
-
+# save an RDS copy of the upshifted data 
 saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS")
 
