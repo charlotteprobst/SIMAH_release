@@ -55,6 +55,22 @@ deathrates <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_sumCOD_001
   
 }
 
+LC <- deathrates %>% dplyr::select(year, cat, LVDCmort) %>% 
+  separate(cat, into=c("sex","age","race","education"), sep=c(1,6,9)) %>% 
+  mutate(agecat = recode(age, "18-24"="18-24",
+                         "25-29"="25-34", "30-34"="25-34",
+                         "35-39"="35-44","40-44"="35-44",
+                         "45-49"="45-54","50-54"="45-54",
+                         "55-59"="55-64","60-64"="55-64",
+                         "65-69"="65-74","70-74"="65-74",
+                         "75-79"="75-79")) %>% 
+  group_by(year, sex, agecat) %>% summarise(total=sum(LVDCmort))
+write.csv(LC, "SIMAH_workplace/LC_SIMAH.csv", row.names=F)
+ggplot(data=LC, aes(x=year, y=total)) + geom_line() + 
+  facet_grid(rows=vars(sex), cols=vars(agecat))
+
+
+
 latest <- deathrates %>% filter(year==2018)
 rep <- as.data.frame(sapply(latest, rep.int, times=10))
 rep$year <- rep(2019:2028, each=288)

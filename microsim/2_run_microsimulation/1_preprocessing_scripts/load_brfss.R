@@ -31,7 +31,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
          microsim.init.education = education_summary,
          agecat = cut(age_var,
                       breaks=c(0,24,34,44,54,64,79),
-                      labels=c("18.24","25.34","35.44","45.54","55.64","65.79"))) %>% 
+                      labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
+         formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %>% 
   rename(microsim.init.age = age_var, 
          microsim.init.drinkingstatus=drinkingstatus,
          microsim.init.alc.gpd=gramsperday,

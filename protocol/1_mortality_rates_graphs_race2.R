@@ -60,27 +60,65 @@ sum$rate <- (sum$deaths/sum$population)*100000
 sum$weighted_rate <- sum$rate*sum$percent
 
 # calculate age-standardised rates - sum of age-weighted rates (i.e. weighted sum)
-sum <- sum %>% group_by(year, sex, raceeth, cause, datatype) %>% 
+sum <- sum %>% mutate(sex=as.factor(sex),raceeth=as.factor(raceeth),cause=as.factor(cause),
+                      year=as.factor(year), datatype=as.factor(datatype)) %>% 
+  group_by(year, sex, raceeth, cause, datatype, .drop=FALSE) %>% 
   summarise(rate = sum(weighted_rate))
 
 # Specifications for the SES graph
 data_graph <- subset(sum, cause!="Rest")
 
-color.vec <- c("#132268", "#447a9e", "#93AEBF","#FFF000")
-ggplot(data=data_graph, aes(x=year, y=rate, colour=raceeth)) + 
-  facet_grid(cols = vars(cause), rows = vars(sex), scales = "free") +
+# recode the causes of death to change order on plot 
+data_graph <- data_graph %>% 
+  mutate(cause = factor(cause, levels=c("AUD","Stroke","HHD",
+                                        "Liver C.","Suicide","Other UI", "MVA",
+                                        "Diabetes",
+                                        "IHD")),
+         raceeth = recode(raceeth, "WHI"="Non-Hispanic White",
+                          "BLA"="Non-Hispanic Black", "SPA"="Hispanic",
+                          "OTH"="Non-Hispanic Others"),
+         raceeth = factor(raceeth, levels=c("Non-Hispanic White","Non-Hispanic Black",
+                                            "Hispanic","Non-Hispanic Others")),
+         year = as.numeric(as.character(year)))
+  
+# create dummy data for custom scale 
+cause <- unique(data_graph$cause)
+sex <- unique(data_graph$sex)
+raceeth <- unique(data_graph$raceeth)
+facet_bounds <- expand.grid(cause,sex,raceeth)
+facet_bounds$ymin <- 0
+facet_bounds$ymax <- ifelse(facet_bounds$Var1=="IHD", 300,
+                            ifelse(facet_bounds$Var1=="AUD" |
+                                     facet_bounds$Var1=="Stroke", 25,
+                                   60))
+names(facet_bounds) <- c("cause","sex","raceeth","ymin","ymax")
+
+ff <- with(facet_bounds,
+           data.frame(rate=c(ymin,ymax),
+                      cause=c(cause,cause),
+                      sex =c(sex,sex),
+                      raceeth=c(raceeth,raceeth)))
+
+color.vec <- c("#132268", "#447a9e", "#93AEBF")
+color.vec <- c("#132268", "#447a9e")
+
+ggplot(data=data_graph, aes(x=year, y=rate, colour=sex)) + 
+  facet_grid(rows = vars(cause), cols = vars(raceeth), scales = "free") +
   theme_light() +
   theme(strip.background = element_rect(fill = "white"), legend.position = "bottom",  legend.box = "horizontal", legend.box.just = "top") +
   theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
   ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
   ylim(0, NA) +
+  # scale_color_brewer(palette="Set2") + 
   scale_color_manual(values = color.vec) +
   geom_line(aes(linetype=datatype, size = datatype), alpha= .75) + 
   #geom_line(aes(linetype=datatype), size = 0.7, alpha= .7) + 
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
   labs(color="Education", linetype = "Data type", size = "Data type") +
-  guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2))
-ggsave("SIMAH_workplace/protocol/output_data/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
+  guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) + 
+  geom_point(data=ff,x=NA, colour=NA)
+
+ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_race.jpeg", dpi=600, width=18, height=25, units="cm")
 
 

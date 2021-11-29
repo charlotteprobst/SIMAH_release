@@ -17,7 +17,7 @@ apply_death_rates <- function(basepop, deathrates, y){
   summary <- left_join(summary, deathrates)
   summary <- summary %>% pivot_longer(cols=LVDCmort: RESTmort, names_to="cause", values_to="count")
   summary <- summary %>% 
-    mutate(count = count/n) %>% group_by(cat) %>% mutate(rate=cumsum(count))
+    mutate(count = round(count, digits=0), proportion = count/n) %>% group_by(cat) %>% mutate(rate=cumsum(proportion))
   options(digits=22)
   basepop$prob <- runif(nrow(basepop))
   fun <- function(x,summary){
@@ -45,3 +45,17 @@ apply_death_rates <- function(basepop, deathrates, y){
   basepop <- basepop %>% dplyr::select(-c(cat, prob))
   return(basepop)
 }
+
+# # testing 
+# test <- basepop %>% mutate(cat=as.factor(cat), cause=as.factor(cause)) %>% 
+#   group_by(cat, cause, .drop=FALSE) %>% filter(dead==1) %>% drop_na() %>% 
+#   tally() %>% mutate(data="simulation") %>% data.frame(.)
+# summarydeaths <- summary %>% mutate(cat=as.factor(cat), cause=as.factor(cause)) %>% 
+#   group_by(cat, cause, .drop=FALSE) %>% summarise(n=sum(count)) %>% 
+#   mutate(data="target",
+#          cause = gsub("mort","",cause)) %>% data.frame(.)
+# summarydeaths <- rbind(summarydeaths, test) %>% group_by(cat, cause,data) %>% 
+#   summarise(sum=sum(n)) %>% pivot_wider(names_from=data, values_from=sum) %>% 
+#   separate(cat, into=c("sex","agecat","race","education"),sep=c(1,6,9)) %>% 
+#   group_by(sex, race, cause) %>% summarise(simulation=sum(simulation),
+#                                            target = sum(target))
