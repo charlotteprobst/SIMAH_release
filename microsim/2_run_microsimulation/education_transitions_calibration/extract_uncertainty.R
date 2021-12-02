@@ -7,7 +7,7 @@ library(tidyr)
 library(MASS)
 
 # how many samples to take from the prior? 
-nsamples <- 10
+nsamples <- 100
 
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msmparsecovariates.R")

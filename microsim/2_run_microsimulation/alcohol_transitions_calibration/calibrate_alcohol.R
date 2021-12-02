@@ -28,19 +28,12 @@ set.seed(42)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
-States <- c("California","Colorado","Florida","Indiana",
-            "Louisiana","Massachusetts","Michigan","Minnesota",
-            "Missouri","New York", "Oregon", "Pennsylvania",
-            "Tennessee","Texas","USA")
-
-for(s in States){
-SelectedState <- s
-print(s)
+SelectedState <- "USA"
 
 ####Size of population 
 PopulationSize <- 1000000
@@ -78,50 +71,50 @@ migrationdeaths <- 1
 updatingeducation <- 1
 
 # switch on and off alcohol updates
-updatingalcohol <- 0
+updatingalcohol <- 1
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
 
-# now sample parameters for the education transitions
-source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
+# now sample parameters for the alcohol transitions
+source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/extract_uncertainty.R")
 
 # save samples 
-saveRDS(transitionsList, paste("SIMAH_workplace/microsim/2_output_data/transitionsList", SelectedState,".RDS",sep=""))
+saveRDS(transitionsList, "SIMAH_workplace/microsim/2_output_data/transitionsList.RDS")
 # length(transitionsList)
 
 # transitionsList <- transitionsList[1:2]
 
-registerDoParallel(30)
-# registerDoSNOW(c1)
-# plan(multicore, workers=24)
+registerDoParallel(25)
+# registerDoParallel(3)
 options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
-Output <- list()
+
 Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
-                       samplenum <- i
-                       seed <- Sys.time()
-                       print(i)
-                       run_microsim(seed,samplenum,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
-                       updatingeducation, education_setup, transitionroles,
-                       calculate_migration_rates, outward_migration, inward_migration, 
-                       brfss,Rates,AlctransitionProbability,
-                       transitionsList[[i]], PopPerYear, 2000, 2018)
-                       }
-                       
-        
+                  .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                    samplenum <- i
+                    seed <- Sys.time()
+                    print(i)
+                    run_microsim(seed,samplenum,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+                                 updatingeducation, education_setup, transitionroles,
+                                 calculate_migration_rates, outward_migration, inward_migration, 
+                                 brfss,Rates,transitionsList[[i]],
+                                 transitions, PopPerYear, 2000, 2018)
+                  }
+
+
 # get target data 
-source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/process_education_compare.R")
+source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/postprocess_alcohol.R")
 
 # calculate error from target data 
 Output <- do.call(rbind,Output)
-Output <- Output %>% group_by(samplenum, year, microsim.init.sex, microsim.init.education) %>% 
+Output <- Output %>% group_by(samplenum, year, microsim.init.sex, microsim.init.education,
+                              AlcCAT, .drop=FALSE) %>% 
   summarise(n=sum(n)) %>% ungroup() %>% 
-  group_by(samplenum, year, microsim.init.sex) %>% 
+  group_by(samplenum, year, microsim.init.sex, microsim.init.education) %>% 
   mutate(microsimpercent = n/sum(n),
-         year=as.numeric(year))
+         year=as.numeric(as.character(year)))
 Output <- left_join(Output, target)
 
 error <- left_join(Output,target) %>% ungroup() %>% 
@@ -130,11 +123,11 @@ error <- left_join(Output,target) %>% ungroup() %>%
   group_by(samplenum) %>% 
   summarise(RMSE = sqrt(mean(errorsq)))
 
-write.csv(error, paste("SIMAH_workplace/microsim/2_output_data/error_RMSE",SelectedState,".csv",sep=""), row.names=F)
+write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_RMSE.csv")
 
 final <- error[which(error$RMSE==min(error$RMSE)),]$samplenum
 transitions <- transitionsList[[final]]
-saveRDS(transitions, paste0("SIMAH_workplace/microsim/2_output_data/final_ed_transitions", SelectedState, ".RDS"))
+saveRDS(transitions, paste0("SIMAH_workplace/microsim/2_output_data/final_alc_transitions", SelectedState, ".RDS"))
 
 # graph <- Output %>% pivot_longer(cols=microsimpercent:targetpercent, values_to="percent") %>% 
 #   mutate(samplenum = ifelse(name=="targetpercent", "target", samplenum))
@@ -150,26 +143,41 @@ Output <- Output %>% mutate(microsim.init.sex = recode(microsim.init.sex,
                                                                       "Some college",
                                                                       "College degree plus")))
 scaleFUN <- function(x) sprintf("%.2f", x)
-ggplot(data=Output, aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
+ggplot(data=subset(Output, microsim.init.sex=="Men"), aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
   geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.education), scales="free") + 
+  facet_grid(rows=vars(AlcCAT), cols=vars(microsim.init.education), scales="free") +
+  # facet_wrap(~AlcCAT+microsim.init.sex+microsim.init.education, scales="free") + 
   theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
   theme(legend.position="bottom",
-        legend.title=element_blank()) + 
-  ylab("percentage in category")
-ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/education_states_compare",SelectedState,".png",sep=""),
+        legend.title=element_blank(),
+        strip.background=element_rect(fill="white")) + 
+  ylab("percentage in category") + ggtitle("Men")
+ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/alcohol_states_comparemen",SelectedState,".png",sep=""),
+       dpi=300, width=33, height=19, units="cm")
+ggplot(data=subset(Output, microsim.init.sex=="Women"), aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
+  geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
+  facet_grid(rows=vars(AlcCAT), cols=vars(microsim.init.education), scales="free") +
+  # facet_wrap(~AlcCAT+microsim.init.sex+microsim.init.education, scales="free") + 
+  theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        strip.background=element_rect(fill="white")) + 
+  ylab("percentage in category") + ggtitle("Women")
+ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/alcohol_states_comparewomen",SelectedState,".png",sep=""),
        dpi=300, width=33, height=19, units="cm")
 
-bestrate <- Output %>% filter(samplenum==final)
-ggplot(data=bestrate, aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
-  geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.education), scales="free") + 
+bestrate <- Output %>% filter(samplenum==final) %>% 
+  pivot_longer(cols=microsimpercent:targetpercent)
+
+ggplot(data=bestrate, aes(x=year, y=value, colour=microsim.init.sex, linetype=name)) + 
+  geom_line() +
+  facet_grid(cols=vars(microsim.init.education), rows=vars(AlcCAT), scales="free") + 
   theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
   theme(legend.position="bottom",
         legend.title=element_blank()) + 
   ylab("percentage in category")
-ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/education_states_bestrate",SelectedState, ".png",sep=""),
+ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/alcohol_states_bestrate",SelectedState, ".png",sep=""),
        dpi=300, width=33, height=19, units="cm")
-}
+
 
 

@@ -6,7 +6,7 @@ k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
 k.wd <- c("~/Google Drive/SIMAH Sheffield/")
 setwd(k.wd)
 
-df <- read.csv("SIMAH_workplace/protocol/output_data/1_microsim_deaths_summary2.csv") 
+df <- read.csv("SIMAH_workplace/protocol/output_data/1_microsim_deaths_summary3.csv")
 
 # only cause with all categories present in all year is all other causes ("REST")
 age2018 <- df %>% filter(year==2018) %>% filter(cause=="REST") %>% 
@@ -23,5 +23,5 @@ summary(check$sum)
 
 age2018 <- data.frame(age2018)
 
-write.csv(age2018, "SIMAH_workplace/protocol/output_data/1_population_weights_2018_2.csv", row.names = F)
+write.csv(age2018, "SIMAH_workplace/protocol/output_data/1_population_weights_2018_3.csv", row.names = F)
 

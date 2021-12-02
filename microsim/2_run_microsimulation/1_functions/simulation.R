@@ -22,7 +22,7 @@ if(y>=2001){
 if(y>=2000){
 basepop <- apply_death_rates(basepop, deathrates, y)
 DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
-                                              dead, cause) %>% mutate(year=y)
+                                              dead, cause) %>% mutate(year=y, seed=seed)
 basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, cat))
 }
 basepop$cat <- NULL
@@ -43,17 +43,20 @@ if(updatingeducation==1 & y>2000){
   basepop <- rbind(totransition, tostay)
 }
 if(updatingalcohol==1 & y>2000){
-  basepop <- basepop %>% mutate(cat = paste(microsim.init.age, microsim.init.sex,
-                                      microsim.init.race, microsim.init.education,
+  basepop <- basepop %>% ungroup() %>% mutate(agecat = ifelse(microsim.init.age<=29, "18-29",
+                                                ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
+                                                       "50+")),
+    cat = paste(agecat, microsim.init.sex,
+                                      microsim.init.race, microsim.init.education, "STATEFROM",
                                       AlcCAT, sep="_"),
                                 prob = runif(nrow(.)))
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., AlctransitionProbability))
   basepop <- basepop %>% 
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
 }
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 #delete anyone over 80
-PopPerYear[[paste(y)]] <- basepop
 ###then age everyone by 1 year and update age category
 basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
                               agecat = cut(microsim.init.age,
@@ -63,19 +66,37 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
 basepop <- subset(basepop, microsim.init.age<=79)
 
 
+
 }
 # SummaryMissing <- do.call(rbind,SummaryMissing)
 # 
 # write.csv(SummaryMissing,paste0("SIMAH_workplace/microsim/2_output_data/SummaryMissing", SelectedState, ".csv"))
 
-for(i in names(PopPerYear)){
-Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% group_by(microsim.init.age, microsim.init.race,
-                                                             microsim.init.sex,
-                                                             microsim.init.education) %>% tally() %>%
-    mutate(year=i, samplenum=samplenum)
-}
-Summary <- do.call(rbind,Summary)
-Summary <- list(PopPerYear, DeathSummary)
-return(Summary)
+# for(i in names(PopPerYear)){
+# Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.init.age,
+#                                                                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
+#                                                                       labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
+#                                                                                "50-54","55-59","60-64","65-69","70-74","75-79"))) %>% 
+#   group_by(microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% tally() %>% 
+#   mutate(year=i, seed=seed) %>% rename(Sex=microsim.init.sex,
+#                                        edclass=microsim.init.education,
+#                                        raceeth = microsim.init.race)
+# }
+PopPerYear <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+                                                   samplenum=as.factor(samplenum),
+                                                   microsim.init.sex=as.factor(microsim.init.sex),
+                                                   microsim.init.race=as.factor(microsim.init.race),
+                                                   microsim.init.education=as.factor(microsim.init.education),
+                                                   agecat = ifelse(microsim.init.age<=29, "18-29",
+                                                                   ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
+                                                                          "50+")),
+                                                   agecat=as.factor(agecat),
+                                                   AlcCAT=as.factor(AlcCAT)) %>% 
+  group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education, agecat,
+           AlcCAT, .drop=FALSE) %>% tally()
+# Summary <- do.call(rbind,Summary)
+# DeathSummary <- do.call(rbind, DeathSummary)
+# Summary <- list(Summary, DeathSummary)
+return(PopPerYear)
 }
 

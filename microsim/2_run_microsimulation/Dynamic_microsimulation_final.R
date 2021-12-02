@@ -15,6 +15,7 @@ library(gridExtra)
 library(readr)
 library(readxl)
 library(parallel)
+library(foreach)
 options(scipen=999)
 # set seed for reproducibility - IMPORTANT - DO NOT CHANGE
 # note - this also needs to be ran straight after R has been opened
@@ -23,7 +24,7 @@ set.seed(42)
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/SIMAH/Microsimulation"
+# WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -70,14 +71,23 @@ updatingalcohol <- 0
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
 
+N_SAMPLES <- 1
+
+sampleseeds <- expand.grid(seed=1:5, SampleNum=1:N_SAMPLES)
+sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 Output <- list()
-Output <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+Output <- foreach(i=1:nrow(sampleseeds)) %do% {
+run_microsim(i,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                        updatingeducation, education_setup, transitionroles,
                        calculate_migration_rates, outward_migration, inward_migration, 
                        brfss,Rates,AlctransitionProbability,
                        transitions, PopPerYear, 2000, 2018)
+}
 
-# saveRDS(Output, "output_alcohol.RDS")
+
+# saveRDS(Output, "output_fullpop.RDS")
+saveRDS(Output[[1]], "SIMAH_workplace/microsim/2_output_data/output_fullpop.RDS")
+saveRDS(Output[[2]], "SIMAH_workplace/microsim/2_output_data/output_deaths.RDS")
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_functions/compare_output_target.R")
 

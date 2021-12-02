@@ -2,38 +2,67 @@
 # rm(list=setdiff(ls(), c("PopPerYear", "DeadSummary", "baseorig", "proportion")))
 
 # PopPerYear <- readRDS("output_data/PopPerYear.RDS")
-PopPerYear <- Output[[1]]
+
+PopPerYear <- c(Output[[1]][1],Output[[2]][1],Output[[3]][1],Output[[4]][1],Output[[5]][1])
+
+PopPerYear[[1]] <- do.call(rbind, PopPerYear[[1]])
+
+# PopPerYear <- Output[[1]]
 # total pop in each year
-tpop <- list() 
-for(i in names(PopPerYear)){
-  tpop[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.init.age,
-                                                                     breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
-                                                                     labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
-                                                                              "50-54","55-59","60-64","65-69","70-74","75-79"))) %>% 
-    group_by(microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% tally() %>% 
-    mutate(year=paste(i),
-           year=as.integer(year)) %>% rename(Sex=microsim.init.sex,
-                                     edclass=microsim.init.education,
-                                     raceeth = microsim.init.race)
-}
-tpop <- do.call(rbind, tpop)
+
+test <- Output[[1]][1]
+
+tpop <- rbind(do.call(rbind,Output[[1]][1]), do.call(rbind,Output[[2]][1]), 
+              do.call(rbind,Output[[3]][1]),
+              do.call(rbind,Output[[4]][1]), 
+              do.call(rbind,Output[[5]][1])) %>% 
+  group_by(year, Sex, agecat, raceeth, edclass) %>% 
+  summarise(n=mean(n))
+
+# tpop <- list() 
+# for(i in names(PopPerYear)){
+#   tpop[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.init.age,
+#                                                                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
+#                                                                      labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
+#                                                                               "50-54","55-59","60-64","65-69","70-74","75-79"))) %>% 
+#     group_by(microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% tally() %>% 
+#     mutate(year=paste(i),
+#            year=as.integer(year)) %>% rename(Sex=microsim.init.sex,
+#                                      edclass=microsim.init.education,
+#                                      raceeth = microsim.init.race)
+# }
+# tpop <- do.call(rbind, tpop)
 summary(tpop)
 
-tpop%>% filter(year==2000) %>% group_by(raceeth, edclass) %>% summarise(sum(n))
+# tpop$n <- tpop$n*(1/proportion)
 
-
-tpop$n <- tpop$n*(1/proportion)
-
-DeadSummary <- Output[[2]]
-Summary <- do.call(rbind,DeadSummary)
-
-Summary <- Summary %>% 
-  group_by(year, microsim.init.sex, microsim.init.race, microsim.init.education, agecat, cause) %>% summarise(totaldeaths=sum(dead),
-                                                                                          totaldeaths = totaldeaths*(1/proportion)) %>% 
+DeadSummary <- rbind(do.call(rbind,Output[[1]][2]), 
+                     do.call(rbind,Output[[2]][2]), 
+                     do.call(rbind,Output[[3]][2]),
+                     do.call(rbind,Output[[4]][2]), 
+                     do.call(rbind,Output[[5]][2])) %>% 
+  group_by(year, microsim.init.sex, microsim.init.race, microsim.init.education,
+           agecat, cause, seed) %>% summarise(totaldeaths=sum(dead)) %>% ungroup() %>% 
+  group_by(year, microsim.init.sex, microsim.init.race, microsim.init.education, agecat, 
+           cause, .drop=FALSE) %>% summarise(totaldeaths=mean(totaldeaths)) %>% 
   mutate(datatype="microsim") %>% rename(Sex=microsim.init.sex,
                                          edclass=microsim.init.education,
-                                         raceeth=microsim.init.race)
-Summary <- left_join(Summary,tpop)
+                                         raceeth=microsim.init.race) %>% drop_na()
+  
+
+# DeadSummary <- do.call(rbind,Output[[1]][2])
+
+# Summary <- do.call(rbind,DeadSummary)
+
+# Summary <- Summary %>% 
+#   group_by(year, microsim.init.sex, microsim.init.race, microsim.init.education, agecat, cause, .drop=FALSE) %>% 
+#   summarise(totaldeaths=sum(dead),
+#             totaldeaths = totaldeaths) %>% 
+#   mutate(datatype="microsim") %>% rename(Sex=microsim.init.sex,
+#                                          edclass=microsim.init.education,
+#                                          raceeth=microsim.init.race)
+tpop$year <- as.numeric(as.character(tpop$year))
+Summary <- left_join(DeadSummary,tpop) %>% drop_na()
 
 summary(Summary)
 
@@ -45,11 +74,12 @@ deathrates <- deathrates %>% filter(age_gp!="80") %>% filter(year!=2019) %>%
          raceeth = recode(race, "White"="WHI","Black"="BLA","Hispanic"="SPA","Other"="OTH")) %>% 
   dplyr::select(year,Sex,edclass,raceeth,age_gp, c(causes)) %>% 
   pivot_longer(cols=LVDCmort:RESTmort, names_to="cause", values_to="deaths") %>% mutate(cause=gsub("mort","",cause)) %>% 
-  group_by(year, Sex, age_gp, raceeth, edclass, cause) %>% summarise(totaldeaths=sum(deaths)) %>% mutate(datatype="target") %>% 
+  group_by(year, Sex, age_gp, raceeth, edclass, cause) %>% summarise(totaldeaths=sum(deaths)*proportion) %>% mutate(datatype="target") %>% 
   mutate(agecat = recode(age_gp,
                          "18"="18-24","25"="25-29","30"="30-34","35"="35-39",
                          "40"="40-44","45"="45-49","50"="50-54","55"="55-59",
-                         "60"="60-64","65"="65-69","70"="70-74","75"="75-79")) %>% ungroup() %>% dplyr::select(year, Sex, edclass, raceeth, agecat, cause,
+                         "60"="60-64","65"="65-69","70"="70-74","75"="75-79"),
+         edclass = ifelse(edclass=="4+yrs","College",edclass)) %>% ungroup() %>% dplyr::select(year, Sex, edclass, raceeth, agecat, cause,
                                                                                           totaldeaths, datatype)
 
 TPop <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_rates_0019_final.csv") %>% 
@@ -62,7 +92,7 @@ TPop <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_rates_0019_final
                          "18"="18-24","25"="25-29","30"="30-34","35"="35-39",
                          "40"="40-44","45"="45-49","50"="50-54","55"="55-59",
                          "60"="60-64","65"="65-69","70"="70-74","75"="75-79")) %>% ungroup() %>% 
-  group_by(year, raceeth, Sex, agecat) %>% summarise(n=sum(TPop))
+  group_by(year, raceeth, Sex, edclass, agecat) %>% summarise(n=(sum(TPop))*proportion)
 deathrates <- left_join(deathrates, TPop)
                                                                                                                
 
@@ -74,6 +104,17 @@ Summary <- rbind(Summary, deathrates)
 summary(Summary)
 
 # percentages by age category
+test <- Summary %>% mutate(Sex=as.factor(Sex), raceeth=as.factor(raceeth),
+                           cause=as.factor(cause),
+                           datatype=as.factor(datatype)) %>% 
+  group_by(year, Sex, raceeth, cause, datatype, .drop=FALSE) %>% 
+    summarise(totaldeaths=sum(totaldeaths))
+
+ggplot(data=test, aes(x=year, y=totaldeaths, colour=raceeth, linetype=datatype)) + 
+  geom_line() + facet_grid(cols=vars(cause), rows=vars(Sex))
+  
+
+
 
 TotalPops <- Summary %>% dplyr::select(year, Sex, edclass, agecat, datatype, n) %>% 
   group_by(year, Sex, edclass, agecat, datatype) %>% summarise(n=sum(n)) %>% ungroup() %>% 
@@ -84,7 +125,7 @@ sum(test$percent)
 
 Summary <- Summary %>% rename(sex=Sex)
 
-write.csv(Summary, "SIMAH_workplace/protocol/output_data/1_microsim_deaths_summary2.csv", row.names=FALSE)
+write.csv(Summary, "SIMAH_workplace/protocol/output_data/1_microsim_deaths_summary3.csv", row.names=FALSE)
 
 options(digits=2)
 
