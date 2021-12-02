@@ -9,7 +9,7 @@ library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 library(irr)        # calculate kappa for true and predicted alcohol use
 # options(scipen=999) # prevent the use of scientific notation
-#memory.limit(size=1e+13)
+memory.limit(size=1e+13)
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
@@ -24,43 +24,46 @@ nesarc_all <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with miss
 
 # Load Models (from sections 2.1 and 3.1)
 alc5.msm_unadj <- readRDS(paste0(models, "alc5.msm_unadj.RDS"))
-alc5.msm <- readRDS(paste0(models, "alc5.msm9.RDS"))
-hed.msm_unadj <- readRDS(paste0(models, "hed.msm_unadj.RDS"))
-hed.msm<- readRDS(paste0(models, "hed.msm.RDS"))
+alc5.msm       <- readRDS(paste0(models, "alc5.msm.RDS"))
+hed.msm_unadj  <- readRDS(paste0(models, "hed.msm_unadj.RDS"))
+hed.msm        <- readRDS(paste0(models, "hed.msm.RDS"))
 
 
 # 1) Descriptives ------------------------------------------------------------------------------------------
 
+# years follow-up
+nesarc %>%
+  filter(wave==2) %>%
+  select (years) %>% 
+  skim()
+
 variables <- c("female", "age", "age3.factor", "race.factor", "edu3.factor", "alc5.factor", "hed.factor")
 factor_vars <- c("female", "age3.factor", "race.factor", "edu3.factor", "alc5.factor", "hed.factor")
-
-# Descriptives at basleine and follow-up of included participants 
-tab1 <-CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc)
-table1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE)   
-write.csv(table1, file=paste0(output,"Table 1 - Descriptives.csv"))  # export to excel, to copy/paste into manuscript
-kableone(table1)
-
-    # years follow-up
-    nesarc %>%
-      filter(wave==2) %>%
-      select (years) %>% 
-      skim()
-
-    
-# Descriptives for attrition 
-nesarc1_all <- filter(nesarc_all, wave==1) # select baseline data
-tab1_attr <-CreateTableOne(vars= variables, factorVars = factor_vars, strata="lost.factor", data=nesarc1_all)
-table1_attr <- print(tab1_attr, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, smd=TRUE)   
-write.csv(table1_attr, file=paste0(output,"Table S1 - Attrition Descriptives.csv"))  # export to excel, to copy/paste into manuscript
-kableone(table1_attr)                             # view in R; R Markdown friendly version
 
 
 
 # Descriptives of expanded data
 tab_exp <-CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc_expanded)
 table_exp <- print(tab_exp, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, format="p")  # Shows only % 
-write.csv(table_exp, file=paste0(output,"Table S2 - Descriptives of expanded data.csv")) 
+write.csv(table_exp, file=paste0(output,"Table 1 - Descriptives of expanded data.csv")) 
 kableone(table1_exp)
+
+
+
+# Descriptives at basleine and follow-up of included participants 
+tab1 <-CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc)
+table1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE)   
+write.csv(table1, file=paste0(output,"Table S1 - Descriptives of original data.csv"))  # export to excel, to copy/paste into manuscript
+kableone(table1)
+
+
+# Descriptives for attrition 
+nesarc1_all <- filter(nesarc_all, wave==1) # select baseline data
+tab1_attr <-CreateTableOne(vars= variables, factorVars = factor_vars, strata="lost.factor", data=nesarc1_all)
+table1_attr <- print(tab1_attr, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, smd=TRUE)   
+write.csv(table1_attr, file=paste0(output,"Table S2 - Attrition Descriptives.csv"))  # export to excel, to copy/paste into manuscript
+kableone(table1_attr)                             # view in R; R Markdown friendly version
+
 
 
 
@@ -149,7 +152,9 @@ write_csv(aTP_alc5, paste0(output, "Supplement 1 - AlcUse Annual Transition Prob
 
 
 
-#   2.4) Compare observed vs predicted (Table 3a) ------------------------------------------------------------------
+#   2.4) Simulate population using aTP  (Table 3a, Figure S1) ------------------------------------------------------------------
+
+#   2.4.1) Load the required files *********************************************************************************************
 
 # Load and format the transition probabilities
 aTP_alc5 <- read_csv(paste0(output, "Supplement 1 - AlcUse Annual Transition Probabilities.csv")) %>% 
@@ -174,75 +179,71 @@ AlcUse_basepop <- nesarc_expanded %>%
   select(idnum, AlcUse_1, AlcUse_2, sex, age, edu, race, AlcUse_pred)
 
 
+
+#   2.4.2) Compare observed vs predicted (Table 3a) *****************************************************************************
+
 # Simulate population at 3 years follow-up
 AlcUse_year3 <-alc_sim(3)
 
 
 # Compare observed and predicted at the group
-observed <- count(AlcUse_year3, AlcUse_2) %>% rename(observed = n, AlcUse = AlcUse_2) 
-predicted <- count(AlcUse_year3, AlcUse_pred) %>% rename(predicted = n, AlcUse = AlcUse_pred)  
-comparison_AlcUse <- full_join (observed, predicted, by="AlcUse") %>%
-  mutate(difference = abs(predicted-observed),  
-    diff_percent = difference/observed * 100) %>%
-  adorn_totals("row") %>%  # Add row totals
-  mutate(diff_percent = ifelse(AlcUse=="Total", difference/predicted * 100, diff_percent),
-    predicted = ifelse(AlcUse=="Total", "", predicted), 
-    diff_percent = round(diff_percent, 1))
+observed <- count(AlcUse_year3, AlcUse_2) %>%
+    rename(observed = n, AlcUse = AlcUse_2) %>%
+    mutate(obs_pct = round(observed / sum(observed) * 100,2))
+
+
+predicted <- count(AlcUse_year3, AlcUse_pred) %>% 
+    rename(predicted = n, AlcUse = AlcUse_pred) %>%
+    mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+comparison_AlcUse <- full_join (observed, predicted, by="AlcUse") %>% 
+    mutate(diff_pct = round(abs(pred_pct-obs_pct), 2))%>%
+    select (AlcUse, obs_pct, pred_pct, diff_pct)
 
 kableone(comparison_AlcUse)
 write_csv(comparison_AlcUse, paste0(output, "Table 3a - AlcUse Observed vs Predicted.csv")) # save results
 
 
 
-#   2.5) Hazard ratios  (Table 4) -------------------------------------------------------------------------------
-# Function to extract HR results, rearrange, and correct CI to original sample size 
-HR_alc5 <- HR_table(alc5.msm, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))  %>%
-  rename( "Abstainer->Category I"   = "State 1 - State 3",
-          "Former->Category I"      = "State 2 - State 3",
-          "Category I->Former"      = "State 3 - State 2",
-          "Category I->Category II"  = "State 3 - State 4",
-          "Category II->Category I"  = "State 4 - State 3",
-          "Category II->Category III" = "State 4 - State 5",
-          "Category III->Category II" = "State 5 - State 4") %>%
-  select(Variable, "Abstainer->Category I", "Former->Category I", "Category I->Category II", "Category II->Category III", "Category III->Category II", "Category II->Category I", "Category I->Former")
-write_csv(HR_alc5, paste0(output, "Table 4 - AlcUse Hazard Ratios.csv")) # save results for paper
-kableone(HR_alc5)
-
-
-
-
-
-#   2.6) Plot TP over multiple years (Figure S1) ----------------------------------------------------------------
+#   2.4.3) Plot TP over multiple years (Figure S1) ******************************************************************************
 
 # Simulate population over multiple years (over 10 years)
-AlcUse_overtime <- rbind(alc_sim(1), alc_sim(2), alc_sim(3), alc_sim(4), alc_sim(5), alc_sim(6))
+AlcUse_overtime <- rbind(alc_sim(1), alc_sim(2), alc_sim(3), alc_sim(4), alc_sim(5))
 
 
-# Plot yearly TP for each age category
-AlcUse_overtime %>%
-  # Format data
-  mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", 
-                                 "30-49" = "Ages 30-49 years", 
-                                 "50+" = "Ages 50+ years"),
-         AlcUse_1 = recode (AlcUse_1, "Abstainer" = "Initial state: Lifetime abstainer",
-                                      "Former" = "Initial state: Former Drinker",
-                                      "Category I" = "Initial state: Category I",
-                                      "Category II" = "Initial state: Category II",
-                                      "Category III" = "Initial state: Category III"),
-         AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",
-                                           "Former" = "Former Drinker"),
-         AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
-                                            "Category I", "Category II", "Category III")) %>%
-  group_by (year, AlcUse_1, age_cat, AlcUse_pred) %>%
-    count() %>%  ungroup() %>%
+# Calculate proportions
+AlcUse_overtime2 <- AlcUse_overtime %>%
+  group_by (year, AlcUse_1, age_cat, AlcUse_pred) %>% count() %>%  ungroup() %>%
   group_by(year, AlcUse_1, age_cat) %>%
-    mutate(total = sum(n),
-           pct_total = n / total * 100) %>%
-  ungroup() %>%
+    mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup()
+  
+# Create dummy data for proportions at year = 0
+AlcUse_overtime3 <- AlcUse_overtime2 %>%
+  filter(year==1) %>%
+  mutate(year = 0,
+         n = ifelse(AlcUse_1 == AlcUse_pred, total, 0),
+         pct_total = ifelse(AlcUse_1 == AlcUse_pred, 100, 0))
+
+
+# Plot the proportions over time stratified by initial state and age (Figure S1)
+rbind (AlcUse_overtime2, AlcUse_overtime3) %>% 
+  # label data
+  mutate(
+    age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", 
+                            "30-49" = "Ages 30-49 years", 
+                            "50+" = "Ages 50+ years"),
+    AlcUse_1 = recode (AlcUse_1, "Abstainer" = "Initial state: Lifetime abstainer",
+                                  "Former" = "Initial state: Former Drinker",
+                                  "Category I" = "Initial state: Category I",
+                                  "Category II" = "Initial state: Category II",
+                                  "Category III" = "Initial state: Category III"),
+    AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker", "Category I",   # re-order the categories
+                                            "Category II", "Category III")) %>%
   # plot data
   ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
   geom_line(aes(color=AlcUse_pred), size=1) +
-  # geom_ribbon(aes(ymin=newLower, ymax=newUpper, fill=To), alpha=0.2) + 
   facet_grid(age_cat~AlcUse_1) +
   labs(x = "Years follow-up", y="Proportion (%)", color="State at Follow-up:") +
   theme(legend.position = "top",
@@ -250,16 +251,258 @@ AlcUse_overtime %>%
     panel.background = element_rect(fill = NA),
     panel.border = element_rect(linetype = "solid", fill = NA)) + 
   scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
-  scale_x_continuous(breaks=seq(0, 6, by= 1))
-ggsave(paste0(output, "Figure S1 - AlcUse over time.tiff"), dpi=600, width=12, height = 7)
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
+ggsave(paste0(output, "Figure S1a - AlcUse over time.tiff"), dpi=600, width=12, height = 7)
 
 
 
 
-#   2.7) Transition frequencies (Tables S1a, S2a) --------------------------------------------------------------
 
-statetable.msm(alc5, idnum, data=nesarc)          # Table S3a
-statetable.msm(alc5, idnum, data=nesarc_expanded) # Table S4a
+# Plot the proportions over time stratified by age (Figure S1b)
+
+# Calculate proportions
+AlcUse_overtime4 <- AlcUse_overtime %>%
+  group_by (year, age_cat, AlcUse_pred) %>% count() %>%  ungroup() %>%
+  group_by(year, age_cat) %>%
+  mutate(total = sum(n),  pct_total = n / total * 100) %>%
+  ungroup()
+
+# Create dummy data for proportions at year = 0
+AlcUse_overtime5 <- AlcUse_overtime %>%
+  filter(year==1) %>%  mutate(year = 0) %>%
+  group_by(year, age_cat, AlcUse_1) %>% count() %>% ungroup() %>%
+  group_by(year, age_cat) %>%
+  mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup() %>%
+  rename (AlcUse_pred = AlcUse_1)
+
+
+rbind (AlcUse_overtime4, AlcUse_overtime5) %>% 
+  # label data
+  mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", 
+                                  "30-49" = "Ages 30-49 years", 
+                                  "50+" = "Ages 50+ years"),
+    AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
+                                            "Category I", "Category II", "Category III")) %>%
+  # plot data
+  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
+  geom_line(aes(color=AlcUse_pred), size=1) +
+  facet_wrap(~age_cat) +
+  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
+  theme(legend.position = "top",
+    panel.grid.major=element_line(color="grey90"), 
+    panel.background = element_rect(fill = NA),
+    panel.border = element_rect(linetype = "solid", fill = NA)) + 
+  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
+ggsave(paste0(output, "Figure S1b - AlcUse over time.tiff"), dpi=600, width=12, height = 7)
+
+
+
+
+
+
+# Plot the proportions over time for everyone (Figure S1c)
+
+# Calculate proportions
+AlcUse_overtime6 <- AlcUse_overtime %>%
+  group_by (year, AlcUse_pred) %>%  count() %>%  ungroup() %>%
+  group_by(year) %>%
+  mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup()
+
+# Create dummy data for proportions at year = 0
+AlcUse_overtime7 <- AlcUse_overtime %>%
+  filter(year==1) %>%   mutate(year = 0) %>%
+  group_by(year, AlcUse_1) %>%  count() %>% ungroup() %>%
+  group_by(year) %>%
+  mutate(total = sum(n),  pct_total = n / total * 100) %>%
+  ungroup() %>%
+  rename (AlcUse_pred = AlcUse_1)
+
+library(ggrepel)
+rbind (AlcUse_overtime6, AlcUse_overtime7) %>% 
+  # label data
+  mutate(
+    AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
+                                           "Category I", "Category II", "Category III"),
+    pct_total = round(pct_total, 1)) %>%
+  # plot data
+  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred, label=pct_total)) + 
+  geom_line(aes(color=AlcUse_pred), size=1) + geom_point(aes(color=AlcUse_pred), size=2)+
+  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state") +
+  theme(legend.position = "top",
+    panel.grid.major=element_line(color="grey90"), 
+    panel.background = element_rect(fill = NA),
+    panel.border = element_rect(linetype = "solid", fill = NA)) + 
+  scale_y_continuous(breaks=seq(0, 100, by= 5), limits=c(0,60)) +
+  scale_x_continuous(breaks=seq(0, 5, by= 1)) + 
+  geom_text_repel(aes(x = year, y = pct_total, label = pct_total))
+
+ggsave(paste0(output, "Figure S1c - AlcUse over time.tiff"), dpi=600, width=12, height = 7)
+
+
+
+
+
+
+# Plot the proportions over time stratified by SES (Figure S1D)
+
+# Calculate proportions
+Fig_S1D_1 <- AlcUse_overtime %>%
+  group_by (year, edu, AlcUse_pred) %>% count() %>%  ungroup() %>%
+  group_by(year, edu) %>%
+  mutate(total = sum(n),  pct_total = n / total * 100) %>%
+  ungroup()
+
+# Create dummy data for proportions at year = 0
+Fig_S1D_2 <- AlcUse_overtime %>%
+  filter(year==1) %>%  mutate(year = 0) %>%
+  group_by(year, edu, AlcUse_1) %>% count() %>% ungroup() %>%
+  group_by(year, edu) %>%
+  mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup() %>%
+  rename (AlcUse_pred = AlcUse_1)
+
+
+rbind (Fig_S1D_1, Fig_S1D_2) %>% 
+  # label data
+  mutate(edu=recode(edu, "High" = "Cachelor's degree or more", 
+                          "Low" = "Highschool or less", 
+                          "Med" = "Some college"),
+    edu = fct_relevel(edu, "Highschool or less", "Some college", "Cachelor's degree or more"), # re-order the categories
+    AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
+      "Category I", "Category II", "Category III")) %>%
+  # plot data
+  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
+  geom_line(aes(color=AlcUse_pred), size=1) +
+  facet_wrap(~edu) +
+  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
+  theme(legend.position = "top",
+    panel.grid.major=element_line(color="grey90"), 
+    panel.background = element_rect(fill = NA),
+    panel.border = element_rect(linetype = "solid", fill = NA)) + 
+  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
+ggsave(paste0(output, "Figure S1d - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
+
+
+
+
+
+
+
+# Plot the proportions over time stratified by Race/ethnicity (Figure S1E)
+
+# Calculate proportions
+Fig_S1E_1 <- AlcUse_overtime %>%
+  group_by (year, race, AlcUse_pred) %>% count() %>%  ungroup() %>%
+  group_by(year, race) %>%
+  mutate(total = sum(n),  pct_total = n / total * 100) %>%
+  ungroup()
+
+# Create dummy data for proportions at year = 0
+Fig_S1E_2 <- AlcUse_overtime %>%
+  filter(year==1) %>%  mutate(year = 0) %>%
+  group_by(year, race, AlcUse_1) %>% count() %>% ungroup() %>%
+  group_by(year, race) %>%
+  mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup() %>%
+  rename (AlcUse_pred = AlcUse_1)
+
+
+rbind (Fig_S1E_1, Fig_S1E_2) %>% 
+  # label data
+  mutate(AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
+      "Category I", "Category II", "Category III")) %>%
+  # plot data
+  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
+  geom_line(aes(color=AlcUse_pred), size=1) +
+  facet_wrap(~race) +
+  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
+  theme(legend.position = "top",
+    panel.grid.major=element_line(color="grey90"), 
+    panel.background = element_rect(fill = NA),
+    panel.border = element_rect(linetype = "solid", fill = NA)) + 
+  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
+ggsave(paste0(output, "Figure S1e - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
+
+
+
+
+
+
+# Plot the proportions over time stratified by female (Figure S1f)
+
+# Calculate proportions
+Fig_S1F_1 <- AlcUse_overtime %>%
+  group_by (year, sex, AlcUse_pred) %>% count() %>%  ungroup() %>%
+  group_by(year, sex) %>%
+  mutate(total = sum(n),  pct_total = n / total * 100) %>%
+  ungroup()
+
+# Create dummy data for proportions at year = 0
+Fig_S1F_2 <- AlcUse_overtime %>%
+  filter(year==1) %>%  mutate(year = 0) %>%
+  group_by(year, sex, AlcUse_1) %>% count() %>% ungroup() %>%
+  group_by(year, sex) %>%
+  mutate(total = sum(n),   pct_total = n / total * 100) %>%
+  ungroup() %>%
+  rename (AlcUse_pred = AlcUse_1)
+
+
+rbind (Fig_S1F_1, Fig_S1F_2) %>% 
+  # label data
+  mutate(AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
+         AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
+                                                 "Category I", "Category II", "Category III")) %>%
+  # plot data
+  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
+  geom_line(aes(color=AlcUse_pred), size=1) +
+  facet_wrap(~sex) +
+  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
+  theme(legend.position = "top",
+    panel.grid.major=element_line(color="grey90"), 
+    panel.background = element_rect(fill = NA),
+    panel.border = element_rect(linetype = "solid", fill = NA)) + 
+  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
+ggsave(paste0(output, "Figure S1f - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
+
+
+
+
+
+
+
+#   2.5) Hazard ratios  (Table 4) -------------------------------------------------------------------------------
+# Function to extract HR results, rearrange, and correct CI to original sample size 
+HR_alc5 <- HR_table(alc5.msm, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))  %>%
+  rename( "Abstainer->Category I"   = "State 1 - State 3",
+    "Former->Category I"      = "State 2 - State 3",
+    "Category I->Former"      = "State 3 - State 2",
+    "Category I->Category II"  = "State 3 - State 4",
+    "Category II->Category I"  = "State 4 - State 3",
+    "Category II->Category III" = "State 4 - State 5",
+    "Category III->Category II" = "State 5 - State 4") %>%
+  select(Variable, "Abstainer->Category I", "Former->Category I", "Category I->Category II", "Category II->Category III", "Category III->Category II", "Category II->Category I", "Category I->Former")
+write_csv(HR_alc5, paste0(output, "Table 4 - AlcUse Hazard Ratios.csv")) # save results for paper
+kableone(HR_alc5)
+
+
+
+#   2.6) Transition frequencies (Tables S3a, S4a) --------------------------------------------------------------
+
+statetable.msm(alc5, idnum, data=nesarc) %>% 
+  as.data.frame.array() %>% write_csv(file=paste0(output, "Table S3a - AlcUse Transition Frequecies.csv"))  
+
+statetable.msm(alc5, idnum, data=nesarc_expanded) %>% 
+  as.data.frame.array() %>% write_csv(file=paste0(output, "Table S4a - AlcUse Transitio Frequencies, expanded data.csv"))  
 
 
 # 3) HEAVY EPISODIC DRINKING  ----------------------------------------------------------------------------------
@@ -348,7 +591,9 @@ aTP_hed <- predicted_TP_covs (hed.msm, 1, age_cat, sex, race, edu) %>%
 write_csv(aTP_hed, paste0(output, "Supplement 2 - HED Annual Transition Probabilities.csv")) # Save TP
 
 
-#   3.4) Compare observed vs predicted (Table 3b) ------------------------------------------------------------------
+#   3.4) Simulate population using aTP  (Table 3a, Figure S2) ------------------------------------------------------
+
+#   3.4.1) Load the required files *********************************************************************************************
 
 # Load and format the transition probabilities
 aTP_hed <- read_csv(paste0(output, "Supplement 2 - HED Annual Transition Probabilities.csv")) %>%
@@ -373,55 +618,62 @@ hed_basepop <- nesarc_expanded %>%
           edu = edu3.factor_1) %>%
   select(idnum, hed_1, hed_2, sex, age, edu, race, hed_pred)
   
- 
+
+
+
+
+#   3.4.2) Compare observed vs predicted (Table 3a) *****************************************************************************
+
 # Simulate population at 3 years follow-up
 hed_year3 <-hed_sim(3)
 
 
-# Compare observed and predicted proportions
-observed <- count(hed_year3, hed_2) %>% rename(observed = n, hed = hed_2) 
-predicted <- count(hed_year3, hed_pred) %>% rename(predicted = n, hed = hed_pred)  
-comparison_hed <- full_join (observed, predicted, by="hed") %>%
-    mutate(difference = abs(predicted-observed),  
-           diff_percent = difference/observed * 100) %>%
-    adorn_totals("row") %>%  # Add row totals
-    mutate(diff_percent = ifelse(hed=="Total", difference/predicted * 100, diff_percent),
-           predicted = ifelse(hed=="Total", NA, predicted), 
-           diff_percent = round(diff_percent, 1))
+# Compare observed and predicted at the group
+observed <- count(hed_year3, hed_2) %>%
+  rename(observed = n, hed = hed_2) %>%
+  mutate(obs_pct = round(observed / sum(observed) * 100, 2))
+
+
+predicted <- count(hed_year3, hed_pred) %>% 
+  rename(predicted = n, hed = hed_pred) %>%
+  mutate(pred_pct = round(predicted / sum(predicted) * 100, 2)) 
+
+comparison_hed <- full_join (observed, predicted, by="hed") %>% 
+  mutate(diff_pct = round(abs(pred_pct-obs_pct), 2))%>%
+  select (hed, obs_pct, pred_pct, diff_pct)
 
 kableone(comparison_hed)
 write_csv(comparison_hed, paste0(output, "Table 3b - HED Observed vs Predicted.csv")) # save results for paper
 
 
 
-#   3.5) Hazard ratios  (Table 5) -------------------------------------------------------------------------------
 
-# Function to extract HR results, rearrange, and correct CI to original sample size 
-HR_hed <- HR_table(hed.msm, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))  %>%
-  rename( "Non-drinker->Drinker, no HED"    = "State 1 - State 2",
-          "Drinker, no HED->Non-drinker"    = "State 2 - State 1",
-          "Drinker, no HED->Occasional HED" = "State 2 - State 3",
-          "Occasional HED->Drinker, no HED" = "State 3 - State 2",
-          "Occasional HED->Monthly HED"     = "State 3 - State 4",
-          "Monthly HED->Occasional HED"     = "State 4 - State 3",
-          "Monthly HED->Weekly HED"         = "State 4 - State 5",
-          "Weekly HED->Monthly HED"         = "State 5 - State 4") %>%
-  select(Variable,  "Non-drinker->Drinker, no HED", "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
-                    "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", "Drinker, no HED->Non-drinker")
-write_csv(HR_hed, paste0(output, "Table 5 - HED Hazard Ratios.csv")) # save results for paper
-HR_hed
-  
-  
 
-#   3.6) Plot TP over multiple years (Figure S2) ----------------------------------------------------------------
+#   3.4.3) Plot TP over multiple years (Figure S2) ******************************************************************************
 
 # Simulate population over multiple years
-hed_overtime <- rbind(hed_sim(1), hed_sim(2), hed_sim(3), hed_sim(4), hed_sim(5), hed_sim(6))
+hed_overtime <- rbind(hed_sim(1), hed_sim(2), hed_sim(3), hed_sim(4), hed_sim(5))
 
 
+# Calculate proportions
+hed_overtime2 <- hed_overtime %>%
+  group_by (year, hed_1, age_cat, hed_pred) %>% count() %>%  ungroup() %>%
+  group_by(year, hed_1, age_cat) %>%
+  mutate(total = sum(n),
+         pct_total = n / total * 100) %>%
+  ungroup() 
 
-# Plot yearly TP for each age category
-hed_overtime %>%
+
+# Create dummy data for proportions at year = 0
+hed_overtime3 <- hed_overtime2 %>%
+  filter(year==1) %>%
+  mutate( year = 0,
+          n = ifelse(hed_1 == hed_pred, total, 0),
+          pct_total = ifelse(hed_1 == hed_pred, 100, 0))
+
+
+# Plot the proportions over time 
+rbind (hed_overtime2, hed_overtime3) %>% 
   # Format data
   mutate(age_cat=recode(age_cat, "18-29" = "Ages 18-29 years", 
                                  "30-49" = "Ages 30-49 years", 
@@ -433,12 +685,6 @@ hed_overtime %>%
                                   "Weekly HED" = "Initial state: Weekly HED"),
           hed_pred = fct_relevel(hed_pred, "Non-drinker", "Drinker, no HED", "Occasional HED",
                                   "Monthly HED", "Weekly HED")) %>%
-  group_by (year, hed_1, age_cat, hed_pred) %>%
-  count() %>%  ungroup() %>%
-  group_by(year, hed_1, age_cat) %>%
-  mutate(total = sum(n),
-    pct_total = n / total * 100) %>%
-  ungroup() %>% 
   # plot data
   ggplot(aes(x=year, y=pct_total, group=hed_pred)) + 
   geom_line(aes(color=hed_pred), size=1) +
@@ -449,16 +695,38 @@ hed_overtime %>%
         panel.background = element_rect(fill = NA),
         panel.border = element_rect(linetype = "solid", fill = NA)) + 
   scale_y_continuous(breaks=seq(0, 100, by= 20)) + 
-  scale_x_continuous(breaks=seq(0, 6, by= 1))
+  scale_x_continuous(breaks=seq(0, 5, by= 1))
 ggsave(paste0(output, "Figure S2 - HED over time.tiff"), dpi=600, width=12, height = 7)
 
 
 
+#   3.5) Hazard ratios  (Table 5) -------------------------------------------------------------------------------
 
-#   3.7) Transition frequencies (Tables S1b, S2b) --------------------------------------------------------------
+# Function to extract HR results, rearrange, and correct CI to original sample size 
+HR_hed <- HR_table(hed.msm, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))  %>%
+  rename( "Non-drinker->Drinker, no HED"    = "State 1 - State 2",
+    "Drinker, no HED->Non-drinker"    = "State 2 - State 1",
+    "Drinker, no HED->Occasional HED" = "State 2 - State 3",
+    "Occasional HED->Drinker, no HED" = "State 3 - State 2",
+    "Occasional HED->Monthly HED"     = "State 3 - State 4",
+    "Monthly HED->Occasional HED"     = "State 4 - State 3",
+    "Monthly HED->Weekly HED"         = "State 4 - State 5",
+    "Weekly HED->Monthly HED"         = "State 5 - State 4") %>%
+  select(Variable,  "Non-drinker->Drinker, no HED", "Drinker, no HED->Occasional HED", "Occasional HED->Monthly HED", "Monthly HED->Weekly HED",
+    "Weekly HED->Monthly HED", "Monthly HED->Occasional HED", "Occasional HED->Drinker, no HED", "Drinker, no HED->Non-drinker")
+write_csv(HR_hed, paste0(output, "Table 5 - HED Hazard Ratios.csv")) # save results for paper
+HR_hed
 
-statetable.msm(hed, idnum, data=nesarc)          # Table S3b
-statetable.msm(hed, idnum, data=nesarc_expanded) # Table S4b
+
+
+
+#   3.6) Transition frequencies (Tables S3b, S4b) --------------------------------------------------------------
+
+statetable.msm(hed, idnum, data=nesarc) %>% 
+  as.data.frame.array() %>% write_csv(file=paste0(output, "Table S3b - HED Transition Frequecies.csv"))  
+
+statetable.msm(hed, idnum, data=nesarc_expanded) %>% 
+  as.data.frame.array() %>% write_csv(file=paste0(output, "Table S4b - HED Transitio Frequencies, expanded data.csv"))  
 
 
 

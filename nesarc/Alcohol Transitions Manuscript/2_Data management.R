@@ -63,20 +63,21 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
         
 
         # Calculate total drinks per year (as per the manual)
-        coolers_yearly = ifelse(S2AQ4D <= 5, 
+        coolers_yearly = ifelse(S2AQ4E <= 5, 
                                   (S2AQ4D * (S2AQ4B_days - S2AQ4F_days)) + (S2AQ4E * S2AQ4F_days), # quantity if largest drinks <=5
-                                  (S2AQ4D * (S2AQ4B_days - S2AQ4F_days)) + ((S2AQ4G_days - S2AQ4F_days)*(exp((log(pmax(5, S2AQ4D)) + log(S2AQ4E - 1)) /2))) + (S2AQ4E*S2AQ4F_days)),      # quantity if largest drinks >5
-        beers_yearly = ifelse(S2AQ5D <= 5, 
+                                  (S2AQ4D * (S2AQ4B_days - S2AQ4G_days)) + ((S2AQ4G_days - S2AQ4F_days)*(exp((log(pmax(5, S2AQ4D)) + log(S2AQ4E - 1)) /2))) + (S2AQ4E*S2AQ4F_days)), # quantity if largest drinks >5
+        
+        beers_yearly = ifelse(S2AQ5E <= 5, 
                                   (S2AQ5D * (S2AQ5B_days - S2AQ5F_days)) + (S2AQ5E * S2AQ5F_days),
-                                  (S2AQ5D * (S2AQ5B_days - S2AQ5F_days)) + ((S2AQ5G_days - S2AQ5F_days)*(exp((log(pmax(5, S2AQ5D)) + log(S2AQ5E - 1)) /2))) + (S2AQ5E*S2AQ5F_days)),
+                                  (S2AQ5D * (S2AQ5B_days - S2AQ5G_days)) + ((S2AQ5G_days - S2AQ5F_days)*(exp((log(pmax(5, S2AQ5D)) + log(S2AQ5E - 1)) /2))) + (S2AQ5E*S2AQ5F_days)),
         
-        wine_yearly = ifelse(S2AQ6D <= 5, 
+        wine_yearly = ifelse(S2AQ6E <= 5, 
                                   (S2AQ6D * (S2AQ6B_days - S2AQ6F_days)) + (S2AQ6E * S2AQ6F_days), 
-                                  (S2AQ6D * (S2AQ6B_days - S2AQ6F_days)) + ((S2AQ6G_days - S2AQ6F_days)*(exp((log(pmax(5, S2AQ6D)) + log(S2AQ6E - 1)) /2))) + (S2AQ6E*S2AQ6F_days)),
+                                  (S2AQ6D * (S2AQ6B_days - S2AQ6G_days)) + ((S2AQ6G_days - S2AQ6F_days)*(exp((log(pmax(5, S2AQ6D)) + log(S2AQ6E - 1)) /2))) + (S2AQ6E*S2AQ6F_days)),
         
-        liquor_yearly = ifelse(S2AQ7D <= 5, 
+        liquor_yearly = ifelse(S2AQ7E <= 5, 
                               (S2AQ7D * (S2AQ7B_days - S2AQ7F_days)) + (S2AQ7E * S2AQ7F_days), 
-                              (S2AQ7D * (S2AQ7B_days - S2AQ7F_days)) + ((S2AQ7G_days - S2AQ7F_days)*(exp((log(pmax(5, S2AQ7D)) + log(S2AQ7E - 1)) /2))) + (S2AQ7E*S2AQ7F_days)), 
+                              (S2AQ7D * (S2AQ7B_days - S2AQ7G_days)) + ((S2AQ7G_days - S2AQ7F_days)*(exp((log(pmax(5, S2AQ7D)) + log(S2AQ7E - 1)) /2))) + (S2AQ7E*S2AQ7F_days)), 
                         
         # Calculate daily ethnanol intake 
         coolers_daily_oz = (coolers_yearly * (s2aq4cr * coolecf))/365,
