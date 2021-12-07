@@ -18,8 +18,8 @@ library(biostat3)   # survRate command
 
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Behavior/Output/"
+data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"   # Location of data
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Lifestyle/Output/"      # Location of figures/tables
 
 
 # Load data

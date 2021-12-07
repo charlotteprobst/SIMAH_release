@@ -15,8 +15,8 @@ memory.limit(size=1e+13)
 
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data"
-output  <- "C:/Users/klajd/Documents/2021-Present CAMH/NHIS Data/Model Outputs - SES x Lifestyle manuscript/Interaction/"
+data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"                # Location of data
+output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/SES x Lifestyle/Interaction/"   # Location of model output
 source("Function - Format Results.R")
 
     

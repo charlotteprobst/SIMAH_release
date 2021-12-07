@@ -10,12 +10,12 @@ library(survey)     # to accomodate survey weights
 
 
 # Specify the data file location
-data  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
-
+data_orig <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Original data/"
+data_new  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Processed data/"
 
 # Import data form SAS and edit/recategorize variables 
 
-nhis_all <- read_sas ("C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/nhis_mort_clean.sas7bdat") %>%
+nhis_all <- read_sas (paste0(data_orig, "nhis_mort_clean.sas7bdat")) %>%
   zap_formats() %>% zap_label() %>% clean_names() %>%   # removes labels/formats form SAS and clean names
   filter(!is.na(mortstat) & !is.na(new_weight)) %>%     # remove people for whom mortality data is not available and the one person that doesn't have a mortality weight
   # Recode and create variables
@@ -146,8 +146,8 @@ nhis_age25_85 <- filter (nhis_all, age>=25 & age <85)
   
 
 # Save copy of final datasets  
-saveRDS(nhis_all, paste0(data, "nhis_all.rds"))         # NHIS data with all participants
-saveRDS(nhis, paste0(data, "nhis.rds"))                 # NHIS data to be analyzed
-saveRDS(nhis_male, paste0(data, "nhis_male.rds"))       # NHIS data to be analyzed (males only)
-saveRDS(nhis_female, paste0(data, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
+saveRDS(nhis_all,    paste0(data_new, "nhis_all.rds"))      # NHIS data with all participants
+saveRDS(nhis,        paste0(data_new, "nhis.rds"))          # NHIS data to be analyzed
+saveRDS(nhis_male,   paste0(data_new, "nhis_male.rds"))     # NHIS data to be analyzed (males only)
+saveRDS(nhis_female, paste0(data_new, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
 

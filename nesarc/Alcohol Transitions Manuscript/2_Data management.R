@@ -10,7 +10,7 @@ library(splitstackshape) # To replicate data based on sampling weight
 
 
 # Specify the data file locations
-data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
+data <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
 
 
 # Edit data - recode and recategorize variables

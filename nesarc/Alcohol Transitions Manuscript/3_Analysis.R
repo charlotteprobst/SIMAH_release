@@ -12,15 +12,15 @@ library(irr)        # calculate kappa for true and predicted alcohol use
 memory.limit(size=1e+13)
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
-models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/Models/"
+data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"                     # Location of tables and figures 
+models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
 source("0_Functions.R")
 
 # Load data / functions
-nesarc <- readRDS(paste0(data, "nesarc_clean.rds")) 
+nesarc          <- readRDS(paste0(data, "nesarc_clean.rds")) 
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
-nesarc_all <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
+nesarc_all      <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
 
 # Load Models (from sections 2.1 and 3.1)
 alc5.msm_unadj <- readRDS(paste0(models, "alc5.msm_unadj.RDS"))
@@ -342,139 +342,6 @@ rbind (AlcUse_overtime6, AlcUse_overtime7) %>%
   geom_text_repel(aes(x = year, y = pct_total, label = pct_total))
 
 ggsave(paste0(output, "Figure S1c - AlcUse over time.tiff"), dpi=600, width=12, height = 7)
-
-
-
-
-
-
-# Plot the proportions over time stratified by SES (Figure S1D)
-
-# Calculate proportions
-Fig_S1D_1 <- AlcUse_overtime %>%
-  group_by (year, edu, AlcUse_pred) %>% count() %>%  ungroup() %>%
-  group_by(year, edu) %>%
-  mutate(total = sum(n),  pct_total = n / total * 100) %>%
-  ungroup()
-
-# Create dummy data for proportions at year = 0
-Fig_S1D_2 <- AlcUse_overtime %>%
-  filter(year==1) %>%  mutate(year = 0) %>%
-  group_by(year, edu, AlcUse_1) %>% count() %>% ungroup() %>%
-  group_by(year, edu) %>%
-  mutate(total = sum(n),   pct_total = n / total * 100) %>%
-  ungroup() %>%
-  rename (AlcUse_pred = AlcUse_1)
-
-
-rbind (Fig_S1D_1, Fig_S1D_2) %>% 
-  # label data
-  mutate(edu=recode(edu, "High" = "Cachelor's degree or more", 
-                          "Low" = "Highschool or less", 
-                          "Med" = "Some college"),
-    edu = fct_relevel(edu, "Highschool or less", "Some college", "Cachelor's degree or more"), # re-order the categories
-    AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
-    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
-      "Category I", "Category II", "Category III")) %>%
-  # plot data
-  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
-  geom_line(aes(color=AlcUse_pred), size=1) +
-  facet_wrap(~edu) +
-  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
-  theme(legend.position = "top",
-    panel.grid.major=element_line(color="grey90"), 
-    panel.background = element_rect(fill = NA),
-    panel.border = element_rect(linetype = "solid", fill = NA)) + 
-  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
-  scale_x_continuous(breaks=seq(0, 5, by= 1))
-ggsave(paste0(output, "Figure S1d - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
-
-
-
-
-
-
-
-# Plot the proportions over time stratified by Race/ethnicity (Figure S1E)
-
-# Calculate proportions
-Fig_S1E_1 <- AlcUse_overtime %>%
-  group_by (year, race, AlcUse_pred) %>% count() %>%  ungroup() %>%
-  group_by(year, race) %>%
-  mutate(total = sum(n),  pct_total = n / total * 100) %>%
-  ungroup()
-
-# Create dummy data for proportions at year = 0
-Fig_S1E_2 <- AlcUse_overtime %>%
-  filter(year==1) %>%  mutate(year = 0) %>%
-  group_by(year, race, AlcUse_1) %>% count() %>% ungroup() %>%
-  group_by(year, race) %>%
-  mutate(total = sum(n),   pct_total = n / total * 100) %>%
-  ungroup() %>%
-  rename (AlcUse_pred = AlcUse_1)
-
-
-rbind (Fig_S1E_1, Fig_S1E_2) %>% 
-  # label data
-  mutate(AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
-    AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
-      "Category I", "Category II", "Category III")) %>%
-  # plot data
-  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
-  geom_line(aes(color=AlcUse_pred), size=1) +
-  facet_wrap(~race) +
-  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
-  theme(legend.position = "top",
-    panel.grid.major=element_line(color="grey90"), 
-    panel.background = element_rect(fill = NA),
-    panel.border = element_rect(linetype = "solid", fill = NA)) + 
-  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
-  scale_x_continuous(breaks=seq(0, 5, by= 1))
-ggsave(paste0(output, "Figure S1e - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
-
-
-
-
-
-
-# Plot the proportions over time stratified by female (Figure S1f)
-
-# Calculate proportions
-Fig_S1F_1 <- AlcUse_overtime %>%
-  group_by (year, sex, AlcUse_pred) %>% count() %>%  ungroup() %>%
-  group_by(year, sex) %>%
-  mutate(total = sum(n),  pct_total = n / total * 100) %>%
-  ungroup()
-
-# Create dummy data for proportions at year = 0
-Fig_S1F_2 <- AlcUse_overtime %>%
-  filter(year==1) %>%  mutate(year = 0) %>%
-  group_by(year, sex, AlcUse_1) %>% count() %>% ungroup() %>%
-  group_by(year, sex) %>%
-  mutate(total = sum(n),   pct_total = n / total * 100) %>%
-  ungroup() %>%
-  rename (AlcUse_pred = AlcUse_1)
-
-
-rbind (Fig_S1F_1, Fig_S1F_2) %>% 
-  # label data
-  mutate(AlcUse_pred = recode (AlcUse_pred,"Abstainer" = "Lifetime abstainer",  "Former" = "Former Drinker"),
-         AlcUse_pred = fct_relevel(AlcUse_pred, "Lifetime abstainer", "Former Drinker",       # re-order the categories
-                                                 "Category I", "Category II", "Category III")) %>%
-  # plot data
-  ggplot(aes(x=year, y=pct_total, group=AlcUse_pred)) + 
-  geom_line(aes(color=AlcUse_pred), size=1) +
-  facet_wrap(~sex) +
-  labs(x = "Years follow-up", y="Proportion (%)", color="Driking state:") +
-  theme(legend.position = "top",
-    panel.grid.major=element_line(color="grey90"), 
-    panel.background = element_rect(fill = NA),
-    panel.border = element_rect(linetype = "solid", fill = NA)) + 
-  scale_y_continuous(breaks=seq(0, 100, by= 5), limits = c(0,70)) + 
-  scale_x_continuous(breaks=seq(0, 5, by= 1))
-ggsave(paste0(output, "Figure S1f - AlcUse over time.tiff"), dpi=300, width=12, height = 7)
-
-
 
 
 

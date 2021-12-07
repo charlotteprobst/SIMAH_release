@@ -8,10 +8,10 @@ library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
 
 
-
 # Specify the data and output file locations
-data_new   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
-data_orig  <- "C:/Users/klajd/Documents/2021-Present CAMH/NESARC Data/"
+data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/"
+data_new   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+
 
 # Load data 
 nesarc1_orig <- read_dta(paste0(data_orig, "NESARCWave1.dta")) %>% zap_formats() %>% zap_label() %>% zap_labels()
