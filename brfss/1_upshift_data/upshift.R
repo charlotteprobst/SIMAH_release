@@ -106,14 +106,14 @@ data <- left_join(data,tally)
 
 # perform the up-shift 
 data <- data %>% group_by(YEAR, State) %>% 
-  mutate(BRFSS_APC = mean(gramsperday), #calculate BRFSS APC as mean grams per day
-         adj_brfss_apc = BRFSS_APC/percentdrinkers, #adjust the BRFSS APC value based on % of current drinkers
-         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc, #adjust to 90% of the APC data
-         cr_quotient = (quotient^(1/3)), #calculate cube root of quotient 
-         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2), #apply cube root quotient to gpd
-         frequency_upshifted = alc_frequency*(cr_quotient^2), #apply cube root quotient to frequency
-         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), #cap frequency at 30 days
-         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) #recalculate drinks per occasion based on upshifted data 
+  mutate(BRFSS_APC = mean(gramsperday),                   # calculate BRFSS APC as mean grams per day
+         adj_brfss_apc = BRFSS_APC/percentdrinkers,       # adjust the BRFSS APC value based on % of current drinkers
+         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc, # adjust to 90% of the APC data
+         cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
+         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),   # apply cube root quotient to gpd
+         frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
+         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) #       recalculate drinks per occasion based on upshifted data 
 
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
@@ -126,7 +126,7 @@ data <- left_join(data, GPDsummary)
 
 compare <- data %>% 
   dplyr::select(YEAR, State, region, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, 
-                gramsperday_upshifted_quotient,
+                # gramsperday_upshifted_quotient, # KP: This variable does not exist, I commented it out
                 meanGPD,
                 gramsperday_upshifted_crquotient) %>% 
   group_by(YEAR, State,region) %>% 
