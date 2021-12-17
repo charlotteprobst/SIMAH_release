@@ -1,5 +1,5 @@
 ####SIMAH OCT 2021 brfss processing - processing the raw data files 
-# BRFSS data 1999- 2020
+# BRFSS data 1984- 2020
 library(foreign)
 library(SASxport)
 library(readr)
@@ -21,7 +21,7 @@ gc()
 # read in R script with the functions
 source("SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
-years <- 1999:2020
+years <- 1984:2020
 for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
@@ -50,6 +50,9 @@ dataFiles <- lapply(dataFiles, recode_education)
 # recode employment status 
 dataFiles <- lapply(dataFiles, recode_employment)
 
+# recode marital status
+dataFiles <- lapply(dataFiles, recode_marital)
+
 # recode income 
 dataFiles <- lapply(dataFiles, recode_income)
 
@@ -60,13 +63,20 @@ dataFiles <- lapply(dataFiles, recode_height)
 
 dataFiles <- lapply(dataFiles, recode_BMI)
 
-#### recode alcohol variables
+# impute missing BMI data
+dataFiles <- lapply(dataFiles, impute_missing_BMI)
 
-# prevalence - note not available in all years but can be derived from quant and freq vars
-dataFiles <- lapply(dataFiles, recode_alc_prevalence)
+#### recode alcohol variables
+for(i in 1:37){
+  print(years[i])
+  print(summary(dataFiles[[i]]$BMI))
+}
 
 # frequency - drinking days per month
 dataFiles <- lapply(dataFiles, recode_alc_frequency)
+
+# prevalence - note not available in all years but can be derived from quant / freq vars
+dataFiles <- lapply(dataFiles, recode_alc_prevalence)
 
 # quantity- drinks per occasion and grams per day 
 dataFiles <- lapply(dataFiles, recode_alc_quantity)

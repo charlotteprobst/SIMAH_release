@@ -31,7 +31,8 @@ pool <- brfss %>% filter(State==SelectedState) %>% filter(YEAR>=windowmin & YEAR
                                                              labels=c("18","19-24","25-29","30-34","35-39",
                                                                       "40-44","45-49","50-54","55-59",
                                                                       "60-64","65-69","70-74","75-79")),
-                      cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
+                      cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_")) %>% group_by(cat) %>% 
+  sample_n(10,replace=T)
 brfsscats <- unique(pool$cat)
 missing <- setdiff(cats, brfsscats)
 print("missing")
@@ -69,10 +70,13 @@ toadd <- left_join(pool, tojoin) %>% filter(toadd!=0) %>% group_by(cat) %>% samp
   mutate(microsim.init.spawn.year=y) %>% ungroup() %>% 
   dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                 microsim.init.alc.gpd, microsim.init.BMI,
-                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker)
-microsim.init.id <- nrow(basepop)+1:nrow(toadd)+nrow(basepop)
+                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker,
+                Cirrhosis_risk, grams_10years, yearsincedrink) %>% 
+  mutate(chronicB = 0,
+         chronicC = 0)
+microsim.init.id <- max(basepop$microsim.init.id)+1:nrow(toadd)+max(basepop$microsim.init.id)
 toadd <- cbind(microsim.init.id, toadd)
-basepopnew <- rbind(basepop, toadd)
+basepop <- rbind(basepop, toadd)
 
 # list <- list(basepop,summarymissing)
 
