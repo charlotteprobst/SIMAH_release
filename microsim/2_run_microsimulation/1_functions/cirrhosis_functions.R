@@ -122,7 +122,7 @@ MetabolicPathway <- function(data,lhsSample,sex){
   }
   test <- 1
   if(test==1){
-  data$RRMetabolic <- ifelse(data$Cirrhosis_risk==1 & data$microsim.init.BMI>=30 & data$microsim.init.sex=="m",
+  data$RRMetabolic <- ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="m",
                              (METABOLIC_BETA1_MALE*((((data$gpd+2)/1000)^-.5)-9.537024026) +
                                    METABOLIC_BETA2_MALE*((((data$gpd+2)/1000)^-.5)*
                                                            log((data$gpd+2)/1000)+43.0154401)),
@@ -130,7 +130,7 @@ MetabolicPathway <- function(data,lhsSample,sex){
                              # (METABOLIC_BETA1_FEMALE*((((data$gpd+2)/1000)^-.5)-9.537024026) +
                              #    METABOLIC_BETA2_FEMALE*((((data$gpd+2)/1000)^-.5)*
                              #                            log((data$gpd+2)/1000)+43.0154401)),0))
-                             ifelse(data$Cirrhosis_risk==1 & data$microsim.init.BMI>=30 & data$microsim.init.sex=="f",
+                             ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="f",
                                     (METABOLIC_BETA1_FEMALE*((data$gpd+2)/100)^3-.0000696286 +
                                           METABOLIC_BETA2_FEMALE*((data$gpd+2)/100)^3*
                                           log((data$gpd+2)/100)+.0002221693), 0))

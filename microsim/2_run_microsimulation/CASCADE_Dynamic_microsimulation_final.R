@@ -113,7 +113,9 @@ basepop <- basepop %>%
                                 grams_10years)) %>% dplyr::select(-former_history)
 
 Output <- list()
-Output <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
+lhsSample <- lhsSample[[1]]
+baseorig <- basepop
+alcohol <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                        updatingeducation, education_setup, transitionroles,
                        calculate_migration_rates, outward_migration, inward_migration, 
                        brfss,Rates,AlctransitionProbability,

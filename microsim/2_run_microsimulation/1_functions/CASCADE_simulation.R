@@ -11,7 +11,7 @@ Summary <- list()
 DeathSummary <- list()
 Cirrhosis <- list()
 alcohol <- list()
-lhsSample <- lhsSample[[1]]
+# lhsSample <- lhsSample[[1]]
 names <- names(lhsSample)
 lhsSample <- as.numeric(lhsSample)
 names(lhsSample) <- names
@@ -38,6 +38,18 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/update
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/apply_cirrhosis_risk.R")
   
 alcohol[[paste(y)]] <- basepop %>% group_by(microsim.init.sex) %>% filter(microsim.init.alc.gpd!=0) %>% 
+  mutate(agegroup = cut(microsim.init.age, 
+                        breaks=c(0,24,34,44,54,64,74,100),
+                        labels=c("18-24","25-34","35-44","45-54","55-64","65-74","75+")),
+         birthyear = y-microsim.init.age,
+         cohort = cut(birthyear,
+                      breaks=c(0,1920,1925,1930,1935,1940,1945,1950,1955,
+                               1960,1965,1970,1975,1980,1985,1990,2005),
+                      labels=c("1900-1920","1921-1925","1926-1930","1931-1935","1936-1940",
+                               "1941-1945","1946-1950","1951-1955","1956-1960","1961-1965",
+                               "1966-1970","1971-1975","1976-1980","1981-1985","1986-1990",
+                               "1991-2000"))) %>% 
+  ungroup() %>% group_by(microsim.init.sex,agegroup,cohort) %>% filter(microsim.init.alc.gpd!=0) %>% 
   summarise(meanGPD = mean(microsim.init.alc.gpd)) %>% mutate(year=y)
 
 #delete anyone over 80
@@ -69,25 +81,27 @@ Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.i
   group_by(microsim.init.sex, microsim.init.age, microsim.init.education, microsim.init.race) %>% tally() %>%
   mutate(year=i, seed=seed)
 }
-# PopPerYear <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
-#                                                    samplenum=as.factor(samplenum),
-#                                                    microsim.init.sex=as.factor(microsim.init.sex),
-#                                                    microsim.init.race=as.factor(microsim.init.race),
-#                                                    microsim.init.education=as.factor(microsim.init.education),
-#                                                    agecat = ifelse(microsim.init.age<=29, "18-29",
-#                                                                    ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
-#                                                                           "50+")),
-#                                                    agecat=as.factor(agecat),
-#                                                    AlcCAT=as.factor(AlcCAT)) %>% 
-#   group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education, agecat,
-#            AlcCAT, .drop=FALSE) %>% tally()
+
 Summary <- do.call(rbind,Summary)
 Cirrhosis <- do.call(rbind, Cirrhosis)
-Cirrhosis$seed <- seed
-Cirrhosis$samplenum <- samplenum
-Cirrhosis <- Cirrhosis %>% group_by(Year, seed, samplenum, microsim.init.sex,agecat) %>% tally()
+Cirrhosis <- Cirrhosis %>% mutate(seed = seed, 
+         samplenum = samplenum,
+         birthyear = Year-microsim.init.age,
+         cohort = cut(birthyear,
+                      breaks=c(0,1920,1925,1930,1935,1940,1945,1950,1955,
+                               1960,1965,1970,1975,1980,1985,1990,2005),
+                      labels=c("1900-1920","1921-1925","1926-1930","1931-1935","1936-1940",
+                               "1941-1945","1946-1950","1951-1955","1956-1960","1961-1965",
+                               "1966-1970","1971-1975","1976-1980","1981-1985","1986-1990",
+                               "1991-2000")),
+         pathway = ifelse(pmax(RRMetabolic, RRHeavyUse, RRHep)==RRHeavyUse, "Heavy use",
+                           ifelse(pmax(RRMetabolic, RRHeavyUse, RRHep)==RRMetabolic, "Metabolic",
+                                  "Hepatitis"))) %>% 
+  group_by(Year,seed,samplenum, microsim.init.sex,cohort,pathway) %>% tally() 
+# Cirrhosis <- Cirrhosis %>% group_by(Year, seed, samplenum, microsim.init.sex,agecat) %>% tally()
+alcohol <- do.call(rbind,alcohol)
 # DeathSummary <- do.call(rbind, DeathSummary)
 # Summary <- list(Summary, DeathSummary)
-return(Summary)
+return(alcohol)
 }
 

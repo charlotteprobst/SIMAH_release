@@ -74,7 +74,7 @@ toadd <- left_join(pool, tojoin) %>% filter(toadd!=0) %>% group_by(cat) %>% samp
                 Cirrhosis_risk, grams_10years, yearsincedrink) %>% 
   mutate(chronicB = 0,
          chronicC = 0)
-microsim.init.id <- max(basepop$microsim.init.id)+1:nrow(toadd)+max(basepop$microsim.init.id)
+microsim.init.id <- max(basepop$microsim.init.id+10000)+1:nrow(toadd)+max(basepop$microsim.init.id+10000)
 toadd <- cbind(microsim.init.id, toadd)
 basepop <- rbind(basepop, toadd)
 

@@ -118,15 +118,50 @@ PSID <- PSID %>% drop_na(weight)
 
 reweighted <- expandRows(PSID, "weight")
 
+# compare to BRFSS data 
+brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
+  filter(age_var<=80) %>% filter(State=="USA")
+  
+summarybrfss <- brfssorig %>%  filter(gramsperday!=0) %>% 
+  group_by(YEAR, sex_recode) %>% summarise(meangpd = mean(gramsperday)) %>% 
+  rename(year=YEAR, sex=sex_recode) %>% 
+  mutate(sex = ifelse(sex=="Male","male","female"),
+         type="BRFSS")
 
 # calculate mean grams per day in each year 
 summary <- reweighted %>% group_by(year, sex) %>% filter(gpd!=0) %>% 
-  summarise(meangpd = mean(gpd))
+  summarise(meangpd = mean(gpd),
+            type="PSID")
 
-ggplot(data=summary, aes(x=year, y=meangpd, colour=sex)) + geom_line() + ylim(0,NA) + theme_bw()
+summary <- rbind(summary, summarybrfss)
+
+ggplot(data=summary, aes(x=year, y=meangpd, colour=type)) + geom_line() + ylim(0,NA) + theme_bw() +
+  facet_grid(rows=vars(sex)) + ylab("mean gpd (in drinkers)") +
+  theme(legend.title=element_blank(),
+        strip.background = element_rect(fill="white"))
+
+ggsave("SIMAH_workplace/PSID/compare_gpd_brfss.png",dpi=300, width=33, height=19, units="cm")
 
 summary <- reweighted %>% group_by(year, sex) %>% 
-  summarise(prevalence = mean(drinkingstatus, na.rm=T))
+  summarise(prevalence = mean(drinkingstatus, na.rm=T)) %>% 
+  mutate(type="PSID")
+
+summarybrfss <- brfssorig %>% 
+  group_by(YEAR, sex_recode) %>% summarise(prevalence = mean(drinkingstatus)) %>% 
+  rename(year=YEAR, sex=sex_recode) %>% 
+  mutate(sex = ifelse(sex=="Male","male","female"),
+         type="BRFSS")
+
+summary <- rbind(summary, summarybrfss) %>% mutate(prevalence=round(prevalence,digits=2))
+scaleFUN <- function(x) sprintf("%.2f", x)
+
+ggplot(data=summary, aes(x=year, y=prevalence, colour=type)) + geom_line() + ylim(0,NA) + theme_bw() +
+  facet_grid(rows=vars(sex)) + ylab("mean prevalence") +
+  theme(legend.title=element_blank(),
+        strip.background = element_rect(fill="white")) + 
+  scale_y_continuous(labels=scaleFUN, limits=c(0,NA))
+
+ggsave("SIMAH_workplace/PSID/compare_prevalence_brfss.png",dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=summary, aes(x=year, y=prevalence, colour=sex)) + geom_line() + ylim(0,NA) + theme_bw()
 
@@ -143,16 +178,42 @@ reweighted <- reweighted %>%
                                                      gpd<=40, "Medium risk",
                                                    ifelse(sex=="male" & gpd>60,
                                                           "High risk",
-                                                          ifelse(sex=="f" & gpd>40,
+                                                          ifelse(sex=="female" & gpd>40,
                                                                  "High risk", NA))))))))
 
 summary <- reweighted %>% drop_na(AlcCAT) %>% group_by(year, sex, AlcCAT) %>% tally() %>% ungroup() %>% 
-  group_by(year, sex) %>% mutate(percent=n/sum(n))
+  group_by(year, sex) %>% mutate(percent=n/sum(n), type="PSID")
 
-ggplot(data=summary, aes(x=year, y=percent, colour=sex)) + geom_line() + ylim(0,NA) + theme_bw() +
-  facet_grid(cols=vars(AlcCAT))
+summarybrfss <- brfssorig %>% 
+  mutate(AlcCAT = ifelse(gramsperday==0, "abstainer",
+                         ifelse(sex_recode=="Male" & gramsperday>0 & 
+                                  gramsperday<=40, "Low risk",
+                                ifelse(sex_recode=="Female" & gramsperday>0 &
+                                         gramsperday<=20, "Low risk",
+                                       ifelse(sex_recode=="Male" & gramsperday>40 &
+                                                gramsperday<=60, "Medium risk",
+                                              ifelse(sex_recode=="Female" & gramsperday>20 & 
+                                                       gramsperday<=40, "Medium risk",
+                                                     ifelse(sex_recode=="Male" & gramsperday>60,
+                                                            "High risk",
+                                                            ifelse(sex_recode=="Female" & gramsperday>40,
+                                                                   "High risk", NA)))))))) %>% 
+  
+  group_by(YEAR, sex_recode, AlcCAT) %>% tally() %>% ungroup() %>% group_by(YEAR, sex_recode) %>% 
+  mutate(percent=n/sum(n)) %>% 
+  rename(year=YEAR, sex=sex_recode) %>% 
+  mutate(sex = ifelse(sex=="Male","male","female"),
+         type="BRFSS")
+
+summary <- rbind(summary, summarybrfss) %>% 
+  mutate(AlcCAT = factor(AlcCAT, levels=c("abstainer","Low risk","Medium risk","High risk")))
+
+ggplot(data=summary, aes(x=year, y=percent, colour=type)) + geom_line() + ylim(0,NA) + theme_bw() +
+  facet_grid(cols=vars(AlcCAT), rows=vars(sex)) + 
+  scale_y_continuous(labels=scaleFUN)
 
 
+ggsave("SIMAH_workplace/PSID/compare_categories_brfss.png",dpi=300, width=33, height=19, units="cm")
 
            
 
