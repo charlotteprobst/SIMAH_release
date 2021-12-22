@@ -2,20 +2,23 @@
 # SIMAH - NESARC Alcohol Transitions
 # Data Extraction (and minor edits)
 
-library(haven)      # Read STATA file
+library(haven)      # Read STATA and SAS data
 library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
 
 
 # Specify the data and output file locations
-data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/"
+data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
+data_orig3  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC III/"
 data_new   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
 
 
 # Load data 
 nesarc1_orig <- read_dta(paste0(data_orig, "NESARCWave1.dta")) %>% zap_formats() %>% zap_label() %>% zap_labels()
 nesarc2_orig <- read_dta(paste0(data_orig, "NESARCWave2.dta")) %>% zap_formats() %>% zap_label() %>% zap_labels()
+nesarc3_orig <- read_sas (paste0(data_orig3, "publicfinal_102015.sas7bdat")) %>% zap_formats() %>% zap_label() %>% zap_labels()
+
 
 # Some variables names are different compared to original codebook; create a file with the available variable names to double check
   # write_csv(as.data.frame(names(nesarc1_orig)), paste0(data_orig, "Wave1_variables.csv"))
@@ -102,7 +105,7 @@ nesarc2 <- nesarc2_orig %>%
   nesarc2 <- select(nesarc2, -w2ethrace, -w2SEX)
   
 
-# Merge Wave 1 & 2 Data -----------------------------------------------------------------------------------------------------------
+# Merge and dave Wave 1 & 2 Data -----------------------------------------------------------------------------------------------------------
 nesarc_raw <- rbind(nesarc1, nesarc2) %>%
     # Fill in age1 data from the nw1age variable from wave2
     arrange (idnum, wave) %>%  
@@ -112,10 +115,23 @@ nesarc_raw <- rbind(nesarc1, nesarc2) %>%
     mutate (age = if_else(wave==1, age_w1, age)) %>%
     select(-nw1age, -age_w1)
   
-  
 
-# Save data -----------------------------------------------------------------------------------------------------------
+# Save data Wave 1 & 2
 saveRDS(nesarc_raw, paste0(data_new, "nesarc_raw.rds"))
 
-
   
+  
+# WAVE 3 ------------------------------------------------------------------------------------------------------------------------
+
+nesarc3 <- nesarc3_orig %>%
+  # specify variables to keep
+  select( idnum, AUDWEIGHT, NAGE, NSEX, nethrace, NMARITAL, NEDUC, 
+          n1q19br, nconsumer, n2aq4h, n2aq4f,
+          n2aq5a, n2aq5b, n2aq5cr, n2aq5d, n2aq5e, n2aq5f, n2aq5g, ncoolecf,
+          n2aq6a, n2aq6b, n2aq6cr, n2aq6d, n2aq6e, n2aq6f, n2aq6g, nbeerecf, 
+          n2aq7a, n2aq7b, n2aq7cr, n2aq7d, n2aq7e, n2aq7f, n2aq7g, nwineecf, 
+          n2aq8a, n2aq8b, n2aq8cr, n2aq8d, n2aq8e, n2aq8f, n2aq8g, nliqrecf) 
+  
+  
+# Save data Wave 3
+saveRDS(nesarc3, paste0(data_new, "nesarc3_raw.rds"))

@@ -21,12 +21,12 @@ library(foreach)    # to loop function
 # Specify the data and output file locations
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data/"
+data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Restricted NHIS Data/Output"
 
 
 # Load data
-nhis        <- readRDS (paste0(data, "nhis.rds"))
+nhis        <- readRDS (paste0(data, "nhis_clean.rds"))
 nhis_male   <- readRDS (paste0(data, "nhis_male.rds"))
 nhis_female <- readRDS (paste0(data, "nhis_female.rds"))
 
@@ -36,11 +36,11 @@ nhis_female <- readRDS (paste0(data, "nhis_female.rds"))
 
 # specify the variables to be included in the table
 
-all_vars <- c("female2", "bl_age", "alc_daily_g", "alc5","smk4",  "bmi4", "phy3",
-                     "race4", "income5", "employed3", "married2", "PsyDistr3")
+all_vars <- c("female2", "bl_age", "alc_daily_g", "alc5","smk4", "bmi4", "phy3",
+                     "race4", "income5", "married2", "PsyDistr3")
 
 categorical_vars <- c("female.factor", "alc5", "smk4", "bmi4", "phy3",
-                      "race4", "income5", "employed3", "married2", "PsyDistr3")
+                      "race4", "income5", "married2", "PsyDistr3")
 
 
 
@@ -181,8 +181,6 @@ strata_rate <- function(data, death_list, strata){
 death_list <- c("allcause_deaths", "alc_deaths", "despair_deaths", "vehicle_deaths", "accident_deaths", 
                 "AUD_deaths", "self_harm_deaths", "liver_deaths", "diabetes_deaths", "IHD_deaths", 
                 "stroke_deaths", "hyperten_deaths", "poisoning_deaths", "other_deaths")
-
-death_list <- c("allcause_death", "heart_death")
 
 
 # Table 2 - Overall frequency and rate of death

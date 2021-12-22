@@ -13,6 +13,7 @@ library(splitstackshape) # To replicate data based on sampling weight
 data <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
 
 
+# NESARC WAVE 1 and 2 --------------------------------------------------------------------------------------------------------
 # Edit data - recode and recategorize variables
 nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
 
@@ -226,13 +227,13 @@ nesarc <- nesarc %>%
 
     # Alcohol variables  
     nesarc$alc6.factor <- factor(nesarc$alc6, levels=c(1,2,3,4,5,6), 
-                          labels=c("Lifetime abstainer", "Former drinker", "Low risk", "Medium risk", "High risk", "Very high risk"))
+                          labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category IV"))
     
     nesarc$alc5.factor <- factor(nesarc$alc5, levels=c(1,2,3,4,5), 
                           labels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))
     
     nesarc$alc4.factor <- factor(nesarc$alc4, levels=c(1,2,3,4), 
-                          labels=c("Abstinence", "Low risk", "Medium risk", "High risk"))
+                          labels=c("Non-drinker", "Category I", "Category II", "Category III"))
     
     nesarc$alc4_nesarc.factor <- factor(nesarc$alc4_nesarc, levels=c(1,2,3, 4), 
                                   labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker"))
@@ -290,3 +291,185 @@ nesarc_cc_expanded <- nesarc_cc %>%
 saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
 saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
 saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))
+
+# NESARC WAVE 3 --------------------------------------------------------------------------------------------------------
+# Edit data - recode and recategorize variables
+nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>% 
+  
+  # Re-code /rename variables
+  rename(age = NAGE,
+        drinking_stat = nconsumer, 
+        drank5plus_freq = n2aq4h,
+        drank4plus_freq = n2aq4f,
+        weight = AUDWEIGHT) %>% 
+  
+  mutate(
+    female = recode(NSEX, `1` = 0, `2` = 1),
+    race = recode(nethrace, `1`=1, `2`=2, `3`=4, `4`=4, `5`=3),
+    edu3 = case_when(NEDUC %in% c(1,2,3,4,5,6,7,8,9) ~ 1,
+                     NEDUC %in% c(10,11) ~ 2,
+                     NEDUC %in% c(12,13,14) ~ 3),
+    age3.factor = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    married = recode(NMARITAL, `1`= 1, `2`=1, `3`=0, `4`=0, `5`=0, `6`=0),
+    
+    # Calculating alcohol intake:
+    # Recode "99" (missing) to NA
+    across( c(n2aq5b, n2aq5cr, n2aq5d, n2aq5e, n2aq5f, n2aq5g,
+              n2aq6b, n2aq6cr, n2aq6d, n2aq6e, n2aq6f, n2aq6g,
+              n2aq7b, n2aq7cr, n2aq7d, n2aq7e, n2aq7f, n2aq7g,
+              n2aq8b, n2aq8cr, n2aq8d, n2aq8e, n2aq8f, n2aq8g), 
+        ~ recode(.x, `99`=NA_real_)),
+    
+    # Recode frequencies to number drinking days (variable: avg # of drinking days)
+    across(c(n2aq5b, n2aq5f, n2aq5g,  n2aq6b, n2aq6f, n2aq6g,  n2aq7b, n2aq7f, n2aq7g, n2aq8b, n2aq8f, n2aq8g), 
+        ~ recode(.x, `1`=365, `2`=273, `3`=182, `4`=104, `5`=52, `6`=30, `7`=12, `8`=9, `9`=4.5, `10`=1.5, `11`=0), .names = "{.col}_days"),
+    
+    
+    # Calculate total drinks per year (as per the manual)
+    coolers_yearly = ifelse(n2aq5e <= 5, 
+      (n2aq5d * (n2aq5b_days - n2aq5f_days)) + (n2aq5e * n2aq5f_days), # quantity if largest drinks <=5
+      (n2aq5d * (n2aq5b_days - n2aq5g_days)) + ((n2aq5g_days - n2aq5f_days)*(exp((log(pmax(5, n2aq5d)) + log(n2aq5e - 1)) /2))) + (n2aq5e*n2aq5f_days)), # quantity if largest drinks >5
+    
+    beers_yearly = ifelse(n2aq6e <= 5, 
+      (n2aq6d * (n2aq6b_days - n2aq6f_days)) + (n2aq6e * n2aq6f_days), 
+      (n2aq6d * (n2aq6b_days - n2aq6g_days)) + ((n2aq6g_days - n2aq6f_days)*(exp((log(pmax(5, n2aq6d)) + log(n2aq6e - 1)) /2))) + (n2aq6e*n2aq6f_days)),
+    
+    wine_yearly = ifelse(n2aq7e <= 5, 
+      (n2aq7d * (n2aq7b_days - n2aq7f_days)) + (n2aq7e * n2aq7f_days), 
+      (n2aq7d * (n2aq7b_days - n2aq7g_days)) + ((n2aq7g_days - n2aq7f_days)*(exp((log(pmax(5, n2aq7d)) + log(n2aq7e - 1)) /2))) + (n2aq7e*n2aq7f_days)),
+    
+    liquor_yearly = ifelse(n2aq8e <= 5, 
+      (n2aq8d * (n2aq8b_days - n2aq8f_days)) + (n2aq8e * n2aq8f_days), 
+      (n2aq8d * (n2aq8b_days - n2aq8g_days)) + ((n2aq8g_days - n2aq8f_days)*(exp((log(pmax(5, n2aq8d)) + log(n2aq8e - 1)) /2))) + (n2aq8e*n2aq8f_days)),
+    
+    # Calculate daily ethnanol intake 
+    coolers_daily_oz = (coolers_yearly * (n2aq5cr * ncoolecf))/365,
+    beers_daily_oz   = (beers_yearly   * (n2aq6cr * nbeerecf))/365,
+    wine_daily_oz    = (wine_yearly    * (n2aq7cr * nwineecf))/365,
+    liquor_daily_oz  = (liquor_yearly  * (n2aq8cr * nliqrecf))/365) %>%
+     
+    
+  mutate(
+    #calculate total alcohol ounces per day 
+    alc_daily_oz = rowSums(select(., coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), na.rm = TRUE), # those with only NAs get a value of 0
+    
+    # Code as NA those who reported drinking a cooler, beer, wine, or liquor but their alc_daily_oz = 0
+    alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a==1 | n2aq6a==1 | n2aq7a==1 | n2aq8a==1), NA_real_, alc_daily_oz),
+    
+    # Code as NA those who with 'unknown' in at least one of cooler, beer, wine, or liquor and 'No' or 'unknown' to all the others 
+    alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a==9        & n2aq6a%in%c(2,9) & n2aq7a%in%c(2,9) & n2aq8a%in%c(2,9)), NA_real_, alc_daily_oz),
+    alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a%in%c(2,9) & n2aq6a==9        & n2aq7a%in%c(2,9) & n2aq8a%in%c(2,9)), NA_real_, alc_daily_oz),
+    alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a%in%c(2,9) & n2aq6a%in%c(2,9) & n2aq7a==9        & n2aq8a%in%c(2,9)), NA_real_, alc_daily_oz),
+    alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a%in%c(2,9) & n2aq6a%in%c(2,9) & n2aq7a%in%c(2,9) & n2aq8a==9),        NA_real_, alc_daily_oz),
+    
+    # Impute 0 ounces daily for non-drinkers
+    alc_daily_oz = if_else(drinking_stat%in%c(2,3), 0, alc_daily_oz), 
+    
+    # Recategorize daily alcohol use using other units
+    alc_daily_g = alc_daily_oz * 28.3495,   # Convert daily ounces to grams  
+    alc_daily_drinks = alc_daily_oz  / 0.60, # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+    
+    
+     # Categorize alcohol use as per SIMAH protocol
+    alc6 = case_when(
+      # Men & Women:
+      drinking_stat==3 ~ 1,                          # lifetime abstinence
+      drinking_stat==2 ~ 2,                          # former drinker
+      drinking_stat==1 & alc_daily_g==0 ~ 2,         # former drinker (indicated they drink, but had 0 grams of alcohol)
+      
+      # Men
+      female==0 & alc_daily_g >0 & alc_daily_g <=40 ~ 3,   # low risk
+      female==0 & alc_daily_g >40 & alc_daily_g <=60 ~ 4,  # medium risk
+      female==0 & alc_daily_g >60 & alc_daily_g <=100 ~ 5, # high risk
+      female==0 & alc_daily_g >100 ~ 6,                    # very high risk
+      
+      # Women:
+      female==1 & alc_daily_g >0 & alc_daily_g <=20 ~ 3,   # low risk
+      female==1 & alc_daily_g >20 & alc_daily_g <=40 ~ 4,  # medium risk
+      female==1 & alc_daily_g >40 & alc_daily_g <=60 ~ 5,  # high risk
+      female==1 & alc_daily_g >60 ~ 6),                    # very high risk
+    
+    alc5 = recode(alc6, `6`=5),       # merge high-risk and very-high-risk categories
+    alc4 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4), # merge absteiners/former and merge high/very-high categories
+    
+    
+    # Calculate heavy episodic drinking (HED)
+    hed = case_when(
+      # Men:
+      female==0 & drank5plus_freq %in% c(1,2,3,4,5) ~ 5, # HED >= 1/week
+      female==0 & drank5plus_freq %in% c(6,7) ~ 4,       # HED >= 1/month but < 1/week
+      female==0 & drank5plus_freq %in% c(8,9,10) ~ 3,    # HED < 1 / month
+      female==0 & drank5plus_freq %in% c(11) ~ 2,        # No HED in last year
+      
+      # Women:
+      female==1 & drank4plus_freq %in% c(1,2,3,4,5) ~ 5, # HED >= 1/week
+      female==1 & drank4plus_freq %in% c(6,7) ~ 4,       # HED >= 1/month but < 1/week
+      female==1 & drank4plus_freq %in% c(8,9,10) ~ 3,    # HED < 1 / month
+      female==1 & drank4plus_freq %in% c(11) ~ 2),       # No HED in last year
+    
+    hed = ifelse(alc5 %in% c(1,2), 1, hed)) #Non-drinker
+
+
+
+
+# Select variables of interest and identify those lost to follow-up or with incomplete data
+nesarc3 <- nesarc3 %>%
+  
+  # Identify the variables to keep
+  select(idnum, weight, age, age3.factor, female, race, married, edu3, 
+         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc4, hed) %>%
+  
+  # remove those with missing data 
+  filter(!is.na(alc5)) %>%   # 88 observations removed; n=36,221
+  filter (!is.na(hed))       # 83 observations removed; n=36,138
+
+
+# label values
+
+# Alcohol variables  
+nesarc3$alc6.factor <- factor(nesarc3$alc6, levels=c(1,2,3,4,5,6), 
+  labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category Iv"))
+
+nesarc3$alc5.factor <- factor(nesarc3$alc5, levels=c(1,2,3,4,5), 
+  labels=c("Abstainer", "Former", "Category I", "Category II", "Category III"))
+
+nesarc3$alc4.factor <- factor(nesarc3$alc4, levels=c(1,2,3,4), 
+  labels=c("Non-drinker", "Category I", "Category II", "Category III"))
+
+nesarc3$hed.factor <- factor(nesarc3$hed, levels=c(1,2,3,4,5), 
+  labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED"))
+
+
+# Covariates (first listed category is the reference)
+nesarc3$female.factor <- factor(nesarc3$female, levels=c(0,1), labels=c("Men", "Women"))
+
+nesarc3$race.factor <- factor(nesarc3$race, levels=c(1,2,3,4), 
+  labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic"))
+
+nesarc3$married.factor <- factor(nesarc3$married, levels=c(1,0), labels=c("Married/cohab.", "Single"))
+
+nesarc3$edu3.factor <- factor(nesarc3$edu3, levels=c(3,1,2), labels=c("High", "Low", "Med"))
+
+
+nesarc3 %>% select(weight) %>% skim()
+
+
+# Replicate data (and create unique ID variable) to adjust for sampling weight
+nesarc3_expanded <- nesarc3 %>%
+  mutate (new_weight = weight / 100) %>%  # because original weight variable ranged from 586 to 49,403
+  expandRows(., "new_weight") %>%         # replicates data
+  
+  # Generate unique ID
+  group_by(idnum) %>%
+  mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
+    idnum = as.numeric(paste0(idnum, iter))) %>%
+  ungroup() %>%
+  arrange(idnum) # order data by ID 
+
+# check
+# filter(nesarc_cc, wave==1) %>% count(hed)
+
+
+# Save data
+saveRDS(nesarc3, paste0(data, "nesarc3_clean.rds"))
+saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded.rds"))

@@ -7,9 +7,8 @@ library(skimr)      # descriptive statistics
 library(janitor)    # data management
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
-library(irr)        # calculate kappa for true and predicted alcohol use
 # options(scipen=999) # prevent the use of scientific notation
-memory.limit(size=1e+13)
+# memory.limit(size=1e+13)
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
@@ -18,13 +17,15 @@ models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Mode
 source("0_Functions.R")
 
 # Load data / functions
+nesarc_all      <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
 nesarc          <- readRDS(paste0(data, "nesarc_clean.rds")) 
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
-nesarc_all      <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
 
-# Load Models (from sections 2.1 and 3.1)
+
+# Load Models (created from sections 2.1 and 3.1)
 alc5.msm_unadj <- readRDS(paste0(models, "alc5.msm_unadj.RDS"))
 alc5.msm       <- readRDS(paste0(models, "alc5.msm.RDS"))
+alc4.msm       <- readRDS(paste0(models, "alc4.msm.RDS"))
 hed.msm_unadj  <- readRDS(paste0(models, "hed.msm_unadj.RDS"))
 hed.msm        <- readRDS(paste0(models, "hed.msm.RDS"))
 
@@ -180,9 +181,9 @@ AlcUse_basepop <- nesarc_expanded %>%
 
 
 
-#   2.4.2) Compare observed vs predicted (Table 3a) *****************************************************************************
+#   2.4.2) Compare observed (at Wave 2) vs predicted (Table 3a) *****************************************************************************
 
-# Simulate population at 3 years follow-up
+# Predicted: Simulate population at 3 years follow-up
 AlcUse_year3 <-alc_sim(3)
 
 
@@ -203,6 +204,33 @@ comparison_AlcUse <- full_join (observed, predicted, by="AlcUse") %>%
 kableone(comparison_AlcUse)
 write_csv(comparison_AlcUse, paste0(output, "Table 3a - AlcUse Observed vs Predicted.csv")) # save results
 
+
+
+#   2.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+
+
+# Predicted: Simulate population at 11 years follow-up
+AlcUse_year11 <-alc_sim(11)
+
+predicted_11 <- count(AlcUse_year11, AlcUse_pred) %>% 
+    rename(predicted = n, AlcUse = AlcUse_pred) %>%
+    mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+
+# Observed at Wave 3 (different population)
+nesarc3          <- readRDS(paste0(data, "nesarc3_clean.rds")) 
+nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) 
+
+observed_11 <- count(nesarc3_expanded, alc5.factor) %>%
+    rename(observed = n, AlcUse = alc5.factor) %>%
+    mutate(obs_pct = round(observed / sum(observed) * 100,2))
+
+
+AlcUse_comparison_11 <- full_join (observed_11, predicted_11, by="AlcUse") %>% 
+  mutate(diff_pct = round(abs(pred_pct-obs_pct), 2))%>%
+  select (AlcUse, obs_pct, pred_pct, diff_pct)
+
+kableone(AlcUse_comparison_11)
 
 
 #   2.4.3) Plot TP over multiple years (Figure S1) ******************************************************************************
@@ -601,7 +629,7 @@ statetable.msm(hed, idnum, data=nesarc_expanded) %>%
 # 4) SENSITIVITYT ANALYSES -------------------------------------------------------------------------------------
 #   4.1) AlcUse Alternative MSM Model --------------------------------------------------------------------------
 
-# Additionally allow for transitions from any drinking state to former drinking
+# 4.1.1) Allow transitions from any drinking state to former drinking ******************************************
 Q2_alc5 <- rbind (c(0,     0,    0.25,  0,    0),
                   c(0,     0,    0.25,  0,    0),
                   c(0,     0.25, 0,     0.25, 0),
@@ -622,6 +650,134 @@ saveRDS(alc5.msm2, paste0(models, "alc5.msm2.RDS")) # Save Results
 
 # Compare models
 AIC(alc5.msm, alc5.msm2)
+
+
+
+
+
+
+# 4.1.2) Combine Abstainers & Former drinkers *******************************************************************
+
+# Specify allowed transitions
+# only allow adjacent transitions
+Q_alc4 <- rbind ( c(0,    0.25,  0,    0),
+                  c(0.25, 0,     0.25, 0),
+                  c(0,    0.25,  0,    0.25),
+                  c(0,    0,     0.25, 0))
+
+# Specifies initial values
+Q_alc4 <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded, qmatrix=Q_alc4)  
+
+
+# Run MSM model (adjusted for covariates)
+alc4.msm <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, 
+  qmatrix = Q_alc4, center=FALSE,                            
+  control = list(trace=1, maxit=600, fnscale = 3000000),
+  covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+saveRDS(alc4.msm, paste0(models, "alc4.msm.RDS")) # Save Results
+
+alc4_aTP <- predicted_TP(model=alc4.msm, year=1, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))
+alc4_aTP
+
+        # 4.1.2.1) COMPARE PREDICTED AND OBSERVED DATA *********************************************************************************************
+        
+          # First, generate the Annual TP for each category ******************************************************************************
+          
+          # Specify the covariate values
+          age_cat <- unique(nesarc_expanded$age3.factor)
+          sex <- unique(nesarc_expanded$female_wave1.factor)
+          race <- unique(nesarc_expanded$race_wave1.factor)
+          edu <- unique(nesarc_expanded$edu3.factor)
+          
+          
+          # Function to extract annual TP 
+          aTP_alc4 <- predicted_TP_covs (alc4.msm, 1, age_cat, sex, race, edu) %>%
+            mutate(From = recode(From,"State 1" = "Non-drinker",  # Rename states
+                                      "State 2" = "Category I",
+                                      "State 3" = "Category II",
+                                      "State 4" = "Category III"),
+              To = recode(To, "State.1" = "Non-drinker",
+                              "State.2" = "Category I",
+                              "State.3" = "Category II",
+                              "State.4" = "Category III"),
+              Transition = paste(From, To, sep = "->"),
+              Transition = fct_relevel(Transition,         # re-arrange order of transition variable
+                "Non-drinker->Category I", "Category I->Category II",	"Category II->Category III",
+                "Category III->Category II",	"Category II->Category I",	"Category I->Non-drinker"))
+          write_csv(aTP_alc4, paste0(output, "AlcUse_4 Annual Transition Probabilities.csv")) # Save TP
+          
+
+        # Load and format the transition probabilities
+        aTP_alc4 <- read_csv(paste0(output, "AlcUse_4 Annual Transition Probabilities.csv")) %>% 
+          mutate(cat = paste(sex, age_cat, edu, race, From, sep="_")) %>% 
+          select(cat, To, Probability) %>% 
+          group_by(cat) %>% 
+          mutate(cumsum = cumsum(Probability)) %>%
+          ungroup()
+        
+        
+        # Load and set up the initial population (based on NESARC wave 1)
+        AlcUse4_basepop <- nesarc_expanded %>%
+          select(idnum, wave, age, female_wave1.factor, race_wave1.factor, edu3.factor, alc4.factor) %>%  
+          rename( sex = female_wave1.factor, 
+                  race = race_wave1.factor) %>%
+          pivot_wider(names_from="wave", values_from=c("alc4.factor", "age", "edu3.factor")) %>%  
+          mutate (AlcUse_pred = alc4.factor_1,
+            AlcUse_1 = alc4.factor_1,
+            AlcUse_2 = alc4.factor_2,
+            age = age_1,
+            edu = edu3.factor_1) %>%
+          select(idnum, AlcUse_1, AlcUse_2, sex, age, edu, race, AlcUse_pred)
+        
+        
+        
+        #   2.4.2) Compare observed (at Wave 2) vs predicted (Table 3a) *****************************************************************************
+        
+        # Predicted: Simulate population at 3 years follow-up
+        AlcUse4_year3 <-alc4_sim(3)
+        
+        
+        # Compare observed and predicted at the group
+        observed <- count(AlcUse4_year3, AlcUse_2) %>%
+          rename(observed = n, AlcUse = AlcUse_2) %>%
+          mutate(obs_pct = round(observed / sum(observed) * 100,2))
+        
+        
+        predicted <- count(AlcUse4_year3, AlcUse_pred) %>% 
+          rename(predicted = n, AlcUse = AlcUse_pred) %>%
+          mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+        
+        comparison_AlcUse4 <- full_join (observed, predicted, by="AlcUse") %>% 
+          mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+          select (AlcUse, obs_pct, pred_pct, diff_pct)
+        
+        kableone(comparison_AlcUse4)
+
+        
+        #   2.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+        
+        
+        # Predicted: Simulate population at 11 years follow-up
+        AlcUse_year11 <-alc4_sim(11)
+        
+        predicted_11 <- count(AlcUse_year11, AlcUse_pred) %>% 
+          rename(predicted = n, AlcUse = AlcUse_pred) %>%
+          mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+        
+        
+        # Observed at Wave 3 (different population)
+        nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) 
+        
+        observed_11 <- count(nesarc3_expanded, alc4.factor) %>%
+          rename(observed = n, AlcUse = alc4.factor) %>%
+          mutate(obs_pct = round(observed / sum(observed) * 100,2))
+        
+        
+        AlcUse4_comparison_11 <- full_join (observed_11, predicted_11, by="AlcUse") %>% 
+          mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+          select (AlcUse, obs_pct, pred_pct, diff_pct)
+        
+        kableone(AlcUse4_comparison_11)
 
 
 

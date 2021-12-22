@@ -18,20 +18,16 @@ options(scipen=999)
 
 
 # Specify the data and output file locations
-data_path    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Data"
-output_tables  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Restricted NHIS Data/Output/"
-output_models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Restricted NHIS Data/Output/Models/"
+data_path     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
+output_tables <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/"
+output_models <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/Models/"
 
     
 # Load data
-nhis_all    <- readRDS (file.path(data_path, "nhis.rds"))
+nhis_all    <- readRDS (file.path(data_path, "nhis_clean.rds"))
 nhis_male   <- readRDS (file.path(data_path, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data_path, "nhis_female.rds"))
-data_file <- sample_frac(nhis_female, 0.05)
 
-
-?coxph
-?aalen
 # OBJECTIVE 1: Joint Effects, Hazard Models - Stratified by Sex
 
 # The effect estimates from the model can be directly interpreted as the number of additional events (deaths) per 1 person year at risk
@@ -65,22 +61,22 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
     # 2) Run analyses     
         # Cox interaction model
         cox_int <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + 
-                              married.factor + ethnicity.factor + factor(srvy_yr), data = data)
+                              married2 + race4 + srvy_yr22, data = data)
         cat("    Completed: Cox Interaction model", "\n")  # progress indicator
       
         # Cox joint effect model
         cox_joint <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + 
-                            married.factor + ethnicity.factor + factor(srvy_yr), data = data)
+                            married2 + race4 + srvy_yr22, data = data)
         cat("    Completed: Cox Joint effects model", "\n")  # progress indicator
       
         # Aalen Interaction model
         aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) +
-                            const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data)
+                            const(married2) + race4 + const(srvy_yr22),  data = data)
         cat("    Completed: Aalen Interaction model", "\n")  # progress indicator
         
         # Aalen joint effects model
         aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) +
-                              const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data)
+                              const(married2) + race4 + const(srvy_yr22),  data = data)
         cat("    Completed: Aalen Joint effects model", "\n")  # progress indicator
         
         # Save model results 
@@ -99,6 +95,7 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
             conf.low = round(conf.low, 2),
             conf.high = round(conf.high, 2),
             p.value_HR = round(p.value, 3),
+            p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
             HR_CI = paste0(estimate, " (",conf.low,", ", conf.high, ")")) %>%
           select(variable, HR_CI, p.value_HR) %>%
           filter(str_detect(variable, "SES|lifestyle")) %>%
@@ -113,6 +110,7 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
            conf.low = round(conf.low, 2),
            conf.high = round(conf.high, 2),
            p.value_HR = round(p.value, 3),
+           p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
            HR_CI = paste0(estimate, " (",conf.low,", ", conf.high, ")")) %>%
          select(variable, HR_CI, p.value_HR) %>%
          filter(str_detect(variable, "SES")) %>%
@@ -124,6 +122,7 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
           mutate (variable = rownames(.),
             var = V2,
             p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+            p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
             lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
             upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
             estimate_10000py = round(estimate*10000, 1),
@@ -140,6 +139,7 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
           mutate (variable = rownames(.),
             var = V2,
             p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+            p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
             lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1), 
             upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
             estimate_10000 = round(estimate*10000, 1),
@@ -171,6 +171,8 @@ death_list <- c("allcause_deaths", "alc_deaths", "despair_deaths", "vehicle_deat
                 "AUD_deaths", "self_harm_deaths", "liver_deaths", "diabetes_deaths", "IHD_deaths", 
                 "stroke_deaths", "hyperten_deaths", "poisoning_deaths", "other_deaths")
 
+# TEMPORARY Death list:
+death_list <- c("allcause_death", "heart_death")
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
@@ -526,6 +528,7 @@ table4to9(nhis_male.edu3, death_list, race4, PsyDistr3, "table8c") # Males, high
 
 
 # Table 9: Alcohol x PsychDistress -----------------------------------------------------------------------------------
+
 ## Alcohol x PsychDistress
 table4to9(nhis_all,    death_list, alc5, PsyDistr3, "table9a") # All participants
 table4to9(nhis_female, death_list, alc5, PsyDistr3, "table9a") # Females

@@ -91,7 +91,39 @@ predicted_TP_covs <- function(model, year, age_cat, sex, race, edu) {
 
 
 
-# Function to apply alcohol consumption transition probabilities
+# Extract Transition Probability for each level of the covariates at a given year
+predicted_TP_covs2 <- function(model, year, sex, race, edu) {
+  probs <- list()
+    for (j in sex){
+      for (l in race){
+        for (k in edu){
+          
+          # extract the probabilities
+          probs[[paste(j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=year, 
+            covariates = list(female_wave1.factor = j, race_wave1.factor = l, edu3.factor = k)))) %>%
+            
+            # modify the output presentation
+            mutate(From = row.names(.)) %>%
+            pivot_longer(cols = -From, names_to = "To") %>%
+            rename(Probability = value) %>%
+            mutate(Transition = paste(From, To, sep = "->"),
+              sex = j, 
+              race = l,
+              edu = k,
+              year = year) 
+      }
+    }
+  }
+  
+  probs <- do.call(rbind, probs)
+  row.names(probs) <- NULL  # remove row names
+  return(probs)
+}
+
+
+
+
+# AlcUse - Function to apply alcohol consumption transition probabilities
 transition_alc5 <- function(data, transitions){
   selected <- unique(data$cat)
   rates <- transitions %>% filter(cat == selected)
@@ -120,8 +152,61 @@ transition_alc5 <- function(data, transitions){
             select (-cat, -prob) 
         }
         return(AlcUse_basepop)
-      }
+}
 
+      
+      
+      # Alcohol Use Simulate transitions, age stratified
+      alc_sim2 <- function(basepop, aTP, apply_transitions, years) {
+        for (i in 1:years) {
+          AlcUse_basepop <- basepop %>% 
+            mutate(year= i,
+              cat = paste(sex, edu, race, AlcUse_pred, sep="_"),
+              prob = runif(nrow(.))) %>%  # generate random prob
+            group_by(cat) %>%
+            do(apply_transitions(., aTP)) %>% # use 'do( )' to run the function defined earlier
+            ungroup() %>% 
+            select (-cat, -prob) 
+        }
+        return(AlcUse_basepop)
+      }
+      
+      
+      
+      
+# AlcUse4 - Function to apply alcohol consumption transition probabilities
+transition_alc4 <- function(data, transitions){
+  selected <- unique(data$cat)
+  rates <- transitions %>% filter(cat == selected)
+  data$AlcUse_pred <- ifelse(data$prob<=rates$cumsum[1], "Non-drinker",
+    ifelse(data$prob<=rates$cumsum[2] & data$prob>rates$cumsum[1], "Category I",
+      ifelse(data$prob<=rates$cumsum[3] & data$prob>rates$cumsum[2],"Category II",
+        ifelse(data$prob<=rates$cumsum[4] & data$prob>rates$cumsum[3],"Category III",NA))))
+  return(data)
+}
+      
+      
+      # Alcohol Use Simulate transitions 
+      alc4_sim <- function(years) {
+        for (i in 1:years) {
+          AlcUse4_basepop <- AlcUse4_basepop %>% 
+            mutate(year= i,
+              age = age + 1,
+              age_cat = case_when(age < 30 ~ "18-29",
+                age >=30 & age < 50 ~ "30-49",
+                age >= 50 ~ "50+"),
+              cat = paste(sex, age_cat, edu, race, AlcUse_pred, sep="_"),
+              prob = runif(nrow(.))) %>%  # generate random prob
+            group_by(cat) %>%
+            do(transition_alc4(., aTP_alc4)) %>% # use 'do( )' to run the function defined earlier
+            ungroup() %>% 
+            select (-cat, -prob) 
+        }
+        return(AlcUse4_basepop)
+      }
+      
+      
+      
       
 
 
@@ -154,4 +239,8 @@ transition_hed <- function(data, transitions){
             select (-cat, -prob) 
         }
         return(hed_basepop)
-      }
+}
+
+
+
+

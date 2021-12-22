@@ -1,323 +1,527 @@
 
 # SIMAH - NESARC Alcohol Transitions
-# Model selection
+# Data Analysis
 
 library(tidyverse)  # data management
 library(skimr)      # descriptive statistics
 library(janitor)    # data management
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
-library(irr)        # calculate kappa for true and predicted alcohol use
 # options(scipen=999) # prevent the use of scientific notation
-
+# memory.limit(size=1e+13)
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Data/"
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"
-models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/Models/"
+data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"                     # Location of tables and figures 
+models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
 source("0_Functions.R")
 
-
 # Load data / functions
-nesarc <- readRDS(paste0(data, "nesarc_clean.rds")) 
+nesarc_all      <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
+nesarc          <- readRDS(paste0(data, "nesarc_clean.rds")) 
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
 
 
-# 1) ALCOHOL CONSUMPTION  ------------------------------------------------------------------------------------------------
-## 1a) Run AlcUse MSM Model (9 models; least to most restrained, sequentally) ------------------------------------------------------------------------------------------------
 
-# Count of transitions 
-statetable.msm(alc5, idnum, data=nesarc)
-statetable.msm(alc5, idnum, data=nesarc_expanded)
+# 1) AlcUse: 4 categories: Combine Abstainers & Former drinkers ------------------------------------------------------------
+
+# 1.1) Run MSM Model *******************************************************************************************************
+
+# Specify allowed transitions; only allow adjacent transitions
+Q_alc4 <- rbind ( c(0,    0.25,  0,    0),
+                  c(0.25, 0,     0.25, 0),
+                  c(0,    0.25,  0,    0.25),
+                  c(0,    0,     0.25, 0))
+
+# Specifies initial values
+Q_alc4 <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded, qmatrix=Q_alc4)  
+
+
+# Run MSM model (adjusted for covariates)
+alc4.msm <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, 
+  qmatrix = Q_alc4, center=FALSE,                            
+  control = list(trace=1, maxit=600, fnscale = 3000000),
+  covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
+saveRDS(alc4.msm, paste0(models, "alc4.msm.RDS")) # Save Results
+
+
+# Load the model
+alc4.msm       <- readRDS(paste0(models, "alc4.msm.RDS"))
 
 
 
-# Run different models using different transition intensity matrixes (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
-# Start with the full model and gradually restricted the allowed transitions beginning with the most remote transitions;
+# 1.2) Average annual TP  ***************************************************************************************************
+alc4_aTP <- predicted_TP(model=alc4.msm, year=1, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))
+kableone(alc4_aTP)
 
-# Model 1: allow all transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
-Q1<- rbind ( c(0,     0,    0.25,  0.25, 0.25),
-             c(0,     0,    0.25,  0.25, 0.25),
-             c(0,     0.25, 0,     0.25, 0.25),
-             c(0,     0.25, 0.25,  0,    0.25),
-             c(0,     0.25, 0.25,  0.25, 0))
 
-    # Run MSM model
-    Q1 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q1)   # Specifies initial values; change Q value here, if needed
-    alc5.msm1 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                       qmatrix = Q1, center=FALSE,                                # Change Q value here, if needed
-                       control = list(trace=1, maxit=2000, fnscale = 3100000),    # the value of 3100000 was obtained from running the same model earlier (not shown) but also including the statement: fixedpars=TRUE 
-                       covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-    saveRDS(alc5.msm1, paste0(models, "alc5.msm1.RDS")) # Save Results
 
+# 1.3) Annual TP for each category ******************************************************************************************
+
+# Specify the covariate values
+age_cat <- unique(nesarc_expanded$age3.factor)
+sex <- unique(nesarc_expanded$female_wave1.factor)
+race <- unique(nesarc_expanded$race_wave1.factor)
+edu <- unique(nesarc_expanded$edu3.factor)
+
+
+# Function to extract annual TP 
+aTP_alc4 <- predicted_TP_covs (alc4.msm, 1, age_cat, sex, race, edu) %>%
+  # Rename states
+  mutate(From = recode(From,"State 1" = "Non-drinker",  "State 2" = "Category I", "State 3" = "Category II", "State 4" = "Category III"),
+         To = recode(To, "State.1" = "Non-drinker", "State.2" = "Category I", "State.3" = "Category II", "State.4" = "Category III"),
+         Transition = paste(From, To, sep = "->"),
+    
+    # re-arrange order of transition variable
+    Transition = fct_relevel(Transition,         
+                            "Non-drinker->Category I", "Category I->Category II",	"Category II->Category III",
+                            "Category III->Category II",	"Category II->Category I",	"Category I->Non-drinker"))
+
+write_csv(aTP_alc4, paste0(output, "AlcUse_4 Annual Transition Probabilities.csv")) # Save TP
+
+
+
+
+
+# 1.4) Simulate population using aTP   *************************************************************************************
+
+# 1.4.1) Load the required files
+
+    # Load and format the transition probabilities
+    aTP_alc4 <- read_csv(paste0(output, "AlcUse_4 Annual Transition Probabilities.csv")) %>% 
+      mutate(cat = paste(sex, age_cat, edu, race, From, sep="_")) %>% 
+      select(cat, To, Probability) %>% 
+      group_by(cat) %>% 
+      mutate(cumsum = cumsum(Probability)) %>%
+      ungroup()
+    
+    
+    # Load and set up the initial population (based on NESARC wave 1)
+    AlcUse4_basepop <- nesarc_expanded %>%
+      select(idnum, wave, age, female_wave1.factor, race_wave1.factor, edu3.factor, alc4.factor) %>%  
+      rename( sex = female_wave1.factor, 
+        race = race_wave1.factor) %>%
+      pivot_wider(names_from="wave", values_from=c("alc4.factor", "age", "edu3.factor")) %>%  
+      mutate (AlcUse_pred = alc4.factor_1,
+        AlcUse_1 = alc4.factor_1,
+        AlcUse_2 = alc4.factor_2,
+        age = age_1,
+        edu = edu3.factor_1) %>%
+      select(idnum, AlcUse_1, AlcUse_2, sex, age, edu, race, AlcUse_pred)
+
+
+
+# 1.4.2) Compare observed (at Wave 2) vs predicted *****************************************************************************
+
+    # Predicted: Simulate population at 3 years follow-up
+    AlcUse4_year3 <-alc4_sim(3)
+    
+    
+    # Compare observed and predicted at the group
+    observed <- count(AlcUse4_year3, AlcUse_2) %>%
+      rename(observed = n, AlcUse = AlcUse_2) %>%
+      mutate(obs_pct = round(observed / sum(observed) * 100,2))
+    
+    
+    predicted <- count(AlcUse4_year3, AlcUse_pred) %>% 
+      rename(predicted = n, AlcUse = AlcUse_pred) %>%
+      mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+    
+    comparison_AlcUse4 <- full_join (observed, predicted, by="AlcUse") %>% 
+      mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+      select (AlcUse, obs_pct, pred_pct, diff_pct)
+    
+    kableone(comparison_AlcUse4)
+
+
+
+# 1.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+
+    # Predicted: Simulate population at 11 years follow-up
+    AlcUse_year11 <-alc4_sim(11)
+    
+    predicted_11 <- count(AlcUse_year11, AlcUse_pred) %>% 
+      rename(predicted = n, AlcUse = AlcUse_pred) %>%
+      mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+    
+    # Observed at Wave 3 (different population)
+    nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) 
+    
+    observed_11 <- count(nesarc3_expanded, alc4.factor) %>%
+      rename(observed = n, AlcUse = alc4.factor) %>%
+      mutate(obs_pct = round(observed / sum(observed) * 100,2))
+    
+    AlcUse4_comparison_11 <- full_join (observed_11, predicted_11, by="AlcUse") %>% 
+      mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+      select (AlcUse, obs_pct, pred_pct, diff_pct)
+    
+    kableone(AlcUse4_comparison_11)
 
     
-# Model 2: remove Abstinence --> Category III
-Q2<- rbind (c(0,     0,    0.25,  0.25, 0),
-            c(0,     0,    0.25,  0.25, 0.25),
-            c(0,     0.25, 0,     0.25, 0.25),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0.25, 0.25,  0.25, 0))
     
-      # Run MSM model
-      Q2 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q2)   # Specifies initial values; change Q value here, if needed
-      alc5.msm2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q2, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=2000, fnscale = 3000000, reltol = 1e-16, ndeps = rep(1e-6, 5)),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm2, paste0(models, "alc5.msm2.RDS")) # Save Results
-      
-      
-
-      
-# Model 3: remove Former --> Category III
-Q3<- rbind (c(0,     0,    0.25,  0.25, 0),
-            c(0,     0,    0.25,  0.25, 0),
-            c(0,     0.25, 0,     0.25, 0.25),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0.25, 0.25,  0.25, 0))
+# 2) AlcUse, Stratify by age ------------------------------------------------------------
     
-      # Run MSM model
-      Q3 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q3)   # Specifies initial values; change Q value here, if needed
-      alc5.msm3 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q3, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm3, paste0(models, "alc5.msm3.RDS")) # Save Results
+# 2.1) Run MSM Model *******************************************************************************************************
 
+# First statify data
+nesarc_ages18_30   <- nesarc %>% filter (age_wave1<=30) 
+nesarc_ages30_50   <- nesarc %>% filter (age_wave1>30 & age_wave1<50)
+nesarc_ages50plus <- nesarc %>% filter (age_wave1>=50)
+    
+nesarc_exp_ages18_30   <- nesarc_expanded %>% filter (age_wave1<=30) 
+nesarc_exp_ages30_50   <- nesarc_expanded %>% filter (age_wave1>30 & age_wave1<50)
+nesarc_exp_ages50plus <- nesarc_expanded %>% filter (age_wave1>=50)
+
+
+# Specify allowed transitions; only allow adjacent transitions
+# only allow adjacent transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
+Q_alc5 <- rbind ( c(0,     0,    0.25,  0,    0),
+                  c(0,     0,    0.25,  0,    0),
+                  c(0,     0.25, 0,     0.25, 0),
+                  c(0,     0,    0.25,  0,    0.25),
+                  c(0,     0,    0,     0.25, 0))
     
 
-      
-          
-# Model 4: remove Category III --> Former
-Q4<- rbind (c(0,     0,    0.25,  0.25, 0),
-            c(0,     0,    0.25,  0.25, 0),
-            c(0,     0.25, 0,     0.25, 0.25),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0,    0.25,  0.25, 0))
-  
-      # Run MSM model
-      Q4 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q4)   # Specifies initial values; change Q value here, if needed
-      alc5.msm4 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q4, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm4, paste0(models, "alc5.msm4.RDS")) # Save Results
-
-
-
-      
-      
-      
-# Model 5: remove Abstainer --> Category II
-Q5<- rbind (c(0,     0,    0.25,  0,    0),
-            c(0,     0,    0.25,  0.25, 0),
-            c(0,     0.25, 0,     0.25, 0.25),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0,    0.25,  0.25, 0))
-
-      # Run MSM model
-      Q5 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q5)   # Specifies initial values; change Q value here, if needed
-      alc5.msm5 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q5, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm5, paste0(models, "alc5.msm5.RDS")) # Save Results
-
-
-      
-      
+# Ages 18 - 30
+    # Specifies initial values
+    Q_alc5_1 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_exp_ages18_30, qmatrix=Q_alc5)  
     
-# Model 6: remove Former --> Category II
-Q6<- rbind (c(0,     0,    0.25,  0,    0),
-            c(0,     0,    0.25,  0,    0),
-            c(0,     0.25, 0,     0.25, 0.25),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0,    0.25,  0.25, 0))
-
-      # Run MSM model
-      Q6 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q6)   # Specifies initial values; change Q value here, if needed
-      alc5.msm6 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q6, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm6, paste0(models, "alc5.msm6.RDS")) # Save Results
-
-
-      
-      
-
-# Model 7: remove Category I --> III
-Q7<- rbind (c(0,     0,    0.25,  0,    0),
-            c(0,     0,    0.25,  0,    0),
-            c(0,     0.25, 0,     0.25, 0),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0,    0.25,  0.25, 0))
-
-      # Run MSM model
-      Q7 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q7)   # Specifies initial values; change Q value here, if needed
-      alc5.msm7 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q7, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm7, paste0(models, "alc5.msm7.RDS")) # Save Results
-
-
-      
-      
-
-# Model 8: remove Category III --> I
-Q8<- rbind (c(0,     0,    0.25,  0,    0),
-            c(0,     0,    0.25,  0,    0),
-            c(0,     0.25, 0,     0.25, 0),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0,    0,  0.25, 0))
-
-
-      # Run MSM model
-      Q8 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q8)   # Specifies initial values; change Q value here, if needed
-      alc5.msm8 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q8, center=FALSE,                                # Change Q value here, if needed
-                        control = list(trace=1, maxit=1000, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-      saveRDS(alc5.msm8, paste0(models, "alc5.msm8.RDS")) # Save Results
-
-
-      
-      
-
-# Model 9: remove Category II --> Former
-# Only allows transitions to an adjacent state, except for transitions back to lifetime abstainers, and abstainer->former drinker
-Q9 <- rbind ( c(0,     0,    0.25,  0,    0),
-              c(0,     0,    0.25,  0,    0),
-              c(0,     0.25, 0,     0.25, 0),
-              c(0,     0,    0.25,  0,    0.25),
-              c(0,     0,    0,     0.25, 0))
     
+    # Run MSM model (adjusted for covariates)
+    alc5_age1.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_exp_ages18_30, qmatrix = Q_alc5_1, 
+                    center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000, reltol = 1e-16),  
+                    covariates = ~ female_wave1.factor + edu3.factor + race_wave1.factor)
+    saveRDS(alc5_age1.msm, paste0(models, "alc5_age1.msm.RDS")) # Save Results
 
-    # Run MSM model
-    Q9 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q9)  # Specifies initial values; Change Q value here, if needed
-    alc5.msm9 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                        qmatrix = Q9, center=FALSE,                             # Change Q value here, if needed
-                        control = list(trace=1, maxit=500, fnscale = 3000000),
-                        covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-    saveRDS(alc5.msm9, paste0(models, "alc5.msm9.RDS")) # Save Results
+    
+    
+# Ages 30 - 50
+    # Specifies initial values
+    Q_alc5_2 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_exp_ages30_50, qmatrix=Q_alc5)  
+    
+    
+    # Run MSM model (adjusted for covariates)
+    alc5_age2.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_exp_ages30_50, qmatrix = Q_alc5_2, 
+                          center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000),
+                          covariates = ~ female_wave1.factor + edu3.factor + race_wave1.factor)
+    saveRDS(alc5_age2.msm, paste0(models, "alc5_age2.msm.RDS")) # Save Results
     
 
     
+# Ages 50+
+    # Specifies initial values
+    Q_alc5_3 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_exp_ages_50plus, qmatrix=Q_alc5)  
+    
+    
+    # Run MSM model (adjusted for covariates)
+    alc5_age3.msm <- msm (alc5 ~ years, subject=idnum, data = nesarc_exp_ages_50plus, qmatrix = Q_alc5_3, 
+                          center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000),
+                          covariates = ~ female_wave1.factor + edu3.factor + race_wave1.factor)
+    saveRDS(alc5_age3.msm, paste0(models, "alc5_age3.msm.RDS")) # Save Results
+    
+
+    
+
 # Load the models
-memory.limit(size=1e+13)
-alc5.msm1 <- readRDS(paste0(models, "alc5.msm1.RDS")) # does not run
-alc5.msm2 <- readRDS(paste0(models, "alc5.msm2.RDS")) # does not run
-alc5.msm3 <- readRDS(paste0(models, "alc5.msm3.RDS")) # does not run
-alc5.msm4 <- readRDS(paste0(models, "alc5.msm4.RDS")) # does not run
-alc5.msm5 <- readRDS(paste0(models, "alc5.msm5.RDS")) # does not run
-alc5.msm6 <- readRDS(paste0(models, "alc5.msm6.RDS")) # runs
-alc5.msm7 <- readRDS(paste0(models, "alc5.msm7.RDS")) # runs
-alc5.msm8 <- readRDS(paste0(models, "alc5.msm8.RDS")) # runs
-alc5.msm9 <- readRDS(paste0(models, "alc5.msm9.RDS")) # runs
+alc5_age1.msm       <- readRDS(paste0(models, "alc5_age1.msm.RDS"))
+alc5_age2.msm       <- readRDS(paste0(models, "alc5_age2.msm.RDS"))
+alc5_age3.msm       <- readRDS(paste0(models, "alc5_age3.msm.RDS"))
 
-
-
-
-# Compare models
-AIC(alc5.msm1, alc5.msm2, alc5.msm3, alc5.msm4, alc5.msm5, alc5.msm6, alc5.msm7, alc5.msm8, alc5.msm9)
     
 
     
-## 1b) Run AlcUse MSM Model (3 models; therory based) ------------------------------------------------------------------------------------------------
-# Count of transitions 
-statetable.msm(alc5, idnum, data=nesarc)
-statetable.msm(alc5, idnum, data=nesarc_expanded)
+# 2.2) Average annual TP  ************************************************************************************************************
 
-# Run different models using different transition intensity matrixes (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
-# Start with the full model (no restrictions), then remove non-adjacent worsening transitions (allow non-adjacent recovery transitions), then only allow adjacent transitions
+# Ages 30 - 50
+alc_aTP_ages30_50 <- predicted_TP(model=alc5_age2.msm, year=1, original_n = nrow(nesarc_ages30_50), expanded_n = nrow(nesarc_exp_ages30_50))
+kableone(alc_aTP_ages30_50)
 
 
-# Model 1: allow all transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
-Q1<- rbind ( c(0,     0,    0.25,  0.25, 0.25),
-  c(0,     0,    0.25,  0.25, 0.25),
-  c(0,     0.25, 0,     0.25, 0.25),
-  c(0,     0.25, 0.25,  0,    0.25),
-  c(0,     0.25, 0.25,  0.25, 0))
-
-    # Run MSM model
-    Q1 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q1)   # Specifies initial values; change Q value here, if needed
-    alc5.msm1_v2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                          qmatrix = Q1, center=FALSE,                                # Change Q value here, if needed
-                          control = list(trace=1, maxit=1000, fnscale = 3100000),    # the value of 3100000 was obtained from running the same model earlier (not shown) but also including the statement: fixedpars=TRUE 
-                          covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-    saveRDS(alc5.msm1_v2, paste0(models, "alc5.msm1_v2.RDS")) # Save Results
+# Ages 50+
+alc_aTP_ages50plus <-predicted_TP(model=alc5_age3.msm, year=1, original_n = nrow(nesarc_ages50plus), expanded_n = nrow(nesarc_exp_ages50plus))
+kableone(alc_aTP_ages50plus)
 
 
+# 2.3) Extract and prepare the annual TP for each category **********************************************************************************************
+
+# Specify the covariate values
+sex <- unique(nesarc_expanded$female_wave1.factor)
+race <- unique(nesarc_expanded$race_wave1.factor)
+edu <- unique(nesarc_expanded$edu3.factor)
+
+
+# Ages 30 - 50 
+aTP_alc5_age2 <- predicted_TP_covs2 (alc5_age2.msm, 1, sex, race, edu) %>%
+  # Rename states
+  mutate(From = recode(From,"State 1" = "Abstainer",  "State 2" = "Former", "State 3" = "Category I", "State 4" = "Category II", "State 5" = "Category III"),
+    To = recode(To, "State.1" = "Abstainer", "State.2" = "Former", "State.3" = "Category I", "State.4" = "Category II", "State.5" = "Category III"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition,         
+      "Abstainer->Category I", "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+      "Category III->Category II",	"Category II->Category I",	"Category I->Former")) %>% 
+  mutate(cat = paste(sex, edu, race, From, sep="_")) %>% 
+  select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+
+# Ages 50+
+aTP_alc5_age3 <- predicted_TP_covs2 (alc5_age3.msm, 1, sex, race, edu) %>%
+  # Rename states
+  mutate(From = recode(From,"State 1" = "Abstainer",  "State 2" = "Former", "State 3" = "Category I", "State 4" = "Category II", "State 5" = "Category III"),
+    To = recode(To, "State.1" = "Abstainer", "State.2" = "Former", "State.3" = "Category I", "State.4" = "Category II", "State.5" = "Category III"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition,         
+      "Abstainer->Category I", "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+      "Category III->Category II",	"Category II->Category I",	"Category I->Former"))%>% 
+  mutate(cat = paste(sex, edu, race, From, sep="_")) %>% 
+  select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+
+# 2.4) Set up the baseline Population ********************************************************************************************
+
+# Ages 30 - 50 
+AlcUse5_basepop2 <- nesarc_exp_ages30_50 %>%
+  select(idnum, wave, female_wave1.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%  
+  rename( sex = female_wave1.factor, 
+          race = race_wave1.factor) %>%
+  pivot_wider(names_from="wave", values_from=c("alc5.factor", "edu3.factor")) %>%  
+  mutate (AlcUse_pred = alc5.factor_1,
+          AlcUse_1 = alc5.factor_1,
+          AlcUse_2 = alc5.factor_2,
+          edu = edu3.factor_1) %>%
+  select(idnum, AlcUse_1, AlcUse_2, sex, edu, race, AlcUse_pred)
+
+
+
+# Ages 50+ 
+AlcUse5_basepop3 <- nesarc_exp_ages50plus %>%
+  select(idnum, wave, female_wave1.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%  
+  rename( sex = female_wave1.factor, 
+    race = race_wave1.factor) %>%
+  pivot_wider(names_from="wave", values_from=c("alc5.factor", "edu3.factor")) %>%  
+  mutate (AlcUse_pred = alc5.factor_1,
+    AlcUse_1 = alc5.factor_1,
+    AlcUse_2 = alc5.factor_2,
+    edu = edu3.factor_1) %>%
+  select(idnum, AlcUse_1, AlcUse_2, sex, edu, race, AlcUse_pred)
+
+
+
+# 2.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+
+# Ages 30 - 50 
+    
+    # Predicted 11 years after baseline
+    predicted <-alc_sim2(AlcUse5_basepop2, aTP_alc5_age2, transition_alc5, 11) %>%  # starts with stimulated data
+      count(AlcUse_pred) %>%                                                        # Count number in each category, then reorganizes it
+      rename(predicted = n, AlcUse = AlcUse_pred) %>%
+      mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+
+    # Observed at NESARC 3 (different population)
+    observed <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) %>% # starts with observed data
+      filter (age>41 & age<61) %>%                                      # specifies age range of participants from simulated data
+      count(alc5.factor) %>%                                            # Count number in each category, then reorganizes it
+      rename(observed = n, AlcUse = alc5.factor) %>%
+      mutate(obs_pct = round(observed / sum(observed) * 100,2))
+    
+    comparison <- full_join (observed, predicted, by="AlcUse") %>% 
+      mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+      select (AlcUse, obs_pct, pred_pct, diff_pct)
+    
+    kableone(comparison)
+
+
+
+# Ages 50+ 
+    
+    # Predicted 11 years after baseline
+    predicted <-alc_sim2(AlcUse5_basepop3, aTP_alc5_age3, transition_alc5, 11) %>%  # starts with stimulated data
+      count(AlcUse_pred) %>%                                                        # Count number in each category, then reorganizes it
+      rename(predicted = n, AlcUse = AlcUse_pred) %>%
+      mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+    
+    
+    # Observed at NESARC 3 (different population)
+    observed <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) %>% # starts with observed data
+      filter (age>=61) %>%                                              # specifies age range of participants from simulated data
+      count(alc5.factor) %>%                                            # Count number in each category, then reorganizes it
+      rename(observed = n, AlcUse = alc5.factor) %>%
+      mutate(obs_pct = round(observed / sum(observed) * 100,2))
+    
+    comparison <- full_join (observed, predicted, by="AlcUse") %>% 
+      mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+      select (AlcUse, obs_pct, pred_pct, diff_pct)
+    
+    kableone(comparison)
+    
+    
+    
+
+# 3) AlcUse, Age continuous ------------------------------------------------------------
 
     
-# Model 2: allow for adjacent transitions and direct transitions to 'former drinker'
-Q2<- rbind (c(0,     0,    0.25,  0,    0),
-            c(0,     0,    0.25,  0,    0),
-            c(0,     0.25, 0,     0.25, 0),
-            c(0,     0.25, 0.25,  0,    0.25),
-            c(0,     0.25, 0,     0.25, 0))
+    
+# 2.1) Run MSM Model *******************************************************************************************************
+# Specify allowed transitions; only allow adjacent transitions
+# only allow adjacent transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
+Q_alc5 <- rbind ( c(0,     0,    0.25,  0,    0),
+                  c(0,     0,    0.25,  0,    0),
+                  c(0,     0.25, 0,     0.25, 0),
+                  c(0,     0,    0.25,  0,    0.25),
+                  c(0,     0,    0,     0.25, 0))
 
-    # Run MSM model
-    Q2 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q2)   # Specifies initial values; change Q value here, if needed
-    alc5.msm2_v2 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, 
-                          qmatrix = Q2, center=FALSE,                                # Change Q value here, if needed
-                          control = list(trace=1, maxit=2000, fnscale = 3000000, reltol = 1e-16, ndeps = rep(1e-6, 4)),
-                          covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-    saveRDS(alc5.msm2_v2, paste0(models, "alc5.msm2_v2.RDS")) # Save Results
+# Specifies initial values
+Q_alc5 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q_alc5)  
+
+# Run MSM model (adjusted for covariates)
+alc5v2.msm <- msm(alc5 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_alc5, 
+                  center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),  
+                  covariates = ~ female_wave1.factor + age + edu3.factor + race_wave1.factor)
+saveRDS(alc5v2.msm, paste0(models, "alc5v2.msm.RDS")) # Save Results
 
 
-
-# Model 3: remove all non-adjacent transitions; its the same as the model from the previous section
-
-
-# Load Models:
-alc5.msm1_v2 <- readRDS(paste0(models, "alc5.msm1_v2.RDS"))
-alc5.msm2_v2 <- readRDS(paste0(models, "alc5.msm2_v2.RDS"))
-alc5.msm3_v2 <- readRDS(paste0(models, "alc5.msm9.RDS"))
-
-alc5.msm1_v2
-alc5.msm2_v2
-alc5.msm3_v2
-
-# Compare models
-AIC(alc5.msm1_v2, alc5.msm2_v2, alc5.msm3_v2)
+# Load the models
+alc5v2.msm <- readRDS(paste0(models, "alc5v2.msm.RDS"))
 
 
 
-# 2) HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
-## 2a) Run HED MSM Model ------------------------------------------------------------------------------------------------
-  
-  # Count of transitions 
-  statetable.msm(hed, idnum, data=nesarc)
-  statetable.msm(hed, idnum, data=nesarc_expanded)
-  
-  
-  # Specify transition intensity matrix (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
-  # Will only allow transitions to an adjacent state 
-  
-  Q <- rbind ( c(0,     0.25,    0,     0,    0),
-               c(0.25,  0,       0.25,  0,    0),
-               c(0,     0.25,    0,     0.25, 0),
-               c(0,     0,       0.25,  0,    0.25),
-               c(0,     0,       0,     0.25, 0))
-  
-  # Specify initial values 
-  Q <- crudeinits.msm(hed ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
-  
-  
-  
-  
-  # Run MSM model
-  hed.msm <- msm (hed ~ years, subject=idnum, data = nesarc_expanded, 
-    qmatrix = Q, center=FALSE,
-    control = list(trace=1, maxit=500, fnscale = 3000000),
-    covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-  
-  # Save Results
-  saveRDS(hed.msm, paste0(models, "hed.msm.RDS"))
-  
-  
-  
-  
+
+
+# 2.2) Average annual TP  ************************************************************************************************************
+
+alc5v2_aTP <- predicted_TP(model=alc5v2.msm, year=1, original_n = nrow(nesarc), expanded_n = nrow(nesarc_expanded))
+kableone(alc5v2_aTP)
+
+
+
+# 2.3) Extract and prepare the annual TP for each category **********************************************************************************************
+
+# Specify the covariate values
+sex <- unique(nesarc_expanded$female_wave1.factor)
+race <- unique(nesarc_expanded$race_wave1.factor)
+edu <- unique(nesarc_expanded$edu3.factor)
+
+
+# Ages 30 - 50 
+aTP_alc5_age2 <- predicted_TP_covs2 (alc5_age2.msm, 1, sex, race, edu) %>%
+  # Rename states
+  mutate(From = recode(From,"State 1" = "Abstainer",  "State 2" = "Former", "State 3" = "Category I", "State 4" = "Category II", "State 5" = "Category III"),
+    To = recode(To, "State.1" = "Abstainer", "State.2" = "Former", "State.3" = "Category I", "State.4" = "Category II", "State.5" = "Category III"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition,         
+      "Abstainer->Category I", "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+      "Category III->Category II",	"Category II->Category I",	"Category I->Former")) %>% 
+  mutate(cat = paste(sex, edu, race, From, sep="_")) %>% 
+  select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+
+# Ages 50+
+aTP_alc5_age3 <- predicted_TP_covs2 (alc5_age3.msm, 1, sex, race, edu) %>%
+  # Rename states
+  mutate(From = recode(From,"State 1" = "Abstainer",  "State 2" = "Former", "State 3" = "Category I", "State 4" = "Category II", "State 5" = "Category III"),
+    To = recode(To, "State.1" = "Abstainer", "State.2" = "Former", "State.3" = "Category I", "State.4" = "Category II", "State.5" = "Category III"),
+    Transition = paste(From, To, sep = "->"),
+    Transition = fct_relevel(Transition,         
+      "Abstainer->Category I", "Former->Category I",	"Category I->Category II",	"Category II->Category III",
+      "Category III->Category II",	"Category II->Category I",	"Category I->Former"))%>% 
+  mutate(cat = paste(sex, edu, race, From, sep="_")) %>% 
+  select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+
+# 2.4) Set up the baseline Population ********************************************************************************************
+
+# Ages 30 - 50 
+AlcUse5_basepop2 <- nesarc_exp_ages30_50 %>%
+  select(idnum, wave, female_wave1.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%  
+  rename( sex = female_wave1.factor, 
+    race = race_wave1.factor) %>%
+  pivot_wider(names_from="wave", values_from=c("alc5.factor", "edu3.factor")) %>%  
+  mutate (AlcUse_pred = alc5.factor_1,
+    AlcUse_1 = alc5.factor_1,
+    AlcUse_2 = alc5.factor_2,
+    edu = edu3.factor_1) %>%
+  select(idnum, AlcUse_1, AlcUse_2, sex, edu, race, AlcUse_pred)
+
+
+
+# Ages 50+ 
+AlcUse5_basepop3 <- nesarc_exp_ages50plus %>%
+  select(idnum, wave, female_wave1.factor, race_wave1.factor, edu3.factor, alc5.factor) %>%  
+  rename( sex = female_wave1.factor, 
+    race = race_wave1.factor) %>%
+  pivot_wider(names_from="wave", values_from=c("alc5.factor", "edu3.factor")) %>%  
+  mutate (AlcUse_pred = alc5.factor_1,
+    AlcUse_1 = alc5.factor_1,
+    AlcUse_2 = alc5.factor_2,
+    edu = edu3.factor_1) %>%
+  select(idnum, AlcUse_1, AlcUse_2, sex, edu, race, AlcUse_pred)
+
+
+
+# 2.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+
+# Ages 30 - 50 
+
+# Predicted 11 years after baseline
+predicted <-alc_sim2(AlcUse5_basepop2, aTP_alc5_age2, transition_alc5, 11) %>%  # starts with stimulated data
+  count(AlcUse_pred) %>%                                                        # Count number in each category, then reorganizes it
+  rename(predicted = n, AlcUse = AlcUse_pred) %>%
+  mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+
+# Observed at NESARC 3 (different population)
+observed <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) %>% # starts with observed data
+  filter (age>41 & age<61) %>%                                      # specifies age range of participants from simulated data
+  count(alc5.factor) %>%                                            # Count number in each category, then reorganizes it
+  rename(observed = n, AlcUse = alc5.factor) %>%
+  mutate(obs_pct = round(observed / sum(observed) * 100,2))
+
+comparison <- full_join (observed, predicted, by="AlcUse") %>% 
+  mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+  select (AlcUse, obs_pct, pred_pct, diff_pct)
+
+kableone(comparison)
+
+
+
+# Ages 50+ 
+
+# Predicted 11 years after baseline
+predicted <-alc_sim2(AlcUse5_basepop3, aTP_alc5_age3, transition_alc5, 11) %>%  # starts with stimulated data
+  count(AlcUse_pred) %>%                                                        # Count number in each category, then reorganizes it
+  rename(predicted = n, AlcUse = AlcUse_pred) %>%
+  mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+
+# Observed at NESARC 3 (different population)
+observed <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) %>% # starts with observed data
+  filter (age>=61) %>%                                              # specifies age range of participants from simulated data
+  count(alc5.factor) %>%                                            # Count number in each category, then reorganizes it
+  rename(observed = n, AlcUse = alc5.factor) %>%
+  mutate(obs_pct = round(observed / sum(observed) * 100,2))
+
+comparison <- full_join (observed, predicted, by="AlcUse") %>% 
+  mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+  select (AlcUse, obs_pct, pred_pct, diff_pct)
+
+kableone(comparison)
+
+
+
+
