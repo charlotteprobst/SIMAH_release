@@ -15,10 +15,15 @@ remove_missing <- function(data){
                                  sex_recode, age_var,
                                  employment, education_summary,
                                  household_income,
+                                 marital_status,
                                  BMI, drinkingstatus,
                                  alc_frequency, quantity_per_occasion,
-                                 gramsperday, mentalhealth,physicalhealth,
-                                 hed) %>% drop_na() %>% 
+                                 gramsperday, 
+                                 mentalhealth,physicalhealth,
+                                 # household_income
+                                 hed) %>% drop_na(YEAR, State, race_eth, sex_recode, age_var,
+                                                  employment,education_summary, marital_status,
+                                                  gramsperday, drinkingstatus, BMI) %>% 
     filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% filter(State!="territories")
   return(data)
 }
@@ -45,9 +50,9 @@ process_APC <- function(data){
   names(APC)[7] <- "Gallons per capita"
   APC <- APC %>% filter(BeverageType==4) %>% dplyr::select(Year, State, 'Gallons per capita') %>% 
     mutate(`Gallons per capita` = `Gallons per capita`/10000)
-  USA <- APC %>% group_by(Year) %>% summarise(`Gallons per capita`= mean(`Gallons per capita`)) %>% 
-    mutate(State="USA")
-  APC <- rbind(APC,USA)
+  # USA <- APC %>% group_by(Year) %>% summarise(`Gallons per capita`= mean(`Gallons per capita`)) %>% 
+  #   mutate(State="USA")
+  # APC <- rbind(APC,USA)
   APC <- APC %>% 
     mutate(State = recode(State,
                           "1"="Alabama", "2"="Alaska", "4"="Arizona","5"="Arkansas",
@@ -79,7 +84,7 @@ process_APC <- function(data){
   APC <- APC %>% group_by(State) %>% 
     fill(Gallons,litrespercapita) %>% mutate(Gallons=as.numeric(Gallons),
                                              litrespercapita=as.numeric(litrespercapita)) %>% 
-    mutate(gramsperday = (litrespercapita*785.06)/365,
+    mutate(gramsperday = (litrespercapita*793)/365,
            gramsperday_adj1 = gramsperday - (gramsperday*0.0098),
            gramsperday_adj2 = gramsperday - (gramsperday*0.0098*1.5)) %>% 
     dplyr::select(Year, State, gramsperday_adj1) %>% 

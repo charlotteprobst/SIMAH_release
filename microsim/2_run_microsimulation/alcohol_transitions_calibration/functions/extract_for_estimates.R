@@ -1,15 +1,24 @@
 extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fixdiag.qmatrix,
                                   msm.parse.covariates, MatrixExp){
   plist <- list()
-  i <- combinations$cat[35]
+  i <- combinations$cat[52]
   for(i in levels(as.factor(combinations$cat))){
     combination <- combinations %>% filter(cat==i)
-    covariates <- list(female_wave1.factor=combination$sex, 
-                       age3.factor=combination$age, 
-                       race_wave1.factor=combination$race,
-                       edu3.factor = combinations$educ)
+    # covariates <- list(female_wave1.factor=as.character(combination$sex), 
+    #                    age3.factor=as.character(combination$age), 
+    #                    edu3.factor = as.character(combinations$educ),
+    #                    race_wave1.factor=as.character(combination$race))
     x <- model
-    covlist <- msm.parse.covariates(x, covariates, x$qcmodel)
+    covlist <- list(female_wave1.factorWomen = ifelse(combination$sex=="Women",1,0),
+                    'age3.factor30-49'=ifelse(combination$age=="30-49",1,0),
+                    'age3.factor50+'=ifelse(combination$age=="50+",1,0),
+                    'edu3.factorLow'=ifelse(combination$educ=="Low",1,0),
+                    'edu3.factorMed'=ifelse(combination$educ=="Med",1,0),
+                    'race_wave1.factor Black, non-Hispanic'=ifelse(combination$race=="Black, non-Hispanic",1,0),
+                    'race_wave1.factorHispanic'=ifelse(combination$race=="Hispanic",1,0),
+                    'race_wave1.factorOther, non-Hispanic'=ifelse(combination$race=="Other, non-Hispanic",1,0))
+
+    # covlist <- msm.parse.covariates(x, covariates, x$qcmodel)
     ni <- x$qmodel$npars
     nc <- length(covlist)
     se <- lse <- fixed <- numeric(ni)

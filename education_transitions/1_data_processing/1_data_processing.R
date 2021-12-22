@@ -310,7 +310,7 @@ subset$racefinal <- ifelse(is.na(subset$racefinal) & subset$relationshiptohead==
                                   subset$raceethwife, subset$racefinal))
 
 subset <- subset %>% 
-  select(uniqueID, year, sex, age, highestEd, educationCAT, educationCATdetailed, weight, racefinal) %>% 
+  select(uniqueID, year, relationshiptohead, sex, age, highestEd, educationCAT, educationCATdetailed, weight, racefinal) %>% 
   fill(weight, .direction=c("downup")) %>% 
   fill(highestEd, .direction=c("downup")) %>% mutate(weight=mean(weight))
 

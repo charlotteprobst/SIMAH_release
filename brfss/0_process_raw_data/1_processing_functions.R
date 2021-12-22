@@ -21,6 +21,25 @@ recode_state <- function(data){
 }
 
 recode_education <- function(data){
+  if(data$YEAR[1]<=1992){
+    data <- data %>% 
+      mutate(
+        education_detailed = recode(EDUCA, 
+                                    "1"="eighth grade or less",
+                                    "2"="some high school",
+                                    "3"="high school graduate",
+                                    "4"="some technical school",
+                                    "5"="technical school graduate",
+                                    "6"="some college",
+                                    "7"="college graduate",
+                                    "8"="postgraduate degree",
+                                    "9"="NA",.default="NA"),
+        education_detailed = ifelse(education_detailed=="NA",NA,
+                                    education_detailed),
+        education_summary = ifelse(EDUCA<=4, "LEHS",
+                                   ifelse(EDUCA>=5 & EDUCA<=6,"SomeC",
+                                          ifelse(EDUCA>=7 & EDUCA<=8, "College",NA))))
+  }else{
   data <- data %>% 
     mutate(
       education_detailed = recode(EDUCA, 
@@ -36,6 +55,7 @@ recode_education <- function(data){
       education_summary = ifelse(EDUCA<=4, "LEHS",
                                  ifelse(EDUCA==5,"SomeC",
                                         ifelse(EDUCA==6, "College",NA))))
+  }
   return(data)
 }
 
@@ -116,8 +136,49 @@ recode_employment <- function(data){
   return(data)
 }
 
-recode_income <- function(data){
+recode_marital <- function(data){
   data <- data %>% mutate(
+    marital_status = ifelse(MARITAL==1, 1,
+                            ifelse(MARITAL==9, NA, 0)))
+    return(data)
+}
+
+recode_income <- function(data){
+ # if(data$YEAR[1]>=1994 & data$YEAR[1]<=1995){
+ #  data$INCOME2 <- data$INCOME
+ # }
+  if(data$YEAR[1]==1984){
+    data <- data %>% mutate(
+      household_income = ifelse(INCOME==1, "0-10000",
+                                ifelse(INCOME==2, "10001-15000",
+                                       ifelse(INCOME==3, "15001-20000",
+                                              ifelse(INCOME==4, "20001-25000",
+                                                     ifelse(INCOME==5, "25001-35000",
+                                                            ifelse(INCOME==6, "35001-100000",
+                                                                   NA)))))))
+  }else if(data$YEAR[1]>=1985 & data$YEAR[1]<=1990){
+    data <- data %>% mutate(
+      household_income = ifelse(INCOME==1, "0-10000",
+                                ifelse(INCOME==2, "10001-15000",
+                                       ifelse(INCOME==3, "15001-20000",
+                                              ifelse(INCOME==4, "20001-25000",
+                                                     ifelse(INCOME==5, "25001-35000",
+                                                            ifelse(INCOME==6, "35001-50000",
+                                                                   ifelse(INCOME==8, "50000-100000",
+                                                                          NA))))))))
+  }else if(data$YEAR[1]>=1991 & data$YEAR[1]<=1994){
+    data <- data %>% mutate(
+      household_income = ifelse(INCOME==1, "0-10000",
+                                ifelse(INCOME==2, "10001-15000",
+                                       ifelse(INCOME==3, "15001-20000",
+                                              ifelse(INCOME==4, "20001-25000",
+                                                     ifelse(INCOME==5, "25001-35000",
+                                                            ifelse(INCOME==6, "35001-50000",
+                                                                   ifelse(INCOME==7, "50000-100000",
+                                                                          NA))))))))
+    }else if(data$YEAR[1]>=1994){
+  data <- data %>% mutate(
+    INCOME2 = ifelse(YEAR==1995, INCOME95, INCOME2),
     household_income = ifelse(INCOME2==1, "0-9999",
                         ifelse(INCOME2==2, "10000-14999",
                                ifelse(INCOME2==3, "15000-19999",
@@ -126,7 +187,7 @@ recode_income <- function(data){
                                                     ifelse(INCOME2==6, "35000-49999",
                                                            ifelse(INCOME2==7, "50000-74999",
                                                                   ifelse(INCOME2==8, "75000+", NA)))))))))
-    
+  }
 return(data)
 }
 
@@ -138,14 +199,14 @@ recode_weight <- function(data){
                           ifelse(WEIGHT==999, NA,
                                  ifelse(WEIGHT==9999, NA, 
                                         ifelse(WEIGHT==7777, NA,
-                                               WEIGHT*0.4535)))))
+                                               WEIGHT*0.4536)))))
   }else if(data$YEAR[1]>=2004){
     data <- data %>% 
       mutate(
         weight_kg = ifelse(WEIGHT2==7777, NA,
                            ifelse(WEIGHT2==9999, NA,
                                   ifelse(WEIGHT2>=9000 & WEIGHT2<=9998, WEIGHT2-9000,
-                                         WEIGHT2*0.4535))))
+                                         WEIGHT2*0.4536))))
   }
   data$weight_kg <- ifelse(data$weight_kg>=400, NA, data$weight_kg)
   return(data)
@@ -157,7 +218,7 @@ recode_height <- function(data){
                        ifelse(YEAR==2004, HEIGHT2, 
                               ifelse(YEAR>=2005, HEIGHT3, NA)))
   )
-  if(data$YEAR[1]<=2004){
+  if(data$YEAR[1]<2004){
     data <- data %>% mutate(
       heightvar = ifelse(heightvar==777, NA,
                          ifelse(heightvar==999, NA,
@@ -168,15 +229,19 @@ recode_height <- function(data){
       inches = as.numeric(substr(heightvar, 2,3)),
       height_cm = feet*0.3048 + inches*0.0254
     )
-  }else if(data$YEAR[1]>=2005){
+  }else if(data$YEAR[1]>=2004){
     data <- data %>% mutate(
       heightvar = ifelse(heightvar==7777, NA, 
-                         ifelse(heightvar==9999, NA, heightvar)),
-      feet <- ifelse(heightvar<=711, as.numeric(substr(heightvar, 1,1)),NA),
-      inches <- ifelse(heightvar<=711, as.numeric(substr(heightvar, 2,3)),NA),
-      height_cm = ifelse(heightvar>=9000 & heightvar<=9998, heightvar-9000,
-                         ifelse(heightvar<=711, feet*0.3048 + inches*0.0254, heightvar))
-    )
+                         ifelse(heightvar==9999, NA, 
+                                ifelse(heightvar==777, NA, 
+                                       ifelse(heightvar==999, NA,
+                                              heightvar)))),
+      feet = ifelse(heightvar<=9000, as.numeric(substr(heightvar, 1,1)),NA),
+      inches = ifelse(heightvar<=9000, as.numeric(substr(heightvar, 3,4)),NA),
+      height_cm = ifelse(heightvar>=9000 & heightvar<=9998, (heightvar-9000)/100,
+                         ifelse(heightvar<=9000, feet*0.3048 + inches*0.0254,heightvar)),
+      height_cm = ifelse(heightvar==777, NA, 
+                         ifelse(heightvar==9777, NA, height_cm)))
   }
   data$height_cm <- ifelse(data$height_cm>300, NA, data$height_cm)
   return(data)
@@ -188,26 +253,48 @@ recode_BMI <- function(data){
   )
 }
 
+impute_missing_BMI <- function(data){
+  data <- data %>% 
+    mutate(BMI = ifelse(BMI<15, NA,
+                        ifelse(BMI>40, NA, BMI)))
+  toimpute <- data %>% dplyr::select(State, age_var, sex_var, race_eth_detailed, education_detailed,
+                                     employment_detailed, household_income, BMI)
+  imputed <- mice(toimpute, method="pmm")
+  completedata <- complete(imputed)
+  data$BMI <- completedata$BMI
+  return(data)
+}
+
 
 # alcohol functions 
 
 recode_alc_prevalence <- function(data){
   data <- data %>%
     mutate(drinkingstatus = ifelse(YEAR<=2000, DRINKANY,
-                                   ifelse(YEAR>=2005 & YEAR<=2010, DRNKANY4, NA)))
+                                   ifelse(YEAR>=2005 & YEAR<=2010, DRNKANY4,NA)),
+           drinkingstatus = ifelse(drinkingstatus==2, 0,
+                                   ifelse(drinkingstatus==1, 1,
+                                          ifelse(alc_frequency==0, 0, NA))))
+  if(data$YEAR[1]>2000 & data$YEAR[1]<=2005){
+    data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
+                                  ifelse(data$alc_frequency>0, 1, NA))
+  }else if(data$YEAR[1]>2010){
+    data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
+                                         ifelse(data$alc_frequency>0, 1, NA))
+  }
   return(data)
 }
 
 recode_alc_frequency <- function(data){
   data <- data %>% mutate(
-  alc_frequency = ifelse(YEAR<=2000, ALCOHOL,
+  alc_frequency = ifelse(YEAR<=2000 & YEAR>=1989, ALCOHOL,
                          ifelse(YEAR==2001, ALCDAYS,
                                 ifelse(YEAR>=2002 & YEAR<=2004, ALCDAY3,
                                        ifelse(YEAR>=2005 & YEAR<=2010, ALCDAY4, 
                                               ifelse(YEAR>=2011, ALCDAY5, NA))))))
-  if(data$YEAR[1]==1999 | data$YEAR[1]==2000){
+  if(data$YEAR[1]<=2000 & data$YEAR[1]>=1989){
     data <- data %>% mutate(
-      alc_frequency = ifelse(drinkingstatus==2, 0,
+      alc_frequency = ifelse(DRINKANY==2, 0,
                              ifelse(alc_frequency<110, (alc_frequency-100)*52/12,
                                     ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                            ifelse(alc_frequency==777, NA,
@@ -222,7 +309,7 @@ recode_alc_frequency <- function(data){
                                                            ifelse(alc_frequency==999,NA,alc_frequency))))))
     }else if(data$YEAR[1]>=2005 & data$YEAR[1]<=2010){
       data <- data %>% mutate(
-        alc_frequency = ifelse(drinkingstatus==2, 0,
+        alc_frequency = ifelse(DRNKANY4==2, 0,
                                ifelse(alc_frequency<110, (alc_frequency-100)*52/12,
                                       ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                              ifelse(alc_frequency==777, NA,
@@ -235,20 +322,62 @@ recode_alc_frequency <- function(data){
                                            ifelse(alc_frequency==777, NA,
                                                   ifelse(alc_frequency==888, 0,
                                                          ifelse(alc_frequency==999,NA,alc_frequency))))))
-                                                    
+    }else if(data$YEAR[1]<=1988){
+      data <- data %>% mutate(
+        beer_freq = ifelse(DRKBEER<110 & DRKBEER>=100, (DRKBEER-100)*52/12,
+                                      ifelse(DRKBEER>200 & DRKBEER<=231, DRKBEER-200,
+                                             ifelse(DRKBEER==777, NA,
+                                                    ifelse(DRKBEER==888, 0,0)))),
+        wine_freq = ifelse(DRKWINE<110 & DRKWINE>=100, (DRKWINE-100)*52/12,
+                                  ifelse(DRKWINE>200 & DRKWINE<=231, DRKWINE-200,
+                                         ifelse(DRKWINE==777, NA,
+                                                ifelse(DRKWINE==888, 0,0)))),
+        spirit_freq = ifelse(DRKLIQR<110 & DRKLIQR>=100, (DRKLIQR-100)*52/12,
+                                    ifelse(DRKLIQR>200 & DRKLIQR<=231, DRKLIQR-200,
+                                           ifelse(DRKLIQR==777, NA,
+                                                  ifelse(DRKLIQR==888, 0, 0)))),
+        beer_freq = ifelse(is.na(beer_freq),0,beer_freq),
+        wine_freq = ifelse(is.na(wine_freq),0,wine_freq),
+        spirit_freq = ifelse(is.na(spirit_freq),0,spirit_freq),
+        # alc_frequency = beer_freq+wine_freq+spirit_freq,
+        alc_frequency = ifelse(DRINKANY==2, 0, 
+                               ifelse(DRINKANY==9, NA, 
+                                      ifelse(DRINKANY==1, beer_freq + wine_freq + spirit_freq, 
+                                             alc_frequency))))
     }
+                                                  
   data$alc_frequency <- round(data$alc_frequency,digits=0)
   data$alc_frequency <- ifelse(data$alc_frequency==31, 30, 
-                               ifelse(data$alc_frequency>31, NA, data$alc_frequency))
+                               ifelse(data$alc_frequency>31, 31, data$alc_frequency))
   # recode the missing drinking prevalence values now we have frequency values 
-  data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
-                                ifelse(data$alc_frequency>=1, 1, data$drinkingstatus))
-  
+  # data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
+  #                               ifelse(data$alc_frequency>=1, 1, data$drinkingstatus))
   
   return(data)
 }
 
 recode_alc_quantity <- function(data){
+  if(data$YEAR[1]<=1988){
+    data <- data %>% mutate(
+      nbeer = ifelse(NBEEROCC>=77, NA, 
+                     ifelse(beer_freq==0, 0, NBEEROCC)),
+      nwine = ifelse(NWINEOCC>=77,NA,
+                     ifelse(wine_freq==0, 0, NWINEOCC)),
+      nspirit = ifelse(NLIQROCC>=77, NA, 
+                       ifelse(spirit_freq==0, 0, NLIQROCC)),
+      nbeer = ifelse(is.na(nbeer), 0, nbeer),
+      nwine = ifelse(is.na(nwine),0,nwine),
+      nspirit=ifelse(is.na(nspirit),0,nspirit),
+      beerpermonth = ifelse(beer_freq==0, 0, nbeer*beer_freq),
+      winepermonth = ifelse(wine_freq==0, 0,nwine*wine_freq),
+      spiritpermonth = ifelse(spirit_freq==0, 0,nspirit*spirit_freq),
+      drinkspermonth = beerpermonth + winepermonth + spiritpermonth,
+      quantity_per_occasion = ifelse(DRINKANY==2, 0,
+                                     ifelse(DRINKANY==9, NA,
+                                     drinkspermonth/alc_frequency)))
+
+  }
+  else if(data$YEAR[1]>=1989){
   data <- data %>% 
     mutate(quantity_per_occasion = ifelse(YEAR<=2000, NALCOCC,
                              ifelse(YEAR>=2001 & YEAR<=2004, AVEDRNK,
@@ -256,9 +385,12 @@ recode_alc_quantity <- function(data){
                                            ifelse(YEAR>=2019, AVEDRNK3, NA)))),
            quantity_per_occasion = ifelse(quantity_per_occasion==88, 0,
                                  ifelse(quantity_per_occasion==77, NA,
-                                        ifelse(quantity_per_occasion==99, NA, quantity_per_occasion))))
+                                        ifelse(quantity_per_occasion==99, NA, 
+                                               ifelse(drinkingstatus==0, 0, quantity_per_occasion)))))
+  }
   data$quantity_per_occasion <- ifelse(data$alc_frequency==0, 0,
                           data$quantity_per_occasion)
+  # data$alc_frequency <- ifelse(data$quantity_per_occasion==0, 0, data$alc_frequency)
   data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
   return(data)
 }
@@ -277,6 +409,7 @@ recode_hed <- function(data){
 }
 
 recode_menthealth <- function(data){
+  if(data$YEAR[1]>=1993){
   data <- data %>% 
     mutate(mentalhealth = ifelse(MENTHLTH==88, 0,
                                  ifelse(MENTHLTH>=77, NA,
@@ -284,6 +417,10 @@ recode_menthealth <- function(data){
            physicalhealth = ifelse(PHYSHLTH==88, 0,
                                    ifelse(PHYSHLTH>=77, NA,
                                           PHYSHLTH)))
+  }else if(data$YEAR[1]<1993){
+    data$mentalhealth <- NA
+    data$physicalhealth <- NA
+  }
   return(data)
 }
 
@@ -301,9 +438,11 @@ recode_sample_weights <- function(data){
 subset_data <- function(data){
   data <- data %>% 
     dplyr::select(YEAR, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
-                  education_summary, employment,
-                  household_income, height_cm, weight_kg, BMI, drinkingstatus, 
+                  education_summary, employment, marital_status,
+                  household_income,
+                  height_cm, weight_kg, BMI, drinkingstatus, 
                   mentalhealth, physicalhealth,
                   alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)
 }
+

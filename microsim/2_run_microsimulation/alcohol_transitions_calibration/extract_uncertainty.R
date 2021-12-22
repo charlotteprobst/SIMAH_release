@@ -7,7 +7,7 @@ library(tidyr)
 library(MASS)
 
 # how many samples to take from the prior? 
-nsamples <- 10
+nsamples <- 25
 
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msmparsecovariates.R")
@@ -15,10 +15,12 @@ source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibratio
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/extract_for_estimates.R")
 
-model <- readRDS("SIMAH_workplace/microsim/1_input_data/alc5.msm9.RDS")
+model <- readRDS("SIMAH_workplace/microsim/1_input_data/alc5.msm.RDS")
 
+# pmatrix.msm(model, covariates=list(female_wave1.factorWomen=1))
 data <- model$data$mf
-
+# model$call
+# unique(data$edu3.factor)
 Samples <- Sample_Probs(data, model, nsamples)
 
 estimates <- Samples[[2]]

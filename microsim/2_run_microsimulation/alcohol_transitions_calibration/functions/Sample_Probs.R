@@ -1,17 +1,16 @@
 Sample_Probs <- function(data, model, nsamples){
   estimates <- model$estimates.t
   covmat <- data.frame(model$covmat)
-  covmat <- covmat + covmat*2
+  covmat <- covmat*1000
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
-  
-  age <- sort(unique(data$age3.factor))
   sex <- unique(data$female_wave1.factor)
-  race <- unique(data$race_wave1.factor)
+  age <- sort(unique(data$age3.factor))
   educ <- unique(data$edu3.factor)
+  race <- unique(data$race_wave1.factor)
   # every age sex race combination
-  combinations <- expand.grid(age,sex,race,educ)
-  names(combinations) <- c("age","sex","race","educ")
+  combinations <- expand.grid(sex,age,educ,race)
+  names(combinations) <- c("sex","age","educ","race")
   combinations <- data.frame(combinations)
   options(digits=3)
   combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, combinations$educ, sep="_")

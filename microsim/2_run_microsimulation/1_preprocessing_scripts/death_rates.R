@@ -54,21 +54,68 @@ deathrates <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_sumCOD_001
                    IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
   
 }
-
-LC <- deathrates %>% dplyr::select(year, cat, LVDCmort) %>% 
-  separate(cat, into=c("sex","age","race","education"), sep=c(1,6,9)) %>% 
-  mutate(agecat = recode(age, "18-24"="18-24",
-                         "25-29"="25-34", "30-34"="25-34",
-                         "35-39"="35-44","40-44"="35-44",
-                         "45-49"="45-54","50-54"="45-54",
-                         "55-59"="55-64","60-64"="55-64",
-                         "65-69"="65-74","70-74"="65-74",
-                         "75-79"="75-79")) %>% 
-  group_by(year, sex, agecat) %>% summarise(total=sum(LVDCmort))
-write.csv(LC, "SIMAH_workplace/LC_SIMAH.csv", row.names=F)
-ggplot(data=LC, aes(x=year, y=total)) + geom_line() + 
-  facet_grid(rows=vars(sex), cols=vars(agecat))
-
+# 
+# LC <- deathrates %>% dplyr::select(year, cat, LVDCmort) %>% 
+#   separate(cat, into=c("sex","age","race","education"), sep=c(1,6,9)) %>% 
+#   mutate(agecat = recode(age, "18-24"="18-24",
+#                          "25-29"="25-34", "30-34"="25-34",
+#                          "35-39"="35-44","40-44"="35-44",
+#                          "45-49"="45-54","50-54"="45-54",
+#                          "55-59"="55-64","60-64"="55-64",
+#                          "65-69"="65-74","70-74"="65-74",
+#                          "75-79"="75-79")) %>% 
+#   group_by(year, sex, agecat) %>% summarise(total=sum(LVDCmort))
+# write.csv(LC, "SIMAH_workplace/LC_SIMAH.csv", row.names=F)
+# ggplot(data=LC, aes(x=year, y=total)) + geom_line() + 
+#   facet_grid(rows=vars(sex), cols=vars(agecat))
+# 
+# TPop <- read.csv("SIMAH_workplace/microsim/1_input_data/allethn_rates_0019_final.csv") %>% 
+#   filter(age_gp!="80") %>% filter(year!=2019) %>% 
+#   dplyr::select(year, race, sex, edclass, age_gp, TPop) %>% 
+#   rename(Sex=sex, raceeth=race, agecat=age_gp) %>% 
+#   mutate(Sex=recode(Sex, "1"="m","2"="f"),
+#          raceeth = recode(raceeth, "White"="WHI","Black"="BLA","Hispanic"="SPA","Other"="OTH")) %>% 
+#   mutate(agecat = recode(agecat,
+#                          "18"="18-24","25"="25-29","30"="30-34","35"="35-39",
+#                          "40"="40-44","45"="45-49","50"="50-54","55"="55-59",
+#                          "60"="60-64","65"="65-69","70"="70-74","75"="75-79")) %>% ungroup() %>% 
+#   mutate(cat=paste0(Sex,agecat,raceeth, edclass)) %>% 
+#   group_by(cat) %>% summarise(n=(sum(TPop))*proportion)
+# deathrates <- left_join(deathrates, TPop)
+# 
+# LC <- deathrates %>% dplyr::select(year, cat, LVDCmort,n) %>% 
+#   separate(cat, into=c("sex","age","race","education"), sep=c(1,6,9)) %>% 
+#   mutate(agecat = recode(age, "18-24"="18-24",
+#                          "25-29"="25-34", "30-34"="25-34",
+#                          "35-39"="35-44","40-44"="35-44",
+#                          "45-49"="45-54","50-54"="45-54",
+#                          "55-59"="55-64","60-64"="55-64",
+#                          "65-69"="65-74","70-74"="65-74",
+#                          "75-79"="75-79")) %>% 
+#   group_by(year, sex, agecat, education) %>% summarise(total=sum(LVDCmort),
+#                                                        totaln = sum(n),
+#                                                        rateper100000 = (total/totaln)*100000) %>% 
+#   mutate(education=ifelse(education=="LEHS","High school degree or less",
+#                           ifelse(education=="SomeC","Some college",
+#                                  "College degree or more")),
+#          education = factor(education, levels=c("High school degree or less",
+#                                                 "Some college", "College degree or more")))
+# 
+# ggplot(data=LC, aes(x=year, y=total, colour=education)) + geom_line() + 
+#   facet_grid(cols=vars(agecat), rows=vars(sex)) + theme_bw() + 
+#   theme(legend.position="bottom",
+#         legend.title=element_blank()) + ylab("Total N deaths")
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_education_totalN.png",
+#        dpi=300, width=33, height=19, units="cm")
+# 
+# ggplot(data=LC, aes(x=year, y=rateper100000, colour=education)) + geom_line() + 
+#   facet_grid(cols=vars(agecat), rows=vars(sex)) + theme_bw() + 
+#   theme(legend.position="bottom",
+#         legend.title=element_blank()) + ylab("Rate per 100,000")
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_education_rate.png",
+#        dpi=300, width=33, height=19, units="cm")
+#   
+# write.csv(LC, "SIMAH_workplace/LC_SIMAH.csv", row.names=F)
 
 
 latest <- deathrates %>% filter(year==2018)
