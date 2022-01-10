@@ -123,6 +123,91 @@ predicted_TP_covs2 <- function(model, year, sex, race, edu) {
 
 
 
+
+
+# Extract Transition Probability for each level of the covariates at a given year
+predicted_TP_covs3 <- function(model, year, age, sex, race, edu) {
+  probs <- list()
+  for (i in age){
+    for (j in sex){
+      for (l in race){
+        for (k in edu){
+          
+          age.c_var <- (mapping%>%filter(age==i))$age.c
+          
+          # extract the probabilities
+          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=year, 
+                                                covariates = list(age.c = age.c_var,   
+                                                  female_wave1.factor = j, 
+                                                  race_wave1.factor = l, edu3.factor = k)))) %>%
+            
+            # modify the output presentation
+            mutate(From = row.names(.)) %>%
+            pivot_longer(cols = -From, names_to = "To") %>%
+            rename(Probability = value) %>%
+            mutate(Transition = paste(From, To, sep = "->"),
+              age = i,
+              sex = j, 
+              race = l,
+              edu = k,
+              year = year) 
+        }
+      }
+    }
+  }
+  
+  probs <- do.call(rbind, probs)
+  row.names(probs) <- NULL  # remove row names
+  return(probs)
+}
+
+
+
+
+# Extract Transition Probability for each level of the covariates at a given year
+predicted_TP_covs4 <- function(model, year, age, sex, race, edu) {
+  probs <- list()
+  for (i in age){
+    for (j in sex){
+      for (l in race){
+        for (k in edu){
+          
+          age.c_var <- (mapping%>%filter(age==i))$age.c
+          age_sq.c_var <- (mapping%>%filter(age==i))$age_sq.c
+          
+          # extract the probabilities
+          probs[[paste(i,j,l,k)]] <- data.frame(print(pmatrix.msm(model, t=year, 
+            covariates = list(age.c = age.c_var, age_sq.c = age_sq.c_var,    
+              female_wave1.factor = j, 
+              race_wave1.factor = l, edu3.factor = k)))) %>%
+            
+            # modify the output presentation
+            mutate(From = row.names(.)) %>%
+            pivot_longer(cols = -From, names_to = "To") %>%
+            rename(Probability = value) %>%
+            mutate(Transition = paste(From, To, sep = "->"),
+              age = i,
+              sex = j, 
+              race = l,
+              edu = k,
+              year = year) 
+        }
+      }
+    }
+  }
+  
+  probs <- do.call(rbind, probs)
+  row.names(probs) <- NULL  # remove row names
+  return(probs)
+}
+
+
+
+
+
+
+
+
 # AlcUse - Function to apply alcohol consumption transition probabilities
 transition_alc5 <- function(data, transitions){
   selected <- unique(data$cat)
@@ -167,6 +252,24 @@ transition_alc5 <- function(data, transitions){
             do(apply_transitions(., aTP)) %>% # use 'do( )' to run the function defined earlier
             ungroup() %>% 
             select (-cat, -prob) 
+        }
+        return(AlcUse_basepop)
+      }
+      
+      
+      # Alcohol Use Simulate transitions, age continuous 
+      alc_sim3 <- function(basepop, aTP, apply_transitions, years) {
+        for (i in 1:years) {
+          AlcUse_basepop <- basepop %>% 
+            mutate(year= i,
+              age = age + 1,
+              cat = paste(age, sex, edu, race, AlcUse_pred, sep="_"),
+              prob = runif(nrow(.))) %>%  # generate random prob
+            group_by(cat) %>%
+            do(apply_transitions(., aTP)) %>% # use 'do( )' to run the function defined earlier
+            ungroup() %>% 
+            select (-cat, -prob) %>% 
+            filter (age<90)
         }
         return(AlcUse_basepop)
       }

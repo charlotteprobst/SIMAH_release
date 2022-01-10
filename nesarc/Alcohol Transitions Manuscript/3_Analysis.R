@@ -8,7 +8,7 @@ library(janitor)    # data management
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 # options(scipen=999) # prevent the use of scientific notation
-# memory.limit(size=1e+13)
+ memory.limit(size=1e+13)
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
@@ -227,7 +227,7 @@ observed_11 <- count(nesarc3_expanded, alc5.factor) %>%
 
 
 AlcUse_comparison_11 <- full_join (observed_11, predicted_11, by="AlcUse") %>% 
-  mutate(diff_pct = round(abs(pred_pct-obs_pct), 2))%>%
+  mutate(diff_pct = round(pred_pct-obs_pct, 2))%>%
   select (AlcUse, obs_pct, pred_pct, diff_pct)
 
 kableone(AlcUse_comparison_11)
