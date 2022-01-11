@@ -592,3 +592,116 @@ kable(comparison)
 
 
 
+
+# 5) AlcUse, Age continuous, 4 alcohol categories ------------------------------------------------------------
+
+nesarc_ageC <- nesarc %>%
+  filter (age<90) %>% group_by(idnum) %>% filter(n() > 1) %>% ungroup() %>% 
+  mutate (age.c = (age - mean(age)) / sd(age)) 
+
+nesarc_expanded_ageC <- nesarc_expanded %>%
+  filter (age<90) %>% group_by(idnum) %>% filter(n() > 1) %>% ungroup() %>% 
+  mutate (age.c = (age - mean(age)) / sd(age)) 
+
+
+# 3.1) Run MSM Model *******************************************************************************************************
+# Specify allowed transitions; only allow adjacent transitions
+# only allow adjacent transitions
+
+# Specify allowed transitions; only allow adjacent transitions
+Q_alc4 <- rbind ( c(0,    0.25,  0,    0),
+  c(0.25, 0,     0.25, 0),
+  c(0,    0.25,  0,    0.25),
+  c(0,    0,     0.25, 0))
+
+# Specifies initial values
+Q_alc4 <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded_ageC, qmatrix=Q_alc4)  
+
+
+# Run MSM model (adjusted for covariates)
+alc4_ageC.msm <- msm(alc4 ~ years, subject=idnum, data = nesarc_expanded_ageC, qmatrix = Q_alc4, 
+                      center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),  
+                      covariates = ~ female_wave1.factor + age.c + edu3.factor + race_wave1.factor)
+saveRDS(alc4_ageC.msm, paste0(models, "alc4_ageC.msm.RDS")) # Save Results
+
+
+# Load the models
+alc4_ageC.msm <- readRDS(paste0(models, "alc4_ageC.msm.RDS"))
+
+
+
+
+# 3.2) Average annual TP  ************************************************************************************************************
+
+alc4_ageC_aTP <- predicted_TP(model=alc4_ageC.msm, year=1, original_n = nrow(nesarc_ageC), expanded_n = nrow(nesarc_expanded_ageC))
+kable(alc4_ageC_aTP)
+
+
+
+# 3.3) Extract and prepare the annual TP for each category **********************************************************************************************
+
+# Specify the covariate values
+mapping <- nesarc_expanded_ageC %>% select(age, age.c) %>% distinct()
+age <- sort(unique(nesarc_expanded_ageC$age))
+sex <- unique(nesarc_expanded_ageC$female_wave1.factor)
+race <- unique(nesarc_expanded_ageC$race_wave1.factor)
+edu <- unique(nesarc_expanded_ageC$edu3.factor)
+
+
+aTP_alc4_ageC <- predicted_TP_covs3 (alc4_ageC.msm, 1, age, sex, race, edu) %>% 
+  # Rename states
+  mutate( From = recode(From,"State 1" = "Non-drinker", "State 2" = "Category I", "State 3" = "Category II", "State 4" = "Category III"),
+          To = recode(To, "State.1" = "Non-drinker", "State.2" = "Category I", "State.3" = "Category II", "State.4" = "Category III"),
+          Transition = paste(From, To, sep = "->"),
+          Transition = fct_relevel(Transition,         
+            "Non-drinker->Category I",	"Category I->Category II",	"Category II->Category III",
+            "Category III->Category II",	"Category II->Category I",	"Category I->Non-drinker")) %>%
+  mutate(cat = paste(age, sex, edu, race, From, sep="_")) %>% 
+  select(cat, To, Probability) %>% 
+  group_by(cat) %>% 
+  mutate(cumsum = cumsum(Probability)) %>%
+  ungroup()
+
+
+
+# 3.4) Set up the baseline Population ********************************************************************************************
+
+AlcUse4_ageC_basepop <- nesarc_expanded_ageC %>%
+  select(idnum, wave, female_wave1.factor, age, race_wave1.factor, edu3.factor, alc4.factor) %>%  
+  rename( sex = female_wave1.factor, 
+          race = race_wave1.factor) %>%
+  pivot_wider(names_from="wave", values_from=c("alc4.factor", "edu3.factor", "age")) %>%  
+  mutate (AlcUse_pred = alc4.factor_1,
+          AlcUse_1 = alc4.factor_1,
+          AlcUse_2 = alc4.factor_2,
+          edu = edu3.factor_1,
+          age = age_1) %>%
+  select(idnum, AlcUse_1, AlcUse_2, sex, age, edu, race, AlcUse_pred)
+
+
+
+# 3.4.2) Compare observed (at NESARC III) vs predicted  *****************************************************************************
+
+# Predicted 11 years after baseline
+
+predicted <-alc_sim3(AlcUse4_ageC_basepop, aTP_alc4_ageC, transition_alc4, 11) %>%  # starts with stimulated data
+  count(AlcUse_pred) %>%                                                        # Count number in each category, then reorganizes it
+  rename(predicted = n, AlcUse = AlcUse_pred) %>%
+  mutate(pred_pct = round(predicted / sum(predicted) * 100,2)) 
+
+# Observed at NESARC 3 (different population)
+observed <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) %>% # starts with observed data
+  filter (age < 90) %>% 
+  count(alc4.factor) %>%                                            # Count number in each category, then reorganizes it
+  rename(observed = n, AlcUse = alc4.factor) %>%
+  mutate(obs_pct = round(observed / sum(observed) * 100,2))
+
+comparison <- full_join (observed, predicted, by="AlcUse") %>% 
+  mutate(diff_pct = round((pred_pct-obs_pct), 2))%>%
+  select (AlcUse, obs_pct, pred_pct, diff_pct)
+
+kable(comparison)
+
+
+
+
