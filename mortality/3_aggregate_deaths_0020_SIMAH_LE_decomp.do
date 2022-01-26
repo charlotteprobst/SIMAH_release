@@ -227,5 +227,7 @@ keep year sex race age_gp *mort1 *mort2 *mort3
 reshape long Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
  i(year age_gp sex race) j(edclass)
 
+lab define edlab 1 "LEHS" 2 "SomeC" 3 "College", modify
+ 
 save "3_out data/allethn_sumCOD_0020_LE_decomp.dta", replace
 outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv" , comma replace

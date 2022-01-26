@@ -14,7 +14,8 @@ global dir `"C:/Users/marie/Dropbox/NIH2020"'
 
 // combine deaths with population by cell
 // read in population counts
-use "${dir}/SIMAH_workplace/demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", clear
+import delimited "${dir}/SIMAH_workplace/demography/pop_counts_simulation_2000_2020.csv", clear
+
 
 merge 1:1 year age_gp sex edclass race using "${dir}/SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.dta"
 
