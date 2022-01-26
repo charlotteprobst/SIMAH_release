@@ -215,7 +215,7 @@ foreach datafile of local datafiles {
 }
 */
 
-forval i = 2000(1)2019 {
+forval i = 2000(1)2020 {
 	erase Mort_`i'_edit.dta
 	erase Mort`i'.dta
 

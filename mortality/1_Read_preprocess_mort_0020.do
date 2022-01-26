@@ -684,7 +684,7 @@ cd "/Users/marie/Dropbox/NIH2020/SIMAH_workplace/mortality"
 			hispanic2003 484-486
 			hisprec 488
 		using "1_raw data/VS20MORT.DUSMCPUB_r20220105" ;
-		gen year=2019 ;
+		gen year=2020 ;
 		compress;
 		save "3_out data/Mort2020.dta", replace;
 		
