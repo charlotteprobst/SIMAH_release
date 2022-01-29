@@ -46,10 +46,12 @@ gen str1 xcode = icd10
 
 // specific causes of death (using icd codes)
 
-*** ADD COVID  ***
-
 /*specific causes of death (using icd codes)
 url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
+
+// COVID (defined according to Gundlapalli et al. 2021)
+
+gen cov = 1 if inlist(icd10, "U071")
 
 // Unintentional inurues
 
@@ -153,7 +155,7 @@ generate hyphd = 1 if inrange(icd10, "I110", "I119")
 
 // Generate rest category
 gen rest = .
-replace rest = 1 if (lvdc == . & panc == . & dm == . & ihd == . & istr == . & hstr == . & hyphd == . ///
+replace rest = 1 if (cov == . & lvdc == . & panc == . & dm == . & ihd == . & istr == . & hstr == . & hyphd == . ///
 	& aud == . & uij == . & mvacc == . & ij == . & cancer == .)
 
 
@@ -168,22 +170,24 @@ save "3_out data/1_allethn_mortbycause_0020_LE_decomp.dta", replace
 use "3_out data/1_allethn_mortbycause_0020_LE_decomp.dta", clear
 
 // Test that all deaths have been assigned exactly once
-egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer)
+egen test = rowtotal(cov lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer)
 tab test
 drop test	
 
 /////////////////////////////////////////////////////////////////////////
 
-// Sum by COD (TOTAL + 7 Catgories + Rest)
-
+// Sum by COD (TOTAL + 14 Catgories + Rest)
+ 
 gen one=1
 
-egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer rest one)
+egen test = rowtotal(cov lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer rest one)
 tab test
 drop test	
 
 
 bysort age_gp sex edclass race year: egen Tmort = total(one)
+
+bysort age_gp sex edclass race year: egen COVmort = total(cov)
 
 bysort age_gp sex edclass race year: egen LVDCmort = total(lvdc)
 bysort age_gp sex edclass race year: egen PANCmort = total(panc)
@@ -212,10 +216,10 @@ save "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", replace
 use "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", clear
 
 keep year sex age_gp edclass race *mort
-reshape wide Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, i(year age_gp sex race) j(edclass)
+reshape wide Tmort COVmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, i(year age_gp sex race) j(edclass)
 sum *mort99
 
-foreach i in T LVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
+foreach i in T COV LVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
 gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 	replace `i'mort1 = `i'mort1 + (`i'mort1/MORT`i') * `i'mort99 if MORT`i' != 0 
 	replace `i'mort2 = `i'mort2 + (`i'mort2/MORT`i') * `i'mort99 if MORT`i' != 0 
@@ -224,7 +228,7 @@ gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 
 keep year sex race age_gp *mort1 *mort2 *mort3   
 
-reshape long Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
+reshape long Tmort COVmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
  i(year age_gp sex race) j(edclass)
 
 lab define edlab 1 "LEHS" 2 "SomeC" 3 "College", modify
