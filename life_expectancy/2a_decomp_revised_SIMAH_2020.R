@@ -31,11 +31,8 @@ dPop <- select (dPop,-c(state))
 dMort <- inner_join(dMort, dPop)
 
 # variable type should be factor and not character
-class(dMort$race)
 dMort$race <- as.factor(dMort$race)
-class(dMort$edclass)
 dMort$edclass <- as.factor(dMort$edclass)
-
 
 ## To aggregate some cause of death categories
 dMort$RESTmort <- dMort$RESTmort + dMort$CANmort
@@ -55,12 +52,12 @@ dMort_t <- aggregate(.~ year + age_gp, data =  dMort, FUN=sum)
 
 
 ## We have to calculate the rates again 
-v.totals <- c("Tmort", "LVDCmort", "DMmort", "IHDmort",
+v.totals <- c("Tmort", "COVmort", "LVDCmort", "DMmort", "IHDmort",
               "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort",  "RESTmort")
 
 ## these are the original rate variable names. You could also introduce the "mx_" 
 ## nomenclature here 
-v.rates <- c("Trate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
+v.rates <- c("Trate", "mx_COVrate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
              "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
              "mx_IJrate",  "mx_RESTrate") 
 
@@ -169,6 +166,6 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
-write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "microsim.csv") )
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
 
