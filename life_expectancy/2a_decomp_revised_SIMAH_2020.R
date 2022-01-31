@@ -48,6 +48,7 @@ dMort <- dMort %>% select (-c(CANmort, PANCmort, ISTRmort, HSTRmort))
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
 dMort <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
+dMort_d <- aggregate(.~ year + edclass + sex + race + age_gp, data =  dMort, FUN=sum)
 dMort_t <- aggregate(.~ year + age_gp, data =  dMort, FUN=sum)
 
 
@@ -90,7 +91,7 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
   geom_point(size = 1, aes(color = SES)) 
 #ggsave("SIMAH_workplace/life_expectancy/3_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
 
-
+####### DECOMP BY SEX AND SES  ########
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
   dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
@@ -168,4 +169,84 @@ dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults
 
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
+
+####### DECOMP BY SEX, SES AND RACE  ########
+
+# Calculate the rates for all relevant causes of death
+for (i in 1:length(v.totals)){
+  dMort_d[, v.rates[i]] <- (dMort_d[, v.totals[i]]/dMort_d$TPop)
+} 
+
+# Generate a variable to loop over
+dMort_d$group <- apply(dMort_d[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
+
+# now you can loop over the unique values of this new variable
+v.group <- unique(dMort_d$group)
+
+v.year1 <- c(2018, 2019)
+v.year2 <- c(2019, 2020)
+for (j in (1:length(v.year1))){
+  year1 <- v.year1[j]
+  year2 <- v.year2[j]
+  for(i in 1:length(v.group)) {
+    US_y1 <- filter(dMort_d, year==year1 &  group == v.group[i]) ## this one would then be i
+    US_y2 <- filter(dMort_d, year==year2 &  group == v.group[i])
+    
+    US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
+    US_y2 <- US_y2[, sel.vars]
+    
+    US_y1$ax = c(3.5,rep(2.5,11), 6.99) # midpoint of age range. Check age groups again. 
+    US_y2$ax = c(3.5,rep(2.5,11), 6.99)
+    
+    # to start the first step of the decomposition
+    US_y1_vector <- unlist(select(US_y1,starts_with("mx_")))
+    US_y2_vector <- unlist(select(US_y2,starts_with("mx_")))
+    
+    decomp_results <-  horiuchi(func = life_table_causes,
+                                pars1 = US_y1_vector,
+                                pars2 = US_y2_vector,
+                                age_vector = pull(US_y1,age_gp),
+                                ax_vector = (pull(US_y1,ax) + pull(US_y2,ax))/2,
+                                N = 100)
+    decomp_results_mat <- matrix(decomp_results,ncol = length(v.totals[-1])) # -1 to remove Tmort
+    
+    #Sum over age - this gives the contribution of each cause in terms of years of LE. Note that this should sum to difference LE between the beg and start periods
+    cause_contributions <- apply(decomp_results_mat,2,sum)
+    
+    cause_contributions <-  array(cause_contributions, dim = c(1, length(cause_contributions)))
+    
+    temp_contrib <- as.data.frame(cause_contributions) 
+    colnames(temp_contrib) <- v.totals[-1]
+    
+    temp_contrib$group <- v.group[i]
+    temp_contrib$start_year <- v.year1[j]
+    temp_contrib$end_year <- v.year2[j]
+    
+    temp_contrib$LE1 <-  life_table_causes(nmx_by_cause_vector = US_y1_vector, age_vector = pull(US_y1,age_gp),
+                                           ax_vector = pull(US_y1, ax)) + min(pull(US_y1, age_gp))
+    temp_contrib$LE2 <-  life_table_causes(nmx_by_cause_vector = US_y2_vector, age_vector = pull(US_y2,age_gp),
+                                           ax_vector = pull(US_y2, ax)) + min(pull(US_y2, age_gp))
+    
+    if (i == 1 & j == 1) {
+      
+      dResults_contrib <- temp_contrib
+      
+      
+    } else {
+      
+      dResults_contrib <- rbind(temp_contrib, dResults_contrib)
+      
+    }
+  } 
+  
+}
+
+dResults_contrib <- separate(dResults_contrib, col = group, into = c("sex","edclass", "race"), sep = "_")
+dResults_contrib$edclass <- factor(dResults_contrib$edclass, 
+                                   levels = c( "LEHS", "SomeC", "College"))
+dResults_contrib$sex <- as.factor(dResults_contrib$sex)
+dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass, dResults_contrib$race), ]
+
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020.csv")
 
