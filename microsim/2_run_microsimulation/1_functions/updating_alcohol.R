@@ -1,10 +1,10 @@
-updating_alcohol <- function(data, CDF,y, ...){
+updating_alcohol <- function(data,CDF,y, ...){
   
 # y <- ifelse(y==1996, 1997, 
 #             ifelse(y==2000, 2001, 
 #                    ifelse(y==1998, 1999, y)))
 
-CDFs <- brfssorig %>% filter(YEAR==y) %>% 
+CDFs <- CDF %>% filter(YEAR==y) %>% 
     mutate(BMIcat = cut(microsim.init.BMI, breaks=c(0,18,25,30,100),
                       labels=c("15-18","19-25","26-30","31+")),
          agecat = cut(microsim.init.age, breaks=c(0,24,34,44,54,64,74,100),

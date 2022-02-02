@@ -47,10 +47,10 @@ formerdrinkers_history <- function(data,lhsSample,sex){
   data$yearsincedrink <- ifelse(data$formerdrinker==0, 0, data$yearsincedrink)
   
   # now implement the baseline decay function
-  # THRESHOLD <- as.numeric(lhsSample["THRESHOLD"])
-  # THRESHOLD_women <- as.numeric(lhsSample["THRESHOLD"]) * as.numeric(lhsSample["THRESHOLD_MODIFIER"])
-  THRESHOLD <- 100000
-  THRESHOLD_women <- 100000*0.66
+  THRESHOLD <- as.numeric(lhsSample["THRESHOLD"])
+  THRESHOLD_women <- as.numeric(lhsSample["THRESHOLD"]) * as.numeric(lhsSample["THRESHOLD_MODIFIER"])
+  # THRESHOLD <- 100000
+  # THRESHOLD_women <- 100000*0.66
   data$Cirrhosis_risk <- ifelse(data$formerdrinker==1 & data$yearsincedrink<=8 & 
                                   data$microsim.init.sex=="m" & 
                                   data$former_history >= THRESHOLD, 1,

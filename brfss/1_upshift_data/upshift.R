@@ -1,5 +1,6 @@
 # SIMAH October 2021 - code to take the processed BRFSS data file and up-shift to per-capita consumption on a state by state basis
 # this code also adjusts the BRFSS monthly alcohol consumption to annual alcohol consumption using data from the NAS 
+rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(foreign)
 library(SASxport)
@@ -9,6 +10,9 @@ library(tidyr)
 library(labelled)
 library(sjlabelled)
 library(tidyverse)
+library(naniar)
+library(splitstackshape) 
+library(truncnorm)
 
 # CB laptop directory
 wd <- "~/Google Drive/SIMAH Sheffield/"
@@ -22,16 +26,31 @@ gc()
 
 source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 
-# not subsetting states - states from common regions are required for the microsim - so all states upshifted
+# bind years together 
+data <- do.call(rbind, dataFiles)
 
-# SIMAH_states <- c("California","Colorado","Florida","Indiana","Kentucky",
-#                   "Louisiana","Massachusetts","Michigan","Minnesota","Missouri",
-#                   "New York","Oregon","Pennsylvania","Tennessee","Texas")
-# # first subset for selected SIMAH states 
-# dataFiles <- lapply(dataFiles, subset_SIMAH_states)
+data <- data %>% filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% 
+  filter(State!="territories")
 
-# remove any missing data for key variables 
-dataFiles <- lapply(dataFiles, remove_missing)
+# summarise missing data for the US as a whole
+missingsummaryUSA <- summarise_missing(data, "USA")
+write.csv(missingsummaryUSA, "SIMAH_workplace/brfss/paper/summary_missing_USA.csv", row.names=F)
+
+# dataFiles <- list()
+# statenames <- unique(data$State)
+# for(i in statenames){
+#   dataFiles[[paste(i)]] <- data %>% filter(State==i)
+# }
+# 
+# missingsummary <- list()
+# missingsummary <- lapply(dataFiles, summarise_missing)
+# missingsummary <- do.call(rbind,missingsummary)
+
+# # impute any missing data for key variables - for all states 
+# imputed <- list()
+# imputed <- lapply(dataFiles, impute_missing)
+
+# saveRDS(imputed, "SIMAH_workplace/brfss/processed_data/brfss_full_imputed.RDS")
 
 # first exploring the data for our selected states and for the US current prevalence and quantity (monthly)
 # summary <- lapply(dataFiles, summariseprevalence)
@@ -40,7 +59,7 @@ dataFiles <- lapply(dataFiles, remove_missing)
 # ggplot(data=summary, aes(x=YEAR, y=percentage, colour=sex_recode)) + 
 #   geom_line() + facet_wrap(~agecat+State) + theme_bw() + ylim(0,NA)
 # reassign the list such that each state is one element of the list 
-data <- do.call(rbind, dataFiles)
+# data <- do.call(rbind, dataFiles)
 
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
@@ -48,31 +67,35 @@ data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==
                                      0.01, data$quantity_per_occasion)
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
 summary(data$gramsperday)
-
-# put cap of 200gpd on drinking 
+summary(data$alc_frequency)
+# put cap of 200gpd on grams per day 
 data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
-# create a new dataset with all states - label the state USA and join back with original data
-USA <- data %>% mutate(State="USA")
-data <- rbind(data, USA)
+# remove missing data for key variables - age, sex, race, drinking
+data <- remove_missing(data)
 
-# dataFiles <- list()
-# 
-# for(i in SIMAH_states){
-#   dataFiles[[paste(i)]] <- data %>% filter(State==i)
-# }
+# apply sample weights - using a factor otherwise dataset is too large 
+data$new_weight <- data$final_sample_weight*0.001
+summary(data$final_sample_weight)
+summary(data$new_weight)
+
+reweighted <- expandRows(data, "new_weight", drop=F)
+
+# create a new dataset with all states - label the state USA and join back with original data
+USA <- reweighted %>% mutate(State="USA")
+
+data <- rbind(data, USA)
 
 # allocate individuals to be monthly/yearly/former drinkers or lifetime abstainers
 data <- impute_yearly_drinking(data)
 
 # check imputation has worked
-# summary <- data %>% group_by(YEAR, State, drinkingstatus_detailed) %>% 
-#   tally() %>% ungroup() %>% 
-#   group_by(YEAR, State) %>% 
-#   mutate(percent = n/sum(n))
-# ggplot(data=summary, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) + 
-#   geom_bar(stat="identity",position="stack") + 
-#   facet_wrap(~State)
+summary <- data %>% filter(State=="USA") %>% group_by(YEAR, drinkingstatus_detailed) %>%
+  tally() %>% ungroup() %>%
+  group_by(YEAR) %>%
+  mutate(percent = n/sum(n))
+ggplot(data=summary, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
+  geom_bar(stat="identity",position="stack")
 
 # impute the gpd for the non-30 day drinkers from the NAS data
 NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") %>% 
@@ -83,7 +106,11 @@ NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") 
 
 data <- left_join(data, NASGPD) %>% 
   mutate(gramsperday = ifelse(drinkingstatus_detailed=="Yearly drinker",
-                              ALCGPD_non30, gramsperday)) %>% 
+                              ALCGPD_non30, gramsperday),
+         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker",
+                                rtruncnorm(nrow(.), a=0, b=11, mean=2, sd=1), alc_frequency),
+         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency<1, 1,
+                                round(alc_frequency))) %>% 
   dplyr::select(-ALCGPD_non30)
 
 # read in APC data - source = NIAAA 
@@ -108,15 +135,29 @@ data <- left_join(data,tally)
 data <- data %>% group_by(YEAR, State) %>% 
   mutate(BRFSS_APC = mean(gramsperday),                   # calculate BRFSS APC as mean grams per day
          adj_brfss_apc = BRFSS_APC/percentdrinkers,       # adjust the BRFSS APC value based on % of current drinkers
-         quotient = (gramsperday_adj1*0.9)/adj_brfss_apc, # adjust to 90% of the APC data
+         gramspercapita_90 = gramspercapita_adj1*0.9, #adjust to 90% of APC
+         quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
          gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),   # apply cube root quotient to gpd
          frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
-         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) #       recalculate drinks per occasion based on upshifted data 
+         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
 
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
+
+# save the data with pre and post upshift for generating paper plots
+forpaper <- data %>% 
+  dplyr::select(YEAR, State, race_eth, sex_recode, age_var,
+                education_summary, household_income,
+                drinkingstatus, alc_frequency, quantity_per_occasion,
+                gramsperday, 
+                drinkingstatus_detailed, gramspercapita_adj1, gramspercapita, gramspercapita_90,
+                gramsperday_upshifted_crquotient, 
+                frequency_upshifted,
+                quantity_per_occasion_upshifted)
+saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_for_paper_analysis_reweighted.RDS")
 
 # now compare up-shifted to per capita mean data for each state 
 GPDsummary <- data %>% group_by(YEAR, State, region) %>% filter(drinkingstatus==1) %>% 
@@ -126,10 +167,7 @@ data <- left_join(data, GPDsummary)
 
 compare <- data %>% 
   dplyr::select(YEAR, State, region, gramsperday_adj1, adj_brfss_apc, BRFSS_APC, 
-<<<<<<< Updated upstream
                 # gramsperday_upshifted_quotient, # KP: This variable does not exist, I commented it out
-=======
->>>>>>> Stashed changes
                 meanGPD,
                 gramsperday_upshifted_crquotient) %>% 
   group_by(YEAR, State,region) %>% 

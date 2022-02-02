@@ -26,7 +26,7 @@ HistoryFunction <- function(basepop, ages, lhsSample){
 #   dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd, newage, agecatnew, agecatorig)
 # write.csv(ages, "SIMAH_workplace/microsim/1_input_data/agesforhistory.csv")
 age <- levels(as.factor(ages$agecatnew))
-
+age <- c("18-20","21-25","26-30","31-40","41-50","51-60","61-70","71+")
 IRR <- data.frame(microsim.init.sex = rep(c("m","f"), each=8), agecatnew = rep(age, times=2),
                     IRR=c(0.901, 1.205, 1.086,
                           1.069, 1.00, 0.963, 0.969, 0.88,
@@ -44,8 +44,7 @@ C <- 3.92
 IRR$SD <- sqrt(IRR$n) * (IRR$Upper - IRR$Lower) / C
 # update the Ns based on the NAS data for each group 
 # male samples
-# correlation <- as.numeric(lhsSample["IRR_correlation"])
-correlation <- 0.72
+correlation <- as.numeric(lhsSample["IRR_correlation"])
 IDS <- unique(subset(ages, microsim.init.sex=="m")$microsim.init.id)
 male <- rnorm_multi(n=length(IDS),
                     mu=IRR$IRR[1:8],

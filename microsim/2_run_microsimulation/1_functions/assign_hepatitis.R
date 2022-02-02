@@ -59,7 +59,7 @@ AssignChronicHep <- function(microsim){
     hep$chronicHep <- 0
     #  Hep B 
     if(dim(subset(hep, HepBstatus==1))[1]!=0){
-      hepBcleared <- hep %>% group_by(excessuse) %>% filter(HepBstatus==1) %>% 
+      hepBcleared <- hep %>% group_by(excessuse) %>% dplyr::filter(HepBstatus==1) %>% 
         sample_frac(clearancerate)
       IDsclearedB <- hepBcleared$microsim.init.id
       hep$clearedB <- hep$microsim.init.id %in% IDsclearedB
@@ -67,7 +67,7 @@ AssignChronicHep <- function(microsim){
       hep$chronicHep <- ifelse(hep$chronicB==1, 1, hep$chronicHep)
       #  Hep C
     }else if(dim(subset(hep, HepCstatus==1))[1]!=0){
-      hepCcleared <- hep %>% group_by(excessuse) %>% filter(HepCstatus==1) %>% 
+      hepCcleared <- hep %>% group_by(excessuse) %>% dplyr::filter(HepCstatus==1) %>% 
         sample_frac(clearancerate)
       IDsclearedC <- hepCcleared$microsim.init.id
       hep$clearedC <- hep$microsim.init.id %in% IDsclearedC

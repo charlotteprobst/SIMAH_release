@@ -348,7 +348,7 @@ recode_alc_frequency <- function(data){
                                                   
   data$alc_frequency <- round(data$alc_frequency,digits=0)
   data$alc_frequency <- ifelse(data$alc_frequency==31, 30, 
-                               ifelse(data$alc_frequency>31, 31, data$alc_frequency))
+                               ifelse(data$alc_frequency>31, 30, data$alc_frequency))
   # recode the missing drinking prevalence values now we have frequency values 
   # data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
   #                               ifelse(data$alc_frequency>=1, 1, data$drinkingstatus))

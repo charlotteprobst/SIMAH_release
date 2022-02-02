@@ -13,7 +13,7 @@ apply_death_rates <- function(basepop, deathrates, y){
     complete(cat, fill=list(n=0)) %>%
     group_by(cat, .drop=FALSE) %>% 
     summarise(n=sum(n))
-  deathrates <- deathrates %>% filter(year==y)
+  deathrates <- deathrates %>% dplyr::filter(year==y)
   summary <- left_join(summary, deathrates)
   summary <- summary %>% pivot_longer(cols=LVDCmort: RESTmort, names_to="cause", values_to="count")
   summary <- summary %>% 

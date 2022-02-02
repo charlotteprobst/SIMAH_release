@@ -40,6 +40,8 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_input_data/fullpopcounts.cs
 proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
+model <- "SIMAH"
+
 #####first read in and process all the necessary data files 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_files.R")
 # load in the education transitions data
