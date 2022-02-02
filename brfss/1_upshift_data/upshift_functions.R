@@ -11,7 +11,7 @@ return(data)
 }
 
 remove_missing <- function(data){
-  data <- data %>% dplyr::select(YEAR, State, race_eth,
+  data <- data %>% dplyr::select(YEAR, State, final_sample_weight, race_eth,
                                  sex_recode, age_var,
                                  employment, education_summary,
                                  household_income,
@@ -22,11 +22,68 @@ remove_missing <- function(data){
                                  mentalhealth,physicalhealth,
                                  # household_income
                                  hed) %>% drop_na(YEAR, State, race_eth, sex_recode, age_var,
-                                                  employment,education_summary, marital_status,
-                                                  gramsperday, drinkingstatus, BMI) %>% 
+                                                  gramsperday, drinkingstatus) %>% 
     filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% filter(State!="territories")
   return(data)
 }
+
+summarise_missing <- function(data, states){
+  if(states=="USA"){
+    STATE <- "USA"
+  }else{
+  STATE <- unique(data$State)
+  }
+  missing <- data %>% group_by(YEAR) %>% 
+    miss_var_summary(.) %>% 
+    filter(variable == "drinkingstatus" |
+             variable== "alc_frequency" |
+             variable =="quantity_per_occasion" |
+             variable == "sex_recode" |
+           variable == "age_var" |
+             variable == "race_eth" |
+           #   variable == "education_summary" |
+             variable == "hed") %>% mutate(State=STATE,
+               pct_miss = round(pct_miss, digits=1)) %>% 
+    dplyr::select(State, YEAR, variable, pct_miss) %>% 
+    pivot_wider(names_from=variable, values_from=pct_miss) %>% 
+    dplyr::select(State, YEAR, sex_recode, age_var, race_eth, drinkingstatus, alc_frequency, quantity_per_occasion)
+  return(missing)
+}
+
+impute_missing <- function(data){
+  data$BMI <- ifelse(data$BMI<15, 15, 
+                     ifelse(data$BMI>50, 50, data$BMI))
+  data <- data %>% 
+    mutate(race_eth_detailed=as.factor(race_eth_detailed),
+           sex_recode=as.factor(sex_recode),
+           education_summary=factor(education_summary,
+                                    levels=c("LEHS","SomeC","College")),
+           employment = as.factor(employment),
+           marital_status=as.factor(marital_status),
+           household_income=as.factor(household_income),
+           drinkingstatus=as.factor(drinkingstatus))
+  predictor <- quickpred(data, mincor=0.3)
+  predictor[,c(3:4,14,20)] <- 0
+  imputed <- mice(data, m=1, predictorMatrix = predictor,
+                  method=c("","","",
+                                      "","polyreg","logreg",
+                                      "pmm","polr","logreg",
+                                      "logreg","polr","pmm",
+                                      "pmm","","logreg",
+                                      "","","pmm",
+                                      "pmm","","pmm"))
+  complete <- complete(imputed)
+  complete <- complete %>% 
+    mutate(BMI= weight_kg / (height_cm^2),
+           BMI = ifelse(BMI<15, 15, 
+                        ifelse(BMI>50, 50, BMI)),
+           gramsperday = (quantity_per_occasion*alc_frequency)*12/365*14,
+           race_eth = ifelse(race_eth_detailed=="Hispanic","Hispanic",
+                             ifelse(race_eth_detailed=="Non-Hispanic White","Non-Hispanic White",
+                                    ifelse(race_eth_detailed=="Non-Hispanic Black","Non-Hispanic Black",
+                                           "Non-Hispanic Other"))))
+  return(complete)
+  }
 
 summariseprevalence <- function(data){
   data <- data %>% 
@@ -84,10 +141,10 @@ process_APC <- function(data){
   APC <- APC %>% group_by(State) %>% 
     fill(Gallons,litrespercapita) %>% mutate(Gallons=as.numeric(Gallons),
                                              litrespercapita=as.numeric(litrespercapita)) %>% 
-    mutate(gramsperday = (litrespercapita*793)/365,
-           gramsperday_adj1 = gramsperday - (gramsperday*0.0098),
-           gramsperday_adj2 = gramsperday - (gramsperday*0.0098*1.5)) %>% 
-    dplyr::select(Year, State, gramsperday_adj1) %>% 
+    mutate(gramspercapita = (litrespercapita*793)/365,
+           gramsperday_adj1 = gramspercapita - (gramspercapita*0.0098),
+           gramspercapita_adj1 = gramspercapita - (gramspercapita*0.0098*1.5)) %>% 
+    dplyr::select(Year, State, gramspercapita, gramspercapita_adj1) %>% 
     rename(YEAR=Year)
   return(APC)
 }

@@ -7,35 +7,35 @@
 # BETA_FEMALE_MORTALITY <- 0.0396643
 # BETA_FEMALE_MORBIDITY <- 0.0439704
 
-if(mortality==0){
-CirrhosisHeavyUse <- function(data,lhsSample){
-  data$gpd <- ifelse(data$microsim.init.alc.gpd>200, 200, data$microsim.init.alc.gpd)
-  # data$gpd <- data$microsim.init.alc.gpd
-  BETA_MALE_MORTALITY <- lhsSample["BETA_MALE_MORTALITY"]
-  BETA_FEMALE_MORTALITY <- lhsSample["BETA_FEMALE_MORTALITY"]
-  BETA_FORMER_DRINKERS <- lhsSample["BETA_FORMER_DRINKERS"]
-  data$RRHeavyUse <- ifelse(data$Cirrhosis_risk==1 &
-                           data$microsim.init.sex=="m" & 
-                             data$drinkingstatus2!=1,
-                         exp(BETA_MALE_MORTALITY*data$gpd),
-                         ifelse(data$Cirrhosis_risk==1 &
-                                  data$microsim.init.sex=="f" & 
-                                  data$drinkingstatus2!=1,
-                                exp(BETA_FEMALE_MORTALITY*data$gpd),
-                                ifelse(data$drinkingstatus2==1, BETA_FORMER_DRINKERS,1)))
+# if(mortality==0){
+# CirrhosisHeavyUse <- function(data,lhsSample,sex){
+#   data$gpd <- ifelse(data$microsim.init.alc.gpd>200, 200, data$microsim.init.alc.gpd)
+#   # data$gpd <- data$microsim.init.alc.gpd
+#   BETA_MALE_MORTALITY <- lhsSample["BETA_MALE_MORTALITY"]
+#   BETA_FEMALE_MORTALITY <- lhsSample["BETA_FEMALE_MORTALITY"]
+#   BETA_FORMER_DRINKERS <- lhsSample["BETA_FORMER_DRINKERS"]
+#   data$RRHeavyUse <- ifelse(data$Cirrhosis_risk==1 &
+#                            data$microsim.init.sex=="m" & 
+#                              data$drinkingstatus2!=1,
+#                          exp(BETA_MALE_MORTALITY*data$gpd),
+#                          ifelse(data$Cirrhosis_risk==1 &
+#                                   data$microsim.init.sex=="f" & 
+#                                   data$drinkingstatus2!=1,
+#                                 exp(BETA_FEMALE_MORTALITY*data$gpd),
+#                                 ifelse(data$drinkingstatus2==1, BETA_FORMER_DRINKERS,1)))
+# 
+#   data$gpd <- NULL
+#   return(data)
+# }
 
-  data$gpd <- NULL
-  return(data)
-}
-
-}
-if(mortality==1){
-  CirrhosisHeavyUse <- function(data,lhsSample,sex){
+# }
+# if(mortality==1){
+CirrhosisHeavyUse <- function(data,lhsSample,sex){
     if(sex=="b"){
-      BETA_MALE_MORTALITY <- lhsSample["BETA_MALE_MORTALITY"]
-      BETA_FORMER_DRINKERS_MEN <- lhsSample["BETA_FORMER_DRINKERS_MEN"]
-      BETA_FEMALE_MORTALITY <- lhsSample["BETA_FEMALE_MORTALITY"]
-      BETA_FORMER_DRINKERS_WOMEN <- lhsSample["BETA_FORMER_DRINKERS_WOMEN"] 
+      BETA_MALE_MORTALITY <- as.numeric(lhsSample["BETA_MALE_MORTALITY"])
+      BETA_FORMER_DRINKERS_MEN <- as.numeric(lhsSample["BETA_FORMER_DRINKERS_MEN"])
+      BETA_FEMALE_MORTALITY <- as.numeric(lhsSample["BETA_FEMALE_MORTALITY"])
+      BETA_FORMER_DRINKERS_WOMEN <- as.numeric(lhsSample["BETA_FORMER_DRINKERS_WOMEN"]) 
     }else if(sex=="m"){
     BETA_MALE_MORTALITY <- lhsSample["BETA_MALE_MORTALITY"]
     BETA_FEMALE_MORTALITY <- 0.0397
@@ -64,7 +64,7 @@ if(mortality==1){
                                                    BETA_FORMER_DRINKERS_WOMEN,1))))
     # modify the risk of former drinkers depending on how many years since they drank
     decay_length=8
-    decay_speed=lhsSample["DECAY_SPEED"] 
+    decay_speed=as.numeric(lhsSample["DECAY_SPEED"])
     t=0:100
     risk_multiplier=1-exp(-(1/decay_speed)*(decay_length-t))
   
@@ -76,11 +76,10 @@ if(mortality==1){
     data$RRHeavyUse <- ifelse(data$formerdrinker==1, data$RRHeavyUse*data$risk_multiplier,
                               data$RRHeavyUse)
     data$RRHeavyUse <- ifelse(data$RRHeavyUse<1, 1, data$RRHeavyUse)
-
+    data$RRHeavyUse <- ifelse(data$RRHeavyUse>50, 50, data$RRHeavyUse)
     data <- data %>% dplyr::select(-c(risk_multiplier,gpd))
     return(data)
   }
-}
 
 
 # data <- CirrhosisHeavyUse(data)
@@ -105,10 +104,10 @@ MetabolicPathway <- function(data,lhsSample,sex){
   data$newgpd2 <- ((data$gpd+2)/100)
   data$newgpd3 <- data$newgpd2*data$newgpd2*data$newgpd2
   if(sex=="b"){
-    METABOLIC_BETA1_MALE <- lhsSample["METABOLIC_BETA1_MALE"]
-    METABOLIC_BETA2_MALE <- lhsSample["METABOLIC_BETA2_MALE"]
-    METABOLIC_BETA1_FEMALE <- lhsSample["METABOLIC_BETA1_FEMALE"]
-    METABOLIC_BETA2_FEMALE <- lhsSample["METABOLIC_BETA2_FEMALE"]
+    METABOLIC_BETA1_MALE <- as.numeric(lhsSample["METABOLIC_BETA1_MALE"])
+    METABOLIC_BETA2_MALE <- as.numeric(lhsSample["METABOLIC_BETA2_MALE"])
+    METABOLIC_BETA1_FEMALE <- as.numeric(lhsSample["METABOLIC_BETA1_FEMALE"])
+    METABOLIC_BETA2_FEMALE <- as.numeric(lhsSample["METABOLIC_BETA2_FEMALE"])
   }else if(sex=="m"){
   METABOLIC_BETA1_MALE <- lhsSample["METABOLIC_BETA1_MALE"]
   METABOLIC_BETA2_MALE <- lhsSample["METABOLIC_BETA2_MALE"]
@@ -122,7 +121,8 @@ MetabolicPathway <- function(data,lhsSample,sex){
   }
   test <- 1
   if(test==1){
-  data$RRMetabolic <- ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="m",
+  data$RRMetabolic <- ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="m" & 
+                               data$Cirrhosis_risk==1,
                              (METABOLIC_BETA1_MALE*((((data$gpd+2)/1000)^-.5)-9.537024026) +
                                    METABOLIC_BETA2_MALE*((((data$gpd+2)/1000)^-.5)*
                                                            log((data$gpd+2)/1000)+43.0154401)),
@@ -130,7 +130,8 @@ MetabolicPathway <- function(data,lhsSample,sex){
                              # (METABOLIC_BETA1_FEMALE*((((data$gpd+2)/1000)^-.5)-9.537024026) +
                              #    METABOLIC_BETA2_FEMALE*((((data$gpd+2)/1000)^-.5)*
                              #                            log((data$gpd+2)/1000)+43.0154401)),0))
-                             ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="f",
+                             ifelse(data$microsim.init.BMI>=30 & data$microsim.init.sex=="f" & 
+                                      data$Cirrhosis_risk==1,
                                     (METABOLIC_BETA1_FEMALE*((data$gpd+2)/100)^3-.0000696286 +
                                           METABOLIC_BETA2_FEMALE*((data$gpd+2)/100)^3*
                                           log((data$gpd+2)/100)+.0002221693), 0))
@@ -160,7 +161,8 @@ MetabolicPathway <- function(data,lhsSample,sex){
   data$newgpdsqrt <- NULL
   data$newgpd2 <- NULL
   data$newgpd3 <- NULL
-  data$RRMetabolic <- ifelse(data$RRMetabolic<0, 0, data$RRMetabolic)
+  data$RRMetabolic <- ifelse(data$RRMetabolic<0, 0, 
+                             ifelse(data$RRMetabolic>50, 50, data$RRMetabolic))
   data$RRMetabolic <- exp(data$RRMetabolic)
   return(data)
 }
@@ -178,7 +180,7 @@ MetabolicPathway <- function(data,lhsSample,sex){
 # 
 CirrhosisHepatitis <- function(data,lhsSample){
 data$gpd <- ifelse(data$microsim.init.alc.gpd>200, 200, data$microsim.init.alc.gpd)
-BETA_HEPATITIS <- lhsSample["BETA_HEPATITIS"]
+BETA_HEPATITIS <- as.numeric(lhsSample["BETA_HEPATITIS"])
 data$RRHep <- ifelse(data$chronicHep==1,
                        (data$gpd*BETA_HEPATITIS),
                        0)

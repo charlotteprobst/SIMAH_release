@@ -116,4 +116,13 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=edclass)) +
 
 ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
 
+LiverC <- data_graph %>% filter(datatype=="Observed") %>% filter(cause=="Liver C.")
 
+ggplot(data=LiverC, aes(x=year, y=rate, colour=edclass)) + geom_line(size=1.5) + 
+  facet_grid(cols=vars(sex)) + theme_bw() + 
+  theme(legend.title=element_blank(),
+        legend.position="bottom",
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=20)) +
+  ylab("Age-standardised mortality rate per 100,000 population") + xlab("Year") + ylim(0,NA)
+ggsave("SIMAH_workplace/protocol/graphs/mortality_LC.png", dpi=300, width=33.87, height=19.05, units="cm")

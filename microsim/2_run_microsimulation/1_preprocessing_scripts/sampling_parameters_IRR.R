@@ -3,7 +3,7 @@
 # Code for generating samples from joint prior distribution over the ABM inputs
 # Mark Strong
 # 26.3.18
-
+sex <- "b"
 if(PE==0){
   if(mortality==1 & sex=="b"){
     prior <- list(c("qtruncnorm", 0.0227, 0.0111), #BETA_MALE_MORTALITY
@@ -111,17 +111,28 @@ if(PE==0){
                       "former_65.74","former75.")
     
   }else if(mortality==0){  
-    prior <- list(c("qnorm", 0.0227, 0.0111), #BETA_MALE_MORTALITY
-                                   c("qnorm", 0.0440, 0.0072), #BETA_FEMALE_MORTALITY
-                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_MEN                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS
-                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_WOMEN                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS
+    prior <- list(c("qtruncnorm", 0.0227, 0.0111), #BETA_MALE_MORTALITY
+                                   c("qtruncnorm", 0.0397, 0.05370378), #BETA_FEMALE_MORTALITY
+                                   c("qtruncnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_MEN                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS
+                                   c("qtruncnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_WOMEN                                   c("qnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS
                                    c("qnorm", -1.020, 0.3083), #METABOLIC_BETA1_MALE
                                    c("qnorm", -0.1275, 0.0440), #METABOLIC_BETA2_MALE
                                    c("qnorm", 3.0397, 1.0536), #METABOLIC_BETA1_FEMALE
                                    c("qnorm", -4.3109, 2.2322), #METABOLIC_BETA2_FEMALE
-                                   c("qnorm", 0.0099, 0.0009), #BETA_HEPATITIS
+                                   c("qtruncnorm", 0.0099, 0.0009), #BETA_HEPATITIS
                                    c("qunif", 50000, 200000), #THRESHOLD
-                                   c("qnorm", 0.72, 0.1)) #THRESHOLD MODIFIER
+                                   c("qunif", 0.5, 1), #THRESHOLD MODIFIER
+                                   c("qtruncnorm", 0.72, 0.2),#correlation for IRR
+                                   c("qunif", 1,3) #decay speed 
+                  
+                  ) 
+    
+    names(prior) <- c("BETA_MALE_MORTALITY", "BETA_FEMALE_MORTALITY",
+                      "BETA_FORMER_DRINKERS_MEN", "BETA_FORMER_DRINKERS_WOMEN",
+                      "METABOLIC_BETA1_MALE", "METABOLIC_BETA2_MALE",
+                      "METABOLIC_BETA1_FEMALE", "METABOLIC_BETA2_FEMALE",
+                      "BETA_HEPATITIS", "THRESHOLD", "THRESHOLD_MODIFIER", "IRR_correlation",
+                      "DECAY_SPEED")
     
   }
   
@@ -141,7 +152,7 @@ for(i in 1:N_PRIORS) {
                               a=0, b=1,
                               as.numeric(prior[[i]][2]), as.numeric(prior[[i]][3])))
   }else if(prior[[i]][1]=="qtruncnorm"){
-  lhsSample[, i] <- eval(call(prior[[i]][1], lhsSampleUniforms[, i], 
+  lhsSample[, i] <- eval(call(prior[[i]][1], lhsSampleUniforms[, i],
                                 a=0, b=Inf,
                                 as.numeric(prior[[i]][2]), as.numeric(prior[[i]][3])))
   }else{
@@ -164,7 +175,7 @@ lhsSample <- cbind(version, lhsSample)
 #                       # "F_18.20","F_21.25","F_26.30","F_31.40","F_51.60","F_61.70","F_71.")
 names(lhsSample) <- c("SampleNum",names(prior))
 # Save selected priors
-write.csv(lhsSample, paste("output_data/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
+write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
 
 list <- list()
 

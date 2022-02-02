@@ -26,25 +26,40 @@ cirrhosismortality <- cirrhosismortality %>% mutate(CDC..80 = CDC..80/5,
 target <- cirrhosismortality
 }else if(mortality==0){
   cirrhosismorbidity <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_hosp_Output.csv") %>% 
-    dplyr::select(c(year,location,sex_id,tups15to19:tupsplus80)) %>% 
+    dplyr::select(c(year,location,sex_id,tups15to19:tupsplus80,tups15to19_U:tupsplus80_L)) %>% 
     filter(location==SelectedState) %>% 
-    mutate(tupsplus80 = tupsplus80/10) %>% 
-    pivot_longer(cols=tups15to19:tupsplus80) %>% 
+    mutate(tupsplus80 = tupsplus80/10,
+           tupsplus80_U = tupsplus80_U/10,
+           tupsplus80_L = tupsplus80_L/10) %>% 
+    pivot_longer(cols=tups15to19:tupsplus80_L) %>% 
     mutate(name=gsub("tups","",name),
+           type = ifelse(grepl("L",name), "Lower",
+                         ifelse(grepl("U",name), "Upper","PE")),
+           name = gsub("_U","",name),
+           name = gsub("_L", "",name),
            agecat = ifelse(name=="15to19","15-19",
                            ifelse(name=="20to24","20-24",
                                   ifelse(name=="25to29"|name=="30to34","25-34",
                                          ifelse(name=="35to39"|name=="40to44","35-44",
                                                 ifelse(name=="45to49"|name=="50to54","45-54",
                                                        ifelse(name=="55to59"|name=="60to64","55-64",
-                                                              ifelse(name=="65to69"|name=="70to74","65-74","75.")))))))) %>% 
-    group_by(year, sex_id, agecat) %>% summarise(value=sum(value)) %>% 
-    mutate(value=value*proportion,
-           count=ifelse(agecat=="15-19",value/5*2,value),
+                                                              ifelse(name=="65to69"|name=="70to74","65-74","75.")))))))) %>%
+    pivot_wider(names_from=type, values_from=value) %>% filter(name!="_value") %>% 
+    group_by(year, sex_id, agecat) %>% summarise(PE=sum(PE),
+                                                 Lower = sum(Lower),
+                                                 Upper = sum(Upper)) %>% 
+    mutate(PE=PE*proportion,
+           PE=ifelse(agecat=="15-19",PE/5*2,PE),
+           Lower = Lower*proportion,
+           Lower=ifelse(agecat=="15-19",Lower/5*2, Lower),
+           Upper = Upper*proportion,
+           Upper = ifelse(agecat=="15-19", Upper/5*2, Upper),
            sex = ifelse(sex_id=="female","f","m"),
            cat=paste(agecat, sex, sep="_")) %>% rename(Year=year, agegroup=agecat) %>% ungroup() %>% 
-    dplyr::select(Year, cat, sex, agegroup, count) %>% group_by(Year,sex,agegroup) %>% 
-    summarise(count=sum(count)*100)
+    dplyr::select(Year, cat, sex, agegroup, PE, Lower,Upper) %>% group_by(Year,sex) %>% 
+    summarise(PE=sum(PE)*100,
+              Lower=sum(Lower)*100,
+              Upper=sum(Upper)*100)
   target <- cirrhosismorbidity
 }
 # variance <- read.csv("input_data/seed_variance.csv")

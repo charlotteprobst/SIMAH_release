@@ -68,14 +68,12 @@ if(length(missing)>0){
 toadd <- left_join(pool, tojoin) %>% filter(toadd!=0) %>% group_by(cat) %>% sample_n(toadd, replace=T) %>% 
   mutate(microsim.init.spawn.year=y) %>% ungroup() %>% 
   dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                microsim.init.alc.gpd, microsim.init.BMI,
-                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker)
+                microsim.init.alc.gpd,
+                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
 microsim.init.id <- nrow(basepop)+1:nrow(toadd)+nrow(basepop)
 toadd <- cbind(microsim.init.id, toadd)
 basepopnew <- rbind(basepop, toadd)
-
 # list <- list(basepop,summarymissing)
-
-return(basepop)
+return(basepopnew)
 }
 

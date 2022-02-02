@@ -1,7 +1,7 @@
 #####BRFSS processing for micro-synthesis 
 
 brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
-  filter(age_var<=79) %>% filter(YEAR==1999 | YEAR==2000 | YEAR==2001) %>% 
+  filter(age_var<=79) %>% filter(YEAR==2000) %>% 
   mutate(RACE = recode(race_eth,"White"="WHI", 
                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
          SEX = recode(sex_recode,"Male"="M","Female"="F"),
@@ -12,7 +12,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
          frequency = ifelse(frequency==0 & gramsperday>0, 1, frequency),
          quantity_per_occasion = (gramsperday/14 * 30) / frequency,
-         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion)) %>% 
+         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion),
+         formerdrinker=ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %>% 
   filter(State!="Utah")
 
 selected <- brfss %>% filter(State==SelectedState) %>% 

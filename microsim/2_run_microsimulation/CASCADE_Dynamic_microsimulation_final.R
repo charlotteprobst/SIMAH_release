@@ -53,6 +53,9 @@ proportion <- ifelse(proportion>1,1,proportion)
 # switch to 1 when adjusting migration scripts
 adjusting <- 1
 
+# switching between mortality and morbidity models
+mortality <- 0
+
 #####first read in and process all the necessary data files 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/CASCADE_load_files.R")
 # load in the education transitions data
@@ -115,18 +118,17 @@ basepop <- basepop %>%
 Output <- list()
 lhsSample <- lhsSample[[1]]
 baseorig <- basepop
-alcohol <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
-                       updatingeducation, education_setup, transitionroles,
-                       calculate_migration_rates, outward_migration, inward_migration, 
-                       brfss,Rates,AlctransitionProbability,
-                       transitions, PopPerYear, 1984, 2016)
+Cirrhosis <- run_microsim(1,1,basepop, deathrates, apply_death_rates,
+                        outward_migration, inward_migration, mortality,
+                        AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, MetabolicPathway,
+                        brfss,Rates, 1984, 2010)
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_target_calibration_age.R")
 
-target <- target %>% rename(microsim.init.sex=sex, agecat=agegroup)
+target <- target %>% rename(microsim.init.sex=sex)
 Cirrhosis <- left_join(Cirrhosis, target)
 ggplot(data=Cirrhosis, aes(x=Year)) + geom_line(aes(y=n), colour="red") + geom_line(aes(y=count),colour="black") +
-  facet_grid(rows=vars(microsim.init.sex), cols=vars(agecat)) + theme_bw() + ylim(0,NA)
+  facet_grid(rows=vars(microsim.init.sex), cols=vars(agegroup)) + theme_bw() + ylim(0,NA)
 
 # saveRDS(Output, "output_fullpop.RDS")
 saveRDS(Output[[1]], "SIMAH_workplace/microsim/2_output_data/output_fullpop.RDS")
