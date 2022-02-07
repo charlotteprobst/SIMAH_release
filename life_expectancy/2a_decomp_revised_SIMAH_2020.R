@@ -14,6 +14,8 @@ library("data.table")
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
+# CB working directory
+setwd("~/Google Drive/SIMAH Sheffield/")
 #setwd("~/Documents/Promotion/Mortality US")
 
 ## Load the functions that go with this code
@@ -25,6 +27,8 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
 dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
+# read in alternative population counts for 2020 from experimental ACS 
+dPop_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 dPop <- filter(dPop, state == "USA")
 dPop <- select (dPop,-c(state))
 
@@ -55,9 +59,15 @@ dMort_t <- aggregate(.~ year + age_gp, data =  dMort, FUN=sum)
 v.totals <- c("Tmort", "COVmort", "LVDCmort", "DMmort", "IHDmort",
               "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort",  "RESTmort")
 
+v.totals <- names(dMort)[6:15]
+
 ## these are the original rate variable names. You could also introduce the "mx_" 
 ## nomenclature here 
 v.rates <- c("Trate", "mx_COVrate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
+             "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
+             "mx_IJrate",  "mx_RESTrate") 
+
+v.rates <- c("Trate","mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
              "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
              "mx_IJrate",  "mx_RESTrate") 
 
@@ -90,11 +100,31 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
   geom_point(size = 1, aes(color = SES)) 
 #ggsave("SIMAH_workplace/life_expectancy/3_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
 
+# creating 80 different versions of the dMort file for 2020
+
+# first aggregate by only year sex age_gp and edclass 
+for(i in 1:length(dPop_weights)){
+  dPop_weights[[i]] <- dPop_weights[[i]] %>% 
+    group_by(year, sex, age_gp, edclass) %>% summarise(TPop2=sum(TPop)) %>% 
+    mutate(age_gp=as.integer(age_gp))
+}
+
+dMort2020 <- dMort %>% filter(year==2020)
+
+mortlist <- list()
+for(i in 1:length(dPop_weights)){
+  mortlist[[i]] <- left_join(dMort2020, dPop_weights[[i]]) %>% 
+    dplyr::select(-TPop) %>% dplyr::rename(TPop=TPop2)
+}
+
 
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
   dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
 } 
+
+
+
 
 # Generate a variable to loop over
 dMort$group <- apply(dMort[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )

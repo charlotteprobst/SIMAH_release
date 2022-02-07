@@ -30,20 +30,20 @@ combined <- left_join(person, household)
 
 # calculating age / sex / race / splits 
 names(combined)
-summary <- combined %>% filter(AGEP<=79) %>% filter(AGEP>=18) %>% 
+summary <- combined %>% filter(AGEP>=18) %>% 
   mutate(RACE = ifelse(RAC1P==1, "White",
                        ifelse(RAC1P==2, "Black", "Other")),
          RACE = ifelse(HISP!="01", "Hispanic",RACE),
-         AGECAT = cut(AGEP, breaks=c(0,24,34,44,54,64,74,79),
+         AGECAT = cut(AGEP, breaks=c(0,24,34,44,54,64,74,79,1000),
                      labels=c("18-24","25-34","35-44",
-                              "45-54","55-64","65-74","75-79")),
+                              "45-54","55-64","65-74","75-79","80+")),
          SEX = ifelse(SEX==1,"M","F")) %>% 
   group_by(SEX, RACE, AGECAT) %>% 
   summarise(target=sum(PWGTP)) %>% 
     mutate(YEAR=2020)
 
 # now calculate SEs and 95% CIs 
-summaryreps <- combined %>% filter(AGEP<=79) %>% filter(AGEP>=18) %>% 
+summaryreps <- combined %>% filter(AGEP>=18) %>% 
   mutate(RACE = ifelse(RAC1P==1, "White",
                        ifelse(RAC1P==2, "Black", "Other")),
          RACE = ifelse(HISP!="01", "Hispanic",RACE),
