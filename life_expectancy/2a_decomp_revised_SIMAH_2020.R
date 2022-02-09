@@ -11,6 +11,9 @@ library("dplyr")
 library("reshape")
 library("data.table")
 
+# remove e notation for small numbers
+options(scipen=999)
+
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
@@ -123,8 +126,18 @@ for (i in 1:length(v.totals)){
   dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
 } 
 
-
-
+# Calculate the rates for all relevant causes of death - 
+# for different 2020 versions 
+for(i in 1:length(mortlist)){
+  mortlist[[i]] <- mortlist[[i]] %>% 
+    pivot_longer(cols=c(Tmort:RESTmort)) %>% 
+    mutate(rate = value/TPop,
+           name = gsub("mort","rate",name),
+           name = ifelse(name=="Trate","Trate",
+                         paste0("mx_",name))) %>% 
+    dplyr::select(-value) %>% 
+    pivot_wider(names_from=name, values_from=rate)
+}
 
 # Generate a variable to loop over
 dMort$group <- apply(dMort[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
@@ -199,3 +212,105 @@ dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
 
+# new version for looping over different population versions for 2020
+for(i in 1:length(mortlist)){
+mortlist[[i]]$group <- apply(mortlist[[i]][ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
+mortlist[[i]]$weight <- i
+}
+
+test <- do.call(rbind,mortlist)
+
+dResults_contrib_list <- list()
+
+# only get the results for 2019 - 2020 (results above will be the same for 2018-2019)
+  # for(k in 1:length(mortlist)){
+  for(k in 1:length(mortlist)){
+    year1 <- 2019
+    year2 <- 2020
+  for(i in 1:length(v.group)) {
+    US_y1 <- filter(dMort, year==year1 &  group == v.group[i]) ## this one would then be i
+    US_y2 <- filter(mortlist[[k]], year==year2 &  group == v.group[i])
+    
+    US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
+    US_y2 <- US_y2[, sel.vars]
+    
+    US_y1$ax = c(3.5,rep(2.5,11), 6.99) # midpoint of age range. Check age groups again. 
+    US_y2$ax = c(3.5,rep(2.5,11), 6.99)
+    
+    # to start the first step of the decomposition
+    US_y1_vector <- unlist(select(US_y1,starts_with("mx_")))
+    US_y2_vector <- unlist(select(US_y2,starts_with("mx_")))
+    
+    decomp_results <-  horiuchi(func = life_table_causes,
+                                pars1 = US_y1_vector,
+                                pars2 = US_y2_vector,
+                                age_vector = pull(US_y1,age_gp),
+                                ax_vector = (pull(US_y1,ax) + pull(US_y2,ax))/2,
+                                N = 100)
+    decomp_results_mat <- matrix(decomp_results,ncol = length(v.totals[-1])) # -1 to remove Tmort
+    
+    #Sum over age - this gives the contribution of each cause in terms of years of LE. Note that this should sum to difference LE between the beg and start periods
+    cause_contributions <- apply(decomp_results_mat,2,sum)
+    
+    cause_contributions <-  array(cause_contributions, dim = c(1, length(cause_contributions)))
+    
+    temp_contrib <- as.data.frame(cause_contributions) 
+    colnames(temp_contrib) <- v.totals[-1]
+    
+    temp_contrib$group <- v.group[i]
+    temp_contrib$start_year <- v.year1[j]
+    temp_contrib$end_year <- v.year2[j]
+    
+    temp_contrib$LE1 <-  life_table_causes(nmx_by_cause_vector = US_y1_vector, age_vector = pull(US_y1,age_gp),
+                                           ax_vector = pull(US_y1, ax)) + min(pull(US_y1, age_gp))
+    temp_contrib$LE2 <-  life_table_causes(nmx_by_cause_vector = US_y2_vector, age_vector = pull(US_y2,age_gp),
+                                           ax_vector = pull(US_y2, ax)) + min(pull(US_y2, age_gp))
+    
+    if (i == 1 & j == 1) {
+      
+      dResults_contrib_list[[paste(k)]] <- temp_contrib
+      
+      
+    } else {
+      
+      dResults_contrib_list[[paste(k)]] <- rbind(temp_contrib, dResults_contrib_list[[paste(k)]])
+      
+    }
+  } 
+  
+  }
+
+
+for(i in 1:length(dResults_contrib_list)){
+  dResults_contrib_list[[paste(i)]] <- separate(dResults_contrib_list[[paste(i)]], col = group, into = c("sex","edclass"), sep = "_")
+  dResults_contrib_list[[paste(i)]]$edclass <- factor(dResults_contrib_list[[paste(i)]]$edclass, 
+                                     levels = c( "LEHS", "SomeC", "College"))
+  dResults_contrib_list[[paste(i)]]$sex <- as.factor(dResults_contrib_list[[paste(i)]]$sex)
+  dResults_contrib_list[[paste(i)]] <- dResults_contrib_list[order(dResults_contrib_list[[paste(i)]]$start_year, dResults_contrib_list[[paste(i)]]$sex, dResults_contrib_list[[paste(i)]]$edclass), ]
+}
+
+for(i in 1:length(dResults_contrib_list)){
+  dResults_contrib_list[[paste(i)]]$weight <- i
+  dResults_contrib_list[[paste(i)]]$group <- NULL
+}
+
+for(i in 2:length(dResults_contrib_list)){
+  dResults_contrib_list[[paste(i)]]$sex <- dResults_contrib_list[[1]]$sex
+  dResults_contrib_list[[paste(i)]]$edclass <- dResults_contrib_list[[1]]$edclass
+}
+
+dResults_weights <- do.call(rbind,dResults_contrib_list)
+
+write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS_2020weights.csv") )
+write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020weights.csv")
+
+dResults_weights <- read.csv(paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS_2020weights.csv") )
+
+
+checking <- dResults_weights %>% group_by(sex,edclass) %>% 
+  summarise(meanLE1 = mean(LE1),
+            minLE1 = min(LE1),
+            maxLE1 = max(LE1),
+            meanLE2 = mean(LE2),
+            minLE2 = min(LE2),
+            maxLE2 = max(LE2))
