@@ -306,11 +306,11 @@ write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020w
 
 dResults_weights <- read.csv(paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS_2020weights.csv") )
 
-
 checking <- dResults_weights %>% group_by(sex,edclass) %>% 
-  summarise(meanLE1 = mean(LE1),
-            minLE1 = min(LE1),
-            maxLE1 = max(LE1),
-            meanLE2 = mean(LE2),
-            minLE2 = min(LE2),
-            maxLE2 = max(LE2))
+  summarise(meanLE1 = round(mean(LE1),digits=2),
+            minLE1 = round(min(LE1),digits=2),
+            maxLE1 = round(max(LE1),digits=2),
+            meanLE2 = round(mean(LE2),digits=2),
+            minLE2 = round(min(LE2),digits=2),
+            maxLE2 = round(max(LE2),digits=2))
+
