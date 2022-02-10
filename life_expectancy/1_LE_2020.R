@@ -42,6 +42,7 @@ dMort <- dMort %>% select(-c(CANmort, PANCmort, ISTRmort, HSTRmort))
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
+dMort_r <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
 dMort <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
 dMort_t <- aggregate(.~ year + sex + age_gp, data =  dMort, FUN=sum)
 
@@ -51,11 +52,11 @@ dMort_t <- aggregate(.~ year + sex + age_gp, data =  dMort, FUN=sum)
 ## define vectors for the total death counts and rates of interest.
 ## IMPORTANT: the order of the totals and the rates must match!! 
 ## We have to calculate the rates again 
-v.totals <- c("Tmort", "LVDCmort", "DMmort", "IHDmort",
+v.totals <- c("Tmort", "COVmort", "LVDCmort", "DMmort", "IHDmort",
               "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort",  "RESTmort")
 
 ## Introduce the "mx_" nomenclature  
-v.rates <- c("Trate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
+v.rates <- c("Trate", "mx_COVrate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
              "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
              "mx_IJrate",  "mx_RESTrate")
 
@@ -81,9 +82,9 @@ v.year1 <- c(2000:2020)
 for (j in (1:length(v.year1))){
       year1 <- v.year1[j]
       for(i in 1:length(v.group)) {
-            US_y1 <- filter(dMort_t, year==year1 &  group == v.group[i]) ## this one would then be i
+            US_y1 <- filter(dMort_t, year==year1 &  group == v.group[i]) 
             
-            US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
+            US_y1 <- US_y1[, sel.vars] 
             
             US_y1$ax = c(3.5,rep(2.5,11), 6.99) # midpoint of age range. Check age groups again. 
             
@@ -172,3 +173,61 @@ names(dle_results) <-  c("Life_expectancy", "Year", "Sex", "SES" )
 write.csv(dle_results, "SIMAH_workplace/life_expectancy/2_out_data/LifeExpectancy_sex_SES_ACS_2020.csv")
 
 
+###############################################################################
+# LE by sex, SES and race/ethnicity
+###############################################################################
+
+sel.vars <- c("year", "edclass", "race", "sex", "age_gp", v.rates) 
+
+# Calculate the rates for all relevant causes of death
+for (i in 1:length(v.totals)){
+   dMort_r[, v.rates[i]] <- (dMort_r[, v.totals[i]]/dMort_r$TPop)
+} 
+
+# Generate a variable to loop over
+dMort_r$group <- apply(dMort_r[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
+
+# now you can loop over the unique values of this new variable
+v.group <- unique(dMort_r$group)
+
+v.year1 <- c(2000:2020)
+for (j in (1:length(v.year1))){
+   year1 <- v.year1[j]
+   for(i in 1:length(v.group)) {
+      US_y1 <- filter(dMort_r, year==year1 &  group == v.group[i]) ## this one would then be i
+      
+      US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
+      
+      US_y1$ax = c(3.5,rep(2.5,11), 6.99) # midpoint of age range. Check age groups again. 
+      
+      US_y1_vector <- unlist(select(US_y1,starts_with("mx_")))
+      
+      le_results <-  life_table_causes(nmx_by_cause_vector = US_y1_vector, age_vector = pull(US_y1,age_gp),
+                                       ax_vector = pull(US_y1,ax))
+      le_results <- as.data.frame(c(le_results + min(pull(US_y1, age_gp)))) # I am adding the age at baseline here
+      le_results$year <- v.year1[j]
+      le_results$group <- v.group[i]
+      
+      if (j == 1 & i == 1) {
+         
+         dle_results <- le_results
+         
+      } else {
+         
+         dle_results <- rbind(dle_results, le_results)
+      }
+      
+   } 
+   
+}
+
+
+dle_results <- separate(dle_results, col = group, into = c("sex","edclass", "race"), sep = "_")
+dle_results$edclass <- factor(dle_results$edclass, 
+                              levels = c( "LEHS", "SomeC", "College"))
+dle_results$sex <- as.factor(dle_results$sex)
+dle_results <- dle_results[order(dle_results$year, dle_results$sex, dle_results$edclass), ]
+names(dle_results) <-  c("Life_expectancy", "Year", "Sex", "SES", "Race" )
+
+
+write.csv(dle_results, "SIMAH_workplace/life_expectancy/2_out_data/LifeExpectancy_sex_SES_race_ACS_2020.csv")
