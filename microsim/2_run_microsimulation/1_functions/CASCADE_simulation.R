@@ -75,6 +75,7 @@ basepop <- AssignAcuteHep(basepop, Hep, distribution,y)
 basepop <- AssignChronicHep(basepop)
 basepop <- CirrhosisHepatitis(basepop,lhsSample)
 basepop$RR <- (basepop$RRHeavyUse)+(basepop$RRMetabolic)+(basepop$RRHep)
+basepop$RR <- basepop$RRHeavyUse
 
 basepop$RR <- ifelse(basepop$RR>100, 100, basepop$RR)
 
@@ -111,7 +112,7 @@ basepop <- basepop %>% filter(!microsim.init.id %in% ids)
 
 basepop$grams_10years <- basepop$grams_10years + (basepop$microsim.init.alc.gpd*365)
   
-alcohol[[paste(y)]] <- basepop %>% group_by(microsim.init.sex) %>% filter(microsim.init.alc.gpd!=0) %>% 
+alcohol[[paste(y)]] <- basepop %>% group_by(microsim.init.sex) %>% 
   mutate(agegroup = cut(microsim.init.age, 
                         breaks=c(0,24,34,44,54,64,74,100),
                         labels=c("18-24","25-34","35-44","45-54","55-64","65-74","75+")),
@@ -123,7 +124,7 @@ alcohol[[paste(y)]] <- basepop %>% group_by(microsim.init.sex) %>% filter(micros
                                "1941-1945","1946-1950","1951-1955","1956-1960","1961-1965",
                                "1966-1970","1971-1975","1976-1980","1981-1985","1986-1990",
                                "1991-2000"))) %>% 
-  ungroup() %>% group_by(microsim.init.sex,agegroup,cohort) %>% filter(microsim.init.alc.gpd!=0) %>% 
+  ungroup() %>% group_by(microsim.init.sex,agegroup) %>% filter(Cirrhosis_risk==1) %>% 
   summarise(meanGPD = mean(microsim.init.alc.gpd)) %>% mutate(year=y)
 
 #delete anyone over 80
@@ -148,11 +149,12 @@ Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.i
                                                                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
                                                                       labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
                                                                                "50-54","55-59","60-64","65-69","70-74","75-79")),
-                                                         agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,79),
-                                                             labels=c("18","19-24","25-29","30-34","35-39",
-                                                                      "40-44","45-49","50-54","55-59",
-                                                                      "60-64","65-69","70-74","75-79"))) %>%
-  group_by(microsim.init.sex, microsim.init.age, microsim.init.education, microsim.init.race) %>% tally() %>%
+                                                         agegroup = cut(microsim.init.age, 
+                                                                        breaks=c(0,19,24,34,44,54,64,74,100),
+                                                                        labels=c("15-19","20-24","25-34","35-44","45-54","55-64","65-74","75.")),
+                                                         obese = ifelse(microsim.init.BMI>=30, 1,0)) %>%
+  group_by(microsim.init.sex, agegroup) %>% summarise(percentobese = mean(obese),
+                                                    percentoverthreshold = mean(Cirrhosis_risk)) %>% 
   mutate(year=i, seed=seed)
 }
 
@@ -179,6 +181,6 @@ Cirrhosis <- Cirrhosis %>% mutate(seed = seed,
 alcohol <- do.call(rbind,alcohol)
 # DeathSummary <- do.call(rbind, DeathSummary)
 # Summary <- list(Summary, DeathSummary)
-return(Cirrhosis)
+return(alcohol)
 }
 

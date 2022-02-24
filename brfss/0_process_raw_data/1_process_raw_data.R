@@ -64,13 +64,15 @@ dataFiles <- lapply(dataFiles, recode_height)
 dataFiles <- lapply(dataFiles, recode_BMI)
 
 # impute missing BMI data
-dataFiles <- lapply(dataFiles, impute_missing_BMI)
+# dataFiles <- lapply(dataFiles, impute_missing_BMI)
+
+dataFiles <- lapply(dataFiles, recode_derived_BMI)
 
 #### recode alcohol variables
-for(i in 1:37){
-  print(years[i])
-  print(summary(dataFiles[[i]]$BMI))
-}
+# for(i in 1:37){
+#   print(years[i])
+#   print(summary(dataFiles[[i]]$BMI))
+# }
 
 # frequency - drinking days per month
 dataFiles <- lapply(dataFiles, recode_alc_frequency)

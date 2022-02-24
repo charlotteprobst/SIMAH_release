@@ -95,6 +95,7 @@ brfss$microsim.init.education <- ifelse(brfss$microsim.init.education=="SomeC1"|
 
 # set up transition probabilities
 transitionProbability <- read.csv("SIMAH_workplace/microsim/1_input_data/TP_tunnel.csv")
+
 transitionProbability$StateFrom <- as.character(transitionProbability$StateFrom)
 transitionProbability$StateTo <- as.character(transitionProbability$StateTo)
 
@@ -126,3 +127,7 @@ transitions <- transitions %>% dplyr::select(cat, StateTo, Prob) %>%
   arrange(cat, StateTo) %>% 
   group_by(cat) %>% mutate(cumsum=cumsum(Prob)) %>% ungroup() %>% dplyr::select(-c(Prob))
 transitions$cumsum <- ifelse(transitions$cumsum>=0.9999, 1, transitions$cumsum)
+
+
+transitions <- readRDS(paste0("SIMAH_workplace/microsim/2_output_data/final_ed_transitions", State, ".RDS"))
+

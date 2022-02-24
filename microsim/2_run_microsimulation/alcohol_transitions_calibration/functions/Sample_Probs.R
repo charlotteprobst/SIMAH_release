@@ -1,11 +1,12 @@
 Sample_Probs <- function(data, model, nsamples){
   estimates <- model$estimates.t
   covmat <- data.frame(model$covmat)
-  covmat <- covmat*1000
+  covmat <- covmat*100
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   sex <- unique(data$female_wave1.factor)
-  age <- sort(unique(data$age3.factor))
+  # age <- sort(unique(data$age3.factor))
+  age <- sort(unique(data$age7))
   educ <- unique(data$edu3.factor)
   race <- unique(data$race_wave1.factor)
   # every age sex race combination
@@ -29,7 +30,9 @@ Sample_Probs <- function(data, model, nsamples){
     allsamples[[paste(k)]]$SampleNum <- k
   }
   allsamples <- do.call(rbind,allsamples)
-  allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo)) %>% 
+  allsamples <- allsamples %>% 
+    # mutate(StateTo=parse_number(StateTo)) %>% 
+    mutate(StateTo = gsub("State ", "", StateTo)) %>% 
     dplyr::select(SampleNum, StateFrom, StateTo, age, sex, race, educ, prob)
   SampleNum <- 1:nrow(samples)
   samples <- data.frame(cbind(SampleNum, samples))
