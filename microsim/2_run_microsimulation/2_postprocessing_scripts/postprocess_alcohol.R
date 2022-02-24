@@ -1,61 +1,62 @@
 # processing alcohol transitions target data 
-
-# df <- Output[[1]]
 # 
-# for(i in 2000:2018){
-#   df[[paste(i)]]$Year <- i
-# }
+# df <- Output
+# 
+# # for(i in 2000:2018){
+# #   df[[paste(i)]]$Year <- i
+# # }
 # 
 # df <- do.call(rbind, df)
 
-# target <- brfss %>% filter(YEAR>=2000) %>% filter(State==SelectedState) %>% 
-#   mutate(agecat = ifelse(microsim.init.age<=29, "18-29",
-#                 ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
-#                        "50+")),
-#          AlcCAT = ifelse(formerdrinker==1, "Former drinker", AlcCAT)) %>% 
-#   group_by(YEAR, microsim.init.sex, microsim.init.education, AlcCAT) %>% 
-#   tally() %>% ungroup() %>% 
-#   group_by(YEAR, microsim.init.sex) %>% 
-#   mutate(targetpercent=n/sum(n)) %>% 
-#   rename(Year=YEAR) %>% dplyr::select(-n)
+target <- brfss %>% filter(YEAR>=2000) %>% filter(State==SelectedState) %>%
+  mutate(agecat = ifelse(microsim.init.age<=29, "18-29",
+                ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
+                       "50+"))
+         # AlcCAT = ifelse(formerdrinker==1, "Former drinker", AlcCAT)
+         ) %>%
+  group_by(YEAR, microsim.init.sex, microsim.init.education, AlcCAT) %>%
+  tally() %>% ungroup() %>%
+  group_by(YEAR, microsim.init.sex, microsim.init.education) %>%
+  mutate(targetpercent=n/sum(n)) %>%
+  rename(year=YEAR) %>% dplyr::select(-n)
 
-summary <- Output %>% 
-  # mutate(agecat = cut(microsim.init.age,
-  #                                     breaks=c(0,24,34,44,54,64,100),
-  #                                     labels=c("18-24","25-34","35-44",
-  #                                              "45-54","55-64","65+"))) %>%
-  group_by(year, microsim.init.sex, AlcCAT) %>% summarise(n=sum(n)) %>%
-  mutate(data="microsimulation") %>% ungroup() %>% group_by(year, microsim.init.sex) %>%
-  mutate(proportion=n/sum(n)) %>% rename(Year=year) %>% mutate(Year=as.numeric(as.character(Year)))
-
+# summary <- Output %>% 
+#   # mutate(agecat = cut(microsim.init.age,
+#   #                                     breaks=c(0,24,34,44,54,64,100),
+#   #                                     labels=c("18-24","25-34","35-44",
+#   #                                              "45-54","55-64","65+"))) %>%
+#   group_by(year, microsim.init.sex, AlcCAT) %>% summarise(n=sum(n)) %>%
+#   mutate(data="microsimulation") %>% ungroup() %>% group_by(year, microsim.init.sex) %>%
+#   mutate(proportion=n/sum(n)) %>% rename(Year=year) %>% mutate(Year=as.numeric(as.character(Year)))
+# 
 summarybrfss <- brfss %>% group_by(YEAR, microsim.init.sex,
                                    AlcCAT)%>%
   tally() %>% rename(Year=YEAR) %>%
   mutate(data="brfss") %>% ungroup() %>%
   group_by(Year, microsim.init.sex) %>%
   mutate(proportion=n/sum(n))
+# # 
+# summary <- rbind(summary, summarybrfss) %>%
+#   mutate(AlcCAT = factor(AlcCAT,
+#                          levels=c(
+#                            # "Lifetime abstainer","Former drinker",
+#                            "Non-drinker",
+#                                   "Low risk", "Medium risk", "High risk")),
+#                          microsim.init.sex = recode(microsim.init.sex,
+#                                                     "m"="Men","f"="Women"))
 # 
-summary <- rbind(summary, summarybrfss) %>%
-  mutate(AlcCAT = factor(AlcCAT,
-                         levels=c(
-                           "Lifetime abstainer","Former drinker",
-                           # "Non-drinker",
-                                  "Low risk", "Medium risk", "High risk")),
-                         microsim.init.sex = recode(microsim.init.sex,
-                                                    "m"="Men","f"="Women"))
+# ggplot(data=summary, aes(x=Year, y=proportion, linetype=data)) +
+#   geom_line() + facet_grid(cols=vars(microsim.init.sex), rows=vars(AlcCAT), scales="free") +
+#   scale_y_continuous(labels=scales::percent, limits=c(0,NA)) +   theme_bw() +
+#   theme(legend.title=element_blank(),
+#         text = element_text(size=12),
+#         legend.position="bottom") +
+#   scale_colour_brewer(type="seq", palette="Dark2")
 # 
-ggplot(data=summary, aes(x=Year, y=proportion, linetype=data)) +
-  geom_line() + facet_grid(cols=vars(microsim.init.sex), rows=vars(AlcCAT), scales="free") +
-  scale_y_continuous(labels=scales::percent, limits=c(0,NA)) +   theme_bw() +
-  theme(legend.title=element_blank(),
-        text = element_text(size=12),
-        legend.position="bottom") +
-  scale_colour_brewer(type="seq", palette="Dark2")
-
-
-ggsave("SIMAH_workplace/microsim/2_output_data/plots/alcohol_bysex_agecat_AlcUse5.png",
-       dpi=300, width=33, height=17, units="cm")
-#   
+# 
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/alcohol_bysex_agecat_AlcUse5.png",
+#        dpi=300, width=33, height=17, units="cm")
+# #   
 # 
 # summary <- df %>% mutate(agecat = cut(microsim.init.age,
 #                                       breaks=c(0,24,34,44,54,64,100),

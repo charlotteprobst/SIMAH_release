@@ -102,8 +102,8 @@ Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CA
 Rates$agecat <- as.character(Rates$agecat)
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
-PE <- 1
-N_SAMPLES <- 1
+PE <- 0
+N_SAMPLES <- 10
 WAVE <- 1
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sampling_parameters_IRR.R")
 
