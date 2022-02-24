@@ -27,11 +27,25 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #############################################################################################################
 #before starting with the decomposition, we have to get the mortality data into the right format
 
+# switch between 0 and 1 for ACS experimental weights (1) versus our modelled ACS 2020 population (0)
+ACS_type <- 1
+
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
+
+if(ACS_type==0){
 dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
+<<<<<<< Updated upstream
 # read in alternative population counts for 2020 from experimental ACS 
 dPop_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
+=======
+}else if(ACS_type==1){
+# version with modelled pop for 2020
+dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020_predicted2020.csv")
+}
+
+
+>>>>>>> Stashed changes
 dPop <- filter(dPop, state == "USA")
 dPop <- select (dPop,-c(state))
 
@@ -106,9 +120,21 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
 # creating 80 different versions of the dMort file for 2020
 
 # first aggregate by only year sex age_gp and edclass 
+<<<<<<< Updated upstream
 for(i in 1:length(dPop_weights)){
   dPop_weights[[i]] <- dPop_weights[[i]] %>% 
     group_by(year, sex, age_gp, edclass) %>% summarise(TPop2=sum(TPop)) %>% 
+=======
+
+if(ACS_type==0){
+dMort2020 <- dMort %>% filter(year==2020) %>% dplyr::select(-c(race,TPop))
+mortlist <- list()
+
+# join with TPop for different weights and calculate mortality from different causes
+for(i in 1:length(dPop_weights_raw)){
+  dPop_weights[[i]] <- dPop_weights_raw[[i]] %>% 
+    group_by(year, sex, age_gp, edclass) %>% summarise(TPop=sum(TPop)) %>% 
+>>>>>>> Stashed changes
     mutate(age_gp=as.integer(age_gp))
 }
 
@@ -118,6 +144,7 @@ mortlist <- list()
 for(i in 1:length(dPop_weights)){
   mortlist[[i]] <- left_join(dMort2020, dPop_weights[[i]]) %>% 
     dplyr::select(-TPop) %>% dplyr::rename(TPop=TPop2)
+}
 }
 
 
@@ -209,10 +236,20 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
+if(ACS_type==0){
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
+}else if(ACS_type==1){
+  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
+  write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_ACSmodel.csv")
+}
 
+<<<<<<< Updated upstream
 # new version for looping over different population versions for 2020
+=======
+if(ACS_type==0){
+# now loop over and get the results for 2020 weights
+>>>>>>> Stashed changes
 for(i in 1:length(mortlist)){
 mortlist[[i]]$group <- apply(mortlist[[i]][ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
 mortlist[[i]]$weight <- i
@@ -298,13 +335,26 @@ for(i in 2:length(dResults_contrib_list)){
   dResults_contrib_list[[paste(i)]]$sex <- dResults_contrib_list[[1]]$sex
   dResults_contrib_list[[paste(i)]]$edclass <- dResults_contrib_list[[1]]$edclass
 }
+}
 
 dResults_weights <- do.call(rbind,dResults_contrib_list)
 
 write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS_2020weights.csv") )
 write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020weights.csv")
 
+<<<<<<< Updated upstream
 dResults_weights <- read.csv(paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS_2020weights.csv") )
+=======
+if(ACS_type==0){
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020.csv")
+}else if(ACS_type==1){
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020_ACSmodel.csv")  
+}
+
+if(ACS_type==0){
+>>>>>>> Stashed changes
 
 checking <- dResults_weights %>% group_by(sex,edclass) %>% 
   summarise(meanLE1 = round(mean(LE1),digits=2),
@@ -314,3 +364,9 @@ checking <- dResults_weights %>% group_by(sex,edclass) %>%
             minLE2 = round(min(LE2),digits=2),
             maxLE2 = round(max(LE2),digits=2))
 
+<<<<<<< Updated upstream
+=======
+dResults_weights <- do.call(rbind, dResults_contrib_list)
+write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACSweights.csv") )
+}
+>>>>>>> Stashed changes
