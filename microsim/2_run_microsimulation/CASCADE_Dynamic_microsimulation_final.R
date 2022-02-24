@@ -103,9 +103,9 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projec
 PE <- 1
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sampling_parameters_IRR.R")
 
-history <- HistoryFunction(basepop, ages)
+history <- HistoryFunction(basepop, ages, lhsSample[[1]])
 basepop <- left_join(basepop, history)
-basepop <- formerdrinkers_history(basepop)
+basepop <- formerdrinkers_history(basepop, lhsSample[[1]])
 basepop <- basepop %>% 
   mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" & 
                                    grams_10years>= 100000, 1,
@@ -118,10 +118,45 @@ basepop <- basepop %>%
 Output <- list()
 lhsSample <- lhsSample[[1]]
 baseorig <- basepop
-Cirrhosis <- run_microsim(1,1,basepop, deathrates, apply_death_rates,
-                        outward_migration, inward_migration, mortality,
-                        AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, MetabolicPathway,
-                        brfss,Rates, 1984, 2010)
+
+Cirrhosis <- run_microsim(1,1,lhsSample, basepop, deathrates, apply_death_rates,
+                          outward_migration, inward_migration, mortality,
+                          AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, MetabolicPathway,
+                          brfss,Rates, 1984, 2010)
+
+# brfssobese <- brfssorig %>% mutate(obese=ifelse(microsim.init.BMI>=30,1,0),
+#                                    agegroup = cut(microsim.init.age, 
+#                                                   breaks=c(0,19,24,34,44,54,64,74,100),
+#                                                   labels=c("15-19","20-24","25-34","35-44","45-54","55-64","65-74","75."))) %>% 
+#   group_by(YEAR, microsim.init.sex, agegroup) %>% summarise(percentobese=mean(obese)) %>% mutate(data="brfss", percentoverthreshold=NA,
+#                                                                                                  seed=1) %>% rename(year=YEAR)
+# 
+# Cirrhosis <- Cirrhosis %>% mutate(data="microsim", year=as.numeric(year))
+# Cirrhosis <- rbind(Cirrhosis, brfssobese)
+# 
+# ggplot(data=Cirrhosis, aes(x=as.numeric(year), y=percentobese, colour=data)) + geom_line() + 
+#   facet_grid(cols=vars(agegroup), rows=vars(microsim.init.sex))+ ylim(0,1) + theme_bw() +
+#   ylab("% BMI over 30") + 
+#   theme(legend.title=element_blank(),
+#         legend.position="bottom",
+#         text = element_text(size=18),
+#         axis.text.x=element_text(angle=45, vjust=0.5, hjust=0.5)) +
+#   scale_x_continuous(breaks=c(1985,1995,2005,2015)) + xlab("Year")
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/percentBMI30.png", dpi=300, width=33, height=19, units="cm")
+# 
+# ggplot(data=Cirrhosis, aes(x=as.numeric(year), y=percentoverthreshold, colour=data)) + geom_line() + 
+#   facet_grid(cols=vars(agegroup), rows=vars(microsim.init.sex)) + theme_bw() + ylim(0,1) +
+#   ylab("% over 100,000 grams threshold") + 
+#   theme(legend.title=element_blank(),
+#         legend.position="bottom",
+#         text = element_text(size=18),
+#         axis.text.x=element_text(angle=45, vjust=0.5, hjust=0.5)) +
+#   scale_x_continuous(breaks=c(1985,1995,2005,2015)) + xlab("Year")
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/percentoverthreshold.png", dpi=300, width=33, height=19, units="cm")
+
+ggplot(data=Cirrhosis, aes(x=year, y=meanGPD)) + geom_line() + 
+  facet_grid(cols=vars(agegroup), rows=vars(microsim.init.sex)) + ylim(0,NA)
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/GPD_overthreshold.png", dpi=300, width=33, height=19, units="cm")
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_target_calibration_age.R")
 
@@ -129,6 +164,7 @@ target <- target %>% rename(microsim.init.sex=sex)
 Cirrhosis <- left_join(Cirrhosis, target)
 ggplot(data=Cirrhosis, aes(x=Year)) + geom_line(aes(y=n), colour="red") + geom_line(aes(y=count),colour="black") +
   facet_grid(rows=vars(microsim.init.sex), cols=vars(agegroup)) + theme_bw() + ylim(0,NA)
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/PE_morbidity_BMIfix_heavyonly.png", dpi=300, width=33, height=19, units="cm")
 
 # saveRDS(Output, "output_fullpop.RDS")
 saveRDS(Output[[1]], "SIMAH_workplace/microsim/2_output_data/output_fullpop.RDS")

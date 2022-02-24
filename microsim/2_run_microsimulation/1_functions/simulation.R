@@ -48,12 +48,12 @@ if(updatingalcohol==1 & y>2000){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
                  breaks=c(0,20,25,29,39,49,64,100),
-                 labels=c("18-20","21-25","26-29","30-39","40-49","50-65","65+")),
+                 labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
     cat = paste(agecat, microsim.init.sex,
                                       microsim.init.race, microsim.init.education,
                                       AlcCAT, sep="_"),
                                 prob = runif(nrow(.)))
-  basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., AlctransitionProbability))
+   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., AlctransitionProbability))
   basepop <- basepop %>% 
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
   }
@@ -99,7 +99,7 @@ PopPerYear <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(y
            AlcCAT, .drop=FALSE) %>% tally()
 Summary <- do.call(rbind,Summary)
 DeathSummary <- do.call(rbind, DeathSummary)
-# Summary <- list(Summary, DeathSummary)
-return(Summary)
+Summary <- list(Summary, DeathSummary)
+return(PopPerYear)
 }
 

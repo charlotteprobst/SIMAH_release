@@ -7,7 +7,7 @@ library(tidyr)
 library(MASS)
 
 # how many samples to take from the prior? 
-nsamples <- 25
+nsamples <- 100
 
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msmparsecovariates.R")
@@ -15,7 +15,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibratio
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/extract_for_estimates.R")
 
-model <- readRDS("SIMAH_workplace/microsim/1_input_data/alc5.msm.RDS")
+model <- readRDS("SIMAH_workplace/microsim/1_input_data/alc4_age7.msm.RDS")
 
 # pmatrix.msm(model, covariates=list(female_wave1.factorWomen=1))
 data <- model$data$mf
@@ -37,14 +37,20 @@ for(i in 1:length(unique(estimates$SampleNum))){
                          "Hispanic"="SPA"),
            educ = recode(educ, "High"="College",
                          "Med"="SomeC","Low"="LEHS"),
-           StateFrom=recode(StateFrom, "1"="Lifetime abstainer",
-                            "2"="Former drinker", "3"="Low risk",
-                            "4"="Medium risk", "5"="High risk"),
-           StateTo = recode(StateTo, "1"="Lifetime abstainer",
-                            "2"="Former drinker", "3"="Low risk",
-                            "4"="Medium risk", "5"="High risk"),
+           # StateFrom=recode(StateFrom, "1"="Lifetime abstainer",
+           #                  "2"="Former drinker", "3"="Low risk",
+           #                  "4"="Medium risk", "5"="High risk"),
+           StateFrom=recode(StateFrom, "1"="Non-drinker",
+                             "2"="Low risk",
+                            "3"="Medium risk", "4"="High risk"),
+           # StateTo = recode(StateTo, "1"="Lifetime abstainer",
+           #                  "2"="Former drinker", "3"="Low risk",
+           #                  "4"="Medium risk", "5"="High risk"),
+           StateTo=recode(StateTo, "1"="Non-drinker",
+                            "2"="Low risk",
+                            "3"="Medium risk", "4"="High risk"),
            
-           cat = paste(age, sex, race, educ, "STATEFROM", StateFrom, sep="_")) %>% 
+           cat = paste(age, sex, race, educ, StateFrom, sep="_")) %>% 
     group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>% 
     dplyr::select(cat, StateTo, cumsum)
 }

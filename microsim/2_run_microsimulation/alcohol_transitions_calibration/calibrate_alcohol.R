@@ -33,7 +33,7 @@ setwd(paste(WorkingDirectory))
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 1000000
+PopulationSize <- 500000
 
 # what proportion of the population does this represent - change to ifelse with all pop sizes when other states added 
 WholePopSize <- read.csv("SIMAH_workplace/microsim/1_input_data/fullpopcounts.csv") %>% 
@@ -41,6 +41,8 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_input_data/fullpopcounts.cs
 
 proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
+
+model <- "SIMAH"
 
 #####first read in and process all the necessary data files 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_files.R")
@@ -113,7 +115,7 @@ registerDoParallel(15)
 mcoptions <- list(set.seed=FALSE)
 
 Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
-                  .options.multicore=mcoptions,
+                  # .options.multicore=mcoptions,
                   .packages=c("dplyr","tidyr","foreach")) %dopar% {
                     samplenum <- i
                     seed <- Sys.time()
@@ -142,7 +144,7 @@ Output <- Output %>% group_by(samplenum, year, microsim.init.sex, microsim.init.
   summarise(n=sum(n)) %>% ungroup() %>% 
   group_by(samplenum, year, microsim.init.sex, microsim.init.education) %>% 
   mutate(microsimpercent = n/sum(n),
-         year=as.numeric(as.character(year)))
+         year=as.numeric(as.character(year))) %>% dplyr::select(-n)
 Output <- left_join(Output, target)
 
 # compare PE 
@@ -153,11 +155,12 @@ Output <- left_join(Output, target)
 #          year=as.numeric(as.character(year)))
 # PE <- left_join(PE, target)
 
-error <- left_join(Output,target) %>% ungroup() %>% 
+error <- Output %>% ungroup() %>% 
   group_by(samplenum) %>% 
   mutate(errorsq = (microsimpercent-targetpercent)^2) %>% 
   group_by(samplenum) %>% 
-  summarise(RMSE = sqrt(mean(errorsq)))
+  summarise(maxerror = max(errorsq),
+            RMSE = sqrt(mean(errorsq)))
 
 write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_RMSE.csv")
 
@@ -178,8 +181,9 @@ Output <- Output %>% mutate(microsim.init.sex = recode(microsim.init.sex,
                                                              levels=c("High school or less",
                                                                       "Some college",
                                                                       "College degree plus")),
-                            AlcCAT = factor(AlcCAT, levels=c("Lifetime abstainer",
-                                                             "Former drinker",
+                            AlcCAT = factor(AlcCAT, levels=c("Non-drinker",
+                              # "Lifetime abstainer",
+                              #                                "Former drinker",
                                                              "Low risk","Medium risk","High risk")))
 scaleFUN <- function(x) sprintf("%.2f", x)
 ggplot(data=subset(Output, microsim.init.sex=="Men"), aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
@@ -225,7 +229,7 @@ bestrate <- Output %>% filter(samplenum==final) %>%
 ggplot(data=bestrate, aes(x=year, y=value, colour=microsim.init.sex, linetype=name)) + 
   geom_line() +
   scale_linetype_manual(values=c("dashed","solid")) + 
-  facet_grid(cols=vars(microsim.init.education), rows=vars(AlcCAT), scales="free") + 
+  facet_grid(rows=vars(AlcCAT), cols=vars(microsim.init.education), scales="free") + 
   theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
   theme(legend.position="bottom",
         legend.title=element_blank()) + 
