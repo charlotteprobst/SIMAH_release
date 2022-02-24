@@ -20,6 +20,8 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 # CB working directory
 setwd("~/Google Drive/SIMAH Sheffield/")
 #setwd("~/Documents/Promotion/Mortality US")
+setwd("~/Google Drive/SIMAH Sheffield/")
+
 
 ## Load the functions that go with this code
 source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
