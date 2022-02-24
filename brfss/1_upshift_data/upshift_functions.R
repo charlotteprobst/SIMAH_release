@@ -11,7 +11,9 @@ return(data)
 }
 
 remove_missing <- function(data){
-  data <- data %>% dplyr::select(YEAR, State, final_sample_weight, race_eth,
+  data <- data %>% mutate(BMI = ifelse(BMI<=15, 15,
+                                       ifelse(BMI>=45, 45, BMI))) %>% 
+    dplyr::select(YEAR, State, final_sample_weight, race_eth,
                                  sex_recode, age_var,
                                  employment, education_summary,
                                  household_income,
