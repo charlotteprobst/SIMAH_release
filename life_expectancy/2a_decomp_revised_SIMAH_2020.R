@@ -24,9 +24,17 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #############################################################################################################
 #before starting with the decomposition, we have to get the mortality data into the right format
 
+# switch between types of ACS population counts 
+# (0) = raw ACS (ACS experimental weights), (1) = modelled ACS 
+ACS_type <- 1
+
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
+if(ACS_type==0){
 dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
+}else if(ACS_type==1){
+  dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020_predicted2020.csv")  
+}
 dPop <- filter(dPop, state == "USA")
 dPop <- select (dPop,-c(state))
 dPop_weights_raw <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
@@ -100,6 +108,7 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
 # first set up 2020 weights 
 # first aggregate by only year sex age_gp and edclass 
 
+if(ACS_type==0){
 dMort2020 <- dMort %>% filter(year==2020) %>% dplyr::select(-c(race,TPop))
 mortlist <- list()
 
@@ -121,6 +130,7 @@ mortlist[[i]] <- left_join(dMort2020, dPop_weights[[i]]) %>%
                        paste0("mx_",name))) %>% 
   dplyr::select(-value) %>% 
   pivot_wider(names_from=name, values_from=rate)
+}
 }
 
 # Calculate the rates for all relevant causes of death
@@ -198,9 +208,15 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
+if(ACS_type==0){
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
+}else if(ACS_type==1){
+  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
+  write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_ACSmodel.csv")
+}
 
+if(ACS_type==0){
 # now loop over and get the results for 2020 weights
 for(i in 1:length(mortlist)){
   mortlist[[i]]$group <- apply(mortlist[[i]][ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
@@ -309,6 +325,7 @@ for(i in 1:length(dPop_weights)){
     pivot_wider(names_from=name, values_from=rate) %>% 
     mutate(group = paste(sex, edclass, race, sep="_"))
 }
+}
 
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
@@ -384,10 +401,15 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
                                    levels = c( "LEHS", "SomeC", "College"))
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass, dResults_contrib$race), ]
-
+if(ACS_type==0){
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
 write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020.csv")
+}else if(ACS_type==1){
+  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+  write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020_ACSmodel.csv")  
+}
 
+if(ACS_type==0){
 dResults_contrib_list <- list()
 # now loop over and get 2020 weights version for race split 
 # for(k in 1:3){
@@ -459,3 +481,4 @@ for(i in 1:length(dResults_contrib_list)){
 
 dResults_weights <- do.call(rbind, dResults_contrib_list)
 write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACSweights.csv") )
+}
