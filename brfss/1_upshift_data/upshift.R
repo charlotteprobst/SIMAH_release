@@ -163,7 +163,8 @@ data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_va
                                drinkingstatus_detailed, gramsperday_upshifted_crquotient,
                                frequency_upshifted, quantity_per_occasion_upshifted,
                                hed) %>% 
-  rename(drinkingstatus = drinkingstatus_updated,
+  rename(
+    drinkingstatus = drinkingstatus_updated,
          gramsperday = gramsperday_upshifted_crquotient,
          frequency = frequency_upshifted,
          quantity_per_occasion = quantity_per_occasion_upshifted) %>% 

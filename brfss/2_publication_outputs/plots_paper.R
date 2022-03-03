@@ -15,7 +15,7 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_for_paper_analysis_reweighted.RDS")
+data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
 
 summary <- data %>% 
   # filter(State=="USA") %>% 
@@ -88,6 +88,11 @@ write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA2.csv", row.names=F)
 TableA1 <- TableA1 %>% filter(State=="USA") %>% ungroup() %>% dplyr::select(-State)
 write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA1.csv", row.names=F)
 
+coverage <- data %>% group_by(State, YEAR, sex_recode) %>% 
+  filter(YEAR<=2019) %>% 
+  mutate(sex_recode=ifelse(sex_recode=="Female","women","men")) %>% 
+  summarise(raw_brfss_gramsperday = mean())
+
 trendovertime <- data %>% filter(State=="USA") %>% group_by(YEAR) %>% 
   filter(gramsperday!=0) %>% 
   summarise(raw_gpd = mean(gramsperday),
@@ -120,11 +125,10 @@ Table2 <- trendovertime %>%
   pivot_wider(names_from=name, values_from=value) %>% 
   rename(raw_brfss = `BRFSS`, 
          adjusted_brfss = `adjusted BRFSS`,
-         raw_APC = APC, 
          adjusted_APC = `adjusted APC`,
          Year = YEAR) %>% 
-  dplyr::select(Year, raw_brfss, adjusted_brfss, raw_APC, adjusted_APC) %>% 
-  mutate(coverage_baseline = round(raw_brfss/raw_APC, digits=3),
+  dplyr::select(Year, raw_brfss, adjusted_brfss, adjusted_APC) %>% 
+  mutate(coverage_baseline = round(raw_brfss/adjusted_APC, digits=3),
          coverage_adjusted = round(adjusted_brfss / adjusted_APC,digits=3))
 
 write.csv(Table2, "SIMAH_workplace/brfss/paper/TableA4.csv", row.names=F)
@@ -161,9 +165,9 @@ ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1
                               2012, 2014, 2016, 2018),
                      expand=c(0,0)) +
   xlab("") + ylab("Grams alcohol per day") +
-  facet_grid(cols=vars(State))
+  facet_grid(rows=vars(State))
 
-ggsave("SIMAH_workplace/brfss/paper/FigureA2_states.png", dpi=500, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/brfss/paper/FigureA2_states.png", dpi=500, width=21, height=29, units="cm")
 
 trendovertime <- data %>% group_by(State,YEAR) %>% 
   filter(gramsperday!=0) %>% 
@@ -182,11 +186,10 @@ Table3 <- trendovertime %>%
   pivot_wider(names_from=name, values_from=value) %>% 
   rename(raw_brfss = `BRFSS`, 
          adjusted_brfss = `adjusted BRFSS`,
-         raw_APC = APC, 
          adjusted_APC = `adjusted APC`,
          Year = YEAR) %>% 
-  dplyr::select(State, Year, raw_brfss, adjusted_brfss, raw_APC, adjusted_APC) %>% 
-  mutate(coverage_baseline = round(raw_brfss/raw_APC, digits=3),
+  dplyr::select(State, Year, raw_brfss, adjusted_brfss, adjusted_APC) %>% 
+  mutate(coverage_baseline = round(raw_brfss/adjusted_APC, digits=3),
          coverage_adjusted = round(adjusted_brfss / adjusted_APC,digits=3))
 
 means <- Table3 %>% group_by(State) %>% 
@@ -196,72 +199,16 @@ means <- Table3 %>% group_by(State) %>%
             coverage_adjusted_sd = round(sd(coverage_adjusted),digits=3))
 write.csv(means, "SIMAH_workplace/brfss/paper/TableA5.csv", row.names=F)
 
-example <- data %>% filter(YEAR==1984) %>% filter(State=="USA") %>% 
-  dplyr::select(sex_recode, race_eth, age_var, drinkingstatus, drinkingstatus_detailed, alc_frequency, gramsperday, frequency_upshifted, 
-                gramsperday_upshifted_crquotient, quantity_per_occasion, quantity_per_occasion_upshifted) %>% sample_n(10)
 
-USquintiles <- data %>% filter(State=="USA")  %>% filter(alc_frequency!=0) %>% 
-  mutate(agecat = cut(age_var,
-                      breaks=c(0,34,64,100),
-                      labels=c("18-34","35-64","65+"))) %>% 
-  group_by(YEAR, sex_recode, agecat) %>% 
-    mutate(quintile = ntile(alc_frequency,5)) %>% ungroup() %>% 
-  group_by(YEAR, sex_recode, quintile, agecat) %>% 
-  summarise(meanfreqraw = mean(alc_frequency),
-            meanfreqshifted = mean(frequency_upshifted)) %>% mutate(quintile=as.factor(quintile)) %>%
-  # mutate(meanfreqraw = round(meanfreqraw), meanfreqshifted=round(meanfreqshifted)) %>% 
-  pivot_longer(cols=meanfreqraw:meanfreqshifted) %>% pivot_wider(names_from=quintile, values_from=value) %>% 
-  mutate(Q2Q1 = `2`/`1`, Q3Q1=`3`/`1`, Q4Q1 = `4`/`1`, Q5Q1 = `5`/`1`) %>% 
-  group_by(YEAR, sex_recode, agecat, name) %>% 
-  summarise(Q2Q1 = mean(Q2Q1),
-            Q3Q1 = mean(Q3Q1),
-            Q4Q1 = mean(Q4Q1),
-            Q5Q1 = mean(Q5Q1)) %>% pivot_longer(cols=Q2Q1:Q5Q1, names_to="quintile") %>% filter(name=="meanfreqraw")
+quintiles <- data %>% group_by(YEAR, State, sex_recode) %>% filter(gramsperday!=0) %>% 
+  mutate(quintile = ntile(gramsperday,5)) %>% 
+  ungroup() %>% 
+  group_by(YEAR, State, sex_recode, quintile) %>% 
+  summarise(mean_GPD_baseline = mean(gramsperday),
+            mean_GPD_adjusted = mean(gramsperday_upshifted_crquotient),
+            mean_freq_baseline = mean(alc_frequency),
+            mean_freq_adjusted = mean(frequency_upshifted))
 
-ggplot(data=USquintiles, aes(x=YEAR, y=value, colour=quintile)) + geom_line() + 
-  facet_grid(cols=vars(agecat), rows=vars(sex_recode)) +
-  xlab("") + ylab("Quintile ratio") + 
-  theme_bw() + 
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        text = element_text(family="serif",size=18)) +
-  scale_fill_brewer(palette="Set1") +
-  scale_x_continuous(breaks=c(1984, 1988, 1992, 1996, 
-                               2000, 2004, 2008, 
-                              2012, 2016),
-                     expand=c(0,0))
-
-ggsave("SIMAH_workplace/brfss/paper/frequency_quiintiles.png", dpi=500, width=33, height=19, units="cm")
-
-USquintiles <- data %>% filter(State=="USA")  %>% filter(gramsperday!=0) %>% 
-  mutate(agecat = cut(age_var,
-                      breaks=c(0,34,64,100),
-                      labels=c("18-34","35-64","65+"))) %>% 
-  group_by(YEAR, sex_recode, agecat) %>% 
-  mutate(quintile = ntile(gramsperday,5)) %>% ungroup() %>% 
-  group_by(YEAR, sex_recode, quintile, agecat) %>% 
-  summarise(meanquantraw = mean(gramsperday),
-            meanquantshifted = mean(gramsperday_upshifted_crquotient)) %>% mutate(quintile=as.factor(quintile)) %>%
-  # mutate(meanfreqraw = round(meanfreqraw), meanfreqshifted=round(meanfreqshifted)) %>% 
-  pivot_longer(cols=meanquantraw:meanquantshifted) %>% pivot_wider(names_from=quintile, values_from=value) %>% 
-  mutate(Q2Q1 = `2`/`1`, Q3Q1=`3`/`1`, Q4Q1 = `4`/`1`, Q5Q1 = `5`/`1`) %>% 
-  group_by(YEAR, sex_recode, agecat, name) %>% 
-  summarise(Q2Q1 = mean(Q2Q1),
-            Q3Q1 = mean(Q3Q1),
-            Q4Q1 = mean(Q4Q1),
-            Q5Q1 = mean(Q5Q1)) %>% pivot_longer(cols=Q2Q1:Q5Q1, names_to="quintile") %>% filter(name=="meanquantraw")
-
-ggplot(data=USquintiles, aes(x=YEAR, y=value, colour=quintile)) + geom_line() + 
-  facet_grid(cols=vars(agecat), rows=vars(sex_recode)) +
-  xlab("") + ylab("Quintile ratio") + 
-  theme_bw() + 
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        text = element_text(family="serif",size=18)) +
-  scale_fill_brewer(palette="Set1") +
-  scale_x_continuous(breaks=c(1984, 1988, 1992, 1996, 
-                              2000, 2004, 2008, 
-                              2012, 2016),
-                     expand=c(0,0))
-
-ggsave("SIMAH_workplace/brfss/paper/frequency_quiintiles.png", dpi=500, width=33, height=19, units="cm")
+ggplot(data=subset(quintiles, State=="USA"), aes(x=YEAR, y=value, colour=name)) + 
+  facet_grid(cols=vars(quintile), rows=vars(sex_recode)) +
+  geom_line()
