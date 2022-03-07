@@ -26,7 +26,15 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     income3 = case_when(fam_income %in% c(1,2,3,4,5,6) ~ 1, # split into evenly sized groups based on Wave 1 data
                         fam_income %in% c(7,8,9,10,11) ~ 2,
                         fam_income %in% c(12,13,14,15,16,17,18,19,20,21) ~ 3),
-    age3.factor = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    age3 = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    age7 = factor(case_when(age < 21 ~ "18-20",
+                            age >= 21 & age <26 ~ "21-25",
+                            age >= 26 & age <30 ~ "26-29",
+                            age >= 30 & age <40 ~ "30-39",
+                            age >= 40 & age <50 ~ "40-49",
+                            age >= 50 & age <65 ~ "50-64",
+                            age >= 65 ~ "65+")),
+    age7 = relevel(age7, ref="65+"), 
 
     # Calculate follow-up time and baseline version of age, sex, and edu
     intv_date = make_date(year=CYEAR, month=CMON, day=CDAY)) %>%
@@ -34,19 +42,17 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
   arrange(idnum, wave) %>%
   group_by(idnum) %>%
       mutate (prev_intv_date = lag(intv_date, 1),
-              age_wave1 = lag(age, 1),
-              female_wave1 = lag(female, 1),
-              edu3_wave1 = lag(edu3, 1),
-              race_wave1 = lag(race, 1),
+              female_w1 = lag(female, 1),
+              age_w1 = lag(age, 1),
+              race_w1 = lag(race, 1),
               drinking_stat_wave1 = lag(drinking_stat, 1),
               weight_wave2 = lead(weight, 1)) %>%
   ungroup() %>%
   mutate (years = as.numeric(prev_intv_date %--% intv_date /dyears(1)),
           years = if_else(wave==1, 0, years),
-          age_wave1 = if_else(wave==1,age, age_wave1),
-          female_wave1 = if_else(wave==1,female, female_wave1),
-          edu3_wave1 = if_else(wave==1, edu3, edu3_wave1),
-          race_wave1 = if_else(wave==1, race, race_wave1),
+          female_w1 = if_else(wave==1,female, female_w1),
+          age_w1 = if_else(wave==1,age, age_w1),
+          race_w1 = if_else(wave==1, race, race_w1),
           drinking_stat_wave1 = if_else(wave==1, drinking_stat, drinking_stat_wave1),
           weight_wave2 = if_else(wave==2, weight, weight_wave2),
 
@@ -148,7 +154,7 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
       
       alc5 = recode(alc6, `6`=5),       # merge high-risk and very-high-risk categories
       alc4 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4), # merge absteiners/former and merge high/very-high categories
-
+      alc5_v2 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=5), # merge absteiners/former categories
          
     # Calculate heavy episodic drinking (HED)
     hed = case_when(
@@ -167,13 +173,10 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     hed = ifelse(alc5 %in% c(1,2), 1, hed)) #Non-drinker
 
 
-  
   # Check  
   # select(nesarc, idnum, wave, intv_date, prev_intv_date, years, age_diff) %>% view()
-  # select(nesarc, idnum, wave, age, age_wave1) %>% view()
-  # select(nesarc, idnum, wave, female, female_wave1) %>% view()
-  # select(nesarc, idnum, wave, edu3, edu3_wave1) %>% view()
-  # select(nesarc, idnum, wave, race, race_wave1) %>% view()
+  # select(nesarc, idnum, wave, female, female_w1) %>% view()
+  # select(nesarc, idnum, wave, race, race_w1) %>% view()
   # count(nesarc, marital_stat, married)
   # count(nesarc, edu, edu3)
   # view(count(nesarc, fam_income, income3))
@@ -211,8 +214,8 @@ nesarc <- nesarc %>%
   arrange(idnum, wave) %>% 
   
   # Identify the variables to keep
-  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_wave1, age3.factor, female, female_wave1, race, race_wave1, 
-    married, edu3, edu3_wave1, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc4, hed) %>% 
+  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_w1, age3, age7, female, female_w1, race, race_w1, 
+    married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed) %>% 
   
   # remove those with missing data 
   group_by(idnum) %>%
@@ -227,21 +230,21 @@ nesarc <- nesarc %>%
 
 nesarc <- nesarc %>%
   mutate (
-    alc6.factor = factor(alc6, levels=c(1,2,3,4,5,6), labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category IV")),
-    alc5.factor = factor(alc5, levels=c(1,2,3,4,5), labels=c("Abstainer", "Former", "Category I", "Category II", "Category III")),
-    alc4.factor = factor(alc4, levels=c(1,2,3,4), labels=c("Non-drinker", "Category I", "Category II", "Category III")),
+    alc6.factor        = factor(alc6, levels=c(1,2,3,4,5,6), labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category IV")),
+    alc5.factor        = factor(alc5, levels=c(1,2,3,4,5), labels=c("Abstainer", "Former", "Category I", "Category II", "Category III")),
+    alc5_v2.factor     = factor(alc5_v2, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Category I", "Category II", "Category III", "Category IV")),
+    alc4.factor        = factor(alc4, levels=c(1,2,3,4), labels=c("Non-drinker", "Category I", "Category II", "Category III")),
     alc4_nesarc.factor = factor(alc4_nesarc, levels=c(1,2,3, 4), labels=c("Non-drinkers", "Light drinker", "Moderate drinker", "Heavy drinker")),
-    hed.factor = factor(hed, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED")),
-    female.factor = factor(female, levels=c(0,1), labels=c("Men", "Women")),
-    female_wave1.factor = factor(female_wave1, levels=c(0,1), labels=c("Men", "Women")),
-    race.factor = factor(race, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")),
-    race_wave1.factor = factor(race_wave1, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")),
-    married.factor = factor(married, levels=c(1,0), labels=c("Married/cohab.", "Single")),
-    edu3.factor = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
-    edu3_wave1.factor = factor(edu3_wave1, levels=c(3,1,2), labels=c("High", "Low", "Med")),
-    income3.factor = factor(income3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
-    wave.factor = factor(wave, levels=c(1,2), labels=c("Wave 1", "Wave 2")),
-    lost.factor = factor(lost, levels=c(0,1), labels=c("Completed Follow-up", "Lost to Follow-up")))
+    hed.factor         = factor(hed, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED")),
+    female.factor      = factor(female, levels=c(0,1), labels=c("Men", "Women")),
+    female_w1          = factor(female_w1, levels=c(0,1), labels=c("Men", "Women")), # Sex at wave 1
+    race.factor        = factor(race, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")),
+    race_w1            = factor(race_w1, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")), # race at wave 1
+    married.factor     = factor(married, levels=c(1,0), labels=c("Married/cohab.", "Single")),
+    edu3               = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
+    income3.factor     = factor(income3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
+    wave.factor        = factor(wave, levels=c(1,2), labels=c("Wave 1", "Wave 2")),
+    lost.factor        = factor(lost, levels=c(0,1), labels=c("Completed Follow-up", "Lost to Follow-up")))
 
 
     
@@ -290,7 +293,14 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     edu3 = case_when(NEDUC %in% c(1,2,3,4,5,6,7,8,9) ~ 1,
                      NEDUC %in% c(10,11) ~ 2,
                      NEDUC %in% c(12,13,14) ~ 3),
-    age3.factor = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    age3 = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    age7 = factor(case_when(age < 21 ~ "18-20",
+                            age >= 21 & age <26 ~ "21-25",
+                            age >= 26 & age <30 ~ "26-29",
+                            age >= 30 & age <40 ~ "30-39",
+                            age >= 40 & age <50 ~ "40-49",
+                            age >= 50 & age <65 ~ "50-64",
+                            age >= 65 ~ "65+")),
     married = recode(NMARITAL, `1`= 1, `2`=1, `3`=0, `4`=0, `5`=0, `6`=0),
     
     # Calculating alcohol intake:
@@ -372,6 +382,7 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     
     alc5 = recode(alc6, `6`=5),       # merge high-risk and very-high-risk categories
     alc4 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4), # merge absteiners/former and merge high/very-high categories
+    alc5_v2 = recode(alc6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=5), # merge absteiners/former categories
     
     
     # Calculate heavy episodic drinking (HED)
@@ -397,8 +408,8 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
 nesarc3 <- nesarc3 %>%
   
   # Identify the variables to keep
-  select(idnum, weight, age, age3.factor, female, race, married, edu3, 
-         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc4, hed) %>%
+  select(idnum, weight, age, age3, age7, female, race, married, edu3, 
+         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed) %>%
   
   # remove those with missing data 
   filter(!is.na(alc5)) %>%   # 88 observations removed; n=36,221
@@ -408,14 +419,15 @@ nesarc3 <- nesarc3 %>%
 # label values (first listed category is the reference)
 nesarc3 <- nesarc3 %>%
   mutate (
-    alc6.factor = factor(alc6, levels=c(1,2,3,4,5,6), labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category Iv")),
-    alc5.factor = factor(alc5, levels=c(1,2,3,4,5), labels=c("Abstainer", "Former", "Category I", "Category II", "Category III")),
-    alc4.factor = factor(alc4, levels=c(1,2,3,4), labels=c("Non-drinker", "Category I", "Category II", "Category III")),
-    hed.factor = factor(hed, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED")),
-    female.factor = factor(female, levels=c(0,1), labels=c("Men", "Women")),
-    race.factor = factor(race, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")),
+    alc6.factor    = factor(alc6, levels=c(1,2,3,4,5,6), labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category IV")),
+    alc5.factor    = factor(alc5, levels=c(1,2,3,4,5), labels=c("Abstainer", "Former", "Category I", "Category II", "Category III")),
+    alc5_v2.factor = factor(alc5_v2, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Category I", "Category II", "Category III", "Category IV")),
+    alc4.factor    = factor(alc4, levels=c(1,2,3,4), labels=c("Non-drinker", "Category I", "Category II", "Category III")),
+    hed.factor     = factor(hed, levels=c(1,2,3,4,5), labels=c("Non-drinker", "Drinker, no HED", "Occasional HED", "Monthly HED", "Weekly HED")),
+    female.factor  = factor(female, levels=c(0,1), labels=c("Men", "Women")),
+    race.factor    = factor(race, levels=c(1,2,3,4), labels=c("White, non-Hispanic", "Black, non-Hispanic", "Hispanic", "Other, non-Hispanic")),
     married.factor = factor(married, levels=c(1,0), labels=c("Married/cohab.", "Single")),
-    edu3.factor = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")))
+    edu3.factor    = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")))
 
 
 nesarc3 %>% select(weight) %>% skim()

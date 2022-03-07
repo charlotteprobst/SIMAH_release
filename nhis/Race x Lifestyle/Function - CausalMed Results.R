@@ -1,5 +1,5 @@
 
-
+# Race x Lifestyle Differential Vulnerability & Exposure Project
 ## Functions for Causal Mediation 
 
 

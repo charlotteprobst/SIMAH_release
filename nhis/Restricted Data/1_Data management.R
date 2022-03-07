@@ -13,8 +13,8 @@ library(survey)     # to accomodate survey weights
 data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
 data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
  
-# NOTE: the variable names have been structured such that those ending in a number are factors, with the 
-# number indicating the number of categories
+# NOTE: the variable names have been structured such that those ending in a number are factors,  
+# where the number indicates the number of categories
 
 # Load data and recode/create variables -------------------------------------------------------------------------
 nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>% 

@@ -1,5 +1,5 @@
 
-# SES x Lifestyle Differential Vulnerability & Exposure Project
+# Race x Lifestyle Differential Vulnerability & Exposure Project
 # Assumptions of Aalen Models File
 
 

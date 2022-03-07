@@ -1,5 +1,5 @@
 
-# SES x Lifestyle Differential Vulnerability & Exposure Project
+# Race x Lifestyle Differential Vulnerability & Exposure Project
 # Objective 2: Causal Mediation File 
 
 
@@ -16,16 +16,16 @@ memory.limit(size=1e+13)
 
     #Personal computer
 
-    # data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"            # Location of data
-    # output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/CausMed/"  # Location of model assumptions
-    # source("Function - Format Results.R")
-    # source("Function - CausalMed Results.R")
+    data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"            # Location of data
+    output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/CausMed/"  # Location of model assumptions
+    source("Function - Format Results.R")
+    source("Function - CausalMed Results.R")
     
     # HCC Server:
-    setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
-    data    <- "Data/"
-    output  <- "Output/"
-    source("Function - CausalMed Results.R")
+    # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
+    # data    <- "Data/"
+    # output  <- "Output/"
+    # source("Function - CausalMed Results.R")
 
 
 # Load data
@@ -35,7 +35,7 @@ nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 
 
-# OBJECTIVE 2: Causal Mediation
+# Causal Mediation
 
 # The causal mediation analyses involves four steps:
 # 1) Fit separate multinomial logistic regressions with each mediator (M1, M2, M3, and M4) as the outcome.
@@ -194,9 +194,11 @@ causal_mediation_prep <-function(data) {
       
       cat("Step 3 complete (final data complete)", "\n")  # progress indicator
       
-      return(newMyData)
+      newMyData <- newMyData %>%
+        dplyr::select(ID, bl_age, end_age, allcause_death, A.race, race_M1.alc, race_M2.smk, race_M3.bmi, race_M4.phy, married, edu, srvy_yr, weightM)
       
-
+      
+      return(newMyData)
       
 }
     
@@ -260,7 +262,7 @@ getTE_IE_NotRobust(CMed_model, c(3,6,9,12,15,44,53,62,71), c(6,9,12,15,44,53,62,
 # Run Analyses, MEN ----------------------------------------------------------------------------------------------------------------
 
 # Load data
-expandedData <- readRDS(file.path(output, "expandedData_male.rds"))
+expandedData <- readRDS(file.path(output, "expandedData_male.rds")) 
 
 hist(expandedData$weightM)
 

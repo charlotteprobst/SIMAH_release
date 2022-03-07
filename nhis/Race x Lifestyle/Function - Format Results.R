@@ -1,5 +1,5 @@
 
-
+# Race x Lifestyle Differential Vulnerability & Exposure Project
 ## Functions for aalen interaction models to extract formatted results
 
 # Function to extract results from Aalen model, multiple by 10,000py and round/format results
