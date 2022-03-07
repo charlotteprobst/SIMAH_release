@@ -35,7 +35,7 @@ dMort$edclass <- as.factor(dMort$edclass)
 dMort$IHDmort <- dMort$IHDmort + dMort$ISTRmort
 
 #  Delete variables that are no longer needed 
-dMort <- dMort %>% select (-c(ISTRmort,))
+dMort <- dMort %>% select (-c(ISTRmort,ISTRrate))
 
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
@@ -49,11 +49,11 @@ v.totals <- c("Tmort", "LVDCmort", "PANCmort", "DMmort", "IHDmort", "HSTRmort",
               "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort", 
               "CANmort", "LRImort", "RESTmort")
 
-## these are the original rate variable names. You could also introduce the "mx_" 
-## nomenclature here 
-v.rates <- c("Trate", "mx_LVDCrate", "mx_PANCrate", "mx_DMrate", "mx_IHDrate", "mx_HSTRrate", 
-             "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
-             "mx_IJrate", "mx_CANrate", "mx_LRIrate", "mx_RESTrate") 
+#define variable names
+v.rates <- c("Trate", "mx_LVDCrate", "mx_PANCrate", "mx_DMrate", "mx_IHDrate", 
+             "mx_HSTRrate", "mx_HYPHDrate", "mx_AUDrate", 
+             "mx_UIJrate", "mx_MVACCrate", "mx_IJrate", 
+             "mx_CANrate", "mx_LRIrate", "mx_RESTrate") 
 
 
 #select mortality rates of interest
