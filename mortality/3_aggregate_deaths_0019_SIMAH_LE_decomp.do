@@ -72,7 +72,8 @@ drop uij_temp
 gen aud = 1 if inrange(icd10, "F10", "F109") | inlist(icd10, "G312", "G312")  ///
 	| inrange(icd10, "G721", "G721") | inrange(icd10, "Q860", "Q860") ///
 	| inrange(icd10, "R780", "R780") ///
-	| inrange(icd10, "X45", "X459") | inrange(icd10, "Y15", "Y159") 
+	| inrange(icd10, "X45", "X459") | inrange(icd10, "Y15", "Y159") |  ///
+	icd10 == "I426" | icd10 == "K292" | icd10 == "G621"
 
 
 
@@ -132,7 +133,7 @@ generate hyphd = 1 if inrange(icd10, "I110", "I119")
   //Pancreatic cancer C25
   gen pancreatic_cancer = 1 if inrange(icd10, "C250", "C259")
   //Colorectal cancer
-  //Malignant neoplsm of colon C18, malignant neoplasm of rectogsigmoid junction C19 ///
+  //Malignant neoplsm of colon C18, malignant neoplasm of rectogsigmoid junction C19 
   //and malignant neoplsm of rectum C20, and Malignant neoplasm of anus and anal canal C21
   //C18.0 to C21.8 to include all colon and rectum cancers
   gen colorectal_cancer = 1 if inrange(icd10, "C180", "C218") 
@@ -142,17 +143,23 @@ generate hyphd = 1 if inrange(icd10, "I110", "I119")
   gen larynx_cancer = 1 if inrange(icd10, "C320", "C329")
   //Liver cancer C22
   gen liver_cancer = 1 if inrange(icd10, "C220", "C229")
-  // Should include C00 to C14 for Lip, Oral cavity and pharynx cancer 
-  gen oral_cancer = 1 if inrange(icd10, "C00", "C149")
+  // Should include C00 to C08 for Lip and Oral cavity; and C09-C10, C12-C14 for pharynx cancer 
+  gen oral_cancer = 1 if inrange(icd10, "C00", "C109") | inrange(icd10, "C12", "C149")
   //combine all cancer types above
   gen cancer = 1 if inlist(1,breast_cancer,pancreatic_cancer,colorectal_cancer,oesophageal_cancer, ///
     larynx_cancer,liver_cancer,oral_cancer)
   drop breast_cancer-oral_cancer	
 
-// Generate rest category
+// Generate Lower respiratory infections: pneumonia A48.1, A70, J09–J15.8, 
+// J16–J16.9, J20–J21.9, P23.0–P23.4 
+gen lri = 1 if icd10 == "A481" | icd10 == "A70" | inrange(icd10, "J09", "J158") | ///
+  inrange(icd10, "J16", "J169") | inrange(icd10, "J20", "J219") | ///
+  inrange(icd10, "P230", "P234") 
+
+  // Generate rest category
 gen rest = .
 replace rest = 1 if (lvdc == . & panc == . & dm == . & ihd == . & istr == . & hstr == . & hyphd == . ///
-	& aud == . & uij == . & mvacc == . & ij == . & cancer == .)
+	& aud == . & uij == . & mvacc == . & ij == . & cancer == . & lri == .)
 
 
 // Update excel worksheet to include the variable names and the codes assigned
@@ -166,7 +173,7 @@ save "3_out data/1_allethn_mortbycause_0019_LE_decomp.dta", replace
 use "3_out data/1_allethn_mortbycause_0019_LE_decomp.dta", clear
 
 // Test that all deaths have been assigned exactly once
-egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer)
+egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer lri)
 tab test
 drop test	
 
@@ -176,7 +183,7 @@ drop test
 
 gen one=1
 
-egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer rest one)
+egen test = rowtotal(lvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer lri rest one)
 tab test
 drop test	
 
@@ -198,6 +205,8 @@ bysort age_gp sex edclass race year: egen MVACCmort = total(mvacc)
 bysort age_gp sex edclass race year: egen IJmort = total(ij)
 bysort age_gp sex edclass race year: egen CANmort = total(cancer)
 
+bysort age_gp sex edclass race year: egen LRImort = total(lri)
+
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
@@ -210,10 +219,11 @@ save "3_out data/2_allethn_sumCOD_0019_LE_decomp.dta", replace
 use "3_out data/2_allethn_sumCOD_0019_LE_decomp.dta", clear
 
 keep year sex age_gp edclass race *mort
-reshape wide Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, i(year age_gp sex race) j(edclass)
+reshape wide Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort /// 
+AUDmort UIJmort MVACCmort IJmort CANmort LRImort RESTmort, i(year age_gp sex race) j(edclass)
 sum *mort99
 
-foreach i in T LVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
+foreach i in T LVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN LRI REST {
 gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 	replace `i'mort1 = `i'mort1 + (`i'mort1/MORT`i') * `i'mort99 if MORT`i' != 0 
 	replace `i'mort2 = `i'mort2 + (`i'mort2/MORT`i') * `i'mort99 if MORT`i' != 0 
@@ -222,8 +232,9 @@ gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 
 keep year sex race age_gp *mort1 *mort2 *mort3   
 
-reshape long Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
+reshape long Tmort LVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort ///
+AUDmort UIJmort MVACCmort IJmort CANmort LRImort RESTmort, ///
  i(year age_gp sex race) j(edclass)
 
 save "3_out data/allethn_sumCOD_0019_LE_decomp.dta", replace
-outsheet using "${dir}/mortality/3_out data/allethn_sumCOD_0019_LE_decomp.csv" , comma replace
+outsheet using "3_out data/allethn_sumCOD_0019_LE_decomp.csv" , comma replace
