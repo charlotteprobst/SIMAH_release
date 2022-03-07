@@ -9,7 +9,10 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 dCont <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_2000_2018CPS_v4.csv")
 
-dCont <- dCont %>% mutate(AAF= LVDCmort + AUDmort + PANCmort + UIJmort + MVACCmort + IJmort, 
+dCont <- dCont %>% mutate(AAF100= AUDmort + LVDCmort,
+                          AAF20=  PANCmort + UIJmort + MVACCmort + IJmort,
+                          AAF0= IHDmort + HYPHDmort + HSTRmort +  
+                             LRImort + CANmort + DMmort, 
                           TOTAL = AUDmort + LVDCmort + PANCmort + 
                              UIJmort + MVACCmort + IJmort + 
                              IHDmort + HYPHDmort + HSTRmort +  
@@ -22,9 +25,17 @@ keyDat <- data.frame(start_year = c(2000:2017),
 dat5year <- dCont %>%
       left_join(., keyDat) %>% 
       group_by(sex, Range = range) %>%
-      summarise(AAF.College = sum(AAF.College),
-                AAF.SomeC = sum(AAF.SomeC),
-                AAF.LEHS = sum(AAF.LEHS),
+      summarise(AAF100.College = sum(AAF100.College),
+                AAF100.SomeC = sum(AAF100.SomeC),
+                AAF100.LEHS = sum(AAF100.LEHS),
+                
+                AAF20.College = sum(AAF20.College),
+                AAF20.SomeC = sum(AAF20.SomeC),
+                AAF20.LEHS = sum(AAF20.LEHS),
+                
+                AAF0.College = sum(AAF0.College),
+                AAF0.SomeC = sum(AAF0.SomeC),
+                AAF0.LEHS = sum(AAF0.LEHS),
                 
                 AUDmort.College = sum(AUDmort.College),
                 AUDmort.SomeC = sum(AUDmort.SomeC),
@@ -88,7 +99,7 @@ dat5year <- dat5year %>%
                             `2` = "2005-2010",
                             `3` = "2010-2015", 
                             `4` = "2015-2018"))
-cod.vec <- c("TOTAL", "AAF", "AUDmort", "LVDCmort", "PANCmort", 
+cod.vec <- c("TOTAL", "AAF100", "AAF20", "AAF0", "AUDmort", "LVDCmort", "PANCmort", 
              "IJmort", "MVACCmort", "UIJmort",
              "IHDmort", "HYPHDmort", "HSTRmort",
              "LRImort", "CANmort", "DMmort", "RESTmort")
@@ -106,7 +117,6 @@ dat5year <- dat5year[, !grepl("College", names(dat5year)) &
                         !grepl("LEHS", names(dat5year))] 
 
 write.csv(dat5year, "SIMAH_workplace/life_expectancy/2_out_data/3_contribution to change_5year.csv")
-#dat5year <- dat5year[dat5year$TOTALdiff_3 > 0.5,]
 
 v.select <- names(dat5year)[grepl("contrib", names(dat5year))]
 group1gathered <- dat5year %>% select(sex, Years, v.select)
@@ -115,7 +125,9 @@ group1gathered <- gather(data = group1gathered, key = "key", value = "value",
                          -sex, -Years )
 group1gathered <- separate(group1gathered, col = key, sep = "_", into = c("Cause_of_death", "SES"))
 group1gathered$Cause_of_death <- as.factor(group1gathered$Cause_of_death)
-levels(group1gathered$Cause_of_death) <- list("AAF" = "AAFcontrib",
+levels(group1gathered$Cause_of_death) <- list("AAF 50% to 100%" = "AAF100contrib",
+                                              "AAF 20% to <50%" = "AAF20contrib",
+                                              "AAF <20%" = "AAF0contrib",
                                               "Alcohol use disorder" = "AUDmortcontrib", 
                                               "Liver disease & cirrhosis" = "LVDCmortcontrib", 
                                               "Pancreatitis" = "PANCmortcontrib",
@@ -130,30 +142,7 @@ levels(group1gathered$Cause_of_death) <- list("AAF" = "AAFcontrib",
                                               "Diabetes mellitus"= "DMmortcontrib",
                                               "Rest" = "RESTmortcontrib")
 
-color.vec <- c("#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E", "blue", "red", "yellow", "black")
-
-group1gathered <- group1gathered[group1gathered$Cause_of_death != "Rest" & 
-                                    group1gathered$Cause_of_death != "AAF"
-                                 & group1gathered$SES == 3 ,]
-
-## 
-ggplot(data = group1gathered, aes(y = value, x = Years, fill = Cause_of_death)) +
-   geom_bar(position = "stack", stat = "identity", width = 0.8) +
-   #facet_grid(cols = vars(Sex), rows = vars(SES),  scales = "free") +
-   facet_grid(rows = vars(sex),  scales = "free") +
-   theme_light() +
-   theme(strip.background = element_rect(fill = "white")) +
-   theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
-   #theme(legend.position = "right") +
-   scale_fill_manual("Cause of death", values = color.vec)+ 
-   ylab("Percent contribution to increases in inequality in life expectancy") +
-   #xlab("Years") +
-   geom_hline(aes(yintercept=0)) + 
-   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2_LE contribution_5year.jpeg", dpi=600, width=23, height=15, units="cm")
-
-write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/3_contribution to change_5year_long.csv")
+write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/Percent contribution to change_5year_long.csv")
 
 ################## Now do the same for the absolute contribution
 v.select <- names(dat5year)[grepl("diff", names(dat5year))]
@@ -169,22 +158,33 @@ levels(group1gathered$SES) <- list("Middle vs. high education" = 2, "Low vs. hig
                                               
 group1gathered$Cause_of_death <- as.factor(group1gathered$Cause_of_death)
 levels(group1gathered$Cause_of_death) <- list("Rest" = "RESTmortdiff",
-                                              "AAF" = "AAFdiff",
+                                              "AAF 50% to 100%" = "AAF100diff",
+                                              "AAF 20% to <50%" = "AAF20diff",
+                                              "AAF <20%" = "AAF0diff",
                                               "Alcohol use disorder" = "AUDmortdiff", 
                                               "Liver disease & cirrhosis" = "LVDCmortdiff", 
+                                              "Pancreatitis" = "PANCmortdiff",
                                               "Suicide" = "IJmortdiff",
                                               "Motor vehicle accident" = "MVACCmortdiff", 
                                               "Unintentional injury*" = "UIJmortdiff",   
                                               "IHD & ischemic stroke" = "IHDmortdiff", 
                                               "Hypertensive heart disease" = "HYPHDmortdiff", 
+                                              "Hemorrhagic stroke" = "HSTRmortdiff",
+                                              "Cancer" = "CANmortdiff",
+                                              "LRI" = "LRImortdiff",
                                               "Diabetes mellitus"= "DMmortdiff",
                                               "Total" = "TOTALdiff")
+write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/absolute contribution to change_5year_long.csv")
 
-color.vec <- c("#D3D3D3", "#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E")
+color.vec <- c("grey", "#001219", "#005F73", "#0A9396", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E", "blue", "red", "yellow", "black", "green")
 
-group1gathered <- group1gathered[group1gathered$Cause_of_death != "AAF" &
-                                    group1gathered$Cause_of_death != "Total",]
+group1gathered
+group1gathered <- group1gathered[group1gathered$Cause_of_death == "AAF 50% to 100%" |
+                                    group1gathered$Cause_of_death == "AAF 20% to <50%" |
+                                    group1gathered$Cause_of_death == "AAF <20%"|
+                                    group1gathered$Cause_of_death == "Rest",]
 
+write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/exhibit contribution to inequality data.csv")
 ## 
 ggplot(data = group1gathered, aes(y = value, x = Years, fill = Cause_of_death)) +
    geom_bar(position = "stack", stat = "identity", width = 0.8) +
@@ -198,5 +198,4 @@ ggplot(data = group1gathered, aes(y = value, x = Years, fill = Cause_of_death)) 
    #xlab("Years") +
    geom_hline(aes(yintercept=0)) + 
    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
 ggsave("SIMAH_workplace/life_expectancy/3_graphs/3_Contribution to inequality.jpeg", dpi=600, width=23, height=15, units="cm")
