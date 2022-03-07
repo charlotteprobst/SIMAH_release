@@ -23,7 +23,7 @@
 #                                                                         ifelse(!is.na(match(SelectedState,division9)),"division9",
 #                                                                                NA)))))))))
 if(model=="SIMAH"){
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>% 
   filter(age_var<=79) %>% filter(YEAR>=2000) %>% 
   mutate(microsim.init.race = recode(race_eth,"White"="WHI", 
                                      "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
@@ -41,9 +41,9 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
                 microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                 microsim.init.alc.gpd, formerdrinker, microsim.init.income, agecat)
 }else if(model=="CASCADE"){
-  brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
-    filter(age_var<=80) %>% filter(State==SelectedState) %>% 
-    mutate(microsim.init.race = recode(race_eth,"White"="WHI", 
+  brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
+    filter(age_var<=80) %>% filter(State==SelectedState) %>%
+    mutate(microsim.init.race = recode(race_eth,"White"="WHI",
                                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
            microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),
            microsim.init.education = education_summary,
@@ -52,40 +52,40 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
                         labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
            formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0),
            microsim.init.BMI = ifelse(BMI<15, 15,
-                                      ifelse(BMI>50, 50, BMI))) %>% 
-    rename(microsim.init.age = age_var, 
+                                      ifelse(BMI>50, 50, BMI))) %>%
+    rename(microsim.init.age = age_var,
            microsim.init.drinkingstatus=drinkingstatus,
            microsim.init.alc.gpd=gramsperday,
-           microsim.init.income = household_income) %>% 
+           microsim.init.income = household_income) %>%
     dplyr::select(YEAR, State, region, microsim.init.race, microsim.init.age,
                   microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                   microsim.init.alc.gpd, formerdrinker, microsim.init.income, agecat,
                   microsim.init.BMI)
   # 
-  # summary <- brfssorig %>% ungroup() %>% 
+  # summary <- brfssorig %>% ungroup() %>%
   #   mutate(agecatnew = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
   #                          labels=c("18","19-24","25-29","30-34","35-39",
   #                                   "40-44","45-49","50-54","55-59",
   #                                   "60-64","65-69","70-74","75-79")),
   #          cat = paste(microsim.init.sex, agecatnew, microsim.init.race, sep="_")) %>%
   #   group_by(YEAR, cat) %>% tally() %>% mutate(tosample = ifelse(n*0.2<100, n, n*0.2)) %>% dplyr::select(-n)
-  # 
-  # 
-  # brfss <- brfssorig %>% ungroup() %>% 
+  # # 
+  # # 
+  # brfss <- brfssorig %>% ungroup() %>%
   #   mutate(agecatnew = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
   #                                                         labels=c("18","19-24","25-29","30-34","35-39",
   #                                                                  "40-44","45-49","50-54","55-59",
   #                                                                  "60-64","65-69","70-74","75-79")),
-  #                                         cat = paste(microsim.init.sex, agecatnew, microsim.init.race, sep="_")) 
+  #                                         cat = paste(microsim.init.sex, agecatnew, microsim.init.race, sep="_"))
   # 
   # 
   # brfss <- left_join(brfss, summary) %>%
   #   group_by(YEAR, cat) %>% sample_n(tosample,replace=F) %>% ungroup() %>% dplyr::select(-c(agecatnew, cat)) %>%
   #   mutate(microsim.init.id = 1:nrow(.))
-  # 
+  # # 
   # source("SIMAH_code/microsim/2_run_microsimulation/1_functions/formerdrinkers_history.R")
-  # brfss <- formerdrinkers_history(brfss)
-  # 
+  # brfss <- formerdrinkers_history(brfss, lhsSample[[1]])
+  # # 
   # agesbrfss <- brfss %>% dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd) %>%
   #   mutate(yearstoadd = microsim.init.age-17)
   # agesbrfss <- expandRows(agesbrfss, "yearstoadd", drop=FALSE)
@@ -116,12 +116,12 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
   # agesbrfss <- read_rds("SIMAH_workplace/microsim/1_input_data/agesbrfss.RDS")
   # brfss <- read_rds("SIMAH_workplace/microsim/1_input_data/brfss_subset.RDS")
   # source("SIMAH_code/microsim/2_run_microsimulation/1_functions/HistoryFunction.R")
-  # history <- HistoryFunction(brfss,agesbrfss, lhsSample[[samplenum]])
-  # brfss <- left_join(brfss,history, by=c("microsim.init.id")) %>% 
-  #   mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" & 
+  # history <- HistoryFunction(brfss,agesbrfss, lhsSample[[1]])
+  # brfss <- left_join(brfss,history, by=c("microsim.init.id")) %>%
+  #   mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" &
   #                                    grams_10years>= 100000, 1,
-  #                                  ifelse(formerdrinker==0 & microsim.init.sex=="f" & 
-  #                                           grams_10years>=100000*0.66, 1, 
+  #                                  ifelse(formerdrinker==0 & microsim.init.sex=="f" &
+  #                                           grams_10years>=100000*0.66, 1,
   #                                         ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
   #         grams_10years = ifelse(formerdrinker==1, former_history,
   #                                 grams_10years)) %>% dplyr::select(-former_history)

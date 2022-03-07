@@ -39,8 +39,6 @@ deathrates <- deathrates %>% filter(State==SelectedState) %>%
 # assuming equal death rates for each year group 
 
 # READ IN CIRRHOSIS DEATHS - TO WORK REFERENCE RATE AND REMOVE CIRRHOSIS DEATHS FROM THE TOTAL DEATHS
-cirrhosis <- 1
-mortality <- 1
 if(cirrhosis==1 & mortality==1){
 cirrhosisdata <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_deaths_CDC_2.csv")[c(1:3,35:48)]
 cirrhosisdata <- cirrhosisdata %>% mutate(CDC..80 = CDC..80/10,
@@ -79,4 +77,25 @@ deathrates <- deathrates %>% dplyr::select(Year, cat, Count)
 # cirrhosisdeaths1984$count <- cirrhosisdeaths1984$count*100
 # cirrhosisdeaths1984 <- cirrhosisdeaths1984 %>% separate(cat, into=c("age","cat"), sep="_") %>% 
 #   group_by(cat) %>% mutate(count=sum(count))
+}else if(cirrhosis==1 & mortality==0){
+  cirrhosisdata <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_hosp_Output.csv") %>% 
+    dplyr::select(c(year,location,sex_id,tups15to19:tupsplus80)) %>% 
+    filter(location==SelectedState) %>% 
+    mutate(tupsplus80 = tupsplus80/10) %>% 
+    pivot_longer(cols=tups15to19:tupsplus80) %>% 
+    mutate(name=gsub("tups","",name),
+           agecat = ifelse(name=="15to19","15-19",
+                           ifelse(name=="20to24","20-24",
+                           ifelse(name=="25to29"|name=="30to34","25-34",
+                                  ifelse(name=="35to39"|name=="40to44","35-44",
+                                         ifelse(name=="45to49"|name=="50to54","45-54",
+                                                ifelse(name=="55to59"|name=="60to64","55-64",
+                                                       ifelse(name=="65to69"|name=="70to74","65-74","75.")))))))) %>% 
+    group_by(year, sex_id, agecat) %>% summarise(value=sum(value)) %>% 
+    mutate(value=value*proportion,
+           count=ifelse(agecat=="15-19",value/5*2,value),
+           sex = ifelse(sex_id=="female","f","m"),
+           cat=paste(agecat, sex, sep="_")) %>% rename(Year=year) %>% ungroup() %>% dplyr::select(Year, cat, count)
+  cirrhosisdeaths1984 <- cirrhosisdata %>% filter(Year==1984) %>% 
+    mutate(count=round(count*100))
 }

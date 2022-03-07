@@ -7,10 +7,13 @@ library("data.table")
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
 
-dCont <- read.csv("LE/3_out data/dResults_contrib_2000_2018CPS_v3.csv")
+dCont <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_2000_2018CPS_v4.csv")
 
-dCont <- dCont %>% mutate(AAF= LVDCmort + AUDmort + UIJmort + MVACCmort + IJmort, 
-                          TOTAL = LVDCmort + DMmort + IHDmort + HYPHDmort + AUDmort + UIJmort + MVACCmort + IJmort + RESTmort) 
+dCont <- dCont %>% mutate(AAF= LVDCmort + AUDmort + PANCmort + UIJmort + MVACCmort + IJmort, 
+                          TOTAL = AUDmort + LVDCmort + PANCmort + 
+                             UIJmort + MVACCmort + IJmort + 
+                             IHDmort + HYPHDmort + HSTRmort +  
+                             LRImort + CANmort + DMmort + RESTmort) 
 
 dCont <- reshape(data = dCont, idvar = c("sex", "start_year",  "end_year"), timevar = "edclass", direction = "wide")
 
@@ -30,6 +33,10 @@ dat5year <- dCont %>%
                 LVDCmort.College = sum(LVDCmort.College),
                 LVDCmort.SomeC = sum(LVDCmort.SomeC),
                 LVDCmort.LEHS = sum(LVDCmort.LEHS),
+                
+                PANCmort.College = sum(PANCmort.College),
+                PANCmort.SomeC = sum(PANCmort.SomeC),
+                PANCmort.LEHS = sum(PANCmort.LEHS),
                 
                 IJmort.College = sum(IJmort.College),
                 IJmort.SomeC = sum(IJmort.SomeC),
@@ -51,6 +58,18 @@ dat5year <- dCont %>%
                 HYPHDmort.SomeC = sum(HYPHDmort.SomeC),
                 HYPHDmort.LEHS = sum(HYPHDmort.LEHS),
                 
+                HSTRmort.College = sum(HSTRmort.College),
+                HSTRmort.SomeC = sum(HSTRmort.SomeC),
+                HSTRmort.LEHS = sum(HSTRmort.LEHS),
+                
+                LRImort.College = sum(LRImort.College),
+                LRImort.SomeC = sum(LRImort.SomeC),
+                LRImort.LEHS = sum(LRImort.LEHS),
+                
+                CANmort.College = sum(CANmort.College),
+                CANmort.SomeC = sum(CANmort.SomeC),
+                CANmort.LEHS = sum(CANmort.LEHS),
+                
                 DMmort.College = sum(DMmort.College),
                 DMmort.SomeC = sum(DMmort.SomeC),
                 DMmort.LEHS = sum(DMmort.LEHS),
@@ -69,8 +88,10 @@ dat5year <- dat5year %>%
                             `2` = "2005-2010",
                             `3` = "2010-2015", 
                             `4` = "2015-2018"))
-cod.vec <- c("TOTAL", "AAF", "AUDmort", "LVDCmort", "IJmort", "MVACCmort", "UIJmort",
-             "IHDmort", "HYPHDmort", "DMmort", "RESTmort")
+cod.vec <- c("TOTAL", "AAF", "AUDmort", "LVDCmort", "PANCmort", 
+             "IJmort", "MVACCmort", "UIJmort",
+             "IHDmort", "HYPHDmort", "HSTRmort",
+             "LRImort", "CANmort", "DMmort", "RESTmort")
 for (i in cod.vec) {
    dat5year[paste0(i, "diff_2")] <- dat5year[paste0(i, ".College")] - dat5year[paste0(i, ".SomeC")]
    dat5year[paste0(i, "diff_3")] <- dat5year[paste0(i, ".College")] - dat5year[paste0(i, ".LEHS")]
@@ -84,7 +105,7 @@ dat5year <- dat5year[, !grepl("College", names(dat5year)) &
                         !grepl("SomeC", names(dat5year)) &
                         !grepl("LEHS", names(dat5year))] 
 
-write.csv(dat5year, "LE/3_out data/3_contribution to change_5year.csv")
+write.csv(dat5year, "SIMAH_workplace/life_expectancy/2_out_data/3_contribution to change_5year.csv")
 #dat5year <- dat5year[dat5year$TOTALdiff_3 > 0.5,]
 
 v.select <- names(dat5year)[grepl("contrib", names(dat5year))]
@@ -97,15 +118,19 @@ group1gathered$Cause_of_death <- as.factor(group1gathered$Cause_of_death)
 levels(group1gathered$Cause_of_death) <- list("AAF" = "AAFcontrib",
                                               "Alcohol use disorder" = "AUDmortcontrib", 
                                               "Liver disease & cirrhosis" = "LVDCmortcontrib", 
+                                              "Pancreatitis" = "PANCmortcontrib",
                                               "Suicide" = "IJmortcontrib",
                                               "Motor vehicle accident" = "MVACCmortcontrib", 
                                               "Unintentional injury*" = "UIJmortcontrib",   
                                               "IHD & ischemic stroke" = "IHDmortcontrib", 
                                               "Hypertensive heart disease" = "HYPHDmortcontrib", 
+                                              "Hemorrhagic stroke" = "HSTRmortcontrib",
+                                              "Cancer" = "CANmortcontrib",
+                                              "LRI" = "LRImortcontrib",
                                               "Diabetes mellitus"= "DMmortcontrib",
                                               "Rest" = "RESTmortcontrib")
 
-color.vec <- c("#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E", "blue")
+color.vec <- c("#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E", "blue", "red", "yellow", "black")
 
 group1gathered <- group1gathered[group1gathered$Cause_of_death != "Rest" & 
                                     group1gathered$Cause_of_death != "AAF"
@@ -126,9 +151,9 @@ ggplot(data = group1gathered, aes(y = value, x = Years, fill = Cause_of_death)) 
    geom_hline(aes(yintercept=0)) + 
    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("LE/4_graphs/2_LE contribution_5year.jpeg", dpi=600, width=23, height=15, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2_LE contribution_5year.jpeg", dpi=600, width=23, height=15, units="cm")
 
-write.csv(group1gathered, "LE/3_out data/3_contribution to change_5year_long.csv")
+write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/3_contribution to change_5year_long.csv")
 
 ################## Now do the same for the absolute contribution
 v.select <- names(dat5year)[grepl("diff", names(dat5year))]
@@ -140,7 +165,7 @@ group1gathered <- separate(group1gathered, col = key, sep = "_", into = c("Cause
 group1gathered$sex <- as.factor(group1gathered$sex)
 levels(group1gathered$sex) <- list("Men" = 1, "Women" = 2)
 group1gathered$SES <- as.factor(group1gathered$SES)
-levels(group1gathered$SES) <- list("Middle vs. high SES" = 2, "Low vs. high SES" = 3)
+levels(group1gathered$SES) <- list("Middle vs. high education" = 2, "Low vs. high education" = 3)
                                               
 group1gathered$Cause_of_death <- as.factor(group1gathered$Cause_of_death)
 levels(group1gathered$Cause_of_death) <- list("Rest" = "RESTmortdiff",
@@ -174,4 +199,4 @@ ggplot(data = group1gathered, aes(y = value, x = Years, fill = Cause_of_death)) 
    geom_hline(aes(yintercept=0)) + 
    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("LE/4_graphs/3_Contribution to inequality.jpeg", dpi=600, width=23, height=15, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/3_Contribution to inequality.jpeg", dpi=600, width=23, height=15, units="cm")

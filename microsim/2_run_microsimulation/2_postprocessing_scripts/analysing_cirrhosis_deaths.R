@@ -44,35 +44,58 @@ toexpand <- left_join(toexpand, forplot) %>%
                                     "1941-1945","1946-1950","1951-1955","1956-1960","1961-1965","1966-1970",
                                     "1971-1975","1976-1980","1981-1985","1986-1990","1991-1995")))
 
-summary <- toexpand %>% group_by(Year, sex, birthcohort) %>% 
+summary <- toexpand %>% group_by(Year, sex, agecat) %>% 
   summarise(count=sum(count)*100) %>% mutate(type="target") 
 
 
 names(summary)
+summary(as.factor(summary$agecat))
 
 names(Cirrhosis)
 
-CirrhosisSummary <- Cirrhosis %>% ungroup() %>% rename(count=n, birthcohort=cohort, sex=microsim.init.sex) %>% 
-  dplyr::select(-c(seed,samplenum)) %>% mutate(type="microsim")
+Cirrhosis <- do.call(rbind,Cirrhosis)
+
+CirrhosisSummary <- Cirrhosis %>% ungroup() %>% rename(count=n,sex=microsim.init.sex, agecat=agegroup) %>% 
+  dplyr::select(-c(seed,samplenum)) %>% mutate(type="microsim",
+                                               agecat = as.character(agecat),
+                                               agecat = ifelse(agecat=="15-19","18-24",
+                                                               ifelse(agecat=="20-24","18-24",
+                                                                      ifelse(agecat=="75.", "75-79",agecat)))) %>% 
+  group_by(Year, sex, agecat, type) %>% summarise(count = sum(count))
 
 names(summary)
+names(CirrhosisSummary)
 
-summary <- summary %>% rename(target=count) %>% dplyr::select(-type)
+# summary <- summary %>% rename(target=count) %>% dplyr::select(-type)
 
-CirrhosisSummary <- rbind(CirrhosisSummary,summary)
-CirrhosisSummary <- left_join(CirrhosisSummary, summary)
-
-ggplot(data=CirrhosisSummary, aes(x=Year, y=count, colour=pathway)) + geom_line() + 
-  geom_line(aes(x=Year, y=target),colour="black") + 
-  facet_grid(cols=vars(birthcohort), rows=vars(sex)) + theme_bw()
-ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_cohort_pathway.png", dpi=300, 
+CirrhosisSummary <- rbind(CirrhosisSummary,summary) %>% 
+  mutate(sex = ifelse(sex=="f","Women","Men"),
+         type = ifelse(type=="microsim","Simulated","Observed"),
+         count = count*(1/proportion))
+library(scales)
+ggplot(data=CirrhosisSummary, aes(x=Year, y=count, colour=type)) + 
+  geom_line(size=1.5) + facet_grid(cols=vars(agecat), rows=vars(sex)) + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     text = element_text(size=20),
+                     strip.background = element_rect(fill="white")) +
+  scale_y_continuous(label=comma) + 
+  ylab("Total N Liver Cirrhosis deaths")
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_agescaled.png", dpi=300,
        width=33, height=19, units="cm")
+# CirrhosisSummary <- left_join(CirrhosisSummary, summary)
+
+# ggplot(data=CirrhosisSummary, aes(x=Year, y=count, colour=pathway)) + geom_line() + 
+#   geom_line(aes(x=Year, y=target),colour="black") + 
+#   facet_grid(cols=vars(birthcohort), rows=vars(sex)) + theme_bw()
+# ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_cohort_pathway.png", dpi=300, 
+#        width=33, height=19, units="cm")
 
 
-ggplot(data=summary, aes(x=Year, y=count)) + geom_line() + 
+ggplot(data=CirrhosisSummary, aes(x=Year, y=count, colour=type)) + geom_line() + 
   facet_grid(cols=vars(birthcohort), rows=vars(sex), scales="free") + ylim(0,NA) + 
   theme_bw() + xlim(1984,2012)
-ggsave("output_data/LC_by_cohort_full.png", dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_cohort_full.png", dpi=300, width=33, height=19, units="cm")
 
 summary <- toexpand %>% filter(birthyear>=1936 & birthyear<=1980) %>% group_by(Year, sex, birthcohort) %>% 
   summarise(count=sum(count))
@@ -80,7 +103,7 @@ summary <- toexpand %>% filter(birthyear>=1936 & birthyear<=1980) %>% group_by(Y
 ggplot(data=summary, aes(x=Year, y=count)) + geom_line() + 
   facet_grid(cols=vars(birthcohort), rows=vars(sex), scales="free") + ylim(0,NA) + 
   theme_bw() + xlim(1984,2012)
-ggsave("output_data/LC_by_cohort_subset.png", dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/plots/LC_by_cohort_subset.png", dpi=300, width=33, height=19, units="cm")
 
 library(ggplot2)
 birthcohort <- data.frame(birthcohort)

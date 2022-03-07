@@ -18,8 +18,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/inward
 ####READ IN OUTWARD MIGRATION DATA - redundant in final version
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/outward_migration.R")
 
-cirrhosis <- 0
-mortality <- 1
+cirrhosis <- 1
 
 # READ IN DEATH RATES
 if(model=="SIMAH"){

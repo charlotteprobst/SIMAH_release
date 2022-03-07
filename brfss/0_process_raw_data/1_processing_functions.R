@@ -207,6 +207,7 @@ recode_weight <- function(data){
                            ifelse(WEIGHT2==9999, NA,
                                   ifelse(WEIGHT2>=9000 & WEIGHT2<=9998, WEIGHT2-9000,
                                          WEIGHT2*0.4536))))
+    # check if weight in kg starts in 99 or 90 
   }
   data$weight_kg <- ifelse(data$weight_kg>=400, NA, data$weight_kg)
   return(data)
@@ -252,6 +253,37 @@ recode_BMI <- function(data){
     BMI = weight_kg / ((height_cm)^2)
   )
 }
+
+for(i in names(dataFiles)){
+  print(i)
+  print(summary(dataFiles[[i]]$X.BMI))
+  print(summary(dataFiles[[i]]$X.BMI2))
+  print(summary(dataFiles[[i]]$X.BMI3))
+  print(summary(dataFiles[[i]]$X.BMI4))
+  print(summary(dataFiles[[i]]$X.BMI5))
+  
+}
+
+# recoding derived BMI variable 
+recode_derived_BMI <- function(data){
+  data <- data %>% mutate(
+    BMI_derived = ifelse(YEAR<1987, NA,
+                         ifelse(YEAR>=1987 & YEAR<2000, X.BMI,
+                         ifelse(YEAR>=2000 & YEAR<=2002, X.BMI2, 
+                                ifelse(YEAR==2003, X.BMI3, 
+                                       ifelse(YEAR>=2004 & YEAR<=2010, X.BMI4,
+                                              ifelse(YEAR>=2011, X.BMI5, NA)))))),
+    BMI_derived = ifelse(YEAR<1987, NA, 
+                         ifelse(YEAR>=1987 & YEAR<=2000 & BMI_derived>=999, NA,
+                                ifelse(YEAR>=1987 & YEAR<=2000, BMI_derived/10,
+                                       ifelse(YEAR==2001 & BMI_derived==999999, NA,
+                                              ifelse(YEAR==2001, BMI_derived/10000,
+                                                     ifelse(YEAR>=2002 & YEAR<=2010 & BMI_derived==9999, NA,
+                                                            ifelse(YEAR>=2002 & YEAR<=2010, BMI_derived/100,
+                                                                   ifelse(YEAR>=2011 & BMI_derived>9000, NA,
+                                                                          ifelse(YEAR>=2011, BMI_derived/100, NA))))))))))
+  return(data)
+  }
 
 impute_missing_BMI <- function(data){
   data <- data %>% 
@@ -348,7 +380,7 @@ recode_alc_frequency <- function(data){
                                                   
   data$alc_frequency <- round(data$alc_frequency,digits=0)
   data$alc_frequency <- ifelse(data$alc_frequency==31, 30, 
-                               ifelse(data$alc_frequency>31, 31, data$alc_frequency))
+                               ifelse(data$alc_frequency>31, 30, data$alc_frequency))
   # recode the missing drinking prevalence values now we have frequency values 
   # data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
   #                               ifelse(data$alc_frequency>=1, 1, data$drinkingstatus))
@@ -440,7 +472,7 @@ subset_data <- function(data){
     dplyr::select(YEAR, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
                   education_summary, employment, marital_status,
                   household_income,
-                  height_cm, weight_kg, BMI, drinkingstatus, 
+                  height_cm, weight_kg, BMI, BMI_derived, drinkingstatus, 
                   mentalhealth, physicalhealth,
                   alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)

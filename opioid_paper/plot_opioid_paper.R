@@ -283,7 +283,7 @@ SuppFig2P2
 
 combined <- ggarrange(SuppFig2P1, SuppFig2P2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")
 combined
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/SuppFigure2_combined.png",
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/SuppFigure2_combinedV2.png",
        combined, width=33, height=40, units="cm", dpi=300)
 
 

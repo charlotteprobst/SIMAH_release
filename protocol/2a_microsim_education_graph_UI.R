@@ -37,17 +37,10 @@ uncertainty$datatype <- factor(uncertainty$datatype, levels = c("Microsimulation
 uncertainty$edclass <- factor(uncertainty$edclass, levels=c("High school degree or less",
                                                             "Some college",
                                                             "College degree or more"))
-# for in-text reporting of UIs
-summary <- uncertainty %>% filter(year==2000 | year==2018) %>% 
-  dplyr::select(year, sex, edclass, percent, min, max, datatype) %>% 
-  distinct() %>% 
-  mutate(percent = round(percent*100, digits=1),
-         min = round(min*100, digits=1),
-         max = round(max*100, digits=1))
 #uncertainty$edclass <- factor(uncertainty$edclass, levels = c("High school degree or less", "Some college", "College degree or more"))
 # warning because we do not have a ribbon around the observed data
-ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
-  geom_ribbon(aes(ymin=min, ymax=max), alpha=0.25, colour=NA) + 
+ggplot(data = uncertainty, aes(x = year, y = percent*100, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
+  geom_ribbon(aes(ymin=min*100, ymax=max*100), alpha=0.25, colour=NA) + 
   geom_line(aes(color=datatype, size=datatype), alpha= .75) +
   facet_grid(cols = vars(sex), rows = vars(edclass), scales = "free") +
   geom_point(size = 1.3, alpha= .9) +
@@ -95,8 +88,8 @@ uncertainty$edclass <- factor(uncertainty$edclass, levels=c("High school degree 
                                                             "College degree or more"))
 uncertainty <- uncertainty %>% filter(year!=2010 & datatype!="Census")
 
-ggplot(data = uncertainty, aes(x = year, y = percent, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
-  geom_ribbon(aes(ymin=min, ymax=max), alpha=0.25, colour=NA) + 
+ggplot(data = uncertainty, aes(x = year, y = percent*100, color=datatype, shape=datatype, fill=datatype, size=datatype)) +
+  geom_ribbon(aes(ymin=min*100, ymax=max*100), alpha=0.25, colour=NA) + 
   geom_line(aes(color=datatype, size=datatype), alpha= .75) +
   facet_grid(cols = vars(race), rows = vars(edclass), scales = "free") +
   geom_point(size = 1.3, alpha= .9) +
