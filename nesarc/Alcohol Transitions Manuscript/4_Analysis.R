@@ -479,9 +479,8 @@ rbind(all, sex, edu, race, age) %>% write_csv(paste0(output, "Table S8.csv"))
 
 # TP OVERALL ***********************************************************************************
 TP_noCovs <- predicted_TP_noCovs(hed.msm, 10) %>% 
-  mutate( 
-    From = recode(From,"State 1" = "Non-drinker", "State 2" = "Drinker, no HED", "State 3" = "Occasional HED", "State 4" = "Monthly HED", "State 5" = "Weekly HED"),
-    To = recode(To, "State.1" = "Non-drinker", "State.2" = "Drinker, no HED", "State.3" = "Occasional HED", "State.4" = "Monthly HED", "State.5" = "Weekly HED"))
+  mutate( From = recode(From,"State 1" = "Non-drinker", "State 2" = "Drinker, no HED", "State 3" = "Occasional HED", "State 4" = "Monthly HED", "State 5" = "Weekly HED"),
+          To = recode(To, "State.1" = "Non-drinker", "State.2" = "Drinker, no HED", "State.3" = "Occasional HED", "State.4" = "Monthly HED", "State.5" = "Weekly HED"))
 
 TP_noCovs_init <- TP_noCovs %>% 
   filter(year==1) %>%
@@ -506,6 +505,39 @@ rbind (TP_noCovs_init, TP_noCovs) %>%
   scale_y_continuous(breaks=seq(0, 1, by= .2)) + 
   scale_x_continuous(breaks=seq(0, 10, by= 2))
 ggsave(paste0(output, "Figure 1b - TP of HED over time.tiff"), dpi=600, width=12, height = 3.5)
+
+
+
+# View TP for non-drinkers 
+TP_noCovs %>% 
+  select(-lowerCI, - upperCI) %>% 
+  filter (From == "Non-drinker" & To %in% c("Non-drinker", "Drinker, no HED") & year %in% c(1,5)) %>%
+  mutate (Probability = round((Probability *100), 1),
+    inverse = 100 - Probability) 
+
+# View TP for Drinker, no HED 
+TP_noCovs %>% 
+  select(-lowerCI, - upperCI) %>% 
+  filter (From == "Drinker, no HED" & year %in% c(1,5)) %>%
+  mutate (Probability = round((Probability *100), 0)) 
+
+# View TP for Occasional HED
+TP_noCovs %>% 
+  select(-lowerCI, - upperCI) %>% 
+  filter (From == "Occasional HED" & year %in% c(1,5)) %>%
+  mutate (Probability = round((Probability *100), 0)) 
+
+# View TP for Monthly HED
+TP_noCovs %>% 
+  select(-lowerCI, - upperCI) %>% 
+  filter (From == "Monthly HED" & year %in% c(1,5)) %>%
+  mutate (Probability = round((Probability *100), 0)) 
+
+# View TP for Weekly HED
+TP_noCovs %>% 
+  select(-lowerCI, - upperCI) %>% 
+  filter (From == "Weekly HED" & year %in% c(1,5)) %>%
+  mutate (Probability = round((Probability *100), 0)) 
 
 
 
