@@ -24,6 +24,10 @@ cirrhosis <- 1
 if(model=="SIMAH"){
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/death_rates.R")
 }else if(model=="CASCADE"){
+  
+  # first load cirrhosis mortality data
+  source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_cirrhosis_1984_2016.R")
+  
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/CASCADE_deathrates.R")
 }
 

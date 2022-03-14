@@ -34,8 +34,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshift
                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
          formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %>% 
   rename(microsim.init.age = age_var, 
-         microsim.init.drinkingstatus=drinkingstatus,
-         microsim.init.alc.gpd=gramsperday,
+         microsim.init.drinkingstatus=drinkingstatus_updated,
+         microsim.init.alc.gpd=gramsperday_upshifted_crquotient,
          microsim.init.income = household_income) %>% 
   dplyr::select(YEAR, State, region, microsim.init.race, microsim.init.age,
                 microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,

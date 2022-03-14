@@ -25,8 +25,8 @@ options(scipen=999)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -114,9 +114,11 @@ registerDoParallel(15)
 # registerDoParallel(2)
 mcoptions <- list(set.seed=FALSE)
 
+transitionsList <- transitionsList[1]
+
 Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
                   # .options.multicore=mcoptions,
-                  .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                  .packages=c("dplyr","tidyr","foreach")) %do% {
                     samplenum <- i
                     seed <- Sys.time()
                     print(i)
@@ -125,7 +127,7 @@ Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
                                  updatingeducation, education_setup, transitionroles,
                                  calculate_migration_rates, outward_migration, inward_migration, 
                                  brfss,Rates,transitionsList[[i]],
-                                 transitions, PopPerYear, 2000, 2018)
+                                 transitions, PopPerYear, 2000, 2005)
                     # PE <- run_microsim(seed,samplenum,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
                     #              updatingeducation, education_setup, transitionroles,
                     #              calculate_migration_rates, outward_migration, inward_migration, 
@@ -157,14 +159,14 @@ Output <- left_join(Output, target)
 
 error <- Output %>% ungroup() %>% 
   group_by(samplenum) %>% 
-  mutate(errorsq = (microsimpercent-targetpercent)^2) %>% 
+  mutate(errorsq = (microsimpercent-targetpercent)^2,
+         implausibility = abs(microsimpercent-targetpercent)/sepercent) %>% 
   group_by(samplenum) %>% 
-  summarise(maxerror = max(errorsq),
-            RMSE = sqrt(mean(errorsq)))
+  summarise(maxerror = max(implausibility))
 
-write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_RMSE.csv")
+write.csv(error, "SIMAH_workplace/microsim/2_output_data/error_implausibility.csv")
 
-final <- error[which(error$RMSE==min(error$RMSE)),]$samplenum
+final <- as.numeric(error[which(error$maxerror==min(error$maxerror)),]$samplenum)
 transitions <- transitionsList[[final]]
 saveRDS(transitions, paste0("SIMAH_workplace/microsim/2_output_data/final_alc_transitions", SelectedState, ".RDS"))
 
@@ -187,8 +189,9 @@ Output <- Output %>% mutate(microsim.init.sex = recode(microsim.init.sex,
                                                              "Low risk","Medium risk","High risk")))
 scaleFUN <- function(x) sprintf("%.2f", x)
 ggplot(data=subset(Output, microsim.init.sex=="Men"), aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
-  geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
+  geom_line(linetype="dashed", size=1) + geom_line(aes(x=year, y=targetpercent), colour="black") + 
   facet_grid(rows=vars(AlcCAT), cols=vars(microsim.init.education), scales="free") +
+  geom_ribbon(aes(ymin=lower_ci, ymax=upper_ci, colour=NULL)) + 
   # facet_wrap(~AlcCAT+microsim.init.sex+microsim.init.education, scales="free") + 
   theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
   theme(legend.position="none",
@@ -198,8 +201,9 @@ ggplot(data=subset(Output, microsim.init.sex=="Men"), aes(x=year, y=microsimperc
 ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/alcohol_states_comparemen",SelectedState,".png",sep=""),
        dpi=300, width=33, height=19, units="cm")
 ggplot(data=subset(Output, microsim.init.sex=="Women"), aes(x=year, y=microsimpercent, colour=as.factor(samplenum))) + 
-  geom_line(linetype="dashed") + geom_line(aes(x=year, y=targetpercent), colour="black") + 
+  geom_line(linetype="dashed", size=1) + geom_line(aes(x=year, y=targetpercent), colour="black") + 
   facet_grid(rows=vars(AlcCAT), cols=vars(microsim.init.education), scales="free") +
+  geom_ribbon(aes(ymin=lower_ci, ymax=upper_ci, colour=NULL)) + 
   # facet_wrap(~AlcCAT+microsim.init.sex+microsim.init.education, scales="free") + 
   theme_bw() + scale_y_continuous(labels=scales::percent, limits=c(0,NA)) + 
   theme(legend.position="none",
@@ -210,7 +214,7 @@ ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/alcohol_states_compar
        dpi=300, width=33, height=19, units="cm")
 
 bestrate <- Output %>% filter(samplenum==final) %>% 
-  pivot_longer(cols=microsimpercent:targetpercent)
+  pivot_longer(cols=c(microsimpercent,targetpercent))
 
 # PE <- PE %>% pivot_longer(cols=microsimpercent:targetpercent) %>% mutate(AlcCAT = factor(AlcCAT, 
 #                                     levels=c("Lifetime abstainer",
