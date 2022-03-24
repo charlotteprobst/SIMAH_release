@@ -1,6 +1,6 @@
 
-# SES x Lifestyle Differential Vulnerability & Exposure Project
-# Assumptions of Aalen Models File
+# # SIMAH Restricted-access Data
+# Assumptions of Aalen Hazard Models 
 
 
 # LOAD DATA AND SET FILE LOCATIONS 
@@ -31,32 +31,37 @@ nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 
-# ASSUMPTIONS, Additive Hazard Models ------------------------------------------------------------------------------------------------------------------
+# ASSUMPTIONS, Additive Hazard Models ------------------------------------------------------------------------------------------------------
 
 # First, check the time-invariant assumption (in our case, 'age-invariant' assumption); whether the effect of covariates 
 # is age-varying or constant with time (similar to proportional hazard assumption in Cox models). The "const()" wrapper is 
 # used to make the effect of a variable age-invariant; without this wrapper the effect of the variable will be age-varying. 
-# Start by fitting the model where all components of the model have age-varying effects, then iteratively simplify the model 
-# by making the variables age-invariant one at a time (based on the plot and the Kolmogorov-Smirnov / Cramer von Mises tests). 
+
+# Start by fitting the model where all components of the model have age-varying effects (i.e., no const() wrappers used), then 
+# iteratively simplify the model by making the variables age-invariant one at a time (based on the plot and the Kolmogorov-
+# Smirnov / Cramer von Mises tests). 
 
 # Ultimately, the variables that are part of an interaction have to have a age-invariant effect, and sensitivity analyses 
-# (stratifying by age group) were  ran to examine the potential impact if the assumption was violated. 
+# (stratifying by age group) can be used to examine the potential impact if the assumption was violated. 
 
 # For more details and theoretical justification/description see:
       # Rod et al. 2012 https://doi.org/10.1097/EDE.0b013e31825fa218
       # Scheike TH, Martinussen T. Dynamic Regression models for survival data: Springer, NY.; 2006.
 
 # The code below has been structured such that only the first two lines need to be modified, the first to label the model and 
-# the second to specify the model
+# the second to specify the model. 
 
-
+# Note: Checking these assumptions is an iterative process and it cannot be automated, since it depends on the results of the 
+# previous model; the code below speficies an example of the process that was completed for another project and WILL NEED TO BE MODIFIED.
       
+
+
 # Assumption: Alcohol x Education *********************************************************************************************************************
 # *****************************************************************************************************************************************************
 
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Iteration 1 - Start with all variables as age-varying
-model <- "_alc_f_1"   # Used to name the files appropriately
+model <- "allcause_alc_f_1"   # Used to name the files appropriately
 assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4 + srvy_yr22, data = nhis_female)
         saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
         pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 

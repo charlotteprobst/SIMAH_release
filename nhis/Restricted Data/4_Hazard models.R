@@ -1,42 +1,49 @@
 
-# SES x Lifestyle Differential Vulnerability & Exposure Project
-# Objective 1: Aalen additive hazard models file
+# # SIMAH Restricted-access Data
+# Cox and Aalen Hazard models 
 
-
-# LOAD DATA AND SET FILE LOCATIONS
+# LOAD DATA AND SET FILE LOCATIONS 
 
 # load libraries
 library(tidyverse)  # data management
-library(broom)
+library(broom)      # To format results
 library(skimr)      # descriptive statistics
 library(survival)   # surivval analyses
 library(survminer)  # surivval analyses
 library(timereg)    # additive survival models
+library(survey)     # Survey adjusted results
+library(srvyr)
 library(foreach)    # loops 
 memory.limit(size=1e+13)
 options(scipen=999)
 
 
 # Specify the data and output file locations
-data_path     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
-output_tables <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/"
-output_models <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/Models/"
-
+data_path     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+output_tables <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
+output_models <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
+output_assump <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
     
 # Load data
-nhis_all    <- readRDS (file.path(data_path, "nhis_clean.rds"))
-nhis_male   <- readRDS (file.path(data_path, "nhis_male.rds"))
-nhis_female <- readRDS (file.path(data_path, "nhis_female.rds"))
+nhis_all    <- readRDS (paste0(data_path, "nhis_clean.rds"))
+nhis_male   <- readRDS (paste0(data_path, "nhis_male.rds"))
+nhis_female <- readRDS (paste0(data_path, "nhis_female.rds"))
 
-# OBJECTIVE 1: Joint Effects, Hazard Models - Stratified by Sex
+nhis_all_svy    <- readRDS (paste0(data_path, "nhis_clean_svy.rds"))
+nhis_male_svy   <- readRDS (paste0(data_path, "nhis_male_svy.rds"))
+nhis_female_svy <- readRDS (paste0(data_path, "nhis_female_svy.rds"))
 
-# The effect estimates from the model can be directly interpreted as the number of additional events (deaths) per 1 person year at risk
-# Two different versions of the model were ran identify the interaction effect (model with the interaction term) and the joint effect (model with interacting variable)
 
+## Create functions and specify causes of death ------------------------------------------------------------------------------------------
+# Function to run the Cox and Aalen models; also exports figures for the Cox PH assumption
+    # Note: Two different versions of the model were ran identify the interaction effect (model with the interaction term) and the joint effect (model with interacting variable)
 
-## Create functions ------------------------------------------------------------------------------------------
-# Function to run the Cox and Aalen models
-table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
+table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
+  
+  cat("Progress indicator:", "\n")  # progress indicator
+  
+  # Create labels, to be used later
+  data_name  <- sub(".*_", "", enexpr(data))
 
   foreach (i = deaths_list) %do% {
   
@@ -44,51 +51,69 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
         data <- mutate (data, 
                         cause_of_death = .data[[i]],
                         SES = {{SES}},
-                        lifestyle = {{lifestyle}})
+                        lifestyle = {{lifestyle}},
+                        SES_lifestyle = interaction(SES, lifestyle)) # Create an 'interaction' variable, combining the SES and lifestyle
         
-        # Create an 'interaction' variable, combining the SES and lifestyle
-        data$SES_lifestyle <- interaction(data$SES, data$lifestyle)
+        design <- mutate (design,
+                          cause_of_death = .data[[i]],
+                          SES = {{SES}},
+                          lifestyle = {{lifestyle}},
+                          SES_lifestyle = interaction(SES, lifestyle))
+
         
         # Create labels, to be used later
-        
-        data_name  <- sub(".*_", "", expr(data))
         death_name <- sub("_.*", "", enexpr(i))
         SES_name   <- enexpr(SES)
         lifestyle_name <- enexpr(lifestyle)
         
         cat(death_name, "\n") # progress indicator
 
+
     # 2) Run analyses     
-        # Cox interaction model
-        cox_int <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + 
-                              married2 + race4 + srvy_yr22, data = data)
-        cat("    Completed: Cox Interaction model", "\n")  # progress indicator
+        
+        # Cox interaction model adjusted for survey weights
+        cat("    Svy Cox Interaction model in progress", "\n")  # progress indicator
+        cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, design = design)
+        cat("    Completed", "\n")  # progress indicator
+        
+        # Cox joint effect model adjusted for survey weights
+        cat("    Svy Cox Joint effects model in progress", "\n")  
+        cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, design = design)
+        cat("    Completed", "\n")  
+        
+        # Cox interaction model NOT adjusting for survey weights
+        # cat("    Cox Interaction model in progress", "\n")  # progress indicator
+        # cox_int <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, data = data)
+        # cat("    Completed", "\n")  # progress indicator
       
-        # Cox joint effect model
-        cox_joint <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + 
-                            married2 + race4 + srvy_yr22, data = data)
-        cat("    Completed: Cox Joint effects model", "\n")  # progress indicator
+        # Cox joint effect model NOT adjusting for survey weights
+        # cat("    Cox Joint effects model in progress", "\n")  
+        # cox_joint <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, data = data)
+        # cat("    Completed", "\n")  
       
+        
         # Aalen Interaction model
-        aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) +
-                            const(married2) + race4 + const(srvy_yr22),  data = data)
-        cat("    Completed: Aalen Interaction model", "\n")  # progress indicator
+        cat("    Aalen Interaction model in progress", "\n")  
+        aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        cat("    Completed", "\n")  
         
         # Aalen joint effects model
-        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) +
-                              const(married2) + race4 + const(srvy_yr22),  data = data)
-        cat("    Completed: Aalen Joint effects model", "\n")  # progress indicator
+        cat("    Aalen Joint effects model in progress", "\n")  
+        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        cat("    Completed", "\n")  
         
         # Save model results 
         saveRDS(cox_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
         saveRDS(cox_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint.rds"))
         saveRDS(aalen_int,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
         saveRDS(aalen_joint,paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
+        
+        # Save assumption plot for Cox model
+        pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int), col = "red"); dev.off()   
+        
 
         
   # 3) Format and save results 
-  library(broom)
-  
    cox_int_results <- cox_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
           mutate(variable = term,
             estimate = round(estimate, 2),
@@ -158,21 +183,21 @@ table4to9 <- function(data, deaths_list, SES, lifestyle, table_label){
       add_row(variable = death_name, .before=1) 
   
     write_csv(results, paste0(output_tables, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".csv"), na="")
-
-    cat("    Completed: Results were exported", "\n")  # progress indicator
+    cat("    Results were exported", "\n")  # progress indicator
   }   
 }
-  
 
-# Causes of death ----------------------------------------------------------------------------------------------
+
+# Test the function:
+death_list <- c("heart_death", "cancer_death") # specify cause of death for testing
+nhis_female<- sample_frac(nhis_female, 0.10) # select x% of sample for testing
+table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
+
+
 # Specify the causes of death (to be used below)
-
 death_list <- c("allcause_deaths", "alc_deaths", "despair_deaths", "vehicle_deaths", "accident_deaths", 
                 "AUD_deaths", "self_harm_deaths", "liver_deaths", "diabetes_deaths", "IHD_deaths", 
                 "stroke_deaths", "hyperten_deaths", "poisoning_deaths", "other_deaths")
-
-# TEMPORARY Death list:
-death_list <- c("allcause_death", "heart_death")
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
@@ -182,22 +207,22 @@ table4to9(nhis_male,   death_list, edu3, alc5, "table4a") # Males
 
 
 # **NOTE**: Need to change to code for this so that the start time and end time is specified
-table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
-table4to9(nhis_fem.age.gp2,  death_list, edu3, alc5, "table4a") # Females, age group 2
-table4to9(nhis_fem.age.gp3,  death_list, edu3, alc5, "table4a") # Females, age group 3
-table4to9(nhis_male.age.gp1, death_list, edu3, alc5, "table4a") # Males, age group 1
-table4to9(nhis_male.age.gp2, death_list, edu3, alc5, "table4a") # Males, age group 2
-table4to9(nhis_male.age.gp3, death_list, edu3, alc5, "table4a") # Males, age group 3
+# table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
+# table4to9(nhis_fem.age.gp2,  death_list, edu3, alc5, "table4a") # Females, age group 2
+# table4to9(nhis_fem.age.gp3,  death_list, edu3, alc5, "table4a") # Females, age group 3
+# table4to9(nhis_male.age.gp1, death_list, edu3, alc5, "table4a") # Males, age group 1
+# table4to9(nhis_male.age.gp2, death_list, edu3, alc5, "table4a") # Males, age group 2
+# table4to9(nhis_male.age.gp3, death_list, edu3, alc5, "table4a") # Males, age group 3
 
 table4to9(nhis_fem.white, death_list, edu3, alc5, "table4a") # Females, white
 table4to9(nhis_fem.black, death_list, edu3, alc5, "table4a") # Females, black
 table4to9(nhis_fem.hisp,  death_list, edu3, alc5, "table4a") # Females, Hispanic
-table4to9(nhis_fem.other, death_list, edu3, alc5, "table4a") # Females, Other (non-Hispanic)
+table4to9(nhis_fem.other, death_list, edu3, alc5, "table4a") # Females, Other
 
 table4to9(nhis_male.white, death_list, edu3, alc5, "table4a") # Males, white
 table4to9(nhis_male.black, death_list, edu3, alc5, "table4a") # Males, black
 table4to9(nhis_male.hisp,  death_list, edu3, alc5, "table4a") # Males, Hispanic
-table4to9(nhis_male.other, death_list, edu3, alc5, "table4a") # Males, Other (non-Hispanic)
+table4to9(nhis_male.other, death_list, edu3, alc5, "table4a") # Males, Other
 
 
 ## Income x Alcohol
@@ -205,12 +230,12 @@ table4to9(nhis_all,    death_list, income5, alc5, "table4b") # All participants
 table4to9(nhis_female, death_list, income5, alc5, "table4b") # Females
 table4to9(nhis_male,   death_list, income5, alc5, "table4b") # Males
 
-table4to9(nhis_fem.age.gp1,  death_list, income5, alc5, "table4b")  # Females, age group 1
-table4to9(nhis_fem.age.gp2,  death_list, income5, alc5, "table4b")  # Females, age group 2
-table4to9(nhis_fem.age.gp3,  death_list, income5, alc5, "table4b")  # Females, age group 3
-table4to9(nhis_male.age.gp1, death_list, income5, alc5, "table4b")  # Males, age group 1
-table4to9(nhis_male.age.gp2, death_list, income5, alc5, "table4b")  # Males, age group 2
-table4to9(nhis_male.age.gp3, death_list, income5, alc5, "table4b")  # Males, age group 3
+# table4to9(nhis_fem.age.gp1,  death_list, income5, alc5, "table4b")  # Females, age group 1
+# table4to9(nhis_fem.age.gp2,  death_list, income5, alc5, "table4b")  # Females, age group 2
+# table4to9(nhis_fem.age.gp3,  death_list, income5, alc5, "table4b")  # Females, age group 3
+# table4to9(nhis_male.age.gp1, death_list, income5, alc5, "table4b")  # Males, age group 1
+# table4to9(nhis_male.age.gp2, death_list, income5, alc5, "table4b")  # Males, age group 2
+# table4to9(nhis_male.age.gp3, death_list, income5, alc5, "table4b")  # Males, age group 3
 
 table4to9(nhis_fem.white, death_list, income5, alc5, "table4b") # Females, white
 table4to9(nhis_fem.black, death_list, income5, alc5, "table4b") # Females, black
@@ -228,12 +253,12 @@ table4to9(nhis_all,    death_list, race4, alc5, "table4c") # All participants
 table4to9(nhis_female, death_list, race4, alc5, "table4c") # Females
 table4to9(nhis_male,   death_list, race4, alc5, "table4c") # Males
 
-table4to9(nhis_fem.age.gp1,  death_list, race4, alc5, "table4c")  # Females, age group 1
-table4to9(nhis_fem.age.gp2,  death_list, race4, alc5, "table4c")  # Females, age group 2
-table4to9(nhis_fem.age.gp3,  death_list, race4, alc5, "table4c")  # Females, age group 3
-table4to9(nhis_male.age.gp1, death_list, race4, alc5, "table4c")  # Males, age group 1
-table4to9(nhis_male.age.gp2, death_list, race4, alc5, "table4c")  # Males, age group 2
-table4to9(nhis_male.age.gp3, death_list, race4, alc5, "table4c")  # Males, age group 3
+# table4to9(nhis_fem.age.gp1,  death_list, race4, alc5, "table4c")  # Females, age group 1
+# table4to9(nhis_fem.age.gp2,  death_list, race4, alc5, "table4c")  # Females, age group 2
+# table4to9(nhis_fem.age.gp3,  death_list, race4, alc5, "table4c")  # Females, age group 3
+# table4to9(nhis_male.age.gp1, death_list, race4, alc5, "table4c")  # Males, age group 1
+# table4to9(nhis_male.age.gp2, death_list, race4, alc5, "table4c")  # Males, age group 2
+# table4to9(nhis_male.age.gp3, death_list, race4, alc5, "table4c")  # Males, age group 3
 
 table4to9(nhis_fem.edu1, death_list, race4, alc5, "table4c") # Female, low edu
 table4to9(nhis_fem.edu2, death_list, race4, alc5, "table4c") # Female, medium edu

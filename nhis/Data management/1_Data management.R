@@ -48,14 +48,15 @@ nhis_all <- read_sas (paste0(data_orig, "nhis_mort_clean.sas7bdat")) %>%
           # Mediator 4 - Physicial Activity
           phy_act3.factor =factor(phy_act3,levels=c(3,1,2), labels = c("Active", "Sedentary", "Somewhat active")),
   
-          # Covariates
+          # Covariates / other
           ethnicity.factor = factor(ethnicity, levels=c(1,2,3,4), labels = c("Non-Hispanic White", "Non-Hispanic Black","Hispanic", "Other")),
           ethnicity_detail = factor(ethnicity_detail, levels=c(1,2,3,4,5,6), labels = c("Non-Hispanic White", "Non-Hispanic Black","Hispanic", "AI/AN", "API", "Other, including multiple")),
           female.factor = factor(female, levels=c(0,1), labels = c("Male", "Female")),
           married.factor = factor(married, levels=c(0,1), labels = c("Not married/living togeter", "Married/cohabitating")),
           employed.factor = factor(employed, levels=c(0,1), labels = c("Not employed", "Paid employment, student or retired")),
           diabet.factor = factor(diabet, levels=c(0,1,2), labels = c("No","Borderline","Yes")),
-          
+          k6scale3.factor = factor (k6scale, levels=c(1,2,3), labels=c("None/low", "Moderate", "Severe")),
+      
           # Outcome        
           allcause_death.factor = factor(allcause_death, levels=c(0,1), labels = c("Alive","Deceased")))
                 
@@ -107,7 +108,7 @@ nrow(nhis)                            # final sample size
 
 
 # Save copy of final datasets  
-saveRDS(nhis_all2,    paste0(data_new, "nhis_all.rds"))      # NHIS data with all participants
+saveRDS(nhis_all2,   paste0(data_new, "nhis_all.rds"))      # NHIS data with all participants
 saveRDS(nhis,        paste0(data_new, "nhis.rds"))          # NHIS data to be analyzed
 saveRDS(nhis_male,   paste0(data_new, "nhis_male.rds"))     # NHIS data to be analyzed (males only)
 saveRDS(nhis_female, paste0(data_new, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
