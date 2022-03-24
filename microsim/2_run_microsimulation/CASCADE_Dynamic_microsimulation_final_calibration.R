@@ -21,6 +21,7 @@ library(splitstackshape)
 library(lhs)
 library(truncnorm)
 library(doParallel)
+library(fitdistrplus)
 options(scipen=999)
 # set seed for reproducibility - IMPORTANT - DO NOT CHANGE
 # note - this also needs to be ran straight after R has been opened
@@ -29,7 +30,7 @@ set.seed(42)
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -104,17 +105,19 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projec
 
 PE <- 0
 N_SAMPLES <- 10
+N_WAVES <- 3
 WAVE <- 1
+N_REPS <- 3
+
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sampling_parameters_IRR.R")
 
-N_REPS <- 1
 sampleseeds <- expand.grid(seed=1:N_REPS, SampleNum=1:N_SAMPLES)
 sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 
 baseorig <- basepop
 
 # adjust parallel settings
-registerDoParallel(28)
+registerDoParallel(25)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -122,7 +125,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %do% {
+                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
 samplenum <- as.numeric(sampleseeds$SampleNum[i])
 seed <- as.numeric(sampleseeds$seed[i])
 print(i)
@@ -151,40 +154,55 @@ run_microsim(seed,samplenum,lhsSample[[samplenum]], basepop, deathrates, apply_d
 saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave", WAVE, ".RDS", sep=""))
 
 Cirrhosis <- readRDS("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave1.RDS")
-# Cirrhosis <- readRDS("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave1.RDS")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/calculate_implausibility.R")
 
-implausibility <- calculateimplausibility(Cirrhosis, "b", N_REPS)
+# for calculating implausibility based on age-specific mortality rates 
+source("SIMAH_code/microsim/2_run_microsimulation/1_functions/calculate_implausibility_age.R")
+output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
+implausibility <- output[[1]]
+write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
 
-write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE, ".csv", sep=""), 
-          row.names=F)
+Cirrhosis <- list()
+gc()
 
-# find the top runs and plot
-summaryimp <- implausibility %>% group_by(samplenum) %>% summarise(maximp = max(implausibility))
+for(w in 2:N_WAVES){
+  WAVE <- w
+  source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sampling_parameters_waves_IRR.R")
+  print(paste("Wave =",WAVE))
+  sampleseeds$seed <- sample(1:nrow(sampleseeds), length(unique(sampleseeds$SampleNum)), replace=F)
+  Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
+                       .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                         print(i)
+                         samplenum <- as.numeric(sampleseeds$SampleNum[i])
+                         seed <- as.numeric(sampleseeds$seed[i])
+                         set.seed(as.numeric(Sys.time()))
+                         selectedlhs <- lhsSample[[samplenum]]
+                         basepop <- baseorig
+                         history <- HistoryFunction(basepop, ages, selectedlhs)
+                         basepop <- left_join(basepop, history)
+                         basepop <- formerdrinkers_history(basepop,selectedlhs)
+                         basepop <- basepop %>% 
+                           mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" & 
+                                                            grams_10years>= as.numeric(lhsSample[[samplenum]]["THRESHOLD"]), 1,
+                                                          ifelse(formerdrinker==0 & microsim.init.sex=="f" & 
+                                                                   grams_10years>=as.numeric(lhsSample[[samplenum]]["THRESHOLD"])*
+                                                                   as.numeric(lhsSample[[samplenum]]["THRESHOLD_MODIFIER"]), 1, 
+                                                                 ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
+                                  grams_10years = ifelse(formerdrinker==1, former_history,
+                                                         grams_10years)) %>% dplyr::select(-former_history)
+                         run_microsim(seed,samplenum,lhsSample[[samplenum]], basepop, deathrates, apply_death_rates,
+                                      outward_migration, inward_migration, mortality,
+                                      AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, 
+                                      MetabolicPathway,
+                                      brfss,Rates, 1984, 2010)
+                       }
+  # save wave 2 output
+  saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave", WAVE, ".RDS", sep=""))
+  # calculate implausibility for each sample
+  output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
+  implausibility <- output[[1]]
+  write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
+  # save implausibility for wave 2
+  Cirrhosis <- list()
+  gc()
+}
 
-topsample <- summaryimp[which.min(summaryimp$maximp),]$samplenum
-
-# plot all runs compared to the target 
-# Cirrhosis <- do.call(rbind, Cirrhosis) %>% group_by(Year, samplenum, microsim.init.sex) %>% summarise(n=mean(n))
-# target <- target %>% rename(microsim.init.sex=sex) %>% mutate(PE=PE/100, Lower=Lower/100, Upper=Upper/100)
-# Cirrhosis <- left_join(Cirrhosis, target)
-
-ggplot(data=implausibility, aes(x=Year)) + geom_line(aes(y=microsim, colour=as.factor(samplenum))) + 
-  geom_line(aes(y=target),colour="black") +
-  geom_ribbon(aes(ymin=Lower, ymax=Upper),alpha=0.2) + 
-  facet_grid(rows=vars(sex)) + theme_bw() + ylim(0,NA) + 
-  theme(legend.position="none")
-ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/allruns.png",dpi=300, width=33, height=19, units="cm")
-
-top <- implausibility %>% filter(samplenum %in% topsample)
-  
-ggplot(data=top, aes(x=Year)) + geom_line(aes(y=microsim), colour="red") + geom_line(aes(y=target),colour="black") +
-  geom_ribbon(aes(ymin=Lower, ymax=Upper),alpha=0.2) + 
-  facet_grid(rows=vars(sex)) + theme_bw() + ylim(0,NA)
-ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/toprun.png",dpi=300, width=33, height=19, units="cm")
-
-# lhsSample <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave1.csv")
-# toplhs <- lhsSample[topsample,]
-# output the parameters from the top run 
-toplhs <- lhsSample[[topsample]]
-write.csv(toplhs, "SIMAH_workplace/microsim/2_output_data/calibration_output/toplhs.csv", row.names=F)

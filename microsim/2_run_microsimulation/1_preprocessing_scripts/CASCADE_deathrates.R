@@ -40,32 +40,10 @@ deathrates <- deathrates %>% filter(State==SelectedState) %>%
 
 # READ IN CIRRHOSIS DEATHS - TO WORK REFERENCE RATE AND REMOVE CIRRHOSIS DEATHS FROM THE TOTAL DEATHS
 if(cirrhosis==1 & mortality==1){
-cirrhosisdata <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_deaths_CDC_2.csv")[c(1:3,35:48)]
-cirrhosisdata <- cirrhosisdata %>% mutate(CDC..80 = CDC..80/10,
-                                          CDC.75.=CDC.75_79+CDC..80,
-                                          CDC.25_34 = CDC.25_29+CDC.30_34,
-                                          CDC.35_44 = CDC.35_39+CDC.40_44,
-                                          CDC.45_54 = CDC.45_49+CDC.50_54,
-                                          CDC.55_64 = CDC.55_59+CDC.60_64,
-                                          CDC.65_74 = CDC.65_69+CDC.70_74) %>% dplyr::select(States, Sex, Year, CDC.15_19, CDC.20_24, CDC.25_34,
-                                                                                      CDC.35_44, CDC.45_54, CDC.55_64,
-                                                                                      CDC.65_74, CDC.75.) %>% 
-  pivot_longer(cols=CDC.15_19:CDC.75., names_to="agegroup", values_to="deaths") %>% 
-  mutate(agegroup=gsub("CDC.", "", agegroup),
-         agegroup=gsub("_","-", agegroup),
-         sex=recode(Sex, "1"="m","2"="f"),
-         State=recode(States, "USA"="USA",
-                      "CA"="California",
-                      "MN"="Minnesota",
-                      "NY"="New York",
-                      "TN"="Tennessee",
-                      "TX"="Texas")) %>% filter(State==SelectedState) %>% 
-  mutate(Deaths=deaths*proportion,
-         count=ifelse(agegroup=="15-19",Deaths/5*2,Deaths),
-         cat=paste(agegroup, sex, sep="_")) %>% dplyr::select(Year, cat, count)
+cirrhosisdata <- cirrhosismortality %>% ungroup() %>% 
+         mutate(cat=paste(agegroup, sex, sep="_")) %>% dplyr::select(Year, cat, count)
   
-cirrhosisdeaths1984 <- cirrhosisdata %>% filter(Year==1984)  %>% 
-   mutate(count=round(count*100))
+cirrhosisdeaths1984 <- cirrhosisdata %>% filter(Year==1984)
 
 # # ADJUST DEATH RATES = total deaths - cirrhosis deaths 
 setdiff(names(cirrhosisdata), names(deathrates))

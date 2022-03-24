@@ -9,6 +9,8 @@ library(ggplot2)
 library(sjlabelled)
 library(RColorBrewer)
 
+# github demonstration
+
 wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 

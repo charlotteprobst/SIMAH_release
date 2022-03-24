@@ -1,5 +1,5 @@
 if(mortality==1){
-cirrhosismortality <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_deaths_CDC_2.csv")[c(1:3,35:48)]
+cirrhosismortality <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_deaths_CDC_2.csv")[c(1:3,35:48)] 
 cirrhosismortality <- cirrhosismortality %>% mutate(CDC..80 = CDC..80/5,
                                                     CDC.75.=CDC.75_79+CDC..80,
                                                     CDC.25_34 = CDC.25_29+CDC.30_34,

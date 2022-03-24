@@ -15,9 +15,13 @@ target <- brfss %>% filter(YEAR>=2000) %>% filter(State==SelectedState) %>%
          # AlcCAT = ifelse(formerdrinker==1, "Former drinker", AlcCAT)
          ) %>%
   group_by(YEAR, microsim.init.sex, microsim.init.education, AlcCAT) %>%
-  tally() %>% ungroup() %>%
+  tally() %>% ungroup() %>% ungroup() %>% 
+  mutate(totalpop=sum(n)) %>% 
   group_by(YEAR, microsim.init.sex, microsim.init.education) %>%
-  mutate(targetpercent=n/sum(n)) %>%
+  mutate(targetpercent=n/sum(n),
+         sepercent = sqrt((targetpercent*(1-targetpercent))/sum(n)),
+         lower_ci = targetpercent - (1.96*sepercent),
+         upper_ci = targetpercent + (1.96*sepercent)) %>%
   rename(year=YEAR) %>% dplyr::select(-n)
 
 # summary <- Output %>% 
@@ -29,12 +33,12 @@ target <- brfss %>% filter(YEAR>=2000) %>% filter(State==SelectedState) %>%
 #   mutate(data="microsimulation") %>% ungroup() %>% group_by(year, microsim.init.sex) %>%
 #   mutate(proportion=n/sum(n)) %>% rename(Year=year) %>% mutate(Year=as.numeric(as.character(Year)))
 # 
-summarybrfss <- brfss %>% group_by(YEAR, microsim.init.sex,
-                                   AlcCAT)%>%
-  tally() %>% rename(Year=YEAR) %>%
-  mutate(data="brfss") %>% ungroup() %>%
-  group_by(Year, microsim.init.sex) %>%
-  mutate(proportion=n/sum(n))
+# summarybrfss <- brfss %>% group_by(YEAR, microsim.init.sex,
+#                                    AlcCAT)%>%
+#   tally() %>% rename(Year=YEAR) %>%
+#   mutate(data="brfss") %>% ungroup() %>%
+#   group_by(Year, microsim.init.sex) %>%
+#   mutate(proportion=n/sum(n))
 # # 
 # summary <- rbind(summary, summarybrfss) %>%
 #   mutate(AlcCAT = factor(AlcCAT,

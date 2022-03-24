@@ -153,12 +153,14 @@ Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.i
                                                                         breaks=c(0,19,24,34,44,54,64,74,100),
                                                                         labels=c("15-19","20-24","25-34","35-44","45-54","55-64","65-74","75.")),
                                                          obese = ifelse(microsim.init.BMI>=30, 1,0)) %>%
-  group_by(microsim.init.sex, agegroup) %>% summarise(percentobese = mean(obese),
-                                                    percentoverthreshold = mean(Cirrhosis_risk)) %>% 
-  mutate(year=i, seed=seed)
+  group_by(microsim.init.sex, agegroup) %>% tally(name="populationtotal") %>% 
+  # summarise(percentobese = mean(obese),
+  #                                                   percentoverthreshold = mean(Cirrhosis_risk)) %>% 
+  mutate(year=i, seed=seed, samplenum=samplenum)
 }
 
 Summary <- do.call(rbind,Summary)
+
 Cirrhosis <- do.call(rbind, Cirrhosis)
 Cirrhosis <- Cirrhosis %>% mutate(seed = seed, 
          samplenum = samplenum,
@@ -176,11 +178,15 @@ Cirrhosis <- Cirrhosis %>% mutate(seed = seed,
          pathway = ifelse(pmax(RRMetabolic, RRHeavyUse, RRHep)==RRHeavyUse, "Heavy use",
                            ifelse(pmax(RRMetabolic, RRHeavyUse, RRHep)==RRMetabolic, "Metabolic",
                                   "Hepatitis"))) %>% 
-  group_by(Year,seed,agegroup,samplenum, microsim.init.sex) %>% tally() 
+  group_by(Year,seed,agegroup,samplenum, microsim.init.sex) %>% tally(name="cirrhosistotal") %>% 
+  rename(year=Year)
+Summary$year <- as.numeric(Summary$year)
+Summary <- left_join(Summary, Cirrhosis)
+Summary$cirrhosistotal <- Summary$cirrhosistotal/100
+Summary$rateper100000 <- (Summary$cirrhosistotal/Summary$populationtotal)*100000
 # Cirrhosis <- Cirrhosis %>% group_by(Year, seed, samplenum, microsim.init.sex,agecat) %>% tally()
-alcohol <- do.call(rbind,alcohol)
 # DeathSummary <- do.call(rbind, DeathSummary)
 # Summary <- list(Summary, DeathSummary)
-return(alcohol)
+return(Summary)
 }
 
