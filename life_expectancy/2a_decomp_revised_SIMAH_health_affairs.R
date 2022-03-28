@@ -64,7 +64,7 @@ dMort_pop <- aggregate(.~ year + sex + edclass, data =  dMort, FUN=sum)
 dMort_pop <- dMort_pop  %>% select(year, sex, edclass, TPop) %>% 
   group_by(year, sex, .drop=FALSE) %>% mutate(Proportion=(TPop/sum(TPop)) * 100) %>%
   ungroup() %>% arrange(., sex, year, edclass)
-color.vec <- c("#69AA9E", "#447a9e",  "#d72c40") # high  middle low
+color.vec <- c("#97CDC3", "#00A896",  "#02606C") # high  middle low
 setnames(dMort_pop, old = c('edclass', 'sex', 'year'), new = c('SES','Sex', 'Year'))
 dMort_pop$SES <- recode(dMort_pop$SES, "College" = "High", "SomeC" = "Middle",  "LEHS" = "Low")
 dMort_pop$Sex <- as.factor(dMort_pop$Sex)
@@ -79,7 +79,7 @@ ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
   theme(strip.background = element_rect(fill = "white"))+
   theme(strip.text = element_text(colour = 'black'), text=element_text(size = 16)) +
   theme(legend.position = "right") +
-  scale_color_manual(name = "SES", breaks = c("High", "Middle", "Low"), values = color.vec, 
+  scale_color_manual(name = "Education", breaks = c("High", "Middle", "Low"), values = color.vec, 
                      labels = c("High", "Middle", "Low")) +   
   geom_point(size = 1, aes(color = SES)) 
 ggsave("SIMAH_workplace/life_expectancy/3_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
@@ -105,14 +105,14 @@ for (j in (1:length(v.year1))){
     US_y1 <- filter(dMort, year==year1 &  group == v.group[i]) ## this one would then be i
     US_y2 <- filter(dMort, year==year2 &  group == v.group[i])
     
-    US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
+    US_y1 <- US_y1[, sel.vars] 
     US_y2 <- US_y2[, sel.vars]
     
     US_y1$ax = c(3.5,rep(2.5,11), 6.99) # midpoint of age range. Check age groups again. 
     US_y2$ax = c(3.5,rep(2.5,11), 6.99)
     
     # to start the first step of the decomposition
-    US_y1_vector <- unlist(select(US_y1,starts_with("mx_")))
+      <- unlist(select(US_y1,starts_with("mx_")))
     US_y2_vector <- unlist(select(US_y2,starts_with("mx_")))
     
     decomp_results <-  horiuchi(func = life_table_causes,
