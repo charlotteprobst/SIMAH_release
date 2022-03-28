@@ -253,7 +253,6 @@ write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dR
 write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020weights.csv")
 
 ####### DECOMP BY SEX, SES AND RACE  ########
-
 # calculate rates by race and ethnicity for 2020 weights 
 dMort2020 <- dMort_d %>% filter(year==2020) %>% dplyr::select(-c(TPop))
 mortlist <- list()
