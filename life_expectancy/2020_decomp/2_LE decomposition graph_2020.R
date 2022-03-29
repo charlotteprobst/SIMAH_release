@@ -67,38 +67,18 @@ color.vec <- c(rev(brewer.pal(injury,"RdPu")),
                c("grey"))
 
 write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/decomp_results_2020.csv")
+group1gathered <- group1gathered[group1gathered$start_year == 2019,] 
 ## Plot showing changes in every year (will not be included in publication)
-ggplot(data = group1gathered, aes(y = Contribution, x = end_year, fill = Cause_of_death)) +
+ggplot(data = group1gathered, aes(y = Contribution, x = SES, fill = Cause_of_death)) +
   geom_bar(position = position_stack(reverse = T), stat = "identity") +
   scale_fill_manual("Cause of death", values = color.vec)+ 
-  facet_grid(cols = vars(SES), rows = vars(Sex),  scales = "free") 
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_2018_2020_rest.jpeg", dpi=600, width=30, height=15, units="cm")
-
-dGraph <- group1gathered[which(group1gathered$Cause_of_death != "Rest" & 
-                                 group1gathered$Cause_of_death != "Covid 19"),]
-dGraph$Year <- as.factor(dGraph$end_year) 
-#color.vec <- c("#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E")
-
-## Plot contributions
-ggplot(data = dGraph, aes(y = Contribution, x = Year, fill = Cause_of_death)) +
-  geom_bar(position = "stack", stat = "identity", width = 0.8, ) +
-  #facet_grid(cols = vars(Sex), rows = vars(SES),  scales = "free") +
-  facet_grid(cols = vars(SES), rows = vars(Sex),  scales = "free") +
-  theme_light() +
-  theme(strip.background = element_rect(fill = "white")) +
-  theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
-  #theme(legend.position = "right") +
-  scale_fill_manual("Cause of death", values = color.vec)+ 
-  ylab("Contribution to changes in life expectancy (years)") +
-  #xlab("Years") +
-  geom_hline(aes(yintercept=0)) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_2018_2020.jpeg", dpi=600, width=30, height=15, units="cm")
+  facet_grid( rows = vars(Sex),  scales = "free") 
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_2020.jpeg", dpi=600, width=30, height=15, units="cm")
 
 #### Graph results by sex, SES and race
 # Graph results by sex and SES
 dResults_contrib <- as.data.frame(dResults_contrib_race[, -1])
+dResults_contrib <- filter(dResults_contrib, start_year == 2019)
 group1gathered <- gather(data = dResults_contrib, key = "mort", value = "value", 
                          -sex , -edclass, -race, -start_year, -end_year, -LE1, -LE2)
 
@@ -138,31 +118,9 @@ levels(group1gathered$Cause_of_death) <- list("Suicide" = "SIJ",
                                               "Other infectious diseases" = "OTHINF", 
                                               "Rest" = "REST")
 write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/decomp_results_2020_race.csv")
-ggplot(data = group1gathered, aes(y = Contribution, x = end_year, fill = Cause_of_death)) +
-  geom_bar(position = "stack", stat = "identity") +
+group1gathered <- group1gathered[group1gathered$start_year == 2019,] 
+ggplot(data = group1gathered, aes(y = Contribution, x = SES, fill = Cause_of_death)) +
+  geom_bar(position = position_stack(reverse = T), stat = "identity") +
   scale_fill_manual("Cause of death", values = color.vec)+ 
-  facet_grid(cols = vars(Sex, SES), rows = vars(Race)) 
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_race_2018_2020_rest.jpeg", dpi=600, width=30, height=15, units="cm")
-
-dGraph <- group1gathered[which(group1gathered$Cause_of_death != "Rest" & 
-                                 group1gathered$Cause_of_death != "Covid 19"),]
-dGraph$Year <- as.factor(dGraph$end_year) 
-color.vec <- c("#E2C244", "#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E")
-color.vec <- c("#ed7a6d", "#d72c40", "#cf82a6", "#a14d72", "#732946" ,"#93AEBF", "#447a9e", "#69AA9E")
-
-## Plot contributions
-ggplot(data = dGraph, aes(y = Contribution, x = Year, fill = Cause_of_death)) +
-  geom_bar(position = "stack", stat = "identity", width = 0.8) +
-  #facet_grid(cols = vars(Sex), rows = vars(SES),  scales = "free") +
-  facet_grid(cols = vars(Sex, SES), rows = vars(Race)) +
-  theme_light() +
-  theme(strip.background = element_rect(fill = "white")) +
-  theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
-  #theme(legend.position = "right") +
-  scale_fill_manual("Cause of death", values = color.vec)+ 
-  ylab("Contribution to changes in life expectancy (years)") +
-  #xlab("Years") +
-  geom_hline(aes(yintercept=0)) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_race_2018_2020.jpeg", dpi=600, width=30, height=15, units="cm")
+  facet_grid(cols = vars(Race), rows = vars(Sex)) 
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_race_2020.jpeg", dpi=600, width=30, height=15, units="cm")
