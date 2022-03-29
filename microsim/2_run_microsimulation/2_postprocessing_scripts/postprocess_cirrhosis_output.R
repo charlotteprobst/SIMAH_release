@@ -14,7 +14,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
@@ -32,7 +32,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/implausi
        dpi=300, width=33, height=19, units="cm")
 
 # now plot cirrhosis output over waves 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis*.RDS", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/Cirrhosis*.RDS", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files
 files <- files[order(index)]
@@ -48,12 +48,41 @@ proportion <- 200000/WholePopSize$total
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_cirrhosis_1984_2016.R")
 
-meansim <- files %>% group_by(wave, year, samplenum, seed, microsim.init.sex) %>% 
-  mutate(microsim=ifelse(is.na(rateper100000),0,rateper100000)) %>% rename(sex=microsim.init.sex) %>% ungroup() %>% 
-  group_by(wave, year, sex, agegroup, samplenum) %>% summarise(microsim=mean(microsim))
-target <- cirrhosismortality %>% filter(Year<=2010 & Year>=1984) %>% rename(target=rate, year=Year) %>% 
-  dplyr::select(year, sex, agegroup, target) %>% mutate(target=ifelse(is.na(target),0,target))
-meansim <- left_join(meansim, target) %>% pivot_longer(cols=microsim:target)
+age2010 <- files %>% filter(year==2010) %>% 
+  ungroup() %>% 
+  group_by(year, microsim.init.sex, agegroup) %>% 
+  summarise(poptotal = mean(populationtotal)) %>% ungroup() %>% 
+  group_by(year, microsim.init.sex) %>% 
+  mutate(percent = poptotal / sum(poptotal)) %>% ungroup() %>% dplyr::select(microsim.init.sex, agegroup, percent)
+
+sim <- left_join(files, age2010) %>% 
+  mutate(cirrhosistotal = ifelse(is.na(cirrhosistotal),0, cirrhosistotal)) %>% 
+  group_by(wave, year, samplenum, seed, microsim.init.sex, agegroup) %>% 
+  mutate(weightedrate = (cirrhosistotal/populationtotal*100000)*percent) %>% ungroup() %>% 
+  group_by(wave, year, samplenum, seed, microsim.init.sex) %>% 
+  summarise(microsim = sum(weightedrate)) %>% rename(sex=microsim.init.sex)
+
+meansim <- sim %>% group_by(wave, year, sex, samplenum) %>% summarise(microsim=mean(microsim)) %>% rename(Year=year)
+
+meansim <- left_join(meansim, cirrhosismortality_agest) %>% 
+  rename(target=agestrate)
+  # pivot_longer(microsim:target)
+
+ggplot(data=meansim, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line() + 
+  geom_line(aes(x=Year, y=target)) + 
+  facet_grid(cols=vars(wave), rows=vars(sex))
+
+meansim$samplenum <- as.factor(meansim$samplenum)
+meansim$name <- as.factor(meansim$name)
+
+target <- meansim %>% filter(name=="target")
+
+ggplot(data=target, aes(x=Year, y=value, colour=name, group=samplenum)) + geom_line(size=1) + 
+  facet_grid(cols=vars(wave), rows=vars(sex), scales="free") + geom_point() + 
+  ylim(0,NA) + theme_bw() + 
+  theme(legend.position="none",
+        text = element_text(size=18)) + xlab("") + 
+  scale_colour_manual(values=c("black","red"))
 
 agegroups <- c("35-44","45-54","55-64")
 for(i in agegroups){

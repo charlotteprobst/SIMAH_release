@@ -104,7 +104,7 @@ Rates$agecat <- as.character(Rates$agecat)
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
 PE <- 0
-N_SAMPLES <- 100
+N_SAMPLES <- 500
 N_WAVES <- 15
 WAVE <- 1
 N_REPS <- 2
@@ -117,7 +117,7 @@ sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 baseorig <- basepop
 
 # adjust parallel settings
-registerDoParallel(25)
+registerDoParallel(18)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -156,8 +156,10 @@ saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_out
 Cirrhosis <- readRDS("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave1.RDS")
 
 # for calculating implausibility based on age-specific mortality rates 
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/calculate_implausibility_age.R")
-output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
+# source("SIMAH_code/microsim/2_run_microsimulation/1_functions/calculate_implausibility_age.R")
+source("SIMAH_code/microsim/2_run_microsimulation/1_functions/calculate_implausibility_agestandardized.R")
+
+output <- calculateimplausibility(Cirrhosis, cirrhosismortality_agest, N_REPS)
 implausibility <- output[[1]]
 write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
 
@@ -199,7 +201,7 @@ for(w in 2:N_WAVES){
   # save wave 2 output
   saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis_output_wave", WAVE, ".RDS", sep=""))
   # calculate implausibility for each sample
-  output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
+  output <- calculateimplausibility(Cirrhosis, cirrhosismortality_agest, N_REPS)
   implausibility <- output[[1]]
   write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
   # save implausibility for wave 2
