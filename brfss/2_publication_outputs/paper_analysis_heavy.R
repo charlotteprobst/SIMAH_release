@@ -17,6 +17,27 @@ setwd(wd)
 ####read in the joined up data files 
 data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
 
+# NY State targets 
+NYstate <- data %>% filter(State=="New York") %>% 
+  group_by(YEAR, sex_recode) %>% 
+  summarise(prevalence = mean(drinkingstatus_updated))
+Years <- expand.grid(sex_recode=c("Male","Female"), YEAR=1984:2019)
+NYstate <- left_join(Years, NYstate)
+
+ggplot(data=NYstate, aes(x=YEAR, y=prevalence)) + geom_point() +
+  facet_grid(cols=vars(sex_recode)) + geom_line() + ylim(0,NA)
+
+
+NYstate <- data %>% filter(State=="New York") %>% 
+  group_by(YEAR, sex_recode) %>% 
+  filter(drinkingstatus_updated==1) %>% 
+  summarise(quantity = mean(gramsperday_upshifted_crquotient),
+            sequantity = std.error(gramsperday_upshifted_crquotient),
+            frequency = mean(frequency_upshifted)) %>% 
+  pivot_wider(names_from=sex_recode, values_from=c(quantity,sequantity, frequency))
+
+ggplot(data=NYstate, ae)
+
 # mean GPD over time 
 summary <- data %>% group_by(State, YEAR, sex_recode) %>% 
   filter(gramsperday_upshifted_crquotient>0) %>% 
