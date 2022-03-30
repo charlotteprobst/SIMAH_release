@@ -11,8 +11,6 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_sex_SES_race_ACS_2020.csv")
 dle_results <- filter(dle_results, Race != "Other")
 
-#dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_sex_SES_ACS_2020.csv")
-
 dle_results <- filter(dle_results, Year >2014)
    
 dle_results$Sex <- as.factor(dle_results$Sex)
