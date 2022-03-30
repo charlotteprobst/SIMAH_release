@@ -286,38 +286,3 @@ AIC(alc5.msm1_v2, alc5.msm2_v2, alc5.msm3_v2)
 
 
 
-# 2) HEAVY EPISODIC DRINKING  ------------------------------------------------------------------------------------------------
-## 2a) Run HED MSM Model ------------------------------------------------------------------------------------------------
-  
-  # Count of transitions 
-  statetable.msm(hed, idnum, data=nesarc)
-  statetable.msm(hed, idnum, data=nesarc_expanded)
-  
-  
-  # Specify transition intensity matrix (Q) - i.e., what (instanteneous) transitions are allowed (specified by the non-zero entries)
-  # Will only allow transitions to an adjacent state 
-  
-  Q <- rbind ( c(0,     0.25,    0,     0,    0),
-               c(0.25,  0,       0.25,  0,    0),
-               c(0,     0.25,    0,     0.25, 0),
-               c(0,     0,       0.25,  0,    0.25),
-               c(0,     0,       0,     0.25, 0))
-  
-  # Specify initial values 
-  Q <- crudeinits.msm(hed ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
-  
-  
-  
-  
-  # Run MSM model
-  hed.msm <- msm (hed ~ years, subject=idnum, data = nesarc_expanded, 
-    qmatrix = Q, center=FALSE,
-    control = list(trace=1, maxit=500, fnscale = 3000000),
-    covariates = ~ female_wave1.factor + age3.factor + edu3.factor + race_wave1.factor)
-  
-  # Save Results
-  saveRDS(hed.msm, paste0(models, "hed.msm.RDS"))
-  
-  
-  
-  
