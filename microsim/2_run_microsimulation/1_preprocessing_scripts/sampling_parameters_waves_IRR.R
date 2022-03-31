@@ -8,7 +8,7 @@ implausibilitywave1 <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/ca
 
 # cutoff <- median(implausibilitywave1$implausibility)*0.9
 # top <- unique(subset(implausibilitywave1, implausibility<=cutoff)$samplenum)
-top <- unique(subset(implausibilitywave1, percentile<=5))$samplenum
+top <- unique(subset(implausibilitywave1, percentile<=15))$samplenum
 
 toplhs <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE-1, ".csv", sep="")) %>% 
   filter(SampleNum %in% top)
