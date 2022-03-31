@@ -21,17 +21,19 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/reweighted_sampled_BRFSS.RDS")
+data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
 gc()
+data <- do.call(rbind, data)
+
+data <- data %>% filter(State!="Guam") %>% filter(State!="Puerto Rico") %>% filter(State!="territories")
+
+data$StateOrig <- data$State
 
 USA <- data %>% mutate(State="USA")
 
 data <- rbind(data,USA)
 
 source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
-
-data <- data %>% filter(State!="Puerto Rico") %>% filter(State!="Guam") %>%
-  filter(State!="territories")
 
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
@@ -44,7 +46,7 @@ summary(data$alc_frequency)
 data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
 # remove missing data for key variables - age, sex, race, drinking
-data <- remove_missing(data)
+data <- remove_missing_data(data)
 
 # allocate individuals to be monthly/yearly/former drinkers or lifetime abstainers
 data <- impute_yearly_drinking(data)
@@ -105,7 +107,7 @@ data <- data %>% group_by(YEAR, State) %>%
          quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
 
 # adding the regions to the BRFSS 
-data <- add_brfss_regions(data)
+data <- add_brfss_regions_wet(data)
 
 # save the data with pre and post upshift for generating paper plots
 # forpaper <- data %>% 
@@ -117,44 +119,12 @@ data <- add_brfss_regions(data)
 #                 gramsperday_upshifted_crquotient, 
 #                 frequency_upshifted,
 #                 quantity_per_occasion_upshifted)
-saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
-
-# now compare up-shifted to per capita mean data for each state 
-GPDsummary <- data %>% group_by(YEAR, State, region) %>% filter(drinkingstatus==1) %>% 
-  summarise(meanGPD = mean(gramsperday))
-
-data <- left_join(data, GPDsummary)
-
-compare <- data %>% 
-  dplyr::select(YEAR, State, region, gramspercapita_adj1, adj_brfss_apc, BRFSS_APC, 
-                # gramsperday_upshifted_quotient, # KP: This variable does not exist, I commented it out
-                meanGPD,
-                gramsperday_upshifted_crquotient) %>% 
-  group_by(YEAR, State,region) %>% 
-  summarise(SALES=mean(gramspercapita_adj1), BASELINE=mean(meanGPD, na.rm=T))
-
-percapita_adjusted <- data %>% 
-  filter(drinkingstatus_updated==1) %>% 
-  group_by(YEAR,State,region) %>% 
-  summarise(UPSHIFTED=mean(gramsperday_upshifted_crquotient, na.rm=T))
-
-compare <- left_join(compare, percapita_adjusted) %>% 
-  pivot_longer(cols=SALES:UPSHIFTED)
-
-# loop through and draw upshift plots for each region 
-for(i in unique(data$region)){
-ggplot(data=subset(compare, region==i), aes(x=YEAR, y=value, colour=name)) + geom_line(size=1) +
-  facet_wrap(~State, scales="fixed") + theme_bw() + theme(legend.title=element_blank(),
-                                                         legend.position="bottom",
-                                                         panel.background = element_rect(fill="white"),
-                                                         strip.background = element_rect(fill="white"),
-                                                         text = element_text(size=18)) + 
-  ylim(0,NA) + xlim(1984,2020) + ylab("grams per day") + ggtitle(paste(i))
-ggsave(paste0("SIMAH_Workplace/brfss/plots/upshift_compare",i,".png"), dpi=300, width=33, height=19, units="cm")
-}
+# saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
 
 # select variables and save the upshifted data 
-data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var, employment, 
+data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 
+                               race_eth_detailed, sex_recode, age_var, employment, 
+                               employment_detailed, marital_status_detailed,
                                marital_status,
                                education_summary, 
                                household_income, BMI,
@@ -163,19 +133,12 @@ data <- data %>% dplyr::select(YEAR, State, region, race_eth, sex_recode, age_va
                                drinkingstatus_detailed, gramsperday_upshifted_crquotient,
                                frequency_upshifted, quantity_per_occasion_upshifted,
                                hed) %>% 
-  rename(
-    drinkingstatus = drinkingstatus_updated,
+  rename(drinkingstatus = drinkingstatus_updated,
          gramsperday = gramsperday_upshifted_crquotient,
          frequency = frequency_upshifted,
          quantity_per_occasion = quantity_per_occasion_upshifted) %>% 
   mutate(formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0),
          gramsperday = ifelse(gramsperday>200, 200, gramsperday))
-
-# save an RDS copy of the upshifted data 
-saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
-
-summary <- data %>% group_by(YEAR) %>% summarise(meanprevalence=mean(drinkingstatus))
-
 
 # data for Maddy APC 
 USA <- data %>% filter(State=="USA") %>% ungroup() %>% 
@@ -192,38 +155,27 @@ USA <- data %>% filter(State=="USA") %>% ungroup() %>%
                                      "1931-1935","1936-1940","1941-1945","1946-1950",
                                      "1951-1955","1956-1960","1961-1965","1966-1970",
                                      "1971-1975","1976-1980","1981-1985","1986-1990",
-                                     "1991-1995","1996-2000","2001-2002"))) %>% 
-  dplyr::select(YEAR, sex_recode, race_eth, age_var, age_cat, birth_year, birth_cohort,
-                                                       employment, education_summary, drinkingstatus,
-                                                       gramsperday, frequency, hed) %>% 
+                                     "1991-1995","1996-2000","2001-2002")),
+         race_eth = ifelse(race_eth_detailed=="Non-Hispanic White","White",
+                           ifelse(race_eth_detailed=="Non-Hispanic Black","Black",
+                                  ifelse(race_eth_detailed=="Hispanic","Hispanic",
+                                         ifelse(race_eth_detailed=="Non-Hispanic Asian/PI","Asian",
+                                                ifelse(race_eth_detailed=="Non-Hispanic Native American","American Indian","Other ethnicity"))))),
+         marital_status = ifelse(marital_status_detailed=="married","Married",
+                                 ifelse(marital_status_detailed=="separated" | marital_status_detailed=="divorced", "Divorce/separated",
+                                        ifelse(marital_status_detailed=="widowed","Widowed",
+                                               ifelse(marital_status_detailed=="nevermarried" | marital_status_detailed=="unmarriedcouple","Never married",NA)))),
+         employment_status = ifelse(employment_detailed=="employed","Employed",
+                                    ifelse(employment_detailed=="retired","Retired",
+                                           ifelse(employment_detailed=="homemaker" | employment_detailed=="unemployed - <1 year" |
+                                                  employment_detailed=="unemployed - 1+ years" | employment_detailed=="student" |
+                                                    employment_detailed=="unable to work","Unemployed", NA)))) %>% 
+  dplyr::select(YEAR, StateOrig, region, sex_recode, race_eth, age_var, age_cat, birth_year, birth_cohort,
+                household_income,
+                employment_status, marital_status, education_summary, drinkingstatus,
+                gramsperday, frequency, hed) %>% 
   rename(year=YEAR, sex=sex_recode, age=age_var, education=education_summary,
          drink_frequency=frequency)
 
 # save the output to a .dta file 
-write.dta(USA, "SIMAH_workplace/brfss/processed_data/BRFSS_for_APC.dta")
-
-summary <- USA %>% group_by(sex, birth_year, age_cat) %>% 
-  filter(gramsperday!=0) %>% 
-  summarise(meangpd = mean(gramsperday)) %>% filter(birth_year>=1900)
-
-summary(USA$age_cat)
-
-
-ggplot(data=subset(summary,sex=="Male"), aes(x=birth_year, y=meangpd, colour=age_cat)) + geom_line() + 
-  facet_grid(rows=vars(sex))
-
-USA$age_cat <- relevel(USA$age_cat, ref="41-50")
-
-USA$birth_cohort <- relevel(USA$birth_cohort, ref="1956-1960")
-
-USA$year_cat <- cut(USA$year,
-                    breaks=c(0,1990,1995,2000,2005,2010,2015,2020),
-                    labels=c("1984-1990","1991-1995","1996-2000",
-                             "2001-2005","2006-2010","2011-2015",
-                             "2016-2020"))
-USA$year_cat <- relevel(USA$year_cat,ref="2016-2020")
-
-
-m1 <- glm.nb(gramsperday ~ year_cat + age_cat + birth_cohort, data = subset(USA,sex=="Male"))
-summary(m1)
-exp(coef(m1))        
+write.dta(USA, "SIMAH_workplace/brfss/processed_data/BRFSS_for_APC_covariates.dta")

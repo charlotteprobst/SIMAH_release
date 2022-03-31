@@ -10,22 +10,26 @@ data <- data %>% ungroup() %>% filter(State %in% SIMAH_states)
 return(data)
 }
 
-remove_missing <- function(data){
+remove_missing_data <- function(data){
   data <- data %>% mutate(BMI = ifelse(BMI<=15, 15,
                                        ifelse(BMI>=45, 45, BMI))) %>% 
-    dplyr::select(YEAR, State, final_sample_weight, race_eth,
-                                 sex_recode, age_var,
-                                 employment, education_summary,
-                                 household_income,
-                                 marital_status,
-                                 BMI, drinkingstatus,
-                                 alc_frequency, quantity_per_occasion,
-                                 gramsperday, 
-                                 mentalhealth,physicalhealth,
-                                 # household_income
-                                 hed) %>% drop_na(YEAR, State, race_eth, sex_recode, age_var,
+    dplyr::select(YEAR, State, StateOrig, final_sample_weight, race_eth,
+                  race_eth_detailed,
+                  sex_recode, age_var,
+                  employment, employment_detailed,
+                  education_summary,
+                  household_income,
+                  marital_status,
+                  marital_status_detailed,
+                  BMI, drinkingstatus,
+                  alc_frequency, quantity_per_occasion,
+                  gramsperday, 
+                  mentalhealth,physicalhealth,
+                  # household_income
+                  hed)  %>% drop_na(YEAR, State, race_eth, sex_recode, age_var,
+                                    education_summary, employment, marital_status,
                                                   gramsperday, drinkingstatus) %>% 
-    filter(State!="Puerto Rico") %>% filter(State!="Guam") %>% filter(State!="territories")
+    filter(StateOrig!="Puerto Rico") %>% filter(StateOrig!="Guam") %>% filter(StateOrig!="territories")
   return(data)
 }
 
@@ -223,3 +227,26 @@ add_brfss_regions <- function(data){
   
   return(data)
 }
+
+add_brfss_regions_wet <- function(data){
+  northcentral <- c("Alaska", "Colorado","Illinois","Iowa","Kansas","Michigan","Minnesota",
+                    "Montana","Missouri","Ohio","Nebraska", "North Dakota", "South Dakota",
+                    "Wisconsin", "Wyoming")
+  newengland <- c("Maine","Massachusetts","New Hampshire","Rhode Island","Vermont")
+  midatlantic <- c("Connecticut","Delaware","Maryland","New Jersey","New York","Pennsylvania", "DC")
+  pacific <- c("California","Hawaii","Idaho","Nevada","Oregon","Washington")
+  southcoast <- c("Arizona","Florida","Louisiana","New Mexico","South Carolina","Texas")
+  drysouth <- c("Alabama","Arkansas","Georgia","Indiana","Kentucky","Mississippi","North Carolina",
+                "Oklahoma","Tennessee", "Utah", "Virginia","West Virginia")
+  data$region <- ifelse(!is.na(match(data$StateOrig,northcentral)), "North-central",
+                        ifelse(!is.na(match(data$StateOrig,newengland)),"New England",
+                               ifelse(!is.na(match(data$StateOrig,midatlantic)),"Mid-Atlantic",
+                                      ifelse(!is.na(match(data$StateOrig,pacific)),"Pacific",
+                                             ifelse(!is.na(match(data$StateOrig,southcoast)),"South Coast",
+                                                    ifelse(!is.na(match(data$StateOrig,drysouth)),"Dry South",
+                                                                                       NA))))))
+  
+  return(data)
+}
+
+
