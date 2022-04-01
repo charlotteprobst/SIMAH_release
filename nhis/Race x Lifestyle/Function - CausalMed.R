@@ -16,10 +16,11 @@ CMed_prep <-function(data, prop = 1) {
       M3.bmi = bmi_cat,
       M4.phy = phy_act3) %>%
     dplyr::select(A.race, M1.alc, M2.smk, M3.bmi, M4.phy, allcause_death, bl_age, end_age, married, edu, srvy_yr) %>%
-    sample_frac(prop)
+    sample_frac(prop, replace=FALSE)
   
-  cat(paste0("Original sample size: ", nrow(mydata)), "\n") 
-  cat("Step 0 complete (Select data)", "\n") # progress indicator
+  cat(paste0("New iteration started", "\n")) 
+  cat(paste0("     Original sample size: ", nrow(mydata)), "\n") 
+  cat("     Step 0 complete (Select data)", "\n") # progress indicator
   
   # NOTE: For technical reasons, the mediators should be coded as integers starting with 1
   
@@ -35,7 +36,7 @@ CMed_prep <-function(data, prop = 1) {
   fitM3 <- vglm(M3.bmi ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 2))
   fitM4 <- vglm(M4.phy ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
   
-  cat("Step 1 complete (fit model for each mediator)", "\n")  # progress indicator
+  cat("     Step 1 complete (fit model for each mediator)", "\n")  # progress indicator
   
   
   
@@ -87,8 +88,8 @@ CMed_prep <-function(data, prop = 1) {
   myData4$race_M4.phy <- levelsOfRACE[4]
   newMyData <- rbind(myData1, myData2, myData3, myData4)
   
-  cat("Step 2 complete (expand data)", "\n")  # progress indicator
-  cat(paste0("Expanded sample size: ", nrow(newMyData)), "\n") 
+  cat("     Step 2 complete (expand data)", "\n")  # progress indicator
+  cat(paste0("     Expanded sample size: ", nrow(newMyData)), "\n") 
   
   
   ### Step 3: Construct weights  *********************************************************************************************************************
@@ -103,7 +104,7 @@ CMed_prep <-function(data, prop = 1) {
   
   newMyData$weight1 <- tempIndir1/tempDir1
   
-  cat("Step 3.1 complete (Construct weights for alcohol)", "\n")  # progress indicator
+  cat("     Step 3.1 complete (Construct weights for alcohol)", "\n")  # progress indicator
   
   
   #M2: Smoking
@@ -115,7 +116,7 @@ CMed_prep <-function(data, prop = 1) {
   
   newMyData$weight2 <- tempIndir2/tempDir2
   
-  cat("Step 3.2 complete (Construct weights for smoking)", "\n")  # progress indicator
+  cat("     Step 3.2 complete (Construct weights for smoking)", "\n")  # progress indicator
   
   
   #M3: BMI
@@ -127,7 +128,7 @@ CMed_prep <-function(data, prop = 1) {
   
   newMyData$weight3 <- tempIndir3/tempDir3
   
-  cat("Step 3.3 complete (Construct weights for BMI)", "\n")  # progress indicator
+  cat("     Step 3.3 complete (Construct weights for BMI)", "\n")  # progress indicator
   
   
   #M4: Physical activity
@@ -139,13 +140,13 @@ CMed_prep <-function(data, prop = 1) {
   
   newMyData$weight4 <- tempIndir4/tempDir4
   
-  cat("Step 3.4 complete (Construct weights for physical activity)", "\n")  # progress indicator
+  cat("     Step 3.4 complete (Construct weights for physical activity)", "\n")  # progress indicator
   
   
   # Final weight
   newMyData$weightM <- newMyData$weight1 * newMyData$weight2 * newMyData$weight3 * newMyData$weight4
   
-  cat("Step 3 complete (final data complete)", "\n")  # progress indicator
+  cat("     Step 3 complete (final data complete)", "\n")  # progress indicator
   
   newMyData <- newMyData %>%
     dplyr::select(ID, bl_age, end_age, allcause_death, A.race, race_M1.alc, race_M2.smk, race_M3.bmi, race_M4.phy, married, edu, srvy_yr, weightM)
@@ -300,7 +301,7 @@ getTE_IE_NotRobust <- function(CMed_model, v, z){
         return(output)}
 
       
-# Format Data from Causal Mediation ----------------------------------------------------------------
+# Format Results from Causal Mediation ----------------------------------------------------------------
 
 format_CMed <- function (model, coef_list) {
   
@@ -393,4 +394,90 @@ format_CMed <- function (model, coef_list) {
   
   
   
+      
+
+# Format Bootstrapped Results from Causal Mediation ----------------------------------------------------------------
+      
+format_CMed_boot <- function (model, coef_list) {
+        
+        group <- enexpr(coef_list)
+        
+        # All_coef model coefficients   
+        All_coef <- coef(model) %>%
+          as.data.frame() %>% 
+          rownames_to_column(var = "term") %>% 
+          mutate (estimate = Coef.,
+            std.error = SE) %>% 
+          dplyr::select (term, estimate, std.error) 
+        
+        coef <- slice(All_coef, coef_list)
+        
+        # Function to get the total effect and proportion mediated
+        TE_prop <- getTE_NotRobust(model, coef_list) %>% 
+          as.data.frame() %>% rownames_to_column(var = "term")
+        
+        TE <- filter(TE_prop, term =="TE") %>% 
+          mutate (estimate = Est.,
+            std.error = SE) %>% 
+          dplyr::select (term, estimate, std.error) 
+        
+        prop <- filter(TE_prop, term !="TE") %>%
+          dplyr::select(term, med_prop) 
+        
+        
+        # Function to get the total combined indirect effect  (coef_list excluding 1st item)
+        IE <- getIE_NotRobust(model, coef_list[-1]) %>% 
+          as.data.frame() %>% rownames_to_column(var = "term") %>% 
+          filter (term == "IE") %>% 
+          mutate (estimate = Est.,
+            std.error = SE) %>% 
+          dplyr::select (term, estimate, std.error) 
+        
+        
+        # Function to get the proportion mediated of the combined indirect effect
+        IE_prop <- getTE_IE_NotRobust(model, coef_list, coef_list[-1]) %>% 
+          as.data.frame() %>% rownames_to_column(var = "term") %>%
+          mutate (term = ifelse(term=="2.5%", "IE", term)) %>%
+          filter (term=="IE") %>%
+          dplyr::select(term, med_prop)
+        
+        
+        one <- full_join(coef, prop, by="term") %>%
+          mutate(label = c(paste0("02 Direct effect of ", group, " (ref=White)"),
+            "04 Alcohol use: differential exposure",
+            "06 Smoking: differential exposure",
+            "08 BMI: differential exposure",
+            "10 Physical activity: differential exposure", 
+            "05 Alcohol use: differential vulnerability",
+            "07 Smoking: differential vulnerability",
+            "09 BMI: differential vulnerability",
+            "11 Physical activity: differential vulnerability")) %>% 
+          dplyr::select(label, estimate, std.error, med_prop)
+        
+        two <- TE %>%
+          mutate (label = ifelse(term == "TE", paste0("01 Total effect of ", group, " (ref=White)"), NA),
+            med_prop = "1") %>% 
+          dplyr::select(label, estimate, std.error, med_prop)
+        
+        three <- full_join(IE, IE_prop, by="term") %>% 
+          mutate (label = ifelse(term == "IE", paste0("03 Indirect effect of ", group, " (ref=White)"), NA)) %>% 
+          dplyr::select(label, estimate, std.error, med_prop) 
+        
+        
+        final <- rbind(one, two, three) %>%
+          mutate (med_prop = as.numeric(med_prop)) %>% 
+          pivot_longer(cols = c("estimate", "med_prop"), names_to = "type", values_to = "estimate") %>%
+          arrange(type, label) %>%
+          mutate(std.error = ifelse(type=="med_prop", NA, std.error),
+            term = paste(label,type, group, sep="__")) %>% 
+          dplyr::select(term, estimate, std.error)
+        
+        return(final)
+}
+      
+      
+      
+      
+      
+      
       
