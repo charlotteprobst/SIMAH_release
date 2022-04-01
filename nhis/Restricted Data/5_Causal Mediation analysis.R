@@ -1,5 +1,5 @@
 
-# # SIMAH Restricted-access Data
+# SIMAH Restricted-access Data
 # Causal Mediation  
 
 
@@ -10,6 +10,7 @@ library(tidyverse)  # data management
 library(timereg)    # additive survival models
 library(VGAM)       # multinomial regression, needed for causal mediation
 library(MASS)       # needed for causal mediation functions
+library(knitr)      # formatted table
 
 
 # Specify the data and output file locations
@@ -60,25 +61,18 @@ CMed_f <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                                                         const(married2) + race4 + const(srvy_yr22),
                           data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)  
                 
-# Save model results
-saveRDS(CMed_f, file.path(output, "CMed_f.rds"))       
+saveRDS(CMed_f, file.path(output, "CMed_f.rds")) # Save model results      
 
 
 # Load model results
 CMed_model <-readRDS(file.path(output, "CMed_f.rds"))  
 
-# The 'summary(model)' command will produce the direct effect, indirect effects, and mediated interaction effects. 
-# Functions were used to extract the other details. 
-              
-# Get final results. NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
-summary(CMed_model)   
-getTE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41))                             # Function to get the total effect and proportion mediated
-getIE_NotRobust(CMed_model, c(3,5,7,9,29,33,37,41))                               # Function to get the total combined indirect effect  
-getTE_IE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41))  # Function to get the proportion mediated of the combined indirect effect
-      
 
- 
-     
+# Load model and view results
+CMed_model <-readRDS(file.path(output, "CMed_f.rds"))  # load model (if needed)
+Low_Education <- c(1,3,5,7,9,29,33,37,41)              # List the coefficients of interest for 'low education'
+format_CMed (CMed_model, Low_Education) %>% kable()    # print formatted results
+
 
 # Run Analyses, MEN ----------------------------------------------------------------------------------------------------------------
 
@@ -94,21 +88,10 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.edu) * const(edu
                                                         const(married2) + race4 + const(srvy_yr22),
                           data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID)
 
+saveRDS(CMed_m, file.path(output, "CMed_m.rds"))  # Save model results     
 
-# Save model results
-saveRDS(CMed_m, file.path(output, "CMed_m.rds"))       
-
-# Load model results
-CMed_model <-readRDS(file.path(output, "CMed_m.rds"))  
-
-
-# The 'summary(model)' command will produce the direct effect, indirect effects, and mediated interaction effects. 
-# Functions were used to extract the other details. 
-
-# Get final results. NOTE: THE NUMBERS BELOW MAY HAVE TO BE CHANGED IF A DIFFERENT MODEL IS USED
-summary(CMed_model) 
-getTE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41))                              # Function to get the total effect and proportion mediated
-getIE_NotRobust(CMed_model, c(3,5,7,9,29,33,37,41))                                # Function to get the total combined indirect effect  
-getTE_IE_NotRobust(CMed_model, c(1,3,5,7,9,29,33,37,41), c(3,5,7,9,29,33,37,41))   # Function to get the proportion mediated of the combined indirect effect
-
+# Load model and view results
+CMed_model <-readRDS(file.path(output, "CMed_m.rds"))  # load model (if needed)
+Low_Education <- c(1,3,5,7,9,29,33,37,41)              # List the coefficients of interest for 'low education'
+format_CMed (CMed_model, Low_Education) %>% kable()    # print formatted results
 
