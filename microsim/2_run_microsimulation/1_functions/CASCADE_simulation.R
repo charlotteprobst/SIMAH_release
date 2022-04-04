@@ -162,6 +162,7 @@ Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.i
 Summary <- do.call(rbind,Summary)
 
 Cirrhosis <- do.call(rbind, Cirrhosis)
+
 Cirrhosis <- Cirrhosis %>% mutate(seed = seed, 
          samplenum = samplenum,
          birthyear = Year-microsim.init.age,

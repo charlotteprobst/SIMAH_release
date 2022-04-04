@@ -14,7 +14,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
@@ -32,7 +32,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/implausi
        dpi=300, width=33, height=19, units="cm")
 
 # now plot cirrhosis output over waves 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/Cirrhosis*.RDS", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis*.RDS", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files
 files <- files[order(index)]
@@ -64,8 +64,8 @@ sim <- left_join(files, age2010) %>%
 
 meansim <- sim %>% group_by(wave, year, sex, samplenum) %>% summarise(microsim=mean(microsim)) %>% rename(Year=year)
 
-meansim <- left_join(meansim, cirrhosismortality_agest) %>% 
-  rename(target=agestrate)
+meansim <- left_join(meansim, cirrhosismortality) %>% 
+  rename(target=rate)
   # pivot_longer(microsim:target)
 
 ggplot(data=meansim, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line() + 
@@ -138,5 +138,7 @@ ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/l
 topruns <- as.numeric(unlist(imp %>% filter(wave==max(imp$wave)) %>% 
   mutate(ntile = ntile(maximplausibility, nrow(.))) %>% 
   filter(ntile<=3) %>% dplyr::select(samplenum)))
+
 toplhs <- do.call(rbind,list) %>% filter(wave==max(imp$wave)) %>% 
   filter(SampleNum %in% topruns)
+write.csv(toplhs, "SIMAH_workplace/microsim/2_output_data/calibration_output/toplhs.csv", row.names=F)
