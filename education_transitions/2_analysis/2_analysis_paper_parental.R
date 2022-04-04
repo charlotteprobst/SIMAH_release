@@ -101,6 +101,15 @@ data$agesq <- data$age^2
 data$agescaled <- scale(data$age, center=T)
 data$agesqscaled <- scale(data$agesq, center=T)
 
+data <- data %>% rowwise() %>% mutate(parental_education = sum(mother_num, father_num, na.rm=T))
+
+data$parental_education <- ifelse(data$parental_education>=3, 1,
+                                         ifelse(data$parental_education==0, NA, 0))
+
+# at least one parent has a college degree 
+data$parental_education_college = ifelse(data$mother_num>=3 | data$father_num>=3, 1, 
+                                 ifelse(data$parental_education==0, NA, 0))
+
 data1 <- data %>% filter(year<=2009)
 length(unique(data1$newID))
 length(unique(data1$uniqueID))
@@ -112,8 +121,26 @@ data1 <- data1[order(data1$newID, data1$year),]
 
 Q <- crudeinits.msm(educNUM~year, newID, data=data1, qmatrix=Q)
 
-data1$parental_education <- ifelse(data1$parental_education<=2, "nobA",
-                                          ifelse(data1$parental_education==3, "BA", NA))
+educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
+                 center=FALSE,
+                 covariates=~parental_education_college,
+                 control=list(trace=1, fnscale=761147, maxit=500))
+educ.msm1
+
+educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
+                 center=FALSE,
+                 covariates=~agescaled + sex + racefinal + parental_education_college,
+                 control=list(trace=1, fnscale=60601, maxit=1000))
+educ.msm1
+
+pmatrix.msm(educ.msm1, t=1, covariates=list(agescaled = -1.5, sex = "0", racefinal="white", parental_education_college=1))
+
+
+educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
+                 center=FALSE,
+                 covariates=~agescaled + sex + racefinal + parental_education_college*racefinal,
+                 control=list(trace=1, fnscale=60601, maxit=1000))
+educ.msm1
 
 # constraints for the effects of covariates
 # model 1
@@ -140,10 +167,20 @@ data2 <- data2 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobserv
 data2 <- as.data.frame(lapply(data2, unlist))
 data2 <- data2[order(data2$newID, data2$year),]
 
-data2$parental_education <- ifelse(data2$parental_education<=2, "nobA",
-                                   ifelse(data2$parental_education==3, "BA", NA))
-
 Q <- crudeinits.msm(educNUM~year, newID, data=data2, qmatrix=Q)
+
+educ.msmmother <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
+                      center=FALSE,
+                      covariates=~motherseducation,
+                      control=list(trace=1, maxit=200, fnscale=15437))
+educ.msmmother
+
+educ.msmfather <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
+                      center=FALSE,
+                      covariates=~fatherseducation,
+                      control=list(trace=1, maxit=200, fnscale=15437))
+educ.msmfather
+
 
 educ.msm3 <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
                  center=FALSE,
