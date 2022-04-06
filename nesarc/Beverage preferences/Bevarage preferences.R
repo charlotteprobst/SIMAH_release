@@ -10,6 +10,7 @@ library(htmlwidgets)
  
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Beverage preferences/"  # Location of output
 
 # Load data and edit data -----------------------------------------------------------------------------------------------
 nesarc <- readRDS(paste0(data, "nesarc_clean.rds")) %>%
@@ -42,7 +43,7 @@ edu <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, edu3, fill= proportion)) + geom_tile() + facet_wrap(~wave)
 
-ggplotly(edu) %>% saveWidget(file="Fig 1A Edu by wave.html")
+ggplotly(edu) %>% saveWidget(file=paste0(output, "Fig 1A Edu by wave.html"))
 
 
 # Proportion by race/ethnicity
@@ -54,7 +55,7 @@ race <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, race4, fill= proportion)) + geom_tile() + facet_wrap(~wave)
 
-ggplotly(race) %>% saveWidget(file="Fig 1B Race by wave.html")
+ggplotly(race) %>% saveWidget(file=paste0(output, "Fig 1B Race by wave.html"))
 
 
 # Proportion by education and race/ethnicity
@@ -66,7 +67,7 @@ edu_race <- data %>%
   rename(proportion = value)%>%
   ggplot(aes(type, race4:edu3, fill= proportion)) + geom_tile() + facet_wrap(~wave)
 
-ggplotly(edu_race) %>% saveWidget(file="Fig 1C Edu_Race by wave.html")
+ggplotly(edu_race) %>% saveWidget(file=paste0(output, "Fig 1C Edu_Race by wave.html"))
 
 # Proportion by age group
 age7 <- data %>%
@@ -77,7 +78,7 @@ age7 <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, age7, fill= proportion)) + geom_tile() + facet_wrap(~wave)
 
-ggplotly(age7) %>% saveWidget(file="Fig 1D Age by wave.html")
+ggplotly(age7) %>% saveWidget(file=paste0(output, "Fig 1D Age by wave.html"))
 
 
 
@@ -90,7 +91,7 @@ sex <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, sex, fill= proportion)) + geom_tile() + facet_wrap(~wave)
 
-ggplotly(sex) %>% saveWidget(file="Fig 1E Sex by wave.html")
+ggplotly(sex) %>% saveWidget(file=paste0(output, "Fig 1E Sex by wave.html"))
 
 
 
@@ -105,7 +106,7 @@ edu <- data %>%
   rename(proportion = value) %>% 
   ggplot(aes(type, edu3, fill= proportion)) + geom_tile() + facet_wrap(~AlcUse)
 
-ggplotly(edu) %>% saveWidget(file="Fig 2A Edu by AlcUse.html")
+ggplotly(edu) %>% saveWidget(file=paste0(output, "Fig 2A Edu by AlcUse.html"))
 
 
 # Proportion by race/ethnicity
@@ -117,7 +118,7 @@ race <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, race4, fill= proportion)) + geom_tile() + facet_wrap(~AlcUse)
 
-ggplotly(race) %>% saveWidget(file="Fig 2B Edu by AlcUse.html")
+ggplotly(race) %>% saveWidget(file=paste0(output, "Fig 2B Edu by AlcUse.html"))
 
 
 # Proportion by education and race/ethnicity
@@ -129,7 +130,7 @@ edu_race <- data %>%
   rename(proportion = value)%>%
   ggplot(aes(type, race4:edu3, fill= proportion)) + geom_tile() + facet_wrap(~AlcUse)
 
-ggplotly(edu_race) %>% saveWidget(file="Fig 2C Edu_Race by AlcUse.html")
+ggplotly(edu_race) %>% saveWidget(file=paste0(output, "Fig 2C Edu_Race by AlcUse.html"))
 
 
 # Proportion by age
@@ -141,7 +142,7 @@ age7 <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, age7, fill= proportion)) + geom_tile() + facet_wrap(~AlcUse)
 
-ggplotly(age7) %>% saveWidget(file="Fig 2D Age by AlcUse.html")
+ggplotly(age7) %>% saveWidget(file=paste0(output, "Fig 2D Age by AlcUse.html"))
 
 
 # Proportion by sex
@@ -153,6 +154,6 @@ sex <- data %>%
   rename(proportion = value) %>%
   ggplot(aes(type, sex, fill= proportion)) + geom_tile() + facet_wrap(~AlcUse)
 
-ggplotly(sex) %>% saveWidget(file="Fig 2E Sex by AlcUse.html")
+ggplotly(sex) %>% saveWidget(file=paste0(output, "Fig 2E Sex by AlcUse.html"))
 
 
