@@ -101,21 +101,26 @@ ff <- with(facet_bounds,
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 color.vec <- c("#132268", "#447a9e")
+color.vec <- c("#062D59", "#76868D", "#E6DFC0")
 
 ggplot(data=data_graph, aes(x=year, y=rate, colour=sex)) + 
   facet_grid(rows = vars(cause), cols = vars(raceeth), scales = "free") +
-  theme_light() +
-  theme(strip.background = element_rect(fill = "white"), legend.position = "bottom",  legend.box = "horizontal", legend.box.just = "top") +
-  theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
+  theme_light() + 
+  theme(strip.background = element_rect(fill = "white"), 
+        strip.text = element_text(colour = 'black'), 
+        text = element_text(size = 14),
+        axis.text = element_text(size = 12), legend.position="bottom", 
+        legend.title = element_text(size = 12),
+        strip.placement = "outside") +
   ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
   ylim(0, NA) +
   # scale_color_brewer(palette="Set2") + 
   scale_color_manual(values = color.vec) +
-  geom_line(aes(linetype=datatype, size = datatype), alpha= .75) + 
+  geom_line(aes(linetype=datatype, size = datatype), alpha= .65) + 
   #geom_line(aes(linetype=datatype), size = 0.7, alpha= .7) + 
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
-  labs(color="Education", linetype = "Data type", size = "Data type") +
+  labs(color="Sex", linetype = "Data type", size = "Data type") +
   guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) + 
   geom_point(data=ff,x=NA, colour=NA)
 

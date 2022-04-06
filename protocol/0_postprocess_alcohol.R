@@ -53,7 +53,8 @@ summary <- basepop %>% group_by(microsim.init.sex, microsim.init.education, drin
 
 # read in the processed brfss data - to save time associated with reading full BRFSS
 # summarybrfss <- read.csv("SIMAH_workplace/protocol/output_data/0_summarybrfss.csv")
-
+if(FALSE) {
+  
 brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.RDS") %>% 
   filter(age_var<=79) %>% filter(YEAR==1999 | YEAR==2000 | YEAR==2001) %>% 
   filter(State=="USA") %>% 
@@ -76,8 +77,10 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_states_upshifted.R
   group_by(microsim.init.sex, microsim.init.education, drinkercat) %>% tally() %>% 
   ungroup() %>% group_by(microsim.init.sex, microsim.init.education) %>% mutate(percent=n/sum(n)*100,
                                                                                 data="BRFSS")
+saveRDS(brfss, "SIMAH_workplace/brfss/processed_data/BRFSS_summary.rds")
+}
 
-
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_summary.rds")
 
 # summary <- left_join(summary, summarybrfss)
 summarycompare <- rbind(summary, brfss) %>% 
@@ -94,6 +97,9 @@ summarycompare <- rbind(summary, brfss) %>%
 
 col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
 col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
+col.vec <- c('#124165', '#168aad','#76c893', '#e1f1a7') #Heavy to light use
+col.vec <- c('#062D59', '#576F81','#A8B0AA', '#F9F2D2') #Heavy to light use
+
 summarycompare <- summarycompare[summarycompare$drinkercat != "Abstainer",]
 
 addline_format <- function(x,...){
@@ -109,6 +115,7 @@ summarycompare$cat <- factor(summarycompare$cat,
                                       "College degree or more microsimulation",
                                       "College degree or more brfss"))
 
+summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
 # plot graph
 ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
@@ -139,6 +146,6 @@ ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) +
   #                                          "College degree or more microsimulation",
   #                                          "College degree or more brfss")))
 
-ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V3.jpeg", dpi = 600, width = 20, height = 14, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V3.jpeg", dpi = 600, width = 20, height = 16, units = "cm")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 
