@@ -109,8 +109,22 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
         alc_daily_oz = if_else(drinking_stat%in%c(2,3), 0, alc_daily_oz), 
       
       # Recategorize daily alcohol use using other units
-      alc_daily_g = alc_daily_oz * 28.3495,   # Convert daily ounces to grams  
-      alc_daily_drinks = alc_daily_oz  / 0.60, # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+      # Convert daily ounces to grams
+      alc_daily_g = alc_daily_oz * 28.3495,     
+      coolers_daily_g = coolers_daily_oz * 28.3495,
+      beers_daily_g = beers_daily_oz * 28.3495,
+      wine_daily_g = wine_daily_oz * 28.3495,
+      liquor_daily_g = liquor_daily_oz * 28.3495,
+      
+      # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+      alc_daily_drinks = alc_daily_oz  / 0.60, 
+
+      
+      # Proportion of beverage
+      coolers_prop = coolers_daily_g / alc_daily_g * 100,
+      beers_prop   = beers_daily_g / alc_daily_g * 100,
+      wine_prop    = wine_daily_g / alc_daily_g * 100,
+      liquor_prop  = liquor_daily_g / alc_daily_g * 100,
       
 
       # Categorize alcohol use as per NESARC guidelines
@@ -215,7 +229,8 @@ nesarc <- nesarc %>%
   
   # Identify the variables to keep
   select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_w1, age3, age7, female, female_w1, race, race_w1, 
-    married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed) %>% 
+          married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed,
+          coolers_prop, beers_prop, wine_prop, liquor_prop) %>% 
   
   # remove those with missing data 
   group_by(idnum) %>%
@@ -357,9 +372,22 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     alc_daily_oz = if_else(drinking_stat%in%c(2,3), 0, alc_daily_oz), 
     
     # Recategorize daily alcohol use using other units
-    alc_daily_g = alc_daily_oz * 28.3495,   # Convert daily ounces to grams  
-    alc_daily_drinks = alc_daily_oz  / 0.60, # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+    # Convert daily ounces to grams
+    alc_daily_g = alc_daily_oz * 28.3495,     
+    coolers_daily_g = coolers_daily_oz * 28.3495,
+    beers_daily_g = beers_daily_oz * 28.3495,
+    wine_daily_g = wine_daily_oz * 28.3495,
+    liquor_daily_g = liquor_daily_oz * 28.3495,
     
+    # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+    alc_daily_drinks = alc_daily_oz  / 0.60, 
+    
+    
+    # Proportion of beverage
+    coolers_prop = coolers_daily_g / alc_daily_g * 100,
+    beers_prop   = beers_daily_g / alc_daily_g * 100,
+    wine_prop    = wine_daily_g / alc_daily_g * 100,
+    liquor_prop  = liquor_daily_g / alc_daily_g * 100,  
     
      # Categorize alcohol use as per SIMAH protocol
     alc6 = case_when(
@@ -409,7 +437,8 @@ nesarc3 <- nesarc3 %>%
   
   # Identify the variables to keep
   select(idnum, weight, age, age3, age7, female, race, married, edu3, 
-         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed) %>%
+         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed,
+         coolers_prop, beers_prop, wine_prop, liquor_prop) %>%
   
   # remove those with missing data 
   filter(!is.na(alc5)) %>%   # 88 observations removed; n=36,221
