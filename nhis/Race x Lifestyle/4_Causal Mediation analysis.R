@@ -37,22 +37,24 @@ nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 set.seed(1235)
 
 # WOMEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
-tic()
+tic() # start timer
+
 # Specify number of cores to use 
-detectCores() # Identify # of cores available
 cl <- makeCluster(4, outfile = "log.txt")   # Windows
-# cl <- makeForkCluster(2) # Linux
+# cl <- makeForkCluster(24, outfile="") # Linux
 registerDoParallel(cl) 
 
-foreach::getDoParWorkers() # Identify # of cores that will be used
+    # Check
+    detectCores() # Identify # of cores available
+    foreach::getDoParWorkers() # Identify # of cores that will be used
 
 
 # Run analysis using bootstrap
 CMed_boot_w <- bootstrap_CMed(nhis_female, reps=32, prop=0.01)
-    
 stopCluster(cl) # To stop the parallel processing (windows)
 saveRDS(CMed_boot_w, file.path(output, "CMed_boot_w.rds")) # Save bootstrap results
-toc()
+
+toc() # end timer
     
 # load bootstrap results
 CMed_boot_w <- readRDS(file.path(output, "CMed_boot_w.rds")) 
