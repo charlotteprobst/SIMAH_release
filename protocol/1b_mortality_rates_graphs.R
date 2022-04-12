@@ -112,7 +112,7 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=sex)) +
   ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
   ylim(0, NA) +
   scale_color_manual(values = color.vec) +
-  geom_line(aes(linetype=datatype, size = datatype), alpha= .65) + 
+  geom_line(aes(linetype=datatype, size = datatype), alpha= .72) + 
   
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +

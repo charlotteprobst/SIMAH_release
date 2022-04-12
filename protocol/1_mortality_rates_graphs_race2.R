@@ -76,9 +76,9 @@ data_graph <- data_graph %>%
                                         "IHD")),
          raceeth = recode(raceeth, "WHI"="Non-Hispanic White",
                           "BLA"="Non-Hispanic Black", "SPA"="Hispanic",
-                          "OTH"="Non-Hispanic Others"),
+                          "OTH"="Non-Hispanic Other"),
          raceeth = factor(raceeth, levels=c("Non-Hispanic White","Non-Hispanic Black",
-                                            "Hispanic","Non-Hispanic Others")),
+                                            "Hispanic","Non-Hispanic Other")),
          year = as.numeric(as.character(year)))
   
 # create dummy data for custom scale 
@@ -116,7 +116,7 @@ ggplot(data=data_graph, aes(x=year, y=rate, colour=sex)) +
   ylim(0, NA) +
   # scale_color_brewer(palette="Set2") + 
   scale_color_manual(values = color.vec) +
-  geom_line(aes(linetype=datatype, size = datatype), alpha= .65) + 
+  geom_line(aes(linetype=datatype, size = datatype), alpha= .75) + 
   #geom_line(aes(linetype=datatype), size = 0.7, alpha= .7) + 
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
   scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
