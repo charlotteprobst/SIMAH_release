@@ -30,9 +30,10 @@ source("Function - CausalMed.R")
 
 
 # Load data
-nhis        <- readRDS (file.path(data, "nhis.rds"))
-nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
-nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
+nhis        <- readRDS (paste0(data, "nhis18_85.rds"))
+nhis_male   <- filter(nhis, female==0)
+nhis_female <- filter(nhis, female==1)
+
 
 set.seed(1235)
 
@@ -40,8 +41,7 @@ set.seed(1235)
 tic() # start timer
 
 # Specify number of cores to use 
-cl <- makeCluster(4, outfile = "log.txt")   # Windows
-# cl <- makeForkCluster(24, outfile="") # Linux
+cl <- makeCluster(4, outfile = "log.txt")
 registerDoParallel(cl) 
 
     # Check
@@ -54,45 +54,12 @@ CMed_boot_w <- bootstrap_CMed(nhis_female, reps=32, prop=0.01)
 stopCluster(cl) # To stop the parallel processing (windows)
 saveRDS(CMed_boot_w, file.path(output, "CMed_boot_w.rds")) # Save bootstrap results
 
-toc() # end timer
     
 # load bootstrap results
 CMed_boot_w <- readRDS(file.path(output, "CMed_boot_w.rds")) 
 
 # Compute CI and format results 
-mean <- rowMeans(CMed_boot_w) # get mean estimate
-ci <- apply(CMed_boot_w, 1, quantile, probs=c(0.025, 0.975)) %>% t() #get 95% CI
-CMed_women <- cbind(mean, ci) %>% as.data.frame() %>% 
-  
-  # add labels
-  mutate (term = rep(c( "Total effect of race (ref=White)", 
-                    "Direct effect of raca (ref=White)", 
-                    "Indirect effect of race (ref=White)", 
-                    "     Alcohol use: differential exposure", 
-                    "     Alcohol use: differential vulnerability ", 
-                    "     Smoking: differential exposure", 
-                    "     Smoking: differential vulnerability ", 
-                    "     BMI: differential exposure", 
-                    "     BMI: differential vulnerability ", 
-                    "     Physical activity: differential exposure", 
-                    "     Physical activity: differential vulnerability"), 6),
-          race = rep(c("Black", "Hispanic", "Other"), each=22),
-          type = rep(c("deaths", "prop"), 3, each=11)) %>% 
-  
-  # Separate the 'additional deaths' and 'proportion' estimates 
-  pivot_wider (names_from="type", values_from=c("mean", "2.5%", "97.5%")) %>%
-  
-  # reformat 
-  mutate (deaths = round(mean_deaths*10000,1),
-    deaths_lower = round(`2.5%_deaths`*10000,1),
-    deaths_upper = round(`97.5%_deaths`*10000,1),
-    prop = round(mean_prop*100,0),
-    prop_lower = round(`2.5%_prop`*100,0),
-    prop_upper = round(`97.5%_prop`*100,0),
-    deaths_10000py_ci = paste0(deaths, " (", deaths_lower, ", ", deaths_upper, ")"),
-    prop_ci = paste0(prop, " (", prop_lower, ", ", prop_upper, ")"))%>%
-  dplyr::select(race, term, deaths_10000py_ci, prop_ci)
-
+CMed_women <- format_CMed(CMed_boot_w)
 view(CMed_women) # view results
 write.csv(CMed_women, file=paste0(output, "CMed_results_women.csv")) # save results
 
@@ -121,39 +88,7 @@ saveRDS(CMed_boot_m, file.path(output, "CMed_boot_m.rds")) # Save bootstrap resu
 CMed_boot_m <- readRDS(file.path(output, "CMed_boot_m.rds")) 
 
 # Compute CI and format results 
-mean <- rowMeans(CMed_boot_m) # get mean estimate
-ci <- apply(CMed_boot_m, 1, quantile, probs=c(0.025, 0.975)) %>% t() #get 95% CI
-CMed_men <- cbind(mean, ci) %>% as.data.frame() %>% 
-  
-  # add labels
-  mutate (term = rep(c( "Total effect of race (ref=White)", 
-    "Direct effect of raca (ref=White)", 
-    "Indirect effect of race (ref=White)", 
-    "     Alcohol use: differential exposure", 
-    "     Alcohol use: differential vulnerability ", 
-    "     Smoking: differential exposure", 
-    "     Smoking: differential vulnerability ", 
-    "     BMI: differential exposure", 
-    "     BMI: differential vulnerability ", 
-    "     Physical activity: differential exposure", 
-    "     Physical activity: differential vulnerability"), 6),
-    race = rep(c("Black", "Hispanic", "Other"), each=22),
-    type = rep(c("deaths", "prop"), 3, each=11)) %>% 
-  
-  # Separate the 'additional deaths' and 'proportion' estimates 
-  pivot_wider (names_from="type", values_from=c("mean", "2.5%", "97.5%")) %>%
-  
-  # reformat 
-  mutate (deaths = round(mean_deaths*10000,1),
-    deaths_lower = round(`2.5%_deaths`*10000,1),
-    deaths_upper = round(`97.5%_deaths`*10000,1),
-    prop = round(mean_prop*100,0),
-    prop_lower = round(`2.5%_prop`*100,0),
-    prop_upper = round(`97.5%_prop`*100,0),
-    deaths_10000py_ci = paste0(deaths, " (", deaths_lower, ", ", deaths_upper, ")"),
-    prop_ci = paste0(prop, " (", prop_lower, ", ", prop_upper, ")"))%>%
-  dplyr::select(race, term, deaths_10000py_ci, prop_ci) 
-
+CMed_men <- format_CMed(CMed_boot_m)
 view(CMed_men) # view results
 write.csv(CMed_men, file=paste0(output, "CMed_results_men.csv")) # save results
 

@@ -30,9 +30,9 @@ library(knitr)      # formatted table
 
 
 # Load data
-nhis        <- readRDS (file.path(data, "nhis.rds"))
-nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
-nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
+nhis        <- readRDS (paste0(data, "nhis25_85.rds"))
+nhis_male   <- filter(nhis, female==0)
+nhis_female <- filter(nhis, female==1)
 
 
 
