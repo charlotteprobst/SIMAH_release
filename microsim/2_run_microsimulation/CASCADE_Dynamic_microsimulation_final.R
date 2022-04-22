@@ -54,7 +54,7 @@ proportion <- ifelse(proportion>1,1,proportion)
 adjusting <- 1
 
 # switching between mortality and morbidity models
-mortality <- 0
+mortality <- 1
 
 #####first read in and process all the necessary data files 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/CASCADE_load_files.R")

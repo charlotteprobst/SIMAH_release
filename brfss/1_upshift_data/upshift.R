@@ -67,12 +67,12 @@ NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") 
   mutate(drinkingstatus_detailed = "Yearly drinker")
 
 data <- left_join(data, NASGPD) %>% 
-  mutate(gramsperday = ifelse(drinkingstatus_detailed=="Yearly drinker",
+  mutate(gramsperday_adj = ifelse(drinkingstatus_detailed=="Yearly drinker",
                               ALCGPD_non30, gramsperday),
-         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker",
+         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
                                 rtruncnorm(nrow(.), a=0, b=11, mean=2, sd=1), alc_frequency),
-         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency<1, 1,
-                                round(alc_frequency))) %>% 
+         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency_new<1, 1,
+                                round(alc_frequency_new))) %>% 
   dplyr::select(-ALCGPD_non30)
 
 # read in APC data - source = NIAAA 
@@ -95,31 +95,33 @@ data <- left_join(data,tally)
 
 # perform the up-shift 
 data <- data %>% group_by(YEAR, State) %>% 
-  mutate(BRFSS_APC = mean(gramsperday),                   # calculate BRFSS APC as mean grams per day
+  mutate(BRFSS_APC = mean(gramsperday_adj),                   # calculate BRFSS APC as mean grams per day
          adj_brfss_apc = BRFSS_APC/percentdrinkers,       # adjust the BRFSS APC value based on % of current drinkers
          gramspercapita_90 = gramspercapita_adj1*0.9, #adjust to 90% of APC
          quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
-         gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),   # apply cube root quotient to gpd
-         frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         gramsperday_upshifted = gramsperday_adj*(cr_quotient^2),   # apply cube root quotient to gpd
+         frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
-         quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
+         quantity_per_occasion_upshifted = gramsperday_upshifted/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
 
+
+test <- data %>% sample_n(10)
 # adding the regions to the BRFSS 
 data <- add_brfss_regions_wet(data)
 
 # save the data with pre and post upshift for generating paper plots
-# forpaper <- data %>% 
-#   dplyr::select(YEAR, State, race_eth, sex_recode, age_var,
-#                 education_summary, household_income,
-#                 drinkingstatus, alc_frequency, quantity_per_occasion,
-#                 gramsperday, 
-#                 drinkingstatus_detailed, gramspercapita_adj1, gramspercapita, gramspercapita_90,
-#                 gramsperday_upshifted_crquotient, 
-#                 frequency_upshifted,
-#                 quantity_per_occasion_upshifted)
-# saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
+forpaper <- data %>%
+  dplyr::select(YEAR, State, race_eth, sex_recode, age_var,
+                education_summary, household_income,
+                drinkingstatus, alc_frequency, quantity_per_occasion,
+                gramsperday,
+                drinkingstatus_detailed, gramspercapita_adj1, gramspercapita, gramspercapita_90,
+                gramsperday_upshifted,
+                frequency_upshifted,
+                quantity_per_occasion_upshifted)
+saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020_paper.RDS")
 
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 

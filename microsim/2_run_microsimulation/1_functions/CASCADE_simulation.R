@@ -75,7 +75,7 @@ basepop <- AssignAcuteHep(basepop, Hep, distribution,y)
 basepop <- AssignChronicHep(basepop)
 basepop <- CirrhosisHepatitis(basepop,lhsSample)
 basepop$RR <- (basepop$RRHeavyUse)+(basepop$RRMetabolic)+(basepop$RRHep)
-basepop$RR <- basepop$RRHeavyUse
+# basepop$RR <- basepop$RRHeavyUse
 
 basepop$RR <- ifelse(basepop$RR>100, 100, basepop$RR)
 

@@ -4,199 +4,127 @@ library(dplyr)
 library(msm)
 library(readr)
 library(tidyr)
+library(readxl)
+
 
 setwd("~/Google Drive/SIMAH Sheffield")
 
-data <- read_csv("SIMAH_workplace/education_transitions/PSID_reweighted_2019_weight_parental.csv")
+source("SIMAH_code/education_transitions/2_analysis/1_setup_markov_model.R")
 
-# # # function for assigning IDs - for each replication of an individual append a number to the end of the original ID
-IDfunction <- function(data){
-  n <- nrow(data)
-  data$ID <- 1:n
-  data$newID <- as.numeric(paste(data$uniqueID2, data$ID, sep="."))
-  data$newID <- data$newID*100
-  return(data)
-}
-#
-data <- data %>% filter(age<=34) %>% filter(age>=18)
-# # apply the ID function to each original individual
-data <- data %>% mutate(uniqueID2 = uniqueID) %>% group_by(uniqueID, year,) %>%
-  group_modify(~IDfunction(.))
-#
-data$newID <- as.numeric(data$newID)
-# # #
-# # # # check that there are no duplicate newIDs for different original IDs
-test <- data %>% group_by(newID) %>% summarise(min=min(uniqueID), max=max(uniqueID),
-                                               difference = ifelse(min==max, 0, 1))
-summary(test$difference)
-rm(test)
-# # # # no there aren't - each newID is based on on a single original ID
-
-# # # # save copy of the reweighted data with the new IDs 
-write.csv(data, "SIMAH_workplace/reweighted_PSID_2019_IDs_parental.csv", row.names=F)
+# data <- read_rds("SIMAH_workplace/education_transitions/PSID_reweighted_2019_imputed_parental_income.RDS")
+# 
+# data1 <- data %>% filter(imp==1) %>% dplyr::select(uniqueID) %>% distinct() %>% 
+#   ungroup() %>% mutate(consecID=1:n())
+# data <- left_join(data, data1)
+# # 
+# # # # # # # function for assigning IDs - for each replication of an individual append a number to the end of the original ID
+# IDfunction <- function(data){
+#   n <- nrow(data)
+#   data$ID <- 1:n
+#   data$ID <- ifelse(data$ID==10, 155,
+#                     ifelse(data$ID==100, 156, 
+#                            ifelse(data$ID==20, 157,
+#                                   ifelse(data$ID==30, 158,
+#                                          ifelse(data$ID==40, 159, 
+#                                                 ifelse(data$ID==50, 161, 
+#                                                        ifelse(data$ID==60, 162,
+#                                                               ifelse(data$ID==70, 163, 
+#                                                                      ifelse(data$ID==80, 164,
+#                                                                             ifelse(data$ID==90, 165,
+#                                                                                    ifelse(data$ID==110, 166,
+#                                                                                           ifelse(data$ID==120, 167,
+#                                                                                                  ifelse(data$ID==130, 168,
+#                                                                                                         ifelse(data$ID==140, 169,
+#                                                                                                                ifelse(data$ID==150, 171,
+#                                                                                    data$ID)))))))))))))))
+#   data$newID <- paste(data$consecID,data$ID,sep=".")
+#   return(data)
+# }
+# # 
+# data1 <- data %>% filter(imp==1)
+# # 
+# # # # # # apply the ID function to each original individual
+# data1 <- data1 %>% mutate(uniqueID2 = uniqueID) %>% group_by(uniqueID, year,) %>%
+#   group_modify(~IDfunction(.))
+# #
+# data1$newID <- as.numeric(data1$newID)
+# # # # # # # # check that there are no duplicate newIDs for different original IDs
+# test <- data1 %>% group_by(newID,year) %>% tally()
+# # 
+# # # # # # # no there aren't - each newID is based on on a single original ID
+# IDS <- data1 %>% dplyr::select(uniqueID, year, newID)
+# # 
+# dataList <- list()
+# for(i in 1:20){
+#   dataList[[paste(i)]] <- data %>% filter(imp==i)
+#   dataList[[paste(i)]] <- dataList[[paste(i)]][order(dataList[[paste(i)]]$uniqueID, dataList[[paste(i)]]$year),]
+#   IDS <- IDS[order(IDS$uniqueID, IDS$year),]
+#   dataList[[paste(i)]]$newID <- IDS$newID
+# }
+# 
+# # # # # # save copy of the reweighted data with the new IDs
+# saveRDS(dataList, "SIMAH_workplace/reweighted_PSID_imp_list.RDS")
 
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
-data <- read_csv("SIMAH_workplace/reweighted_PSID_2019_IDs_parental.csv")
+data <- read_rds("SIMAH_workplace/reweighted_PSID_imp_list.RDS")
 
-summary(data$highestEd)
-# states need to be in numeric format for MSM 
-data$educNUM <- ifelse(data$highestEd<=12, 1,
-                       ifelse(data$highestEd==13, 2,
-                              ifelse(data$highestEd==14,3,
-                                     ifelse(data$highestEd==15,4,
-                                            ifelse(data$highestEd>=16,5,NA)))))
-summary(data$educNUM)
+# setup the datasets for both time periods
 
-# remove anyone with only one year of data- this gives an error in MSM 
-data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
-  filter(totalobservations>1) %>% mutate(sex=factor(sex),
-                                         sex=ifelse(sex=="female",1,0))
-# all data needs to be ordered by ID then year
-data <- as.data.frame(lapply(data, unlist))
-data <- data[order(data$newID, data$year),]
+datat1 <- lapply(dataList, setup_markov_model, y=2009)
+datat2 <- lapply(dataList, setup_markov_model, y=2011)
 
-# n's per year - to decide on year split 
-data %>% group_by(year) %>% tally()
-data$racefinal <- ifelse(data$racefinal=="Native","other",
-                         ifelse(data$racefinal=="Asian/PI","Asian",data$racefinal))
-data$racefinal <- as.factor(data$racefinal)
-summary(data$racefinal)
-data$racefinal <- relevel(data$racefinal, ref="white")
-
-statetable.msm(educNUM, newID, data)
-
-# Q matrix of allowed instantaneous transitions - only allowed to transition between 1-2 and 2-3 (and staying the same)
-Q <- rbind( c(0.5, 0.5, 0, 0, 0),
-            c(0, 0.5, 0.5, 0, 0),
-            c(0, 0, 0.5, 0.5, 0),
-            c(0, 0, 0, 0.5, 0.5),
-            c(0, 0, 0, 0, 0.5))
-
-E <- rbind( c(0, 0.1, 0.1, 0.1, 0.1),
-            c(0.1, 0, 0.1, 0.1, 0.1),
-            c(0.1, 0.1, 0, 0.1, 0.1),
-            c(0.1, 0.1, 0.1, 0, 0.1),
-            c(0.1, 0.1, 0.1, 0.1, 0))
-
-data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
-  filter(totalobservations>1)
-# all data needs to be ordered by ID then year
-data <- as.data.frame(lapply(data, unlist))
-data <- data[order(data$newID, data$year),]
-
-data$educNUM <- ifelse(data$age==18 & data$educNUM>2, 1, data$educNUM)
-
-statetable.msm(educNUM, newID, data=data)
-
-data$sex <- as.factor(data$sex)
 
 # who in the data transitions backwards, i.e. education gets lower - not allowed
-source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function.R")
-backIDs <- getIDs(data)
-data <- data[!data$newID %in% backIDs,]
-summary(data)
+# initQt1 <- list()
+# initQt2 <- list()
+# for(i in 1:20){
+#   initQt1[[paste(i)]] <- crudeinits.msm(educNUM~year, newID, data=datat1[[paste(i)]], qmatrix=Q)
+#   initQt2[[paste(i)]] <- crudeinits.msm(educNUM~year, newID, data=datat2[[paste(i)]], qmatrix=Q)
+# }
 
-Q <- crudeinits.msm(educNUM~year, newID, data=data, qmatrix=Q)
-data$agesq <- data$age^2
-data$agescaled <- scale(data$age, center=T)
-data$agesqscaled <- scale(data$agesq, center=T)
+modelst1_baseline <- lapply(datat1, run_markov_model_baseline)
+saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline.RDS")
+modelst2_baseline <- lapply(datat2, run_markov_model_baseline)
+saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline.RDS")
 
-data <- data %>% rowwise() %>% mutate(parental_education = sum(mother_num, father_num, na.rm=T))
+source("SIMAH_code/education_transitions/2_analysis/3_adjust_se.R")
 
-data$parental_education <- ifelse(data$parental_education>=3, 1,
-                                         ifelse(data$parental_education==0, NA, 0))
+modelst1_baseline <- readRDS("SIMAH_workplace/education_transitions/final_models/t1_baseline.RDS")
 
-# at least one parent has a college degree 
-data$parental_education_college = ifelse(data$mother_num>=3 | data$father_num>=3, 1, 
-                                 ifelse(data$parental_education==0, NA, 0))
+datat1 <- data[[1]] %>% filter(imp==1) %>% filter(year<=2009)
+datat2 <- data[[1]] %>% filter(imp==1) %>% filter(year>=2011)
+coefst1_baseline <- adjust_se(modelst1_baseline, datat1) %>% mutate(time="1999-2009")
+coefst2_baseline <- adjust_se(modelst2_baseline, datat2) %>% mutate(time="2011-2019")
 
-data1 <- data %>% filter(year<=2009)
-length(unique(data1$newID))
-length(unique(data1$uniqueID))
-data1 <- data1 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
-  filter(totalobservations>1)
-# all data needs to be ordered by ID then year
-data1 <- as.data.frame(lapply(data1, unlist))
-data1 <- data1[order(data1$newID, data1$year),]
+coefs_baseline <- rbind(coefst1_baseline, coefst2_baseline)
+write.csv(coefs_baseline, "SIMAH_workplace/education_transitions/final_models/coefs_baseline.csv",
+          row.names=F)
 
-Q <- crudeinits.msm(educNUM~year, newID, data=data1, qmatrix=Q)
+modelst1_parent <- lapply(datat1, run_markov_model_parent)
+saveRDS(modelst1_parent, "SIMAH_workplace/education_transitions/final_models/t1_parent.RDS")
 
-educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~parental_education_college,
-                 control=list(trace=1, fnscale=761147, maxit=500))
-educ.msm1
-
-educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled + sex + racefinal + parental_education_college,
-                 control=list(trace=1, fnscale=60601, maxit=1000))
-educ.msm1
-
-pmatrix.msm(educ.msm1, t=1, covariates=list(agescaled = -1.5, sex = "0", racefinal="white", parental_education_college=1))
+modelst2_parent <- lapply(datat2, run_markov_model_parent)
+saveRDS(modelst2_parent, "SIMAH_workplace/education_transitions/final_models/t2_parent.RDS")
 
 
-educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled + sex + racefinal + parental_education_college*racefinal,
-                 control=list(trace=1, fnscale=60601, maxit=1000))
-educ.msm1
+coefst1_parent <- adjust_se(modelst1_parent, datat1[[1]]) %>% mutate(time="1999-2009")
+coefst2_parent <- adjust_se(modelst2_parent, datat2[[1]]) %>% mutate(time="2011-2019")
 
-# constraints for the effects of covariates
-# model 1
-educ.msm1 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled+agesqscaled+sex+racefinal+parental_education*racefinal,
-                 control=list(trace=1, fnscale=761147, maxit=500))
-educ.msm1 
+coefs_parent <- rbind(coefst1_parent, coefst2_parent)
+write.csv(coefs_baseline, "SIMAH_workplace/education_transitions/final_models/coefs_parent.csv",
+          row.names=F)
 
-data1$educationMother <- ifelse(data1$mother_num<=2, "noBA",
-                                ifelse(data1$mother_num==3, "BA", ))
+# calculate AIC for paper 
 
-educ.msm2 <- msm(educNUM~year, newID, data=data1, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled + agesqscaled +sex*racefinal+parental_education,
-                 control=list(trace=1, maxit=500, fnscale=336947))
+AIC_baselinet1 <- lapply(modelst1_baseline, AIC) %>% bind_rows() %>% data.frame() %>%
+  mutate(type="t1_baseline")
+AIC_baselinet2 <- lapply(modelst2_baseline, AIC) %>% bind_rows() %>% data.frame() %>%
+  mutate(type="t2_baseline")
+AIC_parentt1 <- lapply(modelst1_parent, AIC) %>% bind_rows() %>% data.frame() %>%
+  mutate(type="t1_parent")
+AIC_parentt2 <- lapply(modelst2_parent, AIC) %>% bind_rows() %>% data.frame() %>%
+  mutate(type="t2_parent")
 
-educ.msm2
+AIC <- rbind(AIC_baselinet1, AIC_baselinet2, AIC_parentt1, AIC_parentt2)
 
-data2 <- data %>% filter(year>=2011)
-data2 <- data2 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
-  filter(totalobservations>1)
-# all data needs to be ordered by ID then year
-data2 <- as.data.frame(lapply(data2, unlist))
-data2 <- data2[order(data2$newID, data2$year),]
-
-Q <- crudeinits.msm(educNUM~year, newID, data=data2, qmatrix=Q)
-
-educ.msmmother <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
-                      center=FALSE,
-                      covariates=~motherseducation,
-                      control=list(trace=1, maxit=200, fnscale=15437))
-educ.msmmother
-
-educ.msmfather <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
-                      center=FALSE,
-                      covariates=~fatherseducation,
-                      control=list(trace=1, maxit=200, fnscale=15437))
-educ.msmfather
-
-
-educ.msm3 <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled+agesqscaled+sex+racefinal+parental_education*sex,
-                 control=list(trace=1, maxit=200, fnscale=15437))
-educ.msm3
-
-educ.msm4 <- msm(educNUM~year, newID, data=data2, qmatrix=Q,
-                 center=FALSE,
-                 covariates=~agescaled+agesqscaled+sex*racefinal+motherseducation + fatherseducation,
-                 control=list(trace=1, maxit=200, fnscale=15437))
-educ.msm4
-
-AIC(educ.msm1, educ.msm2, educ.msm3, educ.msm4)
-
-saveRDS(educ.msm1, "SIMAH_workplace/education_transitions/model1_2019_final.RDS")
-saveRDS(educ.msm2, "SIMAH_workplace/education_transitions/model2_2019_final.RDS")
-saveRDS(educ.msm3, "SIMAH_workplace/education_transitions/model3_2019_final.RDS")
-saveRDS(educ.msm4, "SIMAH_workplace/education_transitions/model4_2019_final.RDS")
+write.csv(AIC, "SIMAH_workplace/education_transitions/final_models/AIC.csv", row.names=F)

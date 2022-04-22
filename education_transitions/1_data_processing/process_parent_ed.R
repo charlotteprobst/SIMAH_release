@@ -81,19 +81,12 @@ combined <- left_join(combined, spousemother)
 subset <- left_join(subset, combined)
 
 subset$motherseducation <- ifelse(subset$relationshiptohead=="head", subset$head_mothered,
-                                  ifelse(subset$relationshiptohead=="wife/partner", subset$spouse_mothered,
-                                         ifelse(subset$relationshiptohead=="head" & is.na(subset$head_mothered), subset$edMother,
-                                         ifelse(subset$relationshiptohead=="wife/partner" & is.na(subset$spouse_mothered), subset$edMother,
-                                         subset$edMother))))
-subset$motherseducation <- ifelse(is.na(subset$motherseducation, subset$edMother, subset$motherseducation))
+                                  ifelse(subset$relationshiptohead=="wife/partner", subset$spouse_mothered,NA))
+# subset$motherseducation <- ifelse(is.na(subset$motherseducation, subset$edMother, subset$motherseducation))
 
 subset$fatherseducation <- ifelse(subset$relationshiptohead=="head", subset$head_fathered,
-                                  ifelse(subset$relationshiptohead=="head" & is.na(subset$head_fathered), subset$edFather,
-                                  ifelse(subset$relationshiptohead=="wife/partner", subset$spouse_fathered,
-                                         ifelse(subset$relationshiptohead=="wife/partner" & is.na(subset$spouse_fathered), subset$edFather,
-                                         subset$edFather))))
-
-subset$fatherseducation <- ifelse(is.na(subset$fatherseducation, subset$edFather, subset$fatherseducation))
+                                  ifelse(subset$relationshiptohead=="wife/partner", subset$spouse_fathered, NA))
+# subset$fatherseducation <- ifelse(is.na(subset$fatherseducation, subset$edFather, subset$fatherseducation))
 
 subset <- subset %>% 
   mutate(father_num = ifelse(fatherseducation=="LEHS",1,
@@ -101,11 +94,15 @@ subset <- subset %>%
                                     ifelse(fatherseducation=="College",3,NA))),
          mother_num = ifelse(motherseducation=="LEHS",1,
                              ifelse(motherseducation=="SomeC",2,
-                                    ifelse(motherseducation=="College",3,NA))),
-         parental_education = ifelse(motherseducation==fatherseducation, mother_num,
-                                     ifelse(is.na(mother_num), father_num,
-                                            ifelse(is.na(father_num), mother_num, max(father_num, mother_num, na.rm=T)))),
-         parental_education = ifelse(is.na(father_num), mother_num,
-                                     ifelse(is.na(mother_num), father_num, parental_education))) 
+                                    ifelse(motherseducation=="College",3,NA)))) %>% 
+  group_by(uniqueID, year) %>% 
+  mutate(parental_education_sum = sum(mother_num, father_num, na.rm=T),
+         bothLEHS = ifelse(parental_education_sum == 0, NA,
+                           ifelse(parental_education_sum==1 | parental_education_sum==2, 1,0)),
+         oneCollegeplus = ifelse(father_num==3 | mother_num==3, 1,
+                                 ifelse(parental_education_sum==0, NA, 0)),
+         bothCollegeplus = ifelse(parental_education_sum==0, NA,
+                                  ifelse(parental_education_sum==6, 1, 0)),
+         maxBoth = pmax(mother_num, father_num, na.rm=T))
 
 subset <- write.csv(subset,"SIMAH_workplace/education_transitions/alldata_2019_parentED_final.csv")

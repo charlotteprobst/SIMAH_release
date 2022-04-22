@@ -134,13 +134,17 @@ summary <- reweighted %>% group_by(year, sex) %>% filter(gpd!=0) %>%
             type="PSID")
 
 summary <- rbind(summary, summarybrfss)
+summary$sex <- ifelse(summary$sex=="female","Women","Men")
 
-ggplot(data=summary, aes(x=year, y=meangpd, colour=type)) + geom_line() + ylim(0,NA) + theme_bw() +
-  facet_grid(rows=vars(sex)) + ylab("mean gpd (in drinkers)") +
+ggplot(data=summary, aes(x=year, y=meangpd, colour=type)) + geom_line(size=1) + ylim(0,NA) + theme_bw() +
+  xlim(1999,2020) +
+  facet_grid(cols=vars(sex)) + ylab("mean gpd (in drinkers)") +
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white"))
+        legend.position="bottom",
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=14)) + xlab("")
 
-ggsave("SIMAH_workplace/PSID/compare_gpd_brfss.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/compare_gpd_brfss.png",dpi=500, width=33, height=19, units="cm")
 
 summary <- reweighted %>% group_by(year, sex) %>% 
   summarise(prevalence = mean(drinkingstatus, na.rm=T)) %>% 
