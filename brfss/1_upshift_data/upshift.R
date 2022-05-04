@@ -121,7 +121,7 @@ forpaper <- data %>%
                 gramsperday_upshifted,
                 frequency_upshifted,
                 quantity_per_occasion_upshifted)
-saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020_paper.RDS")
+saveRDS(forpaper, "SIMAH_workplace/brfss/processed_data/BRFSS__upshifted_1984_2020_paper.RDS")
 
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 

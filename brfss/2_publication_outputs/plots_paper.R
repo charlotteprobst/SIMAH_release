@@ -17,7 +17,7 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
+data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS__upshifted_1984_2020_paper.RDS")
 
 summary <- data %>% 
   # filter(State=="USA") %>% 
@@ -57,24 +57,27 @@ summary2 <- summary %>% filter(State=="Colorado"
                               | State=="New York" |
                                 State=="Minnesota" |
                                 State=="Tennessee" |
-                                State=="Texas")
+                                State=="Texas") %>% 
+  filter(drinkingstatus_detailed!="30 day drinker")
+
 Figure2 <- ggplot(data=summary2, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
-  geom_bar(stat="identity",position=position_fill(reverse=T)) +
+  geom_bar(stat="identity",position="stack",colour="black") +
   xlab("Year") + ylab("Proportion") +
   theme_bw() + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         text = element_text(family="serif",size=18),
         strip.background=element_rect(fill="white")) +
-  scale_fill_brewer(palette="Set1") +
-  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
+  # scale_fill_manual(values=c("black","grey80","grey2")) + 
+  scale_fill_brewer(palette="Greys") +
+  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) +
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
                               2012, 2014, 2016, 2018),
                      expand=c(0,0)) +
   facet_grid(rows=vars(State))
 Figure2
-ggsave("SIMAH_workplace/brfss/paper/FigureA1_STATES.png", dpi=500, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/brfss/paper/Figure1_STATES.png", dpi=500, width=33, height=19, units="cm")
 
 TableA1 <- data %>% group_by(State,YEAR, sex_recode) %>% 
   filter(YEAR<=2019) %>% 
@@ -176,7 +179,7 @@ trendovertime <- data %>% group_by(State,YEAR) %>%
   summarise(raw_gpd = mean(gramsperday),
             raw_apc = mean(gramspercapita),
             new_apc = mean(gramspercapita_90),
-            new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
+            new_gpd = mean(gramsperday_upshifted)) %>% 
   filter(YEAR<=2019) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
   mutate(name = recode(name, "raw_gpd"="BRFSS",
                        "raw_apc"="APC", "new_apc"="adjusted APC",
@@ -210,12 +213,13 @@ coverage_map <- left_join(states_map, means, by=c("region"))
 coverage_map$coverage_baseline_mean <- round(coverage_map$coverage_baseline_mean, digits=2)
 
 coverage_map <- coverage_map %>% pivot_longer(cols=c(coverage_baseline_mean, coverage_adjusted_mean)) %>% 
-  mutate(name = ifelse(name=="coverage_baseline_mean","Baseline","Adjusted"),
-         name = factor(name, levels=c("Baseline","Adjusted")))
+  mutate(name = ifelse(name=="coverage_baseline_mean","Raw","Adjusted"),
+         name = factor(name, levels=c("Raw","Adjusted")))
 
 ggplot(coverage_map, aes(long, lat, group=group)) + 
   geom_polygon(aes(fill=value), color="white") +
-  scale_fill_viridis(option="C", labels=scales::percent, name="coverage") + 
+  # scale_fill_viridis(option="C", labels=scales::percent, name="coverage") +
+  scale_fill_brewer(palette="YlGnBu", labels=scales::percent, name="coverage") +
   theme(legend.background=element_rect(fill="white", colour=NA)) +
   facet_grid(rows=vars(name), switch="y") + 
   theme_minimal() + 

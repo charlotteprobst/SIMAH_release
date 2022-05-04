@@ -75,5 +75,3 @@ ggplot(data=meansim, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geo
         text = element_text(size=18)) + xlab("") +
   ylab("Age standardized rate per 100,000 population")
 ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/agest_calibrationwaves.png", dpi=300, width=33, height=19, units="cm")
-
-toprun <- 
