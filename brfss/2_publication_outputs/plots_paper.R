@@ -15,7 +15,11 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
+<<<<<<< Updated upstream
 data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
+=======
+data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
+>>>>>>> Stashed changes
 
 summary <- data %>% 
   # filter(State=="USA") %>% 
@@ -32,24 +36,23 @@ summary <- data %>%
                                           levels=c("Lifetime abstainer",
                                                    "Former drinker",
                                                    "Non-30 day drinker (annual)",
-                                                   "30 day drinker"))) %>% 
-  filter(YEAR<=2019)
+                                                   "30 day drinker")))
 
-Figure1 <- ggplot(data=subset(summary, State=="USA"), aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
-  geom_bar(stat="identity",position=position_fill(reverse=T)) +
-  xlab("Year") + ylab("Proportion") +
-  theme_bw() + 
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        text = element_text(family="serif",size=18)) +
-  scale_fill_brewer(palette="Set1") +
-  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
-  scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
-                              1998, 2000, 2002, 2004, 2006, 2008, 2010, 
-                              2012, 2014, 2016, 2018),
-                     expand=c(0,0))
-Figure1
-ggsave("SIMAH_workplace/brfss/paper/Figure1_reweighted.png", dpi=500, width=33, height=19, units="cm")
+# Figure1 <- ggplot(data=subset(summary, State=="USA"), aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
+#   geom_bar(stat="identity",position=position_fill(reverse=T)) +
+#   xlab("Year") + ylab("Proportion") +
+#   theme_bw() + 
+#   theme(legend.position="bottom",
+#         legend.title=element_blank(),
+#         text = element_text(family="serif",size=18)) +
+#   scale_fill_brewer(palette="Set1") +
+#   scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
+#   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
+#                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
+#                               2012, 2014, 2016, 2018),
+#                      expand=c(0,0))
+# Figure1
+# ggsave("SIMAH_workplace/brfss/paper/Figure1_reweighted.png", dpi=500, width=33, height=19, units="cm")
 
 summary2 <- summary %>% filter(State=="Colorado" 
                               | State=="New York" |
@@ -74,8 +77,12 @@ Figure2 <- ggplot(data=summary2, aes(x=YEAR, y=percent, fill=drinkingstatus_deta
 Figure2
 ggsave("SIMAH_workplace/brfss/paper/FigureA1_STATES.png", dpi=500, width=33, height=19, units="cm")
 
+data <- data %>% 
+  mutate(drinkingstatus_updated = ifelse(drinkingstatus_detailed=="Monthly drinker" |
+                                           drinkingstatus_detailed=="Yearly drinker", 1,0))
+
 TableA1 <- data %>% group_by(State,YEAR, sex_recode) %>% 
-  filter(YEAR<=2019) %>% 
+  filter(YEAR<=2020) %>% 
   mutate(sex_recode=ifelse(sex_recode=="Female","women","men")) %>% 
   summarise(raw_drinking_prevalence = round(mean(drinkingstatus),digits=3),
             adjusted_drinking_prevalence=round(mean(drinkingstatus_updated),digits=3)) %>% 
@@ -88,34 +95,31 @@ write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA2.csv", row.names=F)
 TableA1 <- TableA1 %>% filter(State=="USA") %>% ungroup() %>% dplyr::select(-State)
 write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA1.csv", row.names=F)
 
-coverage <- data %>% group_by(State, YEAR, sex_recode) %>% 
-  filter(YEAR<=2019) %>% 
-  mutate(sex_recode=ifelse(sex_recode=="Female","women","men")) %>% 
-  summarise(raw_brfss_gramsperday = mean())
-
 trendovertime <- data %>% filter(State=="USA") %>% group_by(YEAR) %>% 
-  filter(gramsperday!=0) %>% 
+  filter(drinkingstatus_updated==1) %>% 
   summarise(raw_gpd = mean(gramsperday),
             raw_apc = mean(gramspercapita),
             new_apc = mean(gramspercapita_90),
-            new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
-  filter(YEAR<=2019) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
-  mutate(name = recode(name, "raw_gpd"="BRFSS",
-                       "raw_apc"="APC", "new_apc"="adjusted APC",
-                       "new_gpd"="adjusted BRFSS"),
-         name = factor(name, levels=c("APC","adjusted APC", "BRFSS","adjusted BRFSS")))
+            new_gpd = mean(gramsperday_upshifted)) %>% 
+  filter(YEAR<=2020) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
+  mutate(name = recode(name, "raw_gpd"="Raw BRFSS",
+                       "raw_apc"="Raw APC", "new_apc"="Adjusted APC",
+                       "new_gpd"="Adjusted BRFSS"),
+         name = factor(name, levels=c("Raw APC","Adjusted APC", "Adjusted BRFSS","Raw BRFSS")))
 
-ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1.5) +
+ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name, linetype=name)) + geom_line(size=1.5) +
   ylim(0,NA) +
   theme_bw() + 
+  scale_linetype_manual(values=c("solid","solid","solid","solid")) + 
+  scale_colour_grey() + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         text = element_text(family="serif",size=18)) +
   scale_fill_brewer(palette="Set1") +
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
-                              2012, 2014, 2016, 2018),
-                     expand=c(0,0)) +
+                              2012, 2014, 2016, 2018, 2020),
+                     expand=c(0.01,0.01)) +
   xlab("") + ylab("Grams alcohol per day")
   
 ggsave("SIMAH_workplace/brfss/paper/Figure2.png", dpi=500, width=33, height=19, units="cm")

@@ -37,10 +37,11 @@ PopPerYear <- list()
 DeathSummary <- list()
 
 # save a copy of original population files
-baseorig <- basepop
 # migorig <- migrants
 microsim.init.id <- 1:nrow(basepop)
 basepop <- cbind(microsim.init.id, basepop)
+baseorig <- basepop
+
 # migrants$microsim.init.id <- nrow(basepop)+1:nrow(migrants)
 
 # # # # allocate hepatitis at baseline 

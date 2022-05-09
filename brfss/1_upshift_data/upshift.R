@@ -100,16 +100,26 @@ data <- data %>% group_by(YEAR, State) %>%
          gramspercapita_90 = gramspercapita_adj1*0.9, #adjust to 90% of APC
          quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
+<<<<<<< Updated upstream
          gramsperday_upshifted_crquotient = gramsperday*(cr_quotient^2),   # apply cube root quotient to gpd
          frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
          quantity_per_occasion_upshifted = gramsperday_upshifted_crquotient/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
 
+=======
+         gramsperday_upshifted = gramsperday_adj*(cr_quotient^2),   # apply cube root quotient to gpd
+         gramsperday_upshifted_cr = gramsperday_adj*cr_quotient,
+         frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
+         frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
+         quantity_per_occasion_upshifted = gramsperday_upshifted/14*30/frequency_upshifted) # recalculate drinks per occasion based on upshifted data 
+>>>>>>> Stashed changes
 # adding the regions to the BRFSS 
 data <- add_brfss_regions_wet(data)
 
 # save the data with pre and post upshift for generating paper plots
+<<<<<<< Updated upstream
 # forpaper <- data %>% 
 #   dplyr::select(YEAR, State, race_eth, sex_recode, age_var,
 #                 education_summary, household_income,
@@ -121,6 +131,30 @@ data <- add_brfss_regions_wet(data)
 #                 quantity_per_occasion_upshifted)
 # saveRDS(data, "SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
 
+=======
+forpaper <- data %>%
+  dplyr::select(YEAR, State, race_eth, sex_recode, age_var,
+                education_summary, household_income,
+                drinkingstatus, alc_frequency, quantity_per_occasion,
+                gramsperday,
+                drinkingstatus_detailed, gramspercapita_adj1, gramspercapita, gramspercapita_90,
+                gramsperday_upshifted, gramsperday_upshifted_cr,
+                frequency_upshifted,
+                quantity_per_occasion_upshifted, hed)
+saveRDS(forpaper, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
+
+summary <- forpaper %>% filter(State=="USA") %>% 
+  group_by(YEAR, sex_recode) %>% 
+  mutate(drinkingstatus_updated = ifelse(drinkingstatus_detailed=="Monthly drinker" |
+                                           drinkingstatus_detailed=="Yearly drinker", 1,0)) %>% 
+  filter(drinkingstatus_updated==1) %>% 
+  summarise(monthly5plus = mean(hed, na.rm=T),
+            sdmonthly5plus = sd(hed, na.rm=T),
+            annual5plus = monthly5plus*12)
+write.csv(summary, "SIMAH_workplace/brfss/processed_data/BRFSS_5plus.csv", row.names=F)
+
+summary %>% group_by(sex_recode) %>% summarise(mean(annual5plus))
+>>>>>>> Stashed changes
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 
                                race_eth_detailed, sex_recode, age_var, employment, 

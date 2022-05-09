@@ -58,24 +58,24 @@ basepop <- apply_death_rates(basepop, deathrates, y)
     basepop$newBMI <- NULL
 # source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/update_alcohol_BMI.R") 
   }
-  
+
 # apply cirrhosis risk 
 # source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/apply_cirrhosis_risk.R")
-basepop$Cirrhosis_risk <- ifelse(basepop$microsim.init.drinkingstatus==1 & basepop$grams_10years>100000 & basepop$microsim.init.sex=="m", 1,
-                                 ifelse(basepop$microsim.init.drinkingstatus==1 & basepop$grams_10years>(100000*0.66) &
+basepop$Cirrhosis_risk <- ifelse(basepop$microsim.init.drinkingstatus==1 & basepop$grams_10years>as.numeric(lhsSample[["THRESHOLD"]]) & basepop$microsim.init.sex=="m", 1,
+                                 ifelse(basepop$microsim.init.drinkingstatus==1 & basepop$grams_10years>(as.numeric(lhsSample[["THRESHOLD"]])*as.numeric(lhsSample[["THRESHOLD_MODIFIER"]])) &
                                           basepop$microsim.init.sex=="f", 1, 
-                                        ifelse(basepop$formerdrinker==1 & basepop$grams_10years>100000 & basepop$microsim.init.sex=="m" & 
+                                        ifelse(basepop$formerdrinker==1 & basepop$grams_10years>as.numeric(lhsSample[["THRESHOLD"]]) & basepop$microsim.init.sex=="m" & 
                                                  basepop$yearsincedrink<=8, 1,
-                                               ifelse(basepop$formerdrinker==1 & basepop$grams_10years>(100000*0.66) &
+                                               ifelse(basepop$formerdrinker==1 & basepop$grams_10years>(as.numeric(lhsSample[["THRESHOLD"]])*as.numeric(lhsSample[["THRESHOLD_MODIFIER"]])) &
                                                         basepop$microsim.init.sex=="f" & basepop$yearsincedrink<=8, 1,0))))
 
 basepop <- CirrhosisHeavyUse(basepop, lhsSample,"b")
 basepop <- MetabolicPathway(basepop, lhsSample,"b")
 basepop <- AssignAcuteHep(basepop, Hep, distribution,y)
 basepop <- AssignChronicHep(basepop)
+
 basepop <- CirrhosisHepatitis(basepop,lhsSample)
 basepop$RR <- (basepop$RRHeavyUse)+(basepop$RRMetabolic)+(basepop$RRHep)
-basepop$RR <- basepop$RRHeavyUse
 
 basepop$RR <- ifelse(basepop$RR>100, 100, basepop$RR)
 
@@ -104,8 +104,8 @@ basepop$cirrhosis <- ifelse(basepop$probs<=basepop$Risk, 1,0)
 Cirrhosis[[paste(y)]] <- basepop %>% filter(cirrhosis==1) %>% mutate(Year = y)
 
 if(mortality==1){
-toremove <- basepop %>% filter(cirrhosis==1) %>% group_by(microsim.init.sex) %>% add_tally() %>% 
-  mutate(toremove=n/100) %>% sample_n(toremove)
+toremove <- basepop %>% filter(cirrhosis==1) %>% group_by(microsim.init.sex,agecat) %>% add_tally() %>% 
+  mutate(toremove=round(n/100)) %>% sample_n(toremove)
 ids <- toremove$microsim.init.id
 basepop <- basepop %>% filter(!microsim.init.id %in% ids)
 }
@@ -185,6 +185,7 @@ Summary$year <- as.numeric(Summary$year)
 Summary <- left_join(Summary, Cirrhosis)
 Summary$cirrhosistotal <- Summary$cirrhosistotal/100
 Summary$rateper100000 <- (Summary$cirrhosistotal/Summary$populationtotal)*100000
+# write.csv(Summary, paste0("SIMAH_workplace/microsim/2_output_data/validation/outputfiles/", samplenum, "_", seed,".csv"))
 # Cirrhosis <- Cirrhosis %>% group_by(Year, seed, samplenum, microsim.init.sex,agecat) %>% tally()
 # DeathSummary <- do.call(rbind, DeathSummary)
 # Summary <- list(Summary, DeathSummary)

@@ -14,7 +14,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
@@ -32,7 +32,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/im
        dpi=300, width=33, height=19, units="cm")
 
 # now plot cirrhosis output over waves 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/Cirrhosis*.RDS", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/Cirrhosis*.RDS", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files
 files <- files[order(index)]
@@ -52,8 +52,10 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/proces
 
 age2010 <- files %>% filter(year==2010) %>% 
   ungroup() %>% 
-  group_by(year, microsim.init.sex, agegroup) %>% 
+  group_by(year, microsim.init.sex, agegroup, samplenum) %>% 
   summarise(poptotal = mean(populationtotal)) %>% ungroup() %>% 
+  group_by(year, microsim.init.sex, agegroup) %>% 
+  summarise(poptotal = mean(poptotal)) %>% ungroup() %>% 
   group_by(year, microsim.init.sex) %>% 
   mutate(percent = poptotal / sum(poptotal)) %>% ungroup() %>% dplyr::select(microsim.init.sex, agegroup, percent)
 
@@ -83,8 +85,11 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/ag
 
 # toprun 
 finalwave <- meansim %>% filter(wave==max(meansim$wave))
+top <- imp %>% filter(wave==4)
+top <- 98
+subset <- meansim %>% filter(wave==2) %>% filter(samplenum %in% top)
 
-ggplot(data=finalwave, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line() + 
+ggplot(data=subset, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line(size=1) + 
   geom_line(aes(x=Year, y=target),colour="black", size=1) + 
   facet_grid(cols=vars(wave), rows=vars(sex)) + theme_bw() + 
   xlab("") +
@@ -92,11 +97,11 @@ ggplot(data=finalwave, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + g
   scale_x_continuous(breaks=c(1984, 2010), labels=c(1984,2010)) + 
   theme(legend.position="none",
         text = element_text(size=12),
-        panel.spacing.x = unit(6,"mm")) 
-ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/agest_calibrationfinalwave.png", dpi=300, width=33, height=19, units="cm")
+        panel.spacing.x = unit(6,"mm")) + ylim(0,NA)
+ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/calibration_fixed_toprun.png", dpi=300, width=33, height=19, units="cm")
 
 # now plot the lhs samples 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhs*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhs*.csv", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 # files
 files <- files[order(index)]
