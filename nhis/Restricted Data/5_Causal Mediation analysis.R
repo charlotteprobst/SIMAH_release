@@ -21,7 +21,7 @@ source("5_Causal Mediation functions.R")
 
  
 # Load data
-nhis        <- readRDS (file.path(data, "nhis.rds"))
+nhis        <- readRDS (file.path(data, "nhis_clean.rds"))
 nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
 nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
@@ -31,7 +31,7 @@ nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 
 # The causal mediation analyses involves four steps:
 # 1) Fit separate multinomial logistic regressions with each mediator (M1, M2, M3, and M4) as the outcome.
-# 2) Create copies of the dataset to account for all possible combinations of the exposure and mediators (3^4*= 81); the dataset was expanded from 229,994 to 18,629,514 (women) and 185,770 to 15,047,370 (men) pseudobservations. 
+# 2) Create copies of the dataset to account for all possible combinations of the exposure and mediators. 
 # 3) Using the expanded dataset, calculate weights for each mediator using the predicted probabilities from Step 1. 
 # 4) Fit a marginal structural model using Aalen additive hazards with the weight as weight and the id as a cluster level; this ensures thatrobust standard errors are calculated. The model with robust variance and resampling (robust=TRUE) was not used because of computation limiations.  
 

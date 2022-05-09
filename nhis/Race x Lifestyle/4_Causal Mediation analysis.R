@@ -13,7 +13,8 @@ library(MASS)       # needed for causal mediation functions
 library(foreach)    # to bootstrap
 library(parallel)   # for parallel processing
 library(doParallel) # for parallel processing
-library(tictoc)     # To track time
+#library(doMC)       # parallel processing in Linux
+
 memory.limit(size=1e+13)
 
 # Personal computer; specify locations 
@@ -35,60 +36,48 @@ nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
 
 
-set.seed(1235)
+
+# Set up parallel processing -----------------------------------------------------------------------------------------
+
+foreach::getDoParWorkers()                # Identify # of cores that will be used
+# registerDoMC(5)                         # Linux: Specify number of cores to use  
+cl <- makeCluster(4, outfile = "log.txt") # Windows: Specify number of cores to use  
+registerDoParallel(cl)                    # Windows: Specify number of cores to use  
+foreach::getDoParWorkers()  # Identify # of cores that will be used
+
+
+
 
 # WOMEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
-tic() # start timer
 
-# Specify number of cores to use 
-cl <- makeCluster(4, outfile = "log.txt")
-registerDoParallel(cl) 
+set.seed(1235)
 
-    # Check
-    detectCores() # Identify # of cores available
-    foreach::getDoParWorkers() # Identify # of cores that will be used
+# Analysis
+# CMed_boot_w <- bootstrap_CMed(nhis_female, reps=1000, prop=0.20)  # Run analysis using bootstrap
+# saveRDS(CMed_boot_w, file.path(output, "CMed_boot_w.rds"))        # Save bootstrap results
+CMed_boot_w <- readRDS(file.path(output, "CMed_boot_w.rds"))        # load bootstrap results
 
-
-# Run analysis using bootstrap
-CMed_boot_w <- bootstrap_CMed(nhis_female, reps=32, prop=0.01)
-stopCluster(cl) # To stop the parallel processing (windows)
-saveRDS(CMed_boot_w, file.path(output, "CMed_boot_w.rds")) # Save bootstrap results
-
-    
-# load bootstrap results
-CMed_boot_w <- readRDS(file.path(output, "CMed_boot_w.rds")) 
-
-# Compute CI and format results 
-CMed_women <- format_CMed(CMed_boot_w)
-view(CMed_women) # view results
+# Results 
+boot_data <- as.data.frame(do.call(cbind, CMed_boot_w))
+CMed_women <- format_CMed(boot_data)                                 # Compute CI and format results 
+CMed_women                                                           # print results 
 write.csv(CMed_women, file=paste0(output, "CMed_results_women.csv")) # save results
+
 
 
 
 # MEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
 
-# Specify number of cores to use 
-parallel::detectCores() # Identify # of cores available
-cl <- parallel::makeCluster(4, outfile = "log.txt")   # Windows
-# cl <- parallel::makeForkCluster(2) # Linux
-doParallel::registerDoParallel(cl) 
+set.seed(1235)
 
-foreach::getDoParWorkers() # Identify # of cores that will be used
+# Analysis
+# CMed_boot_m <- bootstrap_CMed(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
+# saveRDS(CMed_boot_m, file.path(output, "CMed_boot_m.rds"))      # Save bootstrap results
+CMed_boot_m <- readRDS(file.path(output, "CMed_boot_m.rds"))    # load bootstrap results
 
-
-# Run analysis using bootstrap
-CMed_boot_m <- bootstrap_CMed(nhis_male, reps=12, prop=0.01)
-
-stopCluster(cl) # To stop the parallel processing (windows)
-saveRDS(CMed_boot_m, file.path(output, "CMed_boot_m.rds")) # Save bootstrap results
-
-    
-    
-# load bootstrap results
-CMed_boot_m <- readRDS(file.path(output, "CMed_boot_m.rds")) 
-
-# Compute CI and format results 
-CMed_men <- format_CMed(CMed_boot_m)
-view(CMed_men) # view results
+# Results 
+boot_data <- as.data.frame(do.call(cbind, CMed_boot_m))
+CMed_men <- format_CMed(boot_data)                                 # Compute CI and format results 
+CMed_men                                                           # print results 
 write.csv(CMed_men, file=paste0(output, "CMed_results_men.csv")) # save results
 

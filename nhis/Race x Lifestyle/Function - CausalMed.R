@@ -279,7 +279,7 @@ format_CMed_bootstrap <- function (model, coef_list) {
 # Bootstrap Causal Mediation (combines the functions above)
 bootstrap_CMed <- function(data, reps, prop) {
   
-  foreach(i = 1:reps, .combine="cbind", 
+  foreach(i = 1:reps, .combine="c", 
           # need to specify the packages and functions that will be used
           .packages = c("tidyverse", "timereg", "VGAM", "MASS"), 
           .export = c("CMed_prep", "getTE", "getIE", "getTE_IE", "format_CMed_bootstrap")) %dopar% {    
