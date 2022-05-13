@@ -2,15 +2,13 @@
 # SIMAH Restricted-access Data
 # Data Management File
 
-# My changes
-
 library(haven)      # Read SAS file
 library(tidyverse)  # data management
 library(janitor)    # clean variable names
 library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
 library(srvyr)      # adds dplyr like syntax to the survey package
-
+library(dplyr)
 
 # Specify the data file location
 # Klajdi's 
@@ -18,8 +16,8 @@ data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Orig
 data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 
 # Yachen's 
-# data_orig <- ""
-# data_new  <- ""
+data_orig <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Original data/"
+data_new  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 
 
 # NOTE: the variable names have been structured such that those ending in a number are factors, where the number indicates the number of categories
@@ -66,21 +64,21 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
       
       heavy_drinker = NA_real_,
       heavy_drinker = if_else(ALC5UPYR >= 12, 1, heavy_drinker),
-      heavy_drinker = if_else(ALC5UPYR<12, 0, heavy_drinker),
+      heavy_drinker = if_else(ALC5UPYR < 12, 0, heavy_drinker),
       heavy_drinker = if_else(none_drinker == 1, 0, heavy_drinker),
-      heavy_drinker = if_else(ALCAMT >=5, 1, heavy_drinker),
+      heavy_drinker = if_else(ALCAMT >= 5, 1, heavy_drinker),
 
       drink_hist = NA_real_,
       drink_hist = if_else(ALC12MYR == 0 & ALC1YR == 2, 0, drink_hist),    # Lifetime abstainers
       drink_hist = if_else(ALC12MYR == 0 & ALC1YR == 1, 1, drink_hist),    # Former drinkers
-      drink_hist = if_else(ALC12MYR >0, 2, drink_hist),                    # Current drinkers
+      drink_hist = if_else(ALC12MYR > 0, 2, drink_hist),                   # Current drinkers
       drink_hist = if_else(is.na(drink_hist) & ALCAMT > 0, 2, drink_hist), # Current Drinkers, though don't know how many drank days in past year
       drink_hist = if_else(is.na(drink_hist) & ALC12MYR == 0 & ALCLIFE == 2, 0, drink_hist),   # Lifetime abstainers
       drink_hist = if_else(is.na(drink_hist) & ALC12MYR == 0 & ALCLIFE == 1, 1 , drink_hist),  # Former drinkers
       
       # Calculate daily grams of alcohol; assuming 14 grams per drink
     	    alc_daily_g_crude = ALC12MYR / 365 * ALCAMT * 14,    # (days drank in past year) / 365 * (freq drinks per drinking day) * (14 grams per drink)
-    
+          
     			# input alcohol_grams for those who didn't drink in past year	
           alc_daily_g_crude = if_else(ALC12MYR == 0, 0, alc_daily_g_crude),
     					
@@ -94,12 +92,13 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
           alc_daily_g_heavy = if_else(is.na(alc_daily_g_heavy), 0, alc_daily_g_heavy),
  
     			# If avg drinks per drinking data <5, then add heavy drinking grams to overall grams
-          alc_daily_g = if_else(ALCAMT<5, alc_daily_g_crude + alc_daily_g_heavy, alc_daily_g_crude),
+          alc_daily_g = if_else(ALCAMT < 5, alc_daily_g_crude + alc_daily_g_heavy, alc_daily_g_crude),
           alc_daily_g = if_else(is.na(alc_daily_g), alc_daily_g_crude, alc_daily_g),
 
     
       # Create the Alcohol Use Categorical Variable
-  		alcohol6 = case_when(	# Females
+  		alcohol6 = case_when(	
+  		                  # Females
                         SEX==2 & alc_daily_g == 0 & drink_hist == 0 ~ 1, # Lifetime abstainer
                         SEX==2 & alc_daily_g == 0 & drink_hist == 1 ~ 2, # Former drinker
                         SEX==2 & alc_daily_g >0 & alc_daily_g <= 20 ~ 3, # Category I
@@ -115,10 +114,10 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
                         SEX==1 & alc_daily_g >60 & alc_daily_g <=100 ~ 5, # Category III
                         SEX==1 & alc_daily_g >100                            ~6, # Category IV
   		                  TRUE ~ NA_real_), 
-    
+      
       alcohol5 = recode(alcohol6, `1`=1, `2`=2, `3`=3, `4`=4, `5`=5, `6`=5),  # merge category III and IV
       alcohol4 = recode(alcohol6, `1`=1, `2`=1, `3`=2, `4`=3, `5`=4, `6`=4),  # merge category III and IV and abstainers/former drinkers
-    
+      
       alc6 = factor(alcohol6, levels=c(3,1,2,4,5,6), labels=c("Category I", "Lifetime abstainer", "Former drinker", "Category II", "Category III", "Category IV")), # the first listed category is the reference
       alc5 = factor(alcohol5, levels=c(3,1,2,4,5), labels=c("Category I", "Lifetime abstainer", "Former drinker", "Category II", "Category III")),
       alc4 = factor(alcohol4, levels=c(2,1,2,4), labels=c("Category I", "Non-drinker", "Category II", "Category III")),
@@ -127,9 +126,9 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     
       # Calculate frequency of heavy episodic drinking 
       hed = case_when(
-                      ALC5UPYR>=52 ~ 4,                                                # HED once a week or more
-                      ALC5UPYR>=12 & ALC5UPYR <52 ~ 3,                                 # HED more than once a month but less than once a week
-                      ALC5UPYR>=1 & ALC5UPYR <12 ~ 2,                                  # HED less than once a month
+                      ALC5UPYR >= 52 ~ 4,                                                 # HED once a week or more
+                      ALC5UPYR >= 12 & ALC5UPYR < 52 ~ 3,                                 # HED more than once a month but less than once a week
+                      ALC5UPYR >= 1 & ALC5UPYR < 12 ~ 2,                                  # HED less than once a month
                       ALC5UPYR == 0 | (ALC1YR == 2) | ALCLIFE == 2 | ALC12MYR == 0 ~ 1),  # No HED
                       
           # Fill in missing values
@@ -151,10 +150,10 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     ## BMI - 1997-2018
     BMI = if_else(BMI==99.99, NA_real_, BMI), # remove 'unknown' category
     bmi = case_when(BMI < 18.5 ~ 1,           
-                        BMI >=18.5 & BMI < 25 ~ 2, 
-                        BMI >=25 & BMI < 30 ~ 3,   
-                        BMI >=30 ~ 4,
-                        is.na(BMI) ~ NA_real_),        
+                    BMI >=18.5 & BMI < 25 ~ 2, 
+                    BMI >=25 & BMI < 30 ~ 3,   
+                    BMI >=30 ~ 4,
+                    is.na(BMI) ~ NA_real_),        
     
     bmi4 = factor(bmi, levels=c(2,1,3,4), labels=c("Healthy weight", "Underweight", "Overweight", "Obese")), 
     
@@ -178,12 +177,12 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
         
         # Create categorical variable for physical activity
         phy = case_when( min_wkly_mod_combined == 0 ~ 1,                               
-                              min_wkly_mod_combined >0 & min_wkly_mod_combined < 150 ~ 2,  
-                              min_wkly_mod_combined >=150 ~ 3,
-                              is.na(min_wkly_vig_act) & min_wkly_mod_act >=150 ~ 3, 
-                              is.na(min_wkly_mod_act) & min_wkly_vig_act >=75 ~ 3),
+                         min_wkly_mod_combined > 0 & min_wkly_mod_combined < 150 ~ 2,  
+                         min_wkly_mod_combined >= 150 ~ 3,
+                         is.na(min_wkly_vig_act) & min_wkly_mod_act >= 150 ~ 3, 
+                         is.na(min_wkly_mod_act) & min_wkly_vig_act >= 75 ~ 3),
     
-        phy3 = factor(phy, levels=c(3,1,2), labels=c("Active", "Sedentary", "Somewhat active ")), 
+        phy3 = factor(phy, levels=c(3,1,2), labels=c("Active", "Sedentary", "Somewhat active")), 
           
           
     # COVARIATES **********************************************************************************************
@@ -222,10 +221,10 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     ## FAMILY INCOME - ratio of family income to the poverty threshold
     
     income = case_when(RAT_CAT %in% c(1,2,3)   | RAT_CAT3 %in% c(1,2,3,15)    | RAT_CAT5 %in% c(1,2,3,15)   ~ 1,  # poor: <100% of poverty threshold
-                      RAT_CAT %in% c(4,5,6,7)  | RAT_CAT3 %in% c(4,5,6,7,16)  | RAT_CAT5 %in% c(4,5,6,7,16)  ~ 2,  # near poor: 100-199% of poverty threshold
-                      RAT_CAT %in% c(8,9,10,11)| RAT_CAT3 %in% c(8,9,10,11,17)| RAT_CAT5 %in% c(8,9,10,11,17)~ 3,  # middle income: 200-399% of poverty threshold
-                      RAT_CAT %in% c(12,13,14) | RAT_CAT3 %in% c(12,13,14,18) | RAT_CAT5 %in% c(12,13,14,18) ~ 4,  # higher income: >=400% of poverty threshold
-                      TRUE ~ 5),   # No income data
+                       RAT_CAT %in% c(4,5,6,7)  | RAT_CAT3 %in% c(4,5,6,7,16)  | RAT_CAT5 %in% c(4,5,6,7,16)  ~ 2,  # near poor: 100-199% of poverty threshold
+                       RAT_CAT %in% c(8,9,10,11)| RAT_CAT3 %in% c(8,9,10,11,17)| RAT_CAT5 %in% c(8,9,10,11,17)~ 3,  # middle income: 200-399% of poverty threshold
+                       RAT_CAT %in% c(12,13,14) | RAT_CAT3 %in% c(12,13,14,18) | RAT_CAT5 %in% c(12,13,14,18) ~ 4,  # higher income: >=400% of poverty threshold
+                       TRUE ~ 5),   # No income data
 
     income_v2 = recode(income, `1`=1, `2`=2, `3`=2, `4`=3, `5`=4),     # merge the two middle categories
     
@@ -234,10 +233,9 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     
     
     
-    
     ## PSYCHOLOGICAL DISTRESS
       # Data is consistent from 1997-2012, except that FEELINGS have a different variable name in 2013-2018; make data consistent
-      SAD      = if_else(SRVY_YR >= 2013, ASISAD, SAD),
+      SAD      = if_else(SRVY_YR >= 2013, ASISAD, SAD),  
       EFFORT   = if_else(SRVY_YR >= 2013, ASIEFFRT, EFFORT),
       HOPELESS = if_else(SRVY_YR >= 2013, ASIHOPLS, HOPELESS),
       NERVOUS  = if_else(SRVY_YR >= 2013, ASINERV, NERVOUS),
@@ -263,8 +261,8 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
   		K6scale = HOPELESS + EFFORT  + SAD + WORTHLS + NERVOUS + RESTLESS,
       K6scale = if_else(is.na(HOPELESS) | is.na(EFFORT) | is.na(SAD) | is.na(WORTHLS) | is.na(NERVOUS) | is.na(RESTLESS), NA_real_, K6scale),
 
-      # Chatergorize psych distress score
-      PsyDistr = case_when( K6scale <5 ~ 1,                # none to low psychological distress
+      # Categorize psych distress score
+      PsyDistr = case_when( K6scale < 5 ~ 1,                # none to low psychological distress
                             K6scale >= 5 & K6scale < 13 ~ 2, # moderate psychological distress
                             K6scale >= 13 ~ 3),              # severe psychological distress
     
@@ -287,7 +285,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     
     
     ## DIABETES - 1997-2018 
-    DIBEV = if_else(SRVY_YR >=2016, DIBEV1, DIBEV),   # Variable was renamed in 2016
+    DIBEV = if_else(SRVY_YR >= 2016, DIBEV1, DIBEV),   # Variable was renamed in 2016
     diabet = if_else(DIBEV == 1, 2, NA_real_),        # Diabetes
     diabet = if_else(DIBEV == 3, 1, diabet),          # Bordermine
     diabet = if_else(DIBEV == 2, 0, diabet),          # No diabetes
@@ -314,7 +312,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     edu_sex = interaction(edu3, female2), 
     
     # TEMPORARY Variables (need updating)
-    bl_age = AGE_P,       # Baseline age
+    # bl_age = AGE_P,       # Baseline age
     allcause_death = MORTSTAT,
     heart_death = ifelse(UCOD_LEADING=="001", 1, 0),
     cancer_death = ifelse(UCOD_LEADING=="002", 1, 0),
@@ -324,13 +322,17 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
   
   # Select variables to keep
   select (PUBLICID, new_weight, new_psu, new_stratum,
-          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, allcause_death, heart_death, cancer_death, accident_death,
+          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
+          
+          allcause_death, 
+          
+          heart_death, cancer_death, accident_death,
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
           female, female2, married, married2, race, race4, edu_sex,
           income, income_v2, income5, income4, K6scale, PsyDistr, PsyDistr3, 
           US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) %>%
 
-  filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
+  #filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
 
 
 
