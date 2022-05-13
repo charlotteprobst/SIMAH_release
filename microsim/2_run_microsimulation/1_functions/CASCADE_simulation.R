@@ -21,7 +21,7 @@ if(y>=1985){
   # SummaryMissing[[paste(y)]] <- list[[2]]
   basepop <- outward_migration(basepop,Rates,y)
 }
-print(length(unique(basepop$microsim.init.id))==nrow(basepop))
+# print(length(unique(basepop$microsim.init.id))==nrow(basepop))
 
 if(y>=1984){
 basepop <- apply_death_rates(basepop, deathrates, y)
@@ -73,7 +73,6 @@ basepop <- CirrhosisHeavyUse(basepop, lhsSample,"b")
 basepop <- MetabolicPathway(basepop, lhsSample,"b")
 basepop <- AssignAcuteHep(basepop, Hep, distribution,y)
 basepop <- AssignChronicHep(basepop)
-
 basepop <- CirrhosisHepatitis(basepop,lhsSample)
 basepop$RR <- (basepop$RRHeavyUse)+(basepop$RRMetabolic)+(basepop$RRHep)
 

@@ -6,7 +6,7 @@
 if(agest==0){
 toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/lhsSamples_wave15_agesp.csv")
 }else if(agest==1){
-  toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/lhsSamples_wave15_agest.csv")
+  toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhsSamples_wave15.csv")
 }
 
 if(PE==0){

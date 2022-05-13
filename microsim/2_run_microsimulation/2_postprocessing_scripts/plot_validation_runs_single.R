@@ -22,7 +22,7 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/const
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
 proportion <- PopulationSize/WholePopSize$total
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agesp.RDS") %>% 
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS") %>% 
   do.call(rbind,.) %>% group_by(year, samplenum, microsim.init.sex, agegroup) %>% 
   summarise(microsim = mean(rateper100000),
             microsim = ifelse(is.na(microsim),0,microsim)) %>% 
@@ -74,7 +74,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
 #   do.call(rbind,.)
 
 # 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_test-1.RDS") %>%
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS") %>%
   do.call(rbind,.)
 
 age2010 <- files %>% filter(year==2010) %>% 

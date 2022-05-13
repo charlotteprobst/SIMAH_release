@@ -28,8 +28,8 @@ set.seed(42)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -101,10 +101,14 @@ updatingalcohol <- 0
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
+tomerge <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates", SelectedState, ".RDS", sep="")) %>% 
+  filter(Year>=2017)
+Rates <- rbind(Rates,tomerge)
+
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
 agest <- 1
-N_SAMPLES <- 100
+N_SAMPLES <- 2
 PE <- 0
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sample_parameters_top.R")
 N_REPS <- 2
@@ -144,7 +148,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                     .packages=c("dplyr","tidyr","foreach")) %do% {
                        samplenum <- as.numeric(sampleseeds$SampleNum[i])
                        seed <- as.numeric(sampleseeds$seed[i])
                        print(i)
@@ -167,7 +171,7 @@ Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
                                     outward_migration, inward_migration, mortality,
                                     AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, 
                                     MetabolicPathway,
-                                    brfss,Rates, 1984, 2016)
+                                    brfss,Rates, 1984, 2019)
                      }
 
-saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_test.RDS")
+saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS")

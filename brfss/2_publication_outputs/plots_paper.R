@@ -15,11 +15,7 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-<<<<<<< Updated upstream
-data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
-=======
 data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
->>>>>>> Stashed changes
 
 summary <- data %>% 
   # filter(State=="USA") %>% 

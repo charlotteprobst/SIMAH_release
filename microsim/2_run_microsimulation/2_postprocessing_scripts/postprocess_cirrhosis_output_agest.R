@@ -17,6 +17,7 @@ setwd(paste(WorkingDirectory))
 files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
+index <- c(1,10,11,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
 # 
 files
@@ -85,9 +86,9 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/ag
 
 # toprun 
 finalwave <- meansim %>% filter(wave==max(meansim$wave))
-top <- imp %>% filter(wave==4)
-top <- 98
-subset <- meansim %>% filter(wave==2) %>% filter(samplenum %in% top)
+top <- imp %>% filter(wave==10)
+top <- 184
+subset <- meansim %>% filter(wave==10) %>% filter(samplenum %in% top)
 
 ggplot(data=subset, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line(size=1) + 
   geom_line(aes(x=Year, y=target),colour="black", size=1) + 
