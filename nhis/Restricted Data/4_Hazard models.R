@@ -8,8 +8,8 @@
 library(tidyverse)  # data management
 library(broom)      # To format results
 library(skimr)      # descriptive statistics
-library(survival)   # surivval analyses
-library(survminer)  # surivval analyses
+library(survival)   # survival analyses
+library(survminer)  # survival analyses
 library(timereg)    # additive survival models
 library(survey)     # Survey adjusted results
 library(srvyr)
@@ -23,7 +23,14 @@ data_path     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/
 output_tables <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
 output_models <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
 output_assump <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
-    
+
+# Yachen
+data_path    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+output_tables <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
+output_models <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
+output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
+
+
 # Load data
 nhis_all    <- readRDS (paste0(data_path, "nhis_clean.rds"))
 nhis_male   <- readRDS (paste0(data_path, "nhis_male.rds"))
@@ -190,7 +197,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 
 # Test the function:
 death_list <- c("heart_death", "cancer_death") # specify cause of death for testing
-nhis_female<- sample_frac(nhis_female, 0.10) # select x% of sample for testing
+nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
 table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
 
 

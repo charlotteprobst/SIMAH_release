@@ -21,9 +21,13 @@ memory.limit(size=1e+13)
 
 
 # Specify the data and output file locations
+# Klajdi
 data     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
 output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/Assumptions/"
 
+# Yachen
+data    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+output  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
 
 # Load data
 nhis        <- readRDS (file.path(data, "nhis_clean.rds"))
