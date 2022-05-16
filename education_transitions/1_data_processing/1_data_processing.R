@@ -284,11 +284,13 @@ subset$racefinal <- ifelse(subset$relationshiptohead=="head", subset$raceethhead
 summary(as.factor(subset$racefinal))
 
 subset <- left_join(subset, parents)
-mother <- subset %>% select(uniqueID, racefinal) %>% distinct() %>% rename(IDmother=uniqueID,
-                                                                            racemother=racefinal)
+mother <- subset %>% select(uniqueID, racefinal, year, educationCAT) %>% distinct() %>% rename(IDmother=uniqueID,
+                                                                            racemother=racefinal,
+                                                                            edMother = educationCAT)
 subset <- left_join(subset, mother)
 
-father <- subset %>% select(uniqueID, racefinal) %>% distinct() %>% rename(IDfather=uniqueID, racefather=racefinal)
+father <- subset %>% select(uniqueID, racefinal, year, educationCAT) %>% distinct() %>% rename(IDfather=uniqueID, racefather=racefinal,
+                                                                                               edFather = educationCAT)
 subset <- left_join(subset, father)
 
 rm(parents, mother, father)
@@ -310,12 +312,12 @@ subset$racefinal <- ifelse(is.na(subset$racefinal) & subset$relationshiptohead==
                                   subset$raceethwife, subset$racefinal))
 
 subset <- subset %>% 
-  select(uniqueID, year, relationshiptohead, sex, age, highestEd, educationCAT, educationCATdetailed, weight, racefinal) %>% 
+  select(uniqueID, year, relationshiptohead, edMother, edFather, sex, age, highestEd, educationCAT, educationCATdetailed, weight, racefinal) %>% 
   fill(weight, .direction=c("downup")) %>% 
   fill(highestEd, .direction=c("downup")) %>% mutate(weight=mean(weight))
 
 summary(subset)
-write.csv(subset, "SIMAH_workplace/education_transitions/alldata_2019.csv", row.names=F)
+write.csv(subset, "SIMAH_workplace/education_transitions/alldata_2019_parentED.csv", row.names=F)
 
 
 

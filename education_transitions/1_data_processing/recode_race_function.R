@@ -52,3 +52,20 @@ recode_race_function <- function(data, type){
                                                                 
 return(data)
 }
+
+recode_race_duplicate <- function(data){
+  data <- data %>% 
+    mutate(newrace2 = ifelse(n==2 & number1=="black" | number2=="black", "black", 
+                            ifelse(n==2 & number1=="hispanic" | number2 =="hispanic","hispanic",
+                                   ifelse(n==2 & number1=="Native" | number2=="Native","Native",
+                                          ifelse(n==2 & number1=="Asian/PI" | number2=="Asian/PI", "Asian/PI",
+                                                 ifelse(n==2 & number1=="other" | number2=="other","other", "white"))))),
+           newrace3 =  ifelse(n==3 & number1=="black" | number2=="black" | number3=="black", "black", 
+                                                               ifelse(n==3 & number1=="hispanic" | number2 =="hispanic" | number3=="hispanic","hispanic",
+                                                                      ifelse(n==3 & number1=="Native" | number2=="Native" | number3=="Native","Native",
+                                                                             ifelse(n==3 & number1=="Asian/PI" | number2=="Asian/PI" | number3=="Asian/PI", "Asian/PI",
+                                                                                    ifelse(n==3 & number1=="other" | number2=="other" | number3=="other","other",
+                                                                                           ifelse(n==4 & number3=="hispanic","hispanic",newrace2)))))),
+           newrace = ifelse(is.na(newrace3), newrace2, newrace3)) %>% dplyr::select(-c(newrace2,newrace3))
+  return(data)
+}
