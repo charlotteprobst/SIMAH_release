@@ -1,110 +1,63 @@
-# Calculate LE decomposition by SES with aggregated US mortality data (2000-2008)
+# Calculate LE decomposition for 2018 to 2020 
+# by SES and race and ethnicity 
 # Mortality data NCHS
-# Population data: March CPS
+# Population data: ACS 
 # Project: SIMAH
 
 
 # libraries required:
-library("tidyverse")
-library("DemoDecomp")
 library("dplyr")
-library("reshape")
-library("data.table")
-
+library("DemoDecomp")
+library("tidyverse")
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
-#setwd("~/Documents/Promotion/Mortality US")
 setwd("~/Google Drive/SIMAH Sheffield/")
-
 
 ## Load the functions that go with this code
 source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 
 #############################################################################################################
 #before starting with the decomposition, we have to get the mortality data into the right format
-
 # switch between types of ACS population counts 
 # (0) = raw ACS (ACS experimental weights), (1) = modelled ACS 
-ACS_type <- 1
+ACS_type <- 0
 
 #load aggregated mortality data:
-dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
+dMort <- read.csv("SIMAH_workplace/mortality/3_out data/US_mortality_rates_0020.csv")
+#load population data (raw vs modelled)
 if(ACS_type==0){
 dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
 }else if(ACS_type==1){
   dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020_predicted2020.csv")  
+  dPop_weights_raw <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 }
 dPop <- filter(dPop, state == "USA")
+dPop <- filter(dPop, year > 2017)
 dPop <- select (dPop,-c(state))
-dPop_weights_raw <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
-
+dMort <- filter(dMort, year > 2017)
 dMort <- inner_join(dMort, dPop)
 
 # variable type should be factor and not character
 dMort$race <- as.factor(dMort$race)
 dMort$edclass <- as.factor(dMort$edclass)
 
-## To aggregate some cause of death categories
-dMort$RESTmort <- dMort$RESTmort + dMort$CANmort
-dMort$RESTmort <- dMort$RESTmort + dMort$PANCmort
-dMort$RESTmort <- dMort$RESTmort + dMort$HSTRmort
-
-dMort$IHDmort <- dMort$IHDmort + dMort$ISTRmort
-
-#  Delete variables that are no longer needed 
-dMort <- dMort %>% select (-c(CANmort, PANCmort, ISTRmort, HSTRmort))
-
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
 dMort_raw <- dMort
-dMort <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
+dMort <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
 dMort_d <- aggregate(.~ year + edclass + sex + race + age_gp, data =  dMort_raw, FUN=sum)
-dMort_t <- aggregate(.~ year + age_gp, data =  dMort_raw, FUN=sum)
 
+## We have to calculate the rates again
+v.totals <- names(dMort)[grepl("mort", names(dMort))]
+v.rates <- names(dMort)[grepl("rate", names(dMort))]
+v.rates <- paste0(c("", rep("mx_", length(v.rates)-1)),v.rates)
 
-## We have to calculate the rates again 
-v.totals <- c("Tmort", "COVmort", "LVDCmort", "DMmort", "IHDmort",
-              "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort",  "RESTmort")
-
-## these are the original rate variable names. You could also introduce the "mx_" 
-## nomenclature here 
-v.rates <- c("Trate", "mx_COVrate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
-             "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
-             "mx_IJrate",  "mx_RESTrate") 
-
-
-#select mortality rates of interest
+#select variables
 sel.vars <- c("year", "edclass", "sex", "age_gp", v.rates) 
 
-# Calculate the proportion in each SES group by sex and year. 
-dMort_pop <- aggregate(.~ year + sex + edclass, data =  dMort, FUN=sum)
-dMort_pop <- dMort_pop  %>% select(year, sex, edclass, TPop) %>% 
-  group_by(year, sex, .drop=FALSE) %>% mutate(Proportion=(TPop/sum(TPop)) * 100) %>%
-  ungroup() %>% arrange(., sex, year, edclass)
-color.vec <- c("#69AA9E", "#447a9e",  "#d72c40") # high  middle low
-setnames(dMort_pop, old = c('edclass', 'sex', 'year'), new = c('SES','Sex', 'Year'))
-dMort_pop$SES <- recode(dMort_pop$SES, "College" = "High", "SomeC" = "Middle",  "LEHS" = "Low")
-dMort_pop$Sex <- as.factor(dMort_pop$Sex)
-dMort_pop$Sex <- recode(dMort_pop$Sex, "1" = "Men", "2" = "Women")
-#write.csv(dMort_pop, "SIMAH_workplace/life_expectancy/2_out_data/proportion_SES.csv")
-
-ggplot(dMort_pop, aes(x = Year, y = Proportion,  group = SES)) +
-  facet_grid(cols = vars(Sex)) +
-  geom_line(aes(colour = SES), size = .9, alpha = .7) +    
-  xlab("Year") +
-  theme_light()+
-  theme(strip.background = element_rect(fill = "white"))+
-  theme(strip.text = element_text(colour = 'black'), text=element_text(size = 16)) +
-  theme(legend.position = "right") +
-  scale_color_manual(name = "SES", breaks = c("High", "Middle", "Low"), values = color.vec, 
-                     labels = c("High", "Middle", "Low")) +   
-  geom_point(size = 1, aes(color = SES)) 
-#ggsave("SIMAH_workplace/life_expectancy/3_graphs/SES_proportion_over_time.jpg", dpi=600, width=18, height=13, units="cm")
-
 ####### DECOMP BY SEX AND SES  ########
-
 # first set up 2020 weights 
 # first aggregate by only year sex age_gp and edclass 
 
@@ -209,7 +162,7 @@ dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
 if(ACS_type==0){
-write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
 }else if(ACS_type==1){
   write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
@@ -300,7 +253,6 @@ write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dR
 write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020weights.csv")
 
 ####### DECOMP BY SEX, SES AND RACE  ########
-
 # calculate rates by race and ethnicity for 2020 weights 
 dMort2020 <- dMort_d %>% filter(year==2020) %>% dplyr::select(-c(TPop))
 mortlist <- list()
@@ -402,11 +354,11 @@ dResults_contrib$edclass <- factor(dResults_contrib$edclass,
 dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass, dResults_contrib$race), ]
 if(ACS_type==0){
-write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
-write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020.csv")
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dMort_race_0020.csv")
 }else if(ACS_type==1){
-  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
-  write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/dMort_race_0020_ACSmodel.csv")  
+  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "race_ACS.csv") )
+  write.csv(dMort_d, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dMort_race_0020_ACSmodel.csv")  
 }
 
 if(ACS_type==0){
@@ -480,5 +432,5 @@ for(i in 1:length(dResults_contrib_list)){
 }
 
 dResults_weights <- do.call(rbind, dResults_contrib_list)
-write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACSweights.csv") )
+write.csv(dResults_weights,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_", v.year1[1], "_", max(v.year2), "race_ACSweights.csv") )
 }

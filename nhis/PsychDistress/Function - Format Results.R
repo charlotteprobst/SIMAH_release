@@ -1,6 +1,26 @@
 
-# Race x Lifestyle Differential Vulnerability & Exposure Project
-## Functions for aalen interaction models to extract formatted results
+
+## Functions for PsychDistress as exposure 
+
+
+# Function specifying the Aalen models 
+
+interaction_model <- function(data, var1, var2){
+  data <- mutate(data, var1 = {{var1}}, var2 = {{var2}})
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(var1)*const(var2) + 
+                  const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data)
+  return(model)  
+}
+
+jointeffect_model <- function(data, var1, var2){
+  data <- mutate(data, interaction = interaction({{var1}}, {{var2}}))
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(interaction) + 
+                  const(married.factor) + ethnicity.factor + const(factor(srvy_yr)),  data = data)
+  return(model)
+}
+
+
+
 
 # Function to extract results from Aalen model, multiple by 10,000py and round/format results
 aalen_10000py <- function(model, x) {
@@ -13,6 +33,8 @@ aalen_10000py <- function(model, x) {
   return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
 
 
+
+
 # Function to extract results from Aalen model, multiple by 10,000py, for a 10-unit increase, and round/format results
 aalen_10000py_10x <- function(model, x) {
   mu <- model$gamma[x]       
@@ -22,6 +44,8 @@ aalen_10000py_10x <- function(model, x) {
   mu <- round(mu*10000*10,1)                                   # mu * 10,000 to get result per 10,000py x 10 unit increase
   output<-paste0(mu, " (",confint.lower,", ", confint.upper, ")")
   return(cat(output, "\n"))}   #cat() returns the text without quotes and without the leading numbers [1], [2]...
+
+
 
 
 # Function to extract and format HR results

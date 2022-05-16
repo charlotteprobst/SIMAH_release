@@ -1,24 +1,32 @@
 
-# SIMAH - Restricted Access Data 
+# SIMAH Restricted-access Data
 # Data Management File
+
+# My changes
 
 library(haven)      # Read SAS file
 library(tidyverse)  # data management
 library(janitor)    # clean variable names
 library(skimr)      # descriptive statistics
 library(survey)     # to accomodate survey weights
+library(srvyr)      # adds dplyr like syntax to the survey package
 
 
 # Specify the data file location
+# Klajdi's 
 data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
-data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
- 
-# NOTE: the variable names have been structured such that those ending in a number are factors,  
-# where the number indicates the number of categories
+data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+
+# Yachen's 
+# data_orig <- ""
+# data_new  <- ""
+
+
+# NOTE: the variable names have been structured such that those ending in a number are factors, where the number indicates the number of categories
 
 # Load data and recode/create variables -------------------------------------------------------------------------
-nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>% 
-  zap_formats() %>% zap_label() %>%  # removes labels/formats form SAS and clean names
+nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>% 
+  zap_formats() %>% zap_label() %>%  # removes labels/formats from SAS
 
   # Recode and create variables
   mutate( 
@@ -36,7 +44,7 @@ nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>%
       edu3 = factor(edu, levels=c(3,1,2), labels=c("Bachelors", "Highschool", `2`="Some college")), # the first listed category is the reference
     
     
-    # MEDIATORS/MODIFIERS *************************************************************************************
+    # LIFESTYLE FACTORS **************************************************************************************
     # *********************************************************************************************************
     
     ## ALCOHOL USE - 1997-2018
@@ -180,11 +188,7 @@ nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>%
           
     # COVARIATES **********************************************************************************************
     # *********************************************************************************************************
-    
-    ## AGE - 1997-2018
-    bl_age = AGE_P,       # Baseline age
-    
-    
+
     ## SEX - 1997-2018
     female = recode(SEX, `1`=0, `2`=1),
     female2 = factor(female, levels=c(0,1), labels=c("Men", "Women")), 
@@ -202,7 +206,7 @@ nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>%
       HISCODI3 == 1        | HISCODI2 == 1 | HISCOD_I == 1 | HISPCODR == 1 | HISPCODE == 1 |  ORIGIN == 1                 ~ 3, # hispanic
       HISCODI3 %in% c(4,5) | HISCODI2 == 4 | HISCOD_I == 4 | HISPCODR == 4 | HISPCODE == 4 | (ORIGIN == 2 & RACEREC == 3) ~ 4),# other
     
-    race4 = factor(race, levels=c(1,2,3,4), labels=c("Non-Hispanic White", "Non-Hispanic Black", "Hispanic ", "Non-Hispanic Other")), 
+    race4 = factor(race, levels=c(1,2,3,4), labels=c("White", "Black", "Hispanic ", "Other")), 
     
     
     # OTHER VARIABLES *****************************************************************************************
@@ -298,24 +302,35 @@ nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>%
     new_psu = PSU,
     new_psu = if_else(is.na(new_psu), PSU_P, new_psu),
     new_psu = if_else(is.na(new_psu), PPSU, new_psu),
-  
+
     new_stratum = STRATUM + 1000,
     new_stratum = if_else(is.na(new_stratum), STRAT_P + 2000, new_stratum),
     new_stratum = if_else(is.na(new_stratum), PSTRAT + 3000, new_stratum),
+
+    new_weight = SA_WGT_NEW / 22,     # divide by # of NHIS surveys that are pooled together
     
     
-    # TEMPORARY Variables
+    # interaction variables
+    edu_sex = interaction(edu3, female2), 
+    
+    # TEMPORARY Variables (need updating)
+    bl_age = AGE_P,       # Baseline age
     allcause_death = MORTSTAT,
     heart_death = ifelse(UCOD_LEADING=="001", 1, 0),
+    cancer_death = ifelse(UCOD_LEADING=="002", 1, 0),
+    accident_death = ifelse(UCOD_LEADING=="004", 1, 0),
     end_age = bl_age + yrs_followup) %>%    
     
   
   # Select variables to keep
-  select (PUBLICID, srvy_yr, srvy_yr22, new_psu, new_stratum, allcause_death, heart_death, end_age,  
+  select (PUBLICID, new_weight, new_psu, new_stratum,
+          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, allcause_death, heart_death, cancer_death, accident_death,
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
-          bl_age, female, female2, married, married2, race, race4,
+          female, female2, married, married2, race, race4, edu_sex,
           income, income_v2, income5, income4, K6scale, PsyDistr, PsyDistr3, 
-          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3)
+          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) %>%
+
+  filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
 
 
 
@@ -341,22 +356,45 @@ nhis <- read_sas (paste0(data_orig, "nhis1997_2018_raw.sas7bdat")) %>%
 # The sample weight variable (SA_WGT_NEW) needs to be divided by 22 because 22 survey years were pooled form NHIS
 
 
-
-# Finalize and save data set ---------------------------------------------------------------------------------------------------------------
+# Finalize data set ---------------------------------------------------------------------------------------------------------------
 # Create subset of data with relevant participants     
 nhis_clean <- nhis %>%
   # Remove those outside our age range:
-  filter(bl_age>=25 & bl_age <85) %>%
+  filter(bl_age>=25) %>%
   
   # Remove those with missing data:
-  filter(complete.cases(allcause_death, heart_death, end_age,  # <- Temporary variables 
-                        edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
 
 # Create database specific to males or females
 nhis_female <- filter(nhis_clean, female==1)
 nhis_male <- filter(nhis_clean, female==0)
         
-        
+
+
+# Finalize data set adjusting for survey weights
+# nhis_svy <- svydesign(id=~new_psu, strata=~new_stratum,weights=~new_weight,
+#                       nest = TRUE, data= nhis)
+# 
+# nhis_clean_svy <- subset(nhis_svy, bl_age>=25 & !is.na(allcause_death) & !is.na(heart_death) & !is.na(end_age) &
+#                         !is.na(edu3) & !is.na(alc5) & !is.na(bl_age) & !is.na(female) & !is.na(married) & !is.na(race4))
+# 
+# nhis_female_svy <- subset(nhis_clean_svy, female==1)
+# nhis_male_svy <- subset(nhis_clean_svy, female==0)
+
+
+# Using {srvyr} finalize data set adjusting for survey weights
+nhis_svy <- nhis %>%
+  as_survey_design(id=new_psu, strata=new_stratum, weights=new_weight, nest = TRUE)
+
+nhis_clean_svy <- nhis_svy %>%
+  filter(bl_age>=25) %>%
+  filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
+
+nhis_female_svy <- filter(nhis_svy, female==1)
+nhis_male_svy <- filter(nhis_svy, female==0)
+
+
+
 
         
 # Save copy of final datasets  
@@ -365,4 +403,7 @@ saveRDS(nhis_clean,  paste0(data_new, "nhis_clean.rds"))    # NHIS data to be an
 saveRDS(nhis_male,   paste0(data_new, "nhis_male.rds"))     # NHIS data to be analyzed (males only)
 saveRDS(nhis_female, paste0(data_new, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
         
-        
+saveRDS(nhis_svy,        paste0(data_new, "nhis_all_svy.rds"))      # NHIS_svy data with all participants
+saveRDS(nhis_clean_svy,  paste0(data_new, "nhis_clean_svy.rds"))    # NHIS_svy data to be analyzed
+saveRDS(nhis_male_svy,   paste0(data_new, "nhis_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
+saveRDS(nhis_female_svy, paste0(data_new, "nhis_female_svy.rds"))   # NHIS_svy data to be analyzed (females only)   

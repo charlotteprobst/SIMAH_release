@@ -14,6 +14,7 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
+
 files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
@@ -32,6 +33,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/implausi
        dpi=300, width=33, height=19, units="cm")
 
 # now plot cirrhosis output over waves 
+
 files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/Cirrhosis*.RDS", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files
@@ -46,8 +48,33 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/const
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
 proportion <- 200000/WholePopSize$total
 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_cirrhosis_1984_2016.R")
+source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_cirrhosis_1984_2016.R") 
 
+meansim <- files %>% group_by(wave, year, samplenum, microsim.init.sex, agegroup) %>% 
+  summarise(microsim = mean(rateper100000),
+            microsim = ifelse(is.na(microsim),0,microsim)) %>% 
+  rename(sex=microsim.init.sex)
+
+cirrhosismortality <- cirrhosismortality %>% rename(year=Year) %>% 
+  dplyr::select(year, sex, agegroup, rate) %>% 
+  rename(target=rate)
+
+meansim <- left_join(meansim, cirrhosismortality) 
+# %>% 
+#   pivot_longer(microsim:target)
+meansim <- meansim %>% group_by(wave, year, sex, agegroup) %>% 
+  mutate(min = min(microsim), max=max(microsim))
+
+subset <- meansim %>% filter(agegroup!="15-19") %>% filter(agegroup!="20-24") %>% 
+  filter(agegroup!="25-34") %>% mutate(agegroup=ifelse(agegroup=="75.","75+",agegroup))
+
+ggplot(data=subset(subset, sex=="f"), aes(x=year, y=target)) + 
+  facet_grid(cols=vars(wave), rows=vars(agegroup), scales="free") +
+  geom_ribbon(aes(ymin=min, ymax=max), fill="grey70") +
+  geom_line() + theme_bw() + ggtitle("Women") + 
+  ylab("Mortality rate per 100,000 population")
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/cirrhosis_agesp_women.png"),
+       dpi=300, width=32, height=21, units="cm")
 sim <- files %>% group_by(wave, year, samplenum, microsim.init.sex, agegroup) %>% 
   summarise(microsim = mean(rateper100000),
             microsim = ifelse(is.na(microsim),0,microsim)) %>% 
@@ -62,10 +89,13 @@ ggplot(data=subset(meansim, sex=="m"), aes(x=Year, y=microsim, colour=as.factor(
   facet_grid(cols=vars(wave), rows=vars(agegroup)) +
   theme(legend.position="none")
 
-meansim$samplenum <- as.factor(meansim$samplenum)
-meansim$name <- as.factor(meansim$name)
-
-target <- meansim %>% filter(name=="target")
+ggplot(data=subset(subset, sex=="m"), aes(x=year, y=target)) + 
+  facet_grid(cols=vars(wave), rows=vars(agegroup), scales="free") +
+  geom_ribbon(aes(ymin=min, ymax=max), fill="grey70") +
+  geom_line() + theme_bw() + ggtitle("Men") + 
+  ylab("Mortality rate per 100,000 population")
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/cirrhosis_agesp_men.png"),
+       dpi=300, width=32, height=21, units="cm")
 
 meansim <- meansim %>% pivot_longer(microsim:target)
 
@@ -120,10 +150,17 @@ for(i in 1:length(list)){
 files <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
   mutate(wave=as.factor(wave))
 
+nb.cols <- 15
+mycolors <- colorRampPalette(brewer.pal(8, "Spectral"))(nb.cols)
+
 ggplot(data=files, aes(x=value, group=wave, fill=wave, colour=wave)) + 
   geom_density(aes(x=value, y=..scaled..,), alpha=0.4, inherit.aes = TRUE) + 
-  facet_wrap(~name, scales="free") + theme_bw()
-ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/lhs_density.png"),
+  facet_wrap(~name, scales="free") + 
+  theme_bw() +
+  theme(legend.position="bottom") + 
+  scale_colour_manual(values=mycolors) + 
+  scale_fill_manual(values=mycolors) + xlab("") + ylab("density")
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/lhs_density_agesp.png"),
        dpi=300, width=33, height=19, units="cm")
 
 # save the top 3 LH samples for the best run from the final wave 

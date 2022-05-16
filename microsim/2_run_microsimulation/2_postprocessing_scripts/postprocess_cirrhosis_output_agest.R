@@ -97,9 +97,9 @@ ggplot(data=subset, aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom
   ylab("Age standardized rate per 100,000 population") +
   scale_x_continuous(breaks=c(1984, 2010), labels=c(1984,2010)) + 
   theme(legend.position="none",
-        text = element_text(size=12),
-        panel.spacing.x = unit(6,"mm")) + ylim(0,NA)
-ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/calibration_fixed_toprun.png", dpi=300, width=33, height=19, units="cm")
+        text = element_text(size=18)) + xlab("") +
+  ylab("Age standardized rate per 100,000 population")
+ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/agest_calibrationwaves.png", dpi=300, width=33, height=19, units="cm")
 
 # now plot the lhs samples 
 files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhs*.csv", sep="")))
@@ -132,5 +132,3 @@ toplhs <- do.call(rbind,list) %>% filter(wave==max(imp$wave)) %>%
 write.csv(toplhs, "SIMAH_workplace/microsim/2_output_data/calibration_output_agest/toplhs_agest.csv", row.names=F)
 
 source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/compare_lhs_calibration.R")
-
-

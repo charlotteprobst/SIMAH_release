@@ -101,20 +101,42 @@ updatingalcohol <- 0
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
+
+source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
+
+agest <- 0
+N_SAMPLES <- 50
+PE <- 1
 tomerge <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates", SelectedState, ".RDS", sep="")) %>% 
   filter(Year>=2017)
 Rates <- rbind(Rates,tomerge)
 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
-
-agest <- 1
-N_SAMPLES <- 6
-PE <- 0
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sample_parameters_top.R")
 N_REPS <- 2
 if(PE==1){
   N_SAMPLES <- 1
 }
+
+# run top 5% versions of the age specific and age standardized version
+top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
+  mutate(percentile=ntile(maximplausibility,500)) %>% 
+  filter(percentile<=1)
+lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+  filter(SampleNum %in% top$samplenum)
+
+lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+  pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+  group_by(name) %>% 
+  summarise(value=mean(value)) %>% 
+  pivot_wider(names_from=name, values_from=value)
+
+lhsSample <- list()
+for(i in 1:nrow(lhs)){
+  lhsSample[[paste(i)]] <- lhs[i,]
+}
+
+N_SAMPLES <- 1
+
 # run top 5% versions of the age specific and age standardized version
 # top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
 #   mutate(percentile=ntile(maximplausibility,500)) %>% 
@@ -134,6 +156,7 @@ if(PE==1){
 # }
 # 
 # N_SAMPLES <- 1
+
 sampleseeds <- expand.grid(seed=1:N_REPS, SampleNum=1:N_SAMPLES)
 sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 
@@ -171,7 +194,8 @@ Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
                                     outward_migration, inward_migration, mortality,
                                     AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, 
                                     MetabolicPathway,
-                                    brfss,Rates, 1984, 2019)
+                                    brfss,Rates, 1984, 2016)
                      }
 
 saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS")
+

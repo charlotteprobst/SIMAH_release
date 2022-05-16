@@ -6,8 +6,11 @@ library(tidyr)
 library(mice)
 
 education <- read.csv("SIMAH_workplace/education_transitions/alldata_2019.csv")
+education <- read.csv("SIMAH_workplace/education_transitions/alldata_2019_parentED_final_income.csv")
 
 summary(education)
+
+education$birthyear <- education$year - education$age
 
 education <- education %>% filter(age<=34)
 
@@ -133,4 +136,4 @@ library(splitstackshape)
 education$newweight <- round(education$weight*10)
 
 neweducation <- expandRows(education, "weight")
-write.csv(neweducation, "SIMAH_workplace/education_transitions/PSID_reweighted_2019_weight.csv", row.names=F)                                                                                          
+write.csv(neweducation, "SIMAH_workplace/education_transitions/PSID_reweighted_2019_weight_parental_income.csv", row.names=F)                                                                                        

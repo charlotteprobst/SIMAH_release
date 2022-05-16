@@ -40,7 +40,7 @@ files <- left_join(files,cirrhosismortality) %>%
          sex = ifelse(sex=="f","Women","Men")) %>% 
   filter(agegroup!="15-19") %>% filter(agegroup!="20-24") %>% 
   filter(agegroup!="25-34") %>% 
-  filter(agegroup!="75+") 
+  filter(agegroup!="75+") %>% 
 
 means <- files %>% 
   mutate(percentdifference = abs(microsim - target) / mean(microsim+target),
@@ -64,13 +64,6 @@ files <- files %>%
   pivot_longer(mean:target) %>% 
   mutate(name = ifelse(name=="target","Observed","Simulated"))
 
-
-
-
-
-
-
-
 ggplot(data=files, aes(x=year, y=value, colour=name, linetype=name)) + 
   scale_colour_manual(values=c("black","grey50")) + 
   scale_linetype_manual(values=c("solid","dotdash")) + 
@@ -90,12 +83,6 @@ ggplot(data=files, aes(x=year, y=value, colour=name, linetype=name)) +
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
        dpi=1000, width=25, height=21, units="cm")
 
-# files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/validation/outputfiles/*.csv", sep="")))
-# 
-# files <- lapply(files, function(x) read.csv(x)) %>% 
-#   do.call(rbind,.)
-
-# 
 files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS") %>%
   do.call(rbind,.)
 

@@ -69,10 +69,10 @@ NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") 
 data <- left_join(data, NASGPD) %>% 
   mutate(gramsperday_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
                               ALCGPD_non30, gramsperday),
-         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker",
+         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
                                 rtruncnorm(nrow(.), a=0, b=11, mean=2, sd=1), alc_frequency),
-         alc_frequency = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency<1, 1,
-                                round(alc_frequency))) %>% 
+         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency_new<1, 1,
+                                round(alc_frequency_new))) %>% 
   dplyr::select(-ALCGPD_non30)
 
 # read in APC data - source = NIAAA 
@@ -95,7 +95,6 @@ data <- left_join(data,tally)
 
 # perform the up-shift 
 data <- data %>% group_by(YEAR, State) %>% 
-  mutate(BRFSS_APC = mean(gramsperday_new),                   # calculate BRFSS APC as mean grams per day
          adj_brfss_apc = BRFSS_APC/percentdrinkers,       # adjust the BRFSS APC value based on % of current drinkers
          gramspercapita_90 = gramspercapita_adj1*0.9, #adjust to 90% of APC
          quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
@@ -109,6 +108,7 @@ data <- data %>% group_by(YEAR, State) %>%
          quantity_per_occasion_upshifted = ifelse(gramsperday_upshifted_crquotient==0, 0, quantity_per_occasion_upshifted)
          ) # recalculate drinks per occasion based on upshifted data 
 
+test <- data %>% sample_n(10)
 # adding the regions to the BRFSS 
 data <- add_brfss_regions_wet(data)
 
@@ -117,6 +117,11 @@ forpaper <- data %>%
                 education_summary, household_income,
                 drinkingstatus, alc_frequency, quantity_per_occasion,
                 gramsperday,
+                drinkingstatus_detailed, gramspercapita_adj1, gramspercapita, gramspercapita_90,
+                gramsperday_upshifted,
+                frequency_upshifted,
+                quantity_per_occasion_upshifted)
+saveRDS(forpaper, "SIMAH_workplace/brfss/processed_data/BRFSS__upshifted_1984_2020_paper.RDS")
                 drinkingstatus_detailed, drinkingstatus_updated, gramspercapita_adj1, gramspercapita, gramspercapita_90,
                 gramsperday_upshifted_crquotient,
                 frequency_upshifted,
@@ -132,8 +137,6 @@ summary <- forpaper %>% filter(State=="USA") %>%
             sdmonthly5plus = sd(hed, na.rm=T),
             annual5plus = monthly5plus*12)
 write.csv(summary, "SIMAH_workplace/brfss/processed_data/BRFSS_5plus.csv", row.names=F)
-
-summary %>% group_by(sex_recode) %>% summarise(mean(annual5plus))
 
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 

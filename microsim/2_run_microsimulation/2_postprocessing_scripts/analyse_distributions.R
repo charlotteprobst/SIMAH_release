@@ -54,3 +54,4 @@ PE <- data.frame(name = c("BETA_MALE_MORTALITY","BETA_FEMALE_MORTALITY","METABOL
 toplhs_forriskfunctions <- rbind(toplhs_forriskfunctions, PE)
 write.csv(toplhs_forriskfunctions, 
           "SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.csv", row.names=F)
+
