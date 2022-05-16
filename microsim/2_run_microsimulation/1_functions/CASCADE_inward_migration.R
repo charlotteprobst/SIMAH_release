@@ -35,9 +35,9 @@ pool <- brfss %>% dplyr::filter(State==SelectedState) %>% dplyr::filter(YEAR>=wi
   sample_n(10,replace=T)
 brfsscats <- unique(pool$cat)
 missing <- setdiff(cats, brfsscats)
-print("missing")
-print(y)
-print(paste(length(missing)))
+# print("missing")
+# print(y)
+# print(paste(length(missing)))
 summary <- tojoin %>% dplyr::filter(cat %in% missing)
 summary$toadd / sum(tojoin$toadd)
 

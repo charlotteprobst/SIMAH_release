@@ -3,12 +3,12 @@
 # Code for generating samples from joint prior distribution over the ABM inputs
 # Mark Strong
 # 26.3.18
-implausibilitywave1 <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility_wave", WAVE-1, ".csv", sep="")) %>% 
+implausibilitywave1 <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/implausibility_wave", WAVE-1, ".csv", sep="")) %>% 
   mutate(percentile=ntile(maximplausibility,100)) %>% rename(implausibility=maximplausibility)
 
-# cutoff <- median(implausibilitywave1$implausibility)*0.9
-# top <- unique(subset(implausibilitywave1, implausibility<=cutoff)$samplenum)
-top <- unique(subset(implausibilitywave1, percentile<=15))$samplenum
+cutoff <- mean(implausibilitywave1$implausibility)*0.95
+top <- unique(subset(implausibilitywave1, implausibility<=cutoff)$samplenum)
+# top <- unique(subset(implausibilitywave1, percentile<=15))$samplenum
 
 toplhs <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE-1, ".csv", sep="")) %>% 
   filter(SampleNum %in% top)

@@ -107,10 +107,30 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
         
         # Impute 0 ounces daily for non-drinkers
         alc_daily_oz = if_else(drinking_stat%in%c(2,3), 0, alc_daily_oz), 
+        
+          across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ if_else(alc_daily_oz==0, 0, .x)),
+          across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ if_else(is.na(alc_daily_oz), NA_real_, .x)),
+          across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ replace_na(.x, 0)),
       
+      
+  
       # Recategorize daily alcohol use using other units
-      alc_daily_g = alc_daily_oz * 28.3495,   # Convert daily ounces to grams  
-      alc_daily_drinks = alc_daily_oz  / 0.60, # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+      # Convert daily ounces to grams
+      alc_daily_g = alc_daily_oz * 28.3495,     
+      coolers_daily_g = coolers_daily_oz * 28.3495,
+      beers_daily_g = beers_daily_oz * 28.3495,
+      wine_daily_g = wine_daily_oz * 28.3495,
+      liquor_daily_g = liquor_daily_oz * 28.3495,
+      
+      # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+      alc_daily_drinks = alc_daily_oz  / 0.60, 
+
+      
+      # Proportion of beverage
+      coolers_prop = coolers_daily_g / alc_daily_g * 100,
+      beers_prop   = beers_daily_g / alc_daily_g * 100,
+      wine_prop    = wine_daily_g / alc_daily_g * 100,
+      liquor_prop  = liquor_daily_g / alc_daily_g * 100,
       
 
       # Categorize alcohol use as per NESARC guidelines
@@ -206,26 +226,6 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     # filter(nesarc, wave==1) %>% count(hed)
 
 
-
-# Select variables of interest and identify those lost to follow-up or with incomplete data
-nesarc <- nesarc %>%
-  
-  # order data by ID, then by wave (timepoint)
-  arrange(idnum, wave) %>% 
-  
-  # Identify the variables to keep
-  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_w1, age3, age7, female, female_w1, race, race_w1, 
-    married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed) %>% 
-  
-  # remove those with missing data 
-  group_by(idnum) %>%
-    mutate(lost = ifelse(n()>1, 0, 1),                    # Identify those with data at one time point (8,440 observations removed; n=69,306)
-           lost = ifelse(any(is.na(alc5)), 1, lost),      # Identify those with missing alcohol data in either time point (424 observations removed; n=68,882)
-           lost = ifelse(any(is.na(hed)), 1, lost)) %>%   # Identify those with missing HED in either time point (166 observations removed; n=68,716)
-    ungroup() 
-
-  
-
 # label values (first listed category is the reference)
 
 nesarc <- nesarc %>%
@@ -243,11 +243,37 @@ nesarc <- nesarc %>%
     married.factor     = factor(married, levels=c(1,0), labels=c("Married/cohab.", "Single")),
     edu3               = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
     income3.factor     = factor(income3, levels=c(3,1,2), labels=c("High", "Low", "Med")),
-    wave.factor        = factor(wave, levels=c(1,2), labels=c("Wave 1", "Wave 2")),
-    lost.factor        = factor(lost, levels=c(0,1), labels=c("Completed Follow-up", "Lost to Follow-up")))
+    wave.factor        = factor(wave, levels=c(1,2), labels=c("Wave 1", "Wave 2")))
 
 
-    
+
+
+# Select variables of interest and identify those lost to follow-up or with incomplete data
+nesarc <- nesarc %>%
+  
+  # order data by ID, then by wave (timepoint)
+  arrange(idnum, wave) %>% 
+  
+  # Identify the variables to keep
+  select(idnum, wave, psu, stratum, weight, weight_wave2,  years, age, age_w1, age3, age7, female, female_w1, race, race_w1, 
+          married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed,
+          coolers_prop, beers_prop, wine_prop, liquor_prop, coolers_daily_g, beers_daily_g, wine_daily_g, liquor_daily_g,
+          alc6.factor, alc5.factor, alc5_v2.factor, alc4.factor, alc4_nesarc.factor, hed.factor, female.factor, female_w1, 
+          race.factor, race_w1, married.factor, edu3, income3.factor, wave.factor) %>% 
+  
+  
+
+  
+  
+  # remove those with missing data 
+  group_by(idnum) %>%
+    mutate(lost = ifelse(n()>1, 0, 1),                    # Identify those with data at one time point (8,440 observations removed; n=69,306)
+           lost = ifelse(any(is.na(alc5)), 1, lost),      # Identify those with missing alcohol data in either time point (424 observations removed; n=68,882)
+           lost = ifelse(any(is.na(hed)), 1, lost),       # Identify those with missing HED in either time point (166 observations removed; n=68,716)
+           lost.factor = factor(lost, levels=c(0,1), labels=c("Completed Follow-up", "Lost to Follow-up"))) %>%   
+    ungroup() 
+
+     
 # Create dataframe with complete data at both time points (cc=complete case)
 nesarc_cc <- nesarc %>% 
   filter(lost==0)  # Remove those with missing data
@@ -301,6 +327,7 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
                             age >= 40 & age <50 ~ "40-49",
                             age >= 50 & age <65 ~ "50-64",
                             age >= 65 ~ "65+")),
+    age7 = relevel(age7, ref="65+"), 
     married = recode(NMARITAL, `1`= 1, `2`=1, `3`=0, `4`=0, `5`=0, `6`=0),
     
     # Calculating alcohol intake:
@@ -356,10 +383,30 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     # Impute 0 ounces daily for non-drinkers
     alc_daily_oz = if_else(drinking_stat%in%c(2,3), 0, alc_daily_oz), 
     
-    # Recategorize daily alcohol use using other units
-    alc_daily_g = alc_daily_oz * 28.3495,   # Convert daily ounces to grams  
-    alc_daily_drinks = alc_daily_oz  / 0.60, # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+        across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ if_else(alc_daily_oz==0, 0, .x)),
+        across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ if_else(is.na(alc_daily_oz), NA_real_, .x)),
+        across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ replace_na(.x, 0)),
     
+    
+    
+    
+    # Recategorize daily alcohol use using other units
+    # Convert daily ounces to grams
+    alc_daily_g = alc_daily_oz * 28.3495,     
+    coolers_daily_g = coolers_daily_oz * 28.3495,
+    beers_daily_g = beers_daily_oz * 28.3495,
+    wine_daily_g = wine_daily_oz * 28.3495,
+    liquor_daily_g = liquor_daily_oz * 28.3495,
+    
+    # Coverty to daily # of drinks, assuming 0.60oz per drink, as per NESARC guidelines
+    alc_daily_drinks = alc_daily_oz  / 0.60, 
+    
+    
+    # Proportion of beverage
+    coolers_prop = coolers_daily_g / alc_daily_g * 100,
+    beers_prop   = beers_daily_g / alc_daily_g * 100,
+    wine_prop    = wine_daily_g / alc_daily_g * 100,
+    liquor_prop  = liquor_daily_g / alc_daily_g * 100,  
     
      # Categorize alcohol use as per SIMAH protocol
     alc6 = case_when(
@@ -402,20 +449,6 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     hed = ifelse(alc5 %in% c(1,2), 1, hed)) #Non-drinker
 
 
-
-
-# Select variables of interest and identify those lost to follow-up or with incomplete data
-nesarc3 <- nesarc3 %>%
-  
-  # Identify the variables to keep
-  select(idnum, weight, age, age3, age7, female, race, married, edu3, 
-         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed) %>%
-  
-  # remove those with missing data 
-  filter(!is.na(alc5)) %>%   # 88 observations removed; n=36,221
-  filter (!is.na(hed))       # 83 observations removed; n=36,138
-
-
 # label values (first listed category is the reference)
 nesarc3 <- nesarc3 %>%
   mutate (
@@ -430,11 +463,27 @@ nesarc3 <- nesarc3 %>%
     edu3.factor    = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")))
 
 
-nesarc3 %>% select(weight) %>% skim()
+# Select variables of interest and identify those lost to follow-up or with incomplete data
+nesarc3 <- nesarc3 %>%
+  
+  # Identify the variables to keep
+  select(idnum, weight, age, age3, age7, female, race, married, edu3, 
+         alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed,
+         coolers_prop, beers_prop, wine_prop, liquor_prop, coolers_daily_g, beers_daily_g, wine_daily_g, liquor_daily_g,
+         alc6.factor, alc5.factor, alc5_v2.factor, alc4.factor, hed.factor, female.factor, 
+         race.factor, married.factor,edu3.factor) %>%
+  
+  # identify those with missing data
+  mutate (lost = ifelse(is.na(alc5), 1, 0),    # 88 observations removed; n=36,221
+          lost = ifelse(is.na(hed), 1, lost))  # 83 observations removed; n=36,138
 
+# Remove those with missing data
+nesarc3_clean <- nesarc3 %>%
+  filter(lost==0)
+    
 
 # Replicate data (and create unique ID variable) to adjust for sampling weight
-nesarc3_expanded <- nesarc3 %>%
+nesarc3_expanded <- nesarc3_clean %>%
   mutate (new_weight = weight / 100) %>%  # because original weight variable ranged from 586 to 49,403
   expandRows(., "new_weight") %>%         # replicates data
   
@@ -450,5 +499,8 @@ nesarc3_expanded <- nesarc3 %>%
 
 
 # Save data
-saveRDS(nesarc3, paste0(data, "nesarc3_clean.rds"))
+saveRDS(nesarc3, paste0(data, "nesarc3_all.rds"))
+saveRDS(nesarc3_clean, paste0(data, "nesarc3_clean.rds"))
 saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded.rds"))
+
+

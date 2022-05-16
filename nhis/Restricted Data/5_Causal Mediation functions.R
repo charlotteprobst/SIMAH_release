@@ -3,7 +3,6 @@
 ## Functions for Causal Mediation 
 
 
-
 # Data preparation for Causal Mediation -------------------------------------------------------------
 
 # Function for data preparation (Edu as exposure), to repeat analyses for men and women

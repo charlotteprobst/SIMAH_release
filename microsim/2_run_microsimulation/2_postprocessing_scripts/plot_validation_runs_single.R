@@ -22,7 +22,7 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/const
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
 proportion <- PopulationSize/WholePopSize$total
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agesp.RDS") %>% 
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agesp_2019.RDS") %>% 
   do.call(rbind,.) %>% group_by(year, samplenum, microsim.init.sex, agegroup) %>% 
   summarise(microsim = mean(rateper100000),
             microsim = ifelse(is.na(microsim),0,microsim)) %>% 
@@ -41,6 +41,21 @@ files <- left_join(files,cirrhosismortality) %>%
   filter(agegroup!="15-19") %>% filter(agegroup!="20-24") %>% 
   filter(agegroup!="25-34") %>% 
   filter(agegroup!="75+") %>% 
+
+means <- files %>% 
+  mutate(percentdifference = abs(microsim - target) / mean(microsim+target),
+         absdifference = abs(microsim - target),
+         yeargroups = ifelse(year >=1985 & year<=2010, 1,
+                             ifelse(year>=2011, 2, 0))) %>% filter(yeargroups!=0) %>% 
+  group_by(samplenum, sex, agegroup, yeargroups) %>% 
+  summarise(meanpercent = mean(percentdifference))
+
+diff <- means %>% group_by(sex,agegroup,yeargroups) %>% 
+  summarise(meanpercentdiff = mean(meanpercent),
+            minpercent = min(meanpercent),
+            maxpercent = max(meanpercent))
+
+files <- files %>% 
   group_by(year, sex, agegroup) %>% 
   summarise(min=min(microsim),
             max=max(microsim),
@@ -68,7 +83,7 @@ ggplot(data=files, aes(x=year, y=value, colour=name, linetype=name)) +
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
        dpi=1000, width=25, height=21, units="cm")
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest.RDS") %>% 
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS") %>%
   do.call(rbind,.)
 
 age2010 <- files %>% filter(year==2010) %>% 
@@ -120,3 +135,13 @@ ggplot(data=meansim, aes(x=Year, y=value, colour=name, linetype=name)) +
 
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig1_agest.png",
        dpi=1000, width=21, height=21, units="cm")
+
+meandifferences <- meansim %>% dplyr::select(Year, sex, name, value) %>% 
+  pivot_wider(names_from=name, values_from=value) %>% 
+  mutate(percentdifference = abs(Simulated - Observed) / Observed,
+         absdifference = abs(Simulated - Observed),
+         yeargroups = ifelse(Year >=1985 & Year<=2010, 1,
+                             ifelse(Year>=2011, 2, 0)))
+diff <- meandifferences %>% group_by(sex,yeargroups) %>% 
+  summarise(meanpercent = mean(percentdifference),
+            meanabsdifference = mean(absdifference))

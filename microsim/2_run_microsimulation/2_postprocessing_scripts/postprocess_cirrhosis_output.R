@@ -14,7 +14,8 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/implausibility*.csv", sep="")))
+
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
@@ -32,7 +33,8 @@ ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/implausi
        dpi=300, width=33, height=19, units="cm")
 
 # now plot cirrhosis output over waves 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/Cirrhosis*.RDS", sep="")))
+
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/Cirrhosis*.RDS", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 files
 files <- files[order(index)]
@@ -73,7 +75,19 @@ ggplot(data=subset(subset, sex=="f"), aes(x=year, y=target)) +
   ylab("Mortality rate per 100,000 population")
 ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/cirrhosis_agesp_women.png"),
        dpi=300, width=32, height=21, units="cm")
+sim <- files %>% group_by(wave, year, samplenum, microsim.init.sex, agegroup) %>% 
+  summarise(microsim = mean(rateper100000),
+            microsim = ifelse(is.na(microsim),0,microsim)) %>% 
+  rename(sex=microsim.init.sex, Year=year)
 
+meansim <- left_join(sim, cirrhosismortality) %>% 
+  rename(target=rate)
+  # pivot_longer(microsim:target)
+
+ggplot(data=subset(meansim, sex=="m"), aes(x=Year, y=microsim, colour=as.factor(samplenum))) + geom_line() + 
+  geom_line(aes(x=Year, y=target),colour="black",size=1) + 
+  facet_grid(cols=vars(wave), rows=vars(agegroup)) +
+  theme(legend.position="none")
 
 ggplot(data=subset(subset, sex=="m"), aes(x=year, y=target)) + 
   facet_grid(cols=vars(wave), rows=vars(agegroup), scales="free") +
@@ -83,15 +97,39 @@ ggplot(data=subset(subset, sex=="m"), aes(x=year, y=target)) +
 ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/cirrhosis_agesp_men.png"),
        dpi=300, width=32, height=21, units="cm")
 
+meansim <- meansim %>% pivot_longer(microsim:target)
+
+ggplot(data=target, aes(x=Year, y=value, colour=name, group=samplenum)) + geom_line(size=1) + 
+  facet_grid(cols=vars(wave), rows=vars(sex), scales="free") + geom_point() + 
+  ylim(0,NA) + theme_bw() + 
+  theme(legend.position="none",
+        text = element_text(size=18)) + xlab("") + 
+  scale_colour_manual(values=c("black","red"))
+
+agegroups <- c("35-44","45-54","55-64")
+for(i in agegroups){
+ggplot(data=subset(meansim, agegroup==i), aes(x=Year, y=value, colour=name, linetype=as.factor(samplenum))) + 
+  geom_line(size=1) + 
+  facet_grid(rows=vars(sex), cols=vars(wave)) +
+  scale_linetype_discrete(guide="none") +
+  theme_bw() +
+  theme(legend.position="none",
+        legend.title=element_blank(),
+        text = element_text(size=12),
+        strip.background = element_rect(fill="white")) +
+  ylab("rate per 100,000") + xlab("") + ggtitle(paste(i))
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/plots/cirrhosis_waves_",i,".png"),
+       dpi=300, width=33, height=19, units="cm")
+}
 
 # now plot the final wave for all age groups 
 finalwave <- meansim %>% filter(wave==max(meansim$wave))
-ggplot(data=finalwave, aes(x=year, y=value, colour=name, linetype=as.factor(samplenum))) + 
+ggplot(data=finalwave, aes(x=Year, y=value, colour=name, linetype=as.factor(samplenum))) + 
   geom_line(size=1) + 
   facet_grid(rows=vars(sex), cols=vars(agegroup)) +
   scale_linetype_discrete(guide="none") +
   theme_bw() +
-  theme(legend.position="bottom",
+  theme(legend.position="none",
         legend.title=element_blank(),
         text = element_text(size=12),
         strip.background = element_rect(fill="white")) +
@@ -129,5 +167,7 @@ ggsave(paste0("SIMAH_workplace/microsim/2_output_data/calibration_output/plots/l
 topruns <- as.numeric(unlist(imp %>% filter(wave==max(imp$wave)) %>% 
   mutate(ntile = ntile(maximplausibility, nrow(.))) %>% 
   filter(ntile<=3) %>% dplyr::select(samplenum)))
+
 toplhs <- do.call(rbind,list) %>% filter(wave==max(imp$wave)) %>% 
   filter(SampleNum %in% topruns)
+write.csv(toplhs, "SIMAH_workplace/microsim/2_output_data/calibration_output/toplhs.csv", row.names=F)
