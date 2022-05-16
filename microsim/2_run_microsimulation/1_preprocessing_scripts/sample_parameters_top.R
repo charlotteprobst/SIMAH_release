@@ -4,7 +4,7 @@
 # Mark Strong
 # 26.3.18
 if(agest==0){
-toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/lhsSamples_wave15_agesp.csv")
+toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/lhsSamples_wave15.csv")
 }else if(agest==1){
   toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhsSamples_wave15.csv")
 }

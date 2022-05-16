@@ -17,6 +17,21 @@ setwd(wd)
 ####read in the joined up data files 
 data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
 
+# summary <- data %>% 
+#   mutate(agecat = cut(age_var,
+#                       breaks=c(0,24,34,44,54,64,74,100),
+#                       labels=c("18-24","25-34","35-44","45-54","55-64",
+#                                "65-74","75+"))) %>% 
+#   filter(drinkingstatus_updated==1) %>% filter(State=="USA") %>% 
+#   group_by(YEAR, sex_recode, agecat) %>% 
+#   summarise(meanGPD = mean(gramsperday_upshifted_crquotient),
+#             se = std.error(gramsperday_upshifted_crquotient),
+#             upper = meanGPD + (1.96*se),
+#             lower = meanGPD - (1.96*se))
+# 
+# 
+# ggplot(data=summary, aes(x=YEAR, y=meanGPD, colour=agecat)) + geom_line() +
+#   facet_grid(cols=vars(sex_recode))
 
 # levels of drinkingpercentage in the different categories
 drinkingcats_baseline <- data %>% 

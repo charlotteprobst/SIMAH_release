@@ -28,8 +28,8 @@ set.seed(42)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -108,7 +108,7 @@ Rates <- rbind(Rates,tomerge)
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
 agest <- 1
-N_SAMPLES <- 2
+N_SAMPLES <- 6
 PE <- 0
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sample_parameters_top.R")
 N_REPS <- 2
@@ -140,7 +140,7 @@ sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 baseorig <- basepop
 
 # adjust parallel settings
-registerDoParallel(18)
+registerDoParallel(14)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -148,7 +148,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %do% {
+                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
                        samplenum <- as.numeric(sampleseeds$SampleNum[i])
                        seed <- as.numeric(sampleseeds$seed[i])
                        print(i)
