@@ -17,7 +17,7 @@ if(PE==0){
                   c("qnorm", 3.0397, 1.0536), #METABOLIC_BETA1_FEMALE
                   c("qnorm", -4.3109, 2.2322), #METABOLIC_BETA2_FEMALE
                   c("qtruncnorm", 0.0099, 0.0009), #BETA_HEPATITIS
-                  c("qunif", 50000, 300000), #THRESHOLD
+                  c("qunif", 50000, 200000), #THRESHOLD
                   c("qunif", 0.5, 1), #THRESHOLD MODIFIER
                   c("qtruncnorm", 0.72, 0.2),#correlation for IRR
                   c("qunif", 1,3) #decay speed 

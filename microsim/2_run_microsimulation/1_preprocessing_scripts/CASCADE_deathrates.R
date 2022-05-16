@@ -6,17 +6,29 @@ deathrates1 <- read.delim("SIMAH_workplace/microsim/1_input_data/Compressed Mort
 # 1999 death rates onwards come from different CDC Wonder system so read in separately 
 deathrates2 <- read.delim("SIMAH_workplace/microsim/1_input_data/Compressed Mortality, 1999-2016 (1).txt")
 
-setdiff(levels(deathrates1$Age.Group), levels(deathrates2$Age.Group))
-setdiff(levels(deathrates2$Age.Group), levels(deathrates1$Age.Group))
+deathrates3 <- read.delim("SIMAH_workplace/microsim/1_input_data/Underlying Cause of Death, 1999-2020.txt") %>% 
+  rename(Age.Group=Five.Year.Age.Groups,
+         Age.Group.Code = Five.Year.Age.Groups.Code) %>% 
+  mutate(Age.Group.Code  = ifelse(Age.Group.Code=="25-29" | Age.Group.Code=="30-34","25-34",
+                             ifelse(Age.Group.Code=="35-39" | Age.Group.Code=="40-44", "35-44",
+                                    ifelse(Age.Group.Code=="45-49" | Age.Group.Code=="50-54","45-54",
+                                           ifelse(Age.Group.Code=="55-59" | Age.Group.Code=="60-64", "55-64",
+                                                  ifelse(Age.Group.Code=="65-69" | Age.Group.Code=="70-74", "65-74",
+                                                         ifelse(Age.Group.Code=="75-79" | Age.Group.Code=="80-84", "75-84", Age.Group.Code)))))))
+  
 
-deathrates <- rbind(deathrates1, deathrates2)
-rm(deathrates1, deathrates2)
 
-deathrates <- deathrates %>% dplyr::select(Year, Gender, Age.Group, State, Deaths) %>% drop_na() %>% 
+setdiff(levels(deathrates1$Age.Group), levels(deathrates3$Age.Group))
+setdiff(levels(deathrates3$Age.Group), levels(deathrates1$Age.Group))
+
+deathrates <- rbind(deathrates1, deathrates3)
+rm(deathrates1, deathrates2,deathrates3)
+
+deathrates <- deathrates %>% dplyr::select(Year, Gender, Age.Group.Code, State, Deaths) %>% drop_na() %>% 
   mutate(Gender = factor(Gender),
-         Age = factor(Age.Group),
+         Age = factor(Age.Group.Code),
          State=factor(State),
-         Sex = recode(Gender, "Male"="m", "Female"="f")) %>% dplyr::select(-c(Age.Group, Gender)) %>% filter(Year>=1980)
+         Sex = recode(Gender, "Male"="m", "Female"="f")) %>% dplyr::select(-c(Age.Group.Code, Gender)) %>% filter(Year>=1980)
 
 deathratesUSA <- deathrates %>% group_by(Year,Age,Sex) %>% summarise(Deaths=sum(Deaths))
 deathratesUSA$State <- "USA"
@@ -25,10 +37,9 @@ deathrates <- rbind(data.frame(deathrates), data.frame(deathratesUSA))
 rm(deathratesUSA)
 
 deathrates <- deathrates %>% filter(State==SelectedState) %>% 
-  filter(Age!="10-14 years") %>% 
-  mutate(Age = gsub("years","",Age),
-         Age = gsub(" ","", Age), 
-         Deaths = Deaths*proportion,
+  filter(Age!="10-14") %>% 
+  mutate(Deaths = Deaths*proportion,
+         Age=as.character(Age),
          Age = ifelse(Age=="75-84", "75.", Age),
          Deaths = ifelse(Age=="15-19", Deaths/5*2,
                          ifelse(Age=="75.", Deaths/10*6, Deaths)),
@@ -50,10 +61,10 @@ setdiff(names(cirrhosisdata), names(deathrates))
 setdiff(levels(as.factor(cirrhosisdata$cat)), levels(as.factor(deathrates$cat)))
 deathrates <- left_join(deathrates, cirrhosisdata)
 deathrates[is.na(deathrates)] <- 0
-deathrates$Count <- deathrates$Count - deathrates$count
+deathrates$Count <- deathrates$Count - (deathrates$count/100)
 deathrates <- deathrates %>% dplyr::select(Year, cat, Count)
 # cirrhosisdeaths1984$count <- cirrhosisdeaths1984$count*100
-# cirrhosisdeaths1984 <- cirrhosisdeaths1984 %>% separate(cat, into=c("age","cat"), sep="_") %>% 
+# cirrhosisdeaths1984 <- cirrhosisdeaths1984 %>% separate(cat, into=c("age","cat"), sep="_") %>%
 #   group_by(cat) %>% mutate(count=sum(count))
 }else if(cirrhosis==1 & mortality==0){
   cirrhosisdata <- read.csv("SIMAH_workplace/microsim/1_input_data/LC_hosp_Output.csv") %>% 

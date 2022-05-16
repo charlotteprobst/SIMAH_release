@@ -106,7 +106,7 @@ summariseprevalence <- function(data){
   }
 
 process_APC <- function(data){
-  APC <- read.delim("SIMAH_workplace/brfss/processed_data/pcyr1970-2019.txt", skip=131, header=F, sep="")
+  APC <- read.delim("SIMAH_workplace/brfss/processed_data/pcyr1970-2020.txt", skip=131, header=F, sep="")
   names(APC)[1] <- "Year"
   names(APC)[2] <- "State"
   names(APC)[3] <- "BeverageType"
@@ -139,11 +139,11 @@ process_APC <- function(data){
     mutate(litrespercapita = Gallons*3.78541)
     
   # allocate 2020 data 2019 APC UNTIL 2020 IS RELEASED
-  data2020 <- expand.grid(Year=2020, State=unique(data$State)) %>% 
-    mutate(State=as.character(State))
-  data2020$Gallons <- NA
-  data2020$litrespercapita=NA
-  APC <- rbind(APC, data2020)
+  # data2020 <- expand.grid(Year=2020, State=unique(data$State)) %>% 
+  #   mutate(State=as.character(State))
+  # data2020$Gallons <- NA
+  # data2020$litrespercapita=NA
+  # APC <- rbind(APC, data2020)
   APC <- APC %>% group_by(State) %>% 
     fill(Gallons,litrespercapita) %>% mutate(Gallons=as.numeric(Gallons),
                                              litrespercapita=as.numeric(litrespercapita)) %>% 

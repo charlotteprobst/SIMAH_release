@@ -76,7 +76,7 @@ CirrhosisHeavyUse <- function(data,lhsSample,sex){
     data$RRHeavyUse <- ifelse(data$formerdrinker==1, data$RRHeavyUse*data$risk_multiplier,
                               data$RRHeavyUse)
     data$RRHeavyUse <- ifelse(data$RRHeavyUse<1, 1, data$RRHeavyUse)
-    data$RRHeavyUse <- ifelse(data$RRHeavyUse>50, 50, data$RRHeavyUse)
+    # data$RRHeavyUse <- ifelse(data$RRHeavyUse>50, 50, data$RRHeavyUse)
     data <- data %>% dplyr::select(-c(risk_multiplier,gpd))
     return(data)
   }
