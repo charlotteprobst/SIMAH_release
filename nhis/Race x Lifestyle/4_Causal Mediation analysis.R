@@ -19,14 +19,15 @@ memory.limit(size=1e+13)
 
 # Personal computer; specify locations 
 data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"            # Location of data
-output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/CausMed/"  # Location of model output
+model <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/CausMed/"  # Location of model output
+output <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Race x Lifestyle/Output/"
 source("Function - CausalMed.R")
 
 
 # SCC; ; specify locations 
 # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
 # data    <- "Data/"
-# output  <- "Output/"
+# model  <- "model/"
 # source("Function - CausalMed.R")
 
 
@@ -54,8 +55,9 @@ set.seed(1235)
 
 # Analysis
 # CMed_boot_w <- bootstrap_CMed(nhis_female, reps=1000, prop=0.20)  # Run analysis using bootstrap
-# saveRDS(CMed_boot_w, file.path(output, "CMed_boot_w.rds"))        # Save bootstrap results
-CMed_boot_w <- readRDS(file.path(output, "CMed_boot_w.rds"))        # load bootstrap results
+# saveRDS(CMed_boot_w, file.path(model, "CMed_boot_w.rds"))        # Save bootstrap results
+CMed_boot_w <- readRDS(file.path(model, "CMed_boot_w.rds"))        # load bootstrap results
+
 
 # Results 
 boot_data <- as.data.frame(do.call(cbind, CMed_boot_w))
@@ -65,15 +67,14 @@ write.csv(CMed_women, file=paste0(output, "CMed_results_women.csv")) # save resu
 
 
 
-
 # MEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
 
 set.seed(1235)
 
 # Analysis
 # CMed_boot_m <- bootstrap_CMed(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
-# saveRDS(CMed_boot_m, file.path(output, "CMed_boot_m.rds"))      # Save bootstrap results
-CMed_boot_m <- readRDS(file.path(output, "CMed_boot_m.rds"))    # load bootstrap results
+# saveRDS(CMed_boot_m, file.path(model, "CMed_boot_m.rds"))      # Save bootstrap results
+CMed_boot_m <- readRDS(file.path(model, "CMed_boot_m.rds"))    # load bootstrap results
 
 # Results 
 boot_data <- as.data.frame(do.call(cbind, CMed_boot_m))
