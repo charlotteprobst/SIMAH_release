@@ -81,6 +81,19 @@ Output <- run_microsim(1,1,basepop, outwardmigrants, inwardmigrants, deathrates,
                        brfss,Rates,AlctransitionProbability,
                        transitions, PopPerYear, 2000, 2020)
 
+source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/postprocess_alcohol.R")
+
+# calculate error from target data 
+Output <- do.call(rbind,Output)
+Output <- Output %>% group_by(samplenum, year, microsim.init.sex, microsim.init.education,
+                              AlcCAT, .drop=FALSE) %>% 
+  summarise(n=sum(n)) %>% ungroup() %>% 
+  group_by(samplenum, year, microsim.init.sex, microsim.init.education) %>% 
+  mutate(microsimpercent = n/sum(n),
+         year=as.numeric(as.character(year))) %>% dplyr::select(-n)
+Output <- left_join(Output, target)
+
+
 # saveRDS(Output, "output_fullpop.RDS")
 saveRDS(Output[[1]], "SIMAH_workplace/microsim/2_output_data/output_fullpop.RDS")
 saveRDS(Output[[2]], "SIMAH_workplace/microsim/2_output_data/output_deaths.RDS")

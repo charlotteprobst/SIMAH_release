@@ -7,6 +7,8 @@ library(tidyr)
 library(labelled)
 library(sjlabelled)
 library(tidyverse)
+library(maps)
+library(viridis)
 
 # CB laptop directory
 wd <- "~/Google Drive/SIMAH Sheffield/"
@@ -15,7 +17,8 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
+
+data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
 
 summary <- data %>% 
   # filter(State=="USA") %>% 
@@ -32,50 +35,56 @@ summary <- data %>%
                                           levels=c("Lifetime abstainer",
                                                    "Former drinker",
                                                    "Non-30 day drinker (annual)",
-                                                   "30 day drinker"))) %>% 
-  filter(YEAR<=2019)
+                                                   "30 day drinker")))
 
-Figure1 <- ggplot(data=subset(summary, State=="USA"), aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
-  geom_bar(stat="identity",position=position_fill(reverse=T)) +
-  xlab("Year") + ylab("Proportion") +
-  theme_bw() + 
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        text = element_text(family="serif",size=18)) +
-  scale_fill_brewer(palette="Set1") +
-  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
-  scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
-                              1998, 2000, 2002, 2004, 2006, 2008, 2010, 
-                              2012, 2014, 2016, 2018),
-                     expand=c(0,0))
-Figure1
-ggsave("SIMAH_workplace/brfss/paper/Figure1_reweighted.png", dpi=500, width=33, height=19, units="cm")
+# Figure1 <- ggplot(data=subset(summary, State=="USA"), aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
+#   geom_bar(stat="identity",position=position_fill(reverse=T)) +
+#   xlab("Year") + ylab("Proportion") +
+#   theme_bw() + 
+#   theme(legend.position="bottom",
+#         legend.title=element_blank(),
+#         text = element_text(family="serif",size=18)) +
+#   scale_fill_brewer(palette="Set1") +
+#   scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
+#   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
+#                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
+#                               2012, 2014, 2016, 2018),
+#                      expand=c(0,0))
+# Figure1
+# ggsave("SIMAH_workplace/brfss/paper/Figure1_reweighted.png", dpi=500, width=33, height=19, units="cm")
 
 summary2 <- summary %>% filter(State=="Colorado" 
                               | State=="New York" |
                                 State=="Minnesota" |
                                 State=="Tennessee" |
-                                State=="Texas")
+                                State=="Texas") %>% 
+  filter(drinkingstatus_detailed!="30 day drinker")
+
 Figure2 <- ggplot(data=summary2, aes(x=YEAR, y=percent, fill=drinkingstatus_detailed)) +
-  geom_bar(stat="identity",position=position_fill(reverse=T)) +
+  geom_bar(stat="identity",position="stack",colour="black") +
   xlab("Year") + ylab("Proportion") +
   theme_bw() + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         text = element_text(family="serif",size=18),
         strip.background=element_rect(fill="white")) +
-  scale_fill_brewer(palette="Set1") +
-  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
+  # scale_fill_manual(values=c("black","grey80","grey2")) + 
+  scale_fill_brewer(palette="Greys") +
+  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) +
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
                               2012, 2014, 2016, 2018),
                      expand=c(0,0)) +
   facet_grid(rows=vars(State))
 Figure2
-ggsave("SIMAH_workplace/brfss/paper/FigureA1_STATES.png", dpi=500, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/brfss/paper/Figure1_STATES.png", dpi=500, width=33, height=19, units="cm")
+
+data <- data %>% 
+  mutate(drinkingstatus_updated = ifelse(drinkingstatus_detailed=="Monthly drinker" |
+                                           drinkingstatus_detailed=="Yearly drinker", 1,0))
 
 TableA1 <- data %>% group_by(State,YEAR, sex_recode) %>% 
-  filter(YEAR<=2019) %>% 
+  filter(YEAR<=2020) %>% 
   mutate(sex_recode=ifelse(sex_recode=="Female","women","men")) %>% 
   summarise(raw_drinking_prevalence = round(mean(drinkingstatus),digits=3),
             adjusted_drinking_prevalence=round(mean(drinkingstatus_updated),digits=3)) %>% 
@@ -88,34 +97,31 @@ write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA2.csv", row.names=F)
 TableA1 <- TableA1 %>% filter(State=="USA") %>% ungroup() %>% dplyr::select(-State)
 write.csv(TableA1, "SIMAH_workplace/brfss/paper/TableA1.csv", row.names=F)
 
-coverage <- data %>% group_by(State, YEAR, sex_recode) %>% 
-  filter(YEAR<=2019) %>% 
-  mutate(sex_recode=ifelse(sex_recode=="Female","women","men")) %>% 
-  summarise(raw_brfss_gramsperday = mean())
-
 trendovertime <- data %>% filter(State=="USA") %>% group_by(YEAR) %>% 
-  filter(gramsperday!=0) %>% 
+  filter(drinkingstatus_updated==1) %>% 
   summarise(raw_gpd = mean(gramsperday),
             raw_apc = mean(gramspercapita),
             new_apc = mean(gramspercapita_90),
-            new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
-  filter(YEAR<=2019) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
-  mutate(name = recode(name, "raw_gpd"="BRFSS",
-                       "raw_apc"="APC", "new_apc"="adjusted APC",
-                       "new_gpd"="adjusted BRFSS"),
-         name = factor(name, levels=c("APC","adjusted APC", "BRFSS","adjusted BRFSS")))
+            new_gpd = mean(gramsperday_upshifted)) %>% 
+  filter(YEAR<=2020) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
+  mutate(name = recode(name, "raw_gpd"="Raw BRFSS",
+                       "raw_apc"="Raw APC", "new_apc"="Adjusted APC",
+                       "new_gpd"="Adjusted BRFSS"),
+         name = factor(name, levels=c("Raw APC","Adjusted APC", "Adjusted BRFSS","Raw BRFSS")))
 
-ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1.5) +
+ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name, linetype=name)) + geom_line(size=1.5) +
   ylim(0,NA) +
   theme_bw() + 
+  scale_linetype_manual(values=c("solid","solid","solid","solid")) + 
+  scale_colour_grey() + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         text = element_text(family="serif",size=18)) +
   scale_fill_brewer(palette="Set1") +
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
-                              2012, 2014, 2016, 2018),
-                     expand=c(0,0)) +
+                              2012, 2014, 2016, 2018, 2020),
+                     expand=c(0.01,0.01)) +
   xlab("") + ylab("Grams alcohol per day")
   
 ggsave("SIMAH_workplace/brfss/paper/Figure2.png", dpi=500, width=33, height=19, units="cm")
@@ -174,7 +180,7 @@ trendovertime <- data %>% group_by(State,YEAR) %>%
   summarise(raw_gpd = mean(gramsperday),
             raw_apc = mean(gramspercapita),
             new_apc = mean(gramspercapita_90),
-            new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
+            new_gpd = mean(gramsperday_upshifted)) %>% 
   filter(YEAR<=2019) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
   mutate(name = recode(name, "raw_gpd"="BRFSS",
                        "raw_apc"="APC", "new_apc"="adjusted APC",
@@ -199,16 +205,160 @@ means <- Table3 %>% group_by(State) %>%
             coverage_adjusted_sd = round(sd(coverage_adjusted),digits=3))
 write.csv(means, "SIMAH_workplace/brfss/paper/TableA5.csv", row.names=F)
 
+# draw a map 
+means$region <- tolower(means$State)
+means$region <- ifelse(means$region=="dc","district of columbia",means$region)
+states_map <- map_data("state")
 
-quintiles <- data %>% group_by(YEAR, State, sex_recode) %>% filter(gramsperday!=0) %>% 
-  mutate(quintile = ntile(gramsperday,5)) %>% 
-  ungroup() %>% 
-  group_by(YEAR, State, sex_recode, quintile) %>% 
-  summarise(mean_GPD_baseline = mean(gramsperday),
-            mean_GPD_adjusted = mean(gramsperday_upshifted_crquotient),
-            mean_freq_baseline = mean(alc_frequency),
-            mean_freq_adjusted = mean(frequency_upshifted))
+coverage_map <- left_join(states_map, means, by=c("region"))
+coverage_map$coverage_baseline_mean <- round(coverage_map$coverage_baseline_mean, digits=2)
 
-ggplot(data=subset(quintiles, State=="USA"), aes(x=YEAR, y=value, colour=name)) + 
-  facet_grid(cols=vars(quintile), rows=vars(sex_recode)) +
-  geom_line()
+coverage_map <- coverage_map %>% pivot_longer(cols=c(coverage_baseline_mean, coverage_adjusted_mean)) %>% 
+  mutate(name = ifelse(name=="coverage_baseline_mean","Raw","Adjusted"),
+         name = factor(name, levels=c("Raw","Adjusted")))
+
+ggplot(coverage_map, aes(long, lat, group=group)) + 
+  geom_polygon(aes(fill=value), color="white") +
+  # scale_fill_viridis(option="C", labels=scales::percent, name="coverage") +
+  scale_fill_brewer(palette="YlGnBu", labels=scales::percent, name="coverage") +
+  theme(legend.background=element_rect(fill="white", colour=NA)) +
+  facet_grid(rows=vars(name), switch="y") + 
+  theme_minimal() + 
+  xlab("") + ylab("") + theme(axis.line=element_blank(),
+        strip.text.y.left = element_text(angle=0),
+        axis.text = element_blank(),
+        axis.ticks=element_blank(),
+        plot.background=element_rect(fill="white"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="right",
+        strip.text = element_text(size=14),
+        legend.text = element_text(size=10))
+
+ggsave("SIMAH_workplace/brfss/plots/coverage_map.png", dpi=500, width=33, height=33, units='cm')
+
+
+# proportion of people in each WHO drinking category at baseline and adjusted 
+categories_baseline <- data %>% 
+  group_by(YEAR, State, sex_recode) %>% 
+  mutate(drinkingcat = ifelse(gramsperday=="0", "abstainer",
+                                       ifelse(gramsperday>0 & gramsperday<=20 & sex_recode=="Female","Category I",
+                                              ifelse(gramsperday>20 & gramsperday<=40 & sex_recode=="Female","Category II",
+                                                     ifelse(gramsperday>40 & gramsperday<=60 & sex_recode=="Female", "Category III",
+                                                            ifelse(gramsperday>60 & sex_recode=="Female","Category III",
+                                                                   ifelse(gramsperday>0 & gramsperday<=40 & sex_recode=="Male","Category I",
+                                                                          ifelse(gramsperday>40 & gramsperday<=60 & sex_recode=="Male","Category II",
+                                                                                 ifelse(gramsperday>60 & gramsperday<=100 & sex_recode=="Male","Category III",
+                                                                                        ifelse(gramsperday>100 & sex_recode=="Male", "Category III", NA)))))))))) %>% 
+  group_by(YEAR, State, drinkingcat, .drop=FALSE) %>% 
+  tally() %>% mutate(type="baseline")
+
+categories_adjusted <- data %>% 
+  group_by(YEAR, State, sex_recode) %>% 
+  mutate(drinkingcat = ifelse(gramsperday_upshifted=="0", "abstainer",
+                                       ifelse(gramsperday_upshifted>0 & gramsperday_upshifted<=20 & sex_recode=="Female","Category I",
+                                              ifelse(gramsperday_upshifted>20 & gramsperday_upshifted<=40 & sex_recode=="Female","Category II",
+                                                     ifelse(gramsperday_upshifted>40 & gramsperday_upshifted<=60 & sex_recode=="Female", "Category III",
+                                                            ifelse(gramsperday_upshifted>60 & sex_recode=="Female","Category III",
+                                                                   ifelse(gramsperday_upshifted>0 & gramsperday_upshifted<=40 & sex_recode=="Male","Category I",
+                                                                          ifelse(gramsperday_upshifted>40 & gramsperday_upshifted<=60 & sex_recode=="Male","Category II",
+                                                                                 ifelse(gramsperday_upshifted>60 & gramsperday_upshifted<=100 & sex_recode=="Male","Category III",
+                                                                                        ifelse(gramsperday_upshifted>100 & sex_recode=="Male", "Category III", NA)))))))))) %>% 
+  group_by(YEAR, State, drinkingcat, .drop=FALSE) %>% 
+  tally() %>% 
+  mutate(type = "adjusted")
+
+
+categories <- rbind(categories_adjusted, categories_baseline) %>% 
+  group_by(YEAR, State, type) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  dplyr::select(YEAR, State, drinkingcat, type, percent) %>% 
+  pivot_wider(names_from=type, values_from=percent)
+categories$type = factor(categories$type, levels=c("baseline","adjusted"))
+
+USA <- categories %>% filter(State=="USA") %>% 
+  pivot_longer(cols=adjusted:baseline) %>% 
+  mutate(name = factor(name, levels=c("baseline","adjusted"))) %>% 
+  group_by(State, sex_recode, drinkingcat, name) %>% 
+  summarise(mean = round(mean(value, na.rm=T),digits=4)*100,
+            sd = round(sd(value, na.rm=T),digits=4)*100) %>% 
+  pivot_wider(names_from=name, values_from=c(mean,sd)) %>% 
+  mutate(ratio = round(mean_adjusted / mean_baseline,digits=2))
+
+write.csv(USA, "SIMAH_workplace/brfss/paper/TableDrinkingCatsUSA.csv", row.names=F)
+
+categories <- categories %>% pivot_longer(cols=adjusted:baseline) %>% 
+  mutate(name = ifelse(name=="baseline","Baseline","Adjusted"),
+         name = factor(name, levels=c("Baseline","Adjusted")),
+         drinkingcat= ifelse(drinkingcat=="abstainer","Abstainer", drinkingcat))
+
+Figure5 <- ggplot(data=subset(categories, State=="USA"), aes(x=YEAR, y=value, fill=drinkingcat)) +
+  geom_bar(stat="identity",position=position_fill(reverse=T)) +
+  xlab("Year") + ylab("Proportion") + facet_grid(rows=vars(name), switch='y') + 
+  theme_bw() + 
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        text = element_text(family="serif",size=18)) +
+  scale_fill_brewer(palette="Set1") +
+  scale_y_continuous(labels=scales::percent, expand=c(0,0),limits=c(0,1.01)) + 
+  scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
+                              1998, 2000, 2002, 2004, 2006, 2008, 2010, 
+                              2012, 2014, 2016, 2018),
+                     expand=c(0,0))
+Figure5
+ggsave("SIMAH_workplace/brfss/paper/Figure5_drinkingcategories.png", dpi=500, width=22, height=20, units="cm")
+
+frequency_categories_baseline <- data %>% 
+  group_by(YEAR, State, sex_recode) %>% 
+  mutate(drinkingcat = ifelse(gramsperday=="0", "abstainer",
+                              ifelse(gramsperday>0 & gramsperday<=20 & sex_recode=="Female","Category I",
+                                     ifelse(gramsperday>20 & gramsperday<=40 & sex_recode=="Female","Category II",
+                                            ifelse(gramsperday>40 & gramsperday<=60 & sex_recode=="Female", "Category III",
+                                                   ifelse(gramsperday>60 & sex_recode=="Female","Category III",
+                                                          ifelse(gramsperday>0 & gramsperday<=40 & sex_recode=="Male","Category I",
+                                                                 ifelse(gramsperday>40 & gramsperday<=60 & sex_recode=="Male","Category II",
+                                                                        ifelse(gramsperday>60 & gramsperday<=100 & sex_recode=="Male","Category III",
+                                                                               ifelse(gramsperday>100 & sex_recode=="Male", "Category III", NA)))))))))) %>% 
+  group_by(YEAR, State, drinkingcat, .drop=FALSE) %>% 
+  tally() %>% mutate(type="baseline")
+
+categories_baseline <- data %>% 
+  group_by(YEAR, State, sex_recode) %>% 
+  mutate(drinkingcat = ifelse(alc_frequency==0, "abstainer",
+                              ifelse(alc_frequency>0 & alc_frequency<=5,"1-5 days per month",
+                                     ifelse(alc_frequency>5 & alc_frequency<=10,"6-10 days per month",
+                                            ifelse(alc_frequency>10 & alc_frequency<=15, "11-15 days per month",
+                                                   ifelse(alc_frequency>15 & alc_frequency<=20, "16-20 days per month",
+                                                          ifelse(alc_frequency>20 & alc_frequency<=25, "21-25 days per month",
+                                                                 ifelse(alc_frequency>25, "25-30 days per month",NA)))))))) %>% 
+  group_by(YEAR, State, drinkingcat, sex_recode,.drop=FALSE) %>% 
+  tally() %>% 
+  mutate(type = "Baseline")
+
+categories_adjusted <- data %>% 
+  group_by(YEAR, State, sex_recode) %>% 
+  mutate(drinkingcat = ifelse(frequency_upshifted==0, "abstainer",
+                              ifelse(frequency_upshifted>0 & frequency_upshifted<=5,"1-5 days per month",
+                                     ifelse(frequency_upshifted>5 & frequency_upshifted<=10,"6-10 days per month",
+                                            ifelse(frequency_upshifted>10 & frequency_upshifted<=15, "11-15 days per month",
+                                                   ifelse(frequency_upshifted>15 & frequency_upshifted<=20, "16-20 days per month",
+                                                          ifelse(frequency_upshifted>20 & frequency_upshifted<=25, "21-25 days per month",
+                                                                 ifelse(frequency_upshifted>25, "25-30 days per month",NA)))))))) %>% 
+  group_by(YEAR, State, drinkingcat,sex_recode, .drop=FALSE) %>% 
+  tally() %>% 
+  mutate(type = "Adjusted")
+
+categories <- rbind(categories_adjusted, categories_baseline) %>% 
+  group_by(YEAR, State, sex_recode, type) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  dplyr::select(YEAR, State, sex_recode, drinkingcat, type, percent) %>% 
+  pivot_wider(names_from=type, values_from=percent)
+
+USfreqcategories <- categories %>% filter(State=="USA") %>% 
+  group_by(sex_recode, drinkingcat) %>% 
+  summarise(meanBaseline=mean(Baseline),
+            sdBaseline = sd(Baseline),
+            meanAdjusted = mean(Adjusted),
+            sdAdjusted = sd(Adjusted),
+            ratio = meanAdjusted/meanBaseline)
+write.csv(USfreqcategories, "SIMAH_workplace/brfss/paper/TableFreqCatsUSA.csv", row.names=F)

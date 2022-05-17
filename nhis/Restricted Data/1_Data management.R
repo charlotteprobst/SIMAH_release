@@ -2,6 +2,8 @@
 # SIMAH Restricted-access Data
 # Data Management File
 
+# My changes
+
 library(haven)      # Read SAS file
 library(tidyverse)  # data management
 library(janitor)    # clean variable names

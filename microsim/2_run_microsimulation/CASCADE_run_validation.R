@@ -18,6 +18,9 @@ library(parallel)
 library(foreach)
 library(faux)
 library(splitstackshape)
+library(fitdistrplus)
+library(lhs)
+library(doParallel)
 options(scipen=999)
 # set seed for reproducibility - IMPORTANT - DO NOT CHANGE
 # note - this also needs to be ran straight after R has been opened
@@ -25,8 +28,8 @@ set.seed(42)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/SIMAH/Microsimulation"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -98,27 +101,77 @@ updatingalcohol <- 0
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
+
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
-lhsSample <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/toplhs_agest.csv")
-lhsSampleList <- list()
-for(i in unique(lhsSample$SampleNum)){
-  lhsSampleList[[paste(i)]] <- lhsSample %>% filter(SampleNum==i)
+agest <- 0
+N_SAMPLES <- 50
+PE <- 1
+tomerge <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates", SelectedState, ".RDS", sep="")) %>% 
+  filter(Year>=2017)
+Rates <- rbind(Rates,tomerge)
+
+source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sample_parameters_top.R")
+N_REPS <- 2
+if(PE==1){
+  N_SAMPLES <- 1
 }
 
-lhsSample <- lhsSampleList
-names(lhsSample) <- 1:length(lhsSample)
+# run top 5% versions of the age specific and age standardized version
+top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
+  mutate(percentile=ntile(maximplausibility,500)) %>% 
+  filter(percentile<=1)
+lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+  filter(SampleNum %in% top$samplenum)
 
+lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+  pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+  group_by(name) %>% 
+  summarise(value=mean(value)) %>% 
+  pivot_wider(names_from=name, values_from=value)
 
-N_SAMPLES <- as.numeric(length(lhsSampleList))
-N_REPS  <- 2
-baseorig <- basepop
+lhsSample <- list()
+for(i in 1:nrow(lhs)){
+  lhsSample[[paste(i)]] <- lhs[i,]
+}
+
+N_SAMPLES <- 1
+
+# run top 5% versions of the age specific and age standardized version
+# top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
+#   mutate(percentile=ntile(maximplausibility,500)) %>% 
+#   filter(percentile<=1)
+# lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+#   filter(SampleNum %in% top$samplenum)
+# 
+# lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
+#   pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+#   group_by(name) %>% 
+#   summarise(value=mean(value)) %>% 
+#   pivot_wider(names_from=name, values_from=value)
+
+# lhsSample <- list()
+# for(i in 1:nrow(lhs)){
+#   lhsSample[[paste(i)]] <- lhs[i,]
+# }
+# 
+# N_SAMPLES <- 1
 
 sampleseeds <- expand.grid(seed=1:N_REPS, SampleNum=1:N_SAMPLES)
 sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 
+baseorig <- basepop
+
+# adjust parallel settings
+registerDoParallel(14)
+# registerDoSNOW(c1)
+# plan(multicore, workers=24)
+options(future.rng.onMisuse="ignore")
+options(future.globals.maxSize = 10000 * 1024^3)
+options(future.fork.multithreading.enable = FALSE)
+
 Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %do% {
+                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
                        samplenum <- as.numeric(sampleseeds$SampleNum[i])
                        seed <- as.numeric(sampleseeds$seed[i])
                        print(i)
@@ -141,5 +194,8 @@ Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
                                     outward_migration, inward_migration, mortality,
                                     AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, 
                                     MetabolicPathway,
-                                    brfss,Rates, 1984,2016)
+                                    brfss,Rates, 1984, 2016)
                      }
+
+saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS")
+
