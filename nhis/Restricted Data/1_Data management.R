@@ -12,8 +12,8 @@ library(srvyr)      # adds dplyr like syntax to the survey package
 
 # Specify the data file location
 # Klajdi's 
-data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
-data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+# data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
+# data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 
 # Yachen's 
 data_orig <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Original data/"
@@ -23,7 +23,7 @@ data_new  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Res
 # NOTE: the variable names have been structured such that those ending in a number are factors, where the number indicates the number of categories
 
 # Load data and recode/create variables -------------------------------------------------------------------------
-nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>% 
+nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  # modify final data name in the RDC
   zap_formats() %>% zap_label() %>%  # removes labels/formats from SAS
 
   # Recode and create variables
@@ -67,7 +67,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
       heavy_drinker = if_else(ALC5UPYR < 12, 0, heavy_drinker),
       heavy_drinker = if_else(none_drinker == 1, 0, heavy_drinker),
       heavy_drinker = if_else(ALCAMT >= 5, 1, heavy_drinker),
-
+    
       drink_hist = NA_real_,
       drink_hist = if_else(ALC12MYR == 0 & ALC1YR == 2, 0, drink_hist),    # Lifetime abstainers
       drink_hist = if_else(ALC12MYR == 0 & ALC1YR == 1, 1, drink_hist),    # Former drinkers
@@ -76,6 +76,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
       drink_hist = if_else(is.na(drink_hist) & ALC12MYR == 0 & ALCLIFE == 2, 0, drink_hist),   # Lifetime abstainers
       drink_hist = if_else(is.na(drink_hist) & ALC12MYR == 0 & ALCLIFE == 1, 1 , drink_hist),  # Former drinkers
       
+
       # Calculate daily grams of alcohol; assuming 14 grams per drink
     	    alc_daily_g_crude = ALC12MYR / 365 * ALCAMT * 14,    # (days drank in past year) / 365 * (freq drinks per drinking day) * (14 grams per drink)
           
@@ -313,26 +314,107 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%
     
     # TEMPORARY Variables (need updating)
     # bl_age = AGE_P,       # Baseline age
-    allcause_death = MORTSTAT,
-    heart_death = ifelse(UCOD_LEADING=="001", 1, 0),
-    cancer_death = ifelse(UCOD_LEADING=="002", 1, 0),
-    accident_death = ifelse(UCOD_LEADING=="004", 1, 0),
-    end_age = bl_age + yrs_followup) %>%    
+    # allcause_death = MORTSTAT,
+    # heart_death = ifelse(UCOD_LEADING=="001", 1, 0),
+    # cancer_death = ifelse(UCOD_LEADING=="002", 1, 0),
+    # accident_death = ifelse(UCOD_LEADING=="004", 1, 0),
+    # end_age = bl_age + yrs_followup
+    
+    icd10_alpha = substr(ICD_10REV, 1, 1),
+    icd10_num1 = substr(ICD_10REV, 2, 3) %>% as.numeric(),
+    icd10_num2 = substr(ICD_10REV, 4, nchar(ICD_10REV)) %>% as.numeric(),
+    
+    # Motor Vehicle Accident
+    MVA_death = ifelse(  ( icd10_alpha == "V" & icd10_num1 %in% c(2:4, 12:14, 20:79, 83:86) ) | 
+                         ( icd10_alpha == "V" & icd10_num1 == 9 & icd10_num2 %in% c(0, 2) ) |
+                         ( icd10_alpha == "V" & icd10_num1 == 19 & icd10_num2 %in% c(0:2, 4:6) ) |
+                         ( icd10_alpha == "V" & icd10_num1 == 80 & icd10_num2 %in% 3:5 ) |
+                         ( icd10_alpha == "V" & icd10_num1 %in% 81:82 & icd10_num2 %in% 0:1 ) |
+                         ( icd10_alpha == "V" & icd10_num1 %in% 87:88 & icd10_num2 %in% 0:8 ) |
+                         ( icd10_alpha == "V" & icd10_num1 == 89 & icd10_num2 %in% c(0, 2) ), 1, 0), 
+    
+    # Other unintentional injury
+    OUI_death = ifelse(MVA_death != 1 & ((icd10_alpha == "V" & icd10_num1 %in% 1:99 ) | 
+                                         (icd10_alpha == "W" & icd10_num1 %in% 0:99) | 
+                                         (icd10_alpha == "X" & icd10_num1 %in% c(0:40, 43, 46:59)) |
+                                         (icd10_alpha == "Y" & icd10_num1 %in% c(40:86, 88:89) ) ), 1, 0), 
+    
+    # Intentional self-harm
+    ISH_death = ifelse( ( icd10_alpha == "X" & icd10_num1 %in% 60:84 ) | 
+                        ( icd10_alpha == "Y" & icd10_num1 == 87 & icd10_num2 == 0 ), 1, 0), 
+    
+    # Alcohol use disorder
+    AUD_death = ifelse(  ( icd10_alpha == "F" & icd10_num1 == 10 ) |
+                         ( icd10_alpha == "G" & icd10_num1 == 31 & icd10_num2 == 2 ) |
+                         ( icd10_alpha == "G" & icd10_num1 == 72 & icd10_num2 == 1 ) |
+                         ( icd10_alpha == "Q" & icd10_num1 == 86 & icd10_num2 == 0 ) |
+                         ( icd10_alpha == "R" & icd10_num1 == 78 & icd10_num2 == 0 ) |
+                         ( icd10_alpha == "X" & icd10_num1 == 45 ) |
+                         ( icd10_alpha == "Y" & icd10_num1 == 15 ), 1, 0),
+    
+    # Liver disease and cirrhosis
+    LDAC_death = ifelse(  ( icd10_alpha == "K" & icd10_num1 == 70 ) |
+                          ( icd10_alpha == "K" & icd10_num1 == 71 & icd10_num2 %in% c(3:5, 7) ) |
+                          ( icd10_alpha == "K" & icd10_num1 %in% 72:74 ), 1, 0),
+    
+    # Diabetes mellitus
+    DM_death = ifelse(  ( icd10_alpha == "E" & icd10_num1 %in% 10:14 ), 1, 0),
+    
+    # Ischemic heart disease
+    IHD_death = ifelse(  ( icd10_alpha == "I" & icd10_num1 %in% 20:25 ), 1, 0),
+    
+    # Ischemic stroke
+    IS_death = ifelse(  ( icd10_alpha == "G" & icd10_num1 == 45 ) |
+                        ( icd10_alpha == "G" & icd10_num1 == 46 & icd10_num2 != 9 ) |
+                        ( icd10_alpha == "I" & icd10_num1 == 63 ) |
+                        ( icd10_alpha == "I" & icd10_num1 %in% 65:66 ) |
+                        ( icd10_alpha == "I" & icd10_num1 == 67 & icd10_num2 %in% 2:8 ) |
+                        ( icd10_alpha == "I" & icd10_num1 == 69 & icd10_num2 %in% 3:4 ), 1, 0),
+    
+    # Hypertensive heart disease
+    HHD_death = ifelse(  ( icd10_alpha == "I" & icd10_num1 == 11), 1, 0),
+    
+    # Poisoning
+    Poisoning_death = ifelse(  ( icd10_alpha == "X" & icd10_num1 %in% 40:45 ) |
+                               ( icd10_alpha == "Y" & icd10_num1 %in% c(10:14, 45, 47, 49) ), 1, 0),
+    
+    All9_death = MVA_death + OUI_death + ISH_death + AUD_death + LDAC_death + DM_death + IHD_death + IS_death + HHD_death,
+    Alcohol_death = MVA_death + OUI_death + ISH_death + AUD_death + LDAC_death,
+    Despair_death = ISH_death + (icd10_alpha == "K" & icd10_num1 %in% c(70, 73:74)) + Poisoning_death,
+    
+    MVA_Recode_icd358 = ifelse(UCOD_358 %in% 385:397, 1, 0), # perfect
+    OUI_Recode_icd358 = ifelse(UCOD_358 %in% c(398:423), 1, 0), # imperfect
+    ISH_Recode_icd358 = ifelse(UCOD_358 %in% 424:431, 1, 0), # looks perfect
+    AUD_Recode_icd358 = ifelse(UCOD_358 %in% c(178, 194, 421, 444), 1, 0),  # imperfect
+    LDAC_Recode_icd358 = ifelse(UCOD_358 %in% 298:301, 1, 0), # imperfect
+    DM_Recode_icd358 = ifelse(UCOD_358 == 159, 1, 0), # perfect
+    IHD_Recode_icd358 = ifelse(UCOD_358 %in% 210:215, 1, 0), # perfect
+    IS_Recode_icd358 = ifelse(UCOD_358 %in% c(192, 237, 239), 1, 0), # imperfect
+    HHD_Recode_icd358 = ifelse(UCOD_358 == 207, 1, 0), # perfect
+    Poisoning_Recode_icd358 = ifelse(UCOD_358 %in% c(420, 443, 454), 1, 0) # imperfect
+    
+    ) %>%    
     
   
   # Select variables to keep
   select (PUBLICID, new_weight, new_psu, new_stratum,
-          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
+          srvy_yr, srvy_yr22, bl_age, end_age, # yrs_followup, 
           
-          allcause_death, 
+          # allcause_death, 
+          MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
+          All9_death, Alcohol_death, Despair_death,
           
-          heart_death, cancer_death, accident_death,
+          MVA_Recode_icd358, OUI_Recode_icd358, ISH_Recode_icd358, AUD_Recode_icd358, LDAC_Recode_icd358,
+          DM_Recode_icd358, IHD_Recode_icd358, IS_Recode_icd358, HHD_Recode_icd358, Poisoning_Recode_icd358, 
+          
+          # heart_death, cancer_death, accident_death,
+          
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
           female, female2, married, married2, race, race4, edu_sex,
           income, income_v2, income5, income4, K6scale, PsyDistr, PsyDistr3, 
           US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) %>%
 
-  #filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
+  # filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
 
 
 
@@ -365,7 +447,8 @@ nhis_clean <- nhis %>%
   filter(bl_age>=25) %>%
   
   # Remove those with missing data:
-  filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
+  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
 
 # Create database specific to males or females
 nhis_female <- filter(nhis_clean, female==1)
@@ -390,7 +473,8 @@ nhis_svy <- nhis %>%
 
 nhis_clean_svy <- nhis_svy %>%
   filter(bl_age>=25) %>%
-  filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
+  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
 
 nhis_female_svy <- filter(nhis_svy, female==1)
 nhis_male_svy <- filter(nhis_svy, female==0)
