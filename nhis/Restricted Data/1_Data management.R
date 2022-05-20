@@ -320,6 +320,8 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     # accident_death = ifelse(UCOD_LEADING=="004", 1, 0),
     # end_age = bl_age + yrs_followup
     
+    yrs_followup = end_age - bl_age # calculate follow-up time
+    
     icd10_alpha = substr(ICD_10REV, 1, 1),
     icd10_num1 = substr(ICD_10REV, 2, 3) %>% as.numeric(),
     icd10_num2 = substr(ICD_10REV, 4, nchar(ICD_10REV)) %>% as.numeric(),
