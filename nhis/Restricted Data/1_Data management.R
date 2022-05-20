@@ -446,7 +446,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
 # Create subset of data with relevant participants     
 nhis_clean <- nhis %>%
   # Remove those outside our age range:
-  filter(bl_age>=25) %>%
+  filter(bl_age>=18) %>% # update the age range for the current analysis
   
   # Remove those with missing data:
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
@@ -474,7 +474,7 @@ nhis_svy <- nhis %>%
   as_survey_design(id=new_psu, strata=new_stratum, weights=new_weight, nest = TRUE)
 
 nhis_clean_svy <- nhis_svy %>%
-  filter(bl_age>=25) %>%
+  filter(bl_age>=18) %>%
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
   filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
 
