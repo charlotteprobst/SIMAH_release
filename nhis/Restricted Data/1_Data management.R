@@ -320,7 +320,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     # accident_death = ifelse(UCOD_LEADING=="004", 1, 0),
     # end_age = bl_age + yrs_followup
     
-    yrs_followup = end_age - bl_age # calculate follow-up time
+    yrs_followup = end_age - bl_age, # calculate follow-up time
     
     icd10_alpha = substr(ICD_10REV, 1, 1),
     icd10_num1 = substr(ICD_10REV, 2, 3) %>% as.numeric(),
@@ -400,7 +400,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
   
   # Select variables to keep
   select (PUBLICID, new_weight, new_psu, new_stratum,
-          srvy_yr, srvy_yr22, bl_age, end_age, # yrs_followup, 
+          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
           
           # allcause_death, 
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
