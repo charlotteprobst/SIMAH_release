@@ -17,6 +17,23 @@ setwd(wd)
 ####read in the joined up data files 
 data <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_paper.RDS")
 
+subset <- data %>% filter(State=="USA") %>% 
+  dplyr::select(YEAR, gramsperday, gramsperday_upshifted_crquotient) %>% 
+  pivot_longer(gramsperday:gramsperday_upshifted_crquotient) %>% 
+  mutate(name = ifelse(name=="gramsperday","Unadjusted","Adjusted"),
+         name = factor(name, levels=c("Unadjusted","Adjusted"))) %>% 
+  filter(YEAR==2020) %>%
+  mutate(value=ifelse(value>200, 200, value)) %>% 
+  group_by(name) %>% 
+  mutate(mean = mean(value))
+
+ggplot(data=subset, aes(x=value)) + geom_histogram(bins=50, colour="black",
+                                                   fill="white") + 
+  facet_grid(rows=vars(name)) + theme_bw() + 
+  geom_vline(aes(xintercept=mean), linetype="dashed", size=1) +
+  xlab("Grams per day") + ylab("Total")
+ggsave("SIMAH_workplace/brfss/paper/SuppFigureDistributions.png", dpi=500, width=33, height=19, units="cm")
+
 summary <- data %>% 
   # filter(State=="USA") %>% 
   group_by(State, YEAR, drinkingstatus_detailed) %>%

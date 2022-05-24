@@ -1,4 +1,9 @@
 # plotting for publication the risk functions
+library(dplyr)
+library(tidyr)
+library(ggplot2) 
+
+setwd("~/Google Drive/SIMAH Sheffield/")
 riskfunctioninput <- read.csv("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.csv")
 
 sample <- function(data){
@@ -111,7 +116,76 @@ women <- ggplot(data=subset(data,microsim.init.sex=="Women"), aes(x=microsim.ini
   ylab("Relative Risk (RR)")
 women
 
+library(gridExtra)
 combined <- grid.arrange(men,women)
 
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.png", combined, dpi=500, width=23, height=31, units="cm")
+
+
+# for paper -split these into the three pathways 
+priors <- data %>% filter(type=="Prior belief")
+
+HeavyUse <- priors %>% filter(pathway=="Heavy alcohol use")
+HeavyUsePlot <- ggplot(data=HeavyUse, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 1: If lifetime alcohol consumption > threshold (100kg)") +
+  ylab("Relative Risk (RR)")
+HeavyUsePlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/HeavyUseRisk.png", HeavyUsePlot, dpi=500, width=33, height=19, units="cm")
+
+Metabolic <- priors %>% filter(pathway=="Metabolic interaction") %>% 
+  mutate(max = ifelse(microsim.init.sex=="Men" & microsim.init.alc.gpd<=9,1.002860,max))
+
+MetabolicPlot <- ggplot(data=Metabolic, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 2: If BMI >= 30") +
+  ylab("Relative Risk (RR)")
+MetabolicPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/MetabolicRisk.png", MetabolicPlot, dpi=500, width=33, height=19, units="cm")
+
+Hepatitis <- priors %>% filter(pathway=="Hepatitis")
+
+HepatitisPlot <- ggplot(data=Hepatitis, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 3: If chronic HBV or HCV") +
+  ylab("Relative Risk (RR)")
+HepatitisPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/HepatitisRisk.png", HepatitisPlot, dpi=500, width=33, height=19, units="cm")
+
+# posterior plot for presentation 
+posteriors <- data %>% 
+  filter(type=="Posterior belief (age-standardized)" | type=="Prior belief") %>% 
+  mutate(max = ifelse(type=="Prior belief" & microsim.init.sex=="Men" & pathway=="Metabolic interaction" & 
+                        microsim.init.alc.gpd<=9,1.002860,max))
+
+PosteriorPlot <- ggplot(data=subset(posteriors,pathway=="Heavy alcohol use"), aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(type), rows=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + 
+  ylab("Relative Risk (RR)")
+PosteriorPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/PosteriorPlot.png", PosteriorPlot, dpi=500, width=33, height=19, units="cm")
 
