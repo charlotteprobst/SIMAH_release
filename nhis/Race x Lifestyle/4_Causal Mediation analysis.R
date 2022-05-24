@@ -37,19 +37,61 @@ nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
 
 
+# Aalen model - Sequentially adding covariates
 
-# Set up parallel processing -----------------------------------------------------------------------------------------
+# Function to format results
+aalen_10000py <- function(model) {
+  library(knitr)
+  mu <- model$gamma
+  var <- as.matrix(diag(model$var.gamma))
+  combined <- as.data.frame(cbind(mu, var)) %>%
+    rownames_to_column("variable") %>% 
+    filter(!str_detect(variable, "srvy_yr")) %>% # hide coefficients related to survey year
+    mutate (lower = round((estimate - (1.96 * sqrt(V2)))*10000,1), # CI * 10,000 to get result per 10,000py
+            upper = round((estimate + (1.96 * sqrt(V2)))*10000,1), # CI * 10,000 to get result per 10,000py
+            mu = round(estimate*10000,1),                          # mu * 10,000 to get result per 10,000py 
+            mu_CI = paste0(mu, " (",lower,", ", upper, ")"),
+            var = sub(".*)", "", variable)) %>%
+    dplyr::select(var, mu_CI)
+  return(combined)
+}
+  
+# WOMEN
+w_mod1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(ethnicity.factor), data=nhis_female, robust=0) 
+w_mod2 <- update(w_mod1, . ~ . + const(married.factor) + const(factor(srvy_yr)))
+w_mod3 <- update(w_mod2, . ~ . + const(edu.factor))
+w_mod4 <- update(w_mod3, . ~ . + const(alcohol5v2.factor) + const(smoking4.factor) + const(bmi_cat.factor) + const(phy_act3.factor))
 
-foreach::getDoParWorkers()                # Identify # of cores that will be used
+full_join(aalen_10000py(w_mod1), aalen_10000py(w_mod2), by="var") %>%
+  full_join(aalen_10000py(w_mod3), by="var") %>%
+  full_join(aalen_10000py(w_mod4), by="var") %>%
+  kable()
+
+
+# MEN
+m_mod1 <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(ethnicity.factor), data=nhis_male, robust=0) 
+m_mod2 <- update(w_mod1, . ~ . + const(married.factor) + const(factor(srvy_yr)))
+m_mod3 <- update(w_mod2, . ~ . + const(edu.factor))
+m_mod4 <- update(w_mod3, . ~ . + const(alcohol5v2.factor) + const(smoking4.factor) + const(bmi_cat.factor) + const(phy_act3.factor))
+
+full_join(aalen_10000py(m_mod1), aalen_10000py(m_mod2), by="var") %>%
+  full_join(aalen_10000py(m_mod3), by="var") %>%
+  full_join(aalen_10000py(m_mod4), by="var") %>%
+  kable()
+
+
+
+# Set up parallel processing ************************************************************************************************
+
+# foreach::getDoParWorkers()                # Identify # of cores that will be used
 # registerDoMC(5)                         # Linux: Specify number of cores to use  
-cl <- makeCluster(4, outfile = "log.txt") # Windows: Specify number of cores to use  
-registerDoParallel(cl)                    # Windows: Specify number of cores to use  
-foreach::getDoParWorkers()  # Identify # of cores that will be used
+# cl <- makeCluster(4, outfile = "log.txt") # Windows: Specify number of cores to use  
+# registerDoParallel(cl)                    # Windows: Specify number of cores to use  
+# foreach::getDoParWorkers()  # Identify # of cores that will be used
 
 
 
-
-# WOMEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
+# WOMEN: Bootstrap Causal Mediation *****************************************************************************************
 
 set.seed(1235)
 
@@ -60,25 +102,33 @@ CMed_boot_w <- readRDS(file.path(model, "CMed_boot_w.rds"))        # load bootst
 
 
 # Results 
-boot_data <- as.data.frame(do.call(cbind, CMed_boot_w))
-CMed_women <- format_CMed(boot_data)                                 # Compute CI and format results 
+CMed_women <- as.data.frame(do.call(cbind, CMed_boot_w)) %>%
+    format_CMed()                                                    # Compute CI and format results 
 CMed_women                                                           # print results 
-write.csv(CMed_women, file=paste0(output, "CMed_results_women.csv")) # save results
 
 
 
-# MEN: Bootstrap Causal Mediation -----------------------------------------------------------------------------------------
+# MEN: Bootstrap Causal Mediation ********************************************************************************************
 
 set.seed(1235)
 
 # Analysis
 # CMed_boot_m <- bootstrap_CMed(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
-# saveRDS(CMed_boot_m, file.path(model, "CMed_boot_m.rds"))      # Save bootstrap results
-CMed_boot_m <- readRDS(file.path(model, "CMed_boot_m.rds"))    # load bootstrap results
+# saveRDS(CMed_boot_m, file.path(model, "CMed_boot_m.rds"))       # Save bootstrap results
+CMed_boot_m <- readRDS(file.path(model, "CMed_boot_m.rds"))       # load bootstrap results
 
 # Results 
-boot_data <- as.data.frame(do.call(cbind, CMed_boot_m))
-CMed_men <- format_CMed(boot_data)                                 # Compute CI and format results 
+CMed_men <- as.data.frame(do.call(cbind, CMed_boot_m)) %>%
+  format_CMed()                                                    # Compute CI and format results 
 CMed_men                                                           # print results 
-write.csv(CMed_men, file=paste0(output, "CMed_results_men.csv")) # save results
+
+
+# COMBINE Results
+
+colnames(CMed_men)   <- paste0("men_", colnames(CMed_men))
+colnames(CMed_women) <- paste0("women_", colnames(CMed_women))
+CMed_table <- cbind(CMed_men, CMed_women) %>% rename(race = men_race, term = men_term)
+CMed_table <- CMed_table[c(1:4, 7:8)]
+CMed_table
+write.csv(CMed_table, file=paste0(output, "Table2 Causal Mediation results.csv")) # save results
 
