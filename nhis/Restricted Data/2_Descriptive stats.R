@@ -20,14 +20,15 @@ library(foreach)    # to loop function
 # Specify the data and output file locations
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
-output  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Descriptives/"
+data    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+output  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Descriptives/"
+
 
 # Load data
 nhis <- readRDS (paste0(data, "nhis_clean.rds"))
 nhis_svy <- readRDS (paste0(data, "nhis_clean_svy.rds"))
 
-# Need to first create the 'age_group' vaariable, based on the results of the assumption checks
+# Need to first create the 'age_group' variable, based on the results of the assumption checks
 
 
 
@@ -89,6 +90,9 @@ CreateTableOne(vars= all_vars, strata= c("edu3", "age_group"), addOverall = TRUE
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v3 Demographics by education, age group.csv"))
   
+# Warning message:
+#   In ModuleReturnVarsExist(strata, data) :
+#   The data frame does not have: age_group  Dropped
 
 # Survey adjusted Data
 svyCreateTableOne(vars= all_vars, strata= c("edu3", "age_group"), addOverall = TRUE, data=nhis_svy) %>%
@@ -102,6 +106,7 @@ CreateTableOne(vars= all_vars, strata= c("income5"), addOverall = TRUE, data=nhi
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v4 Demographics by income.csv"))
   
+?tableone::print.TableOne
 
 # Survey adjusted Data
 svyCreateTableOne(vars= all_vars, strata= c("income5"), addOverall = TRUE, data=nhis_svy) %>% 
@@ -155,6 +160,7 @@ overall_rate <- function(data, death_list){
   rate <- do.call(rbind, rate) 
   return(rate)
 }
+
 strata_rate <- function(data, death_list, strata){  
   
   rate<-list()
