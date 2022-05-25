@@ -1,12 +1,18 @@
+# load libraries
 library(tidyverse)
 library(mvmeta)
 library(dosresmeta)
-
 library(meta)
 library(metafor)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+step1to3 <- readRDS (paste0(data, "1LC_step1to3_all.xlsx"))
+
 library(readxl)
-step1to3 <- read_excel("CAMH/SIMAH/SIMAH_dataset/1LC_step1to3_all.xlsx", 
+step1to3 <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/1LC_step1to3_all.xlsx", 
                   col_types = c("numeric", "numeric", "text", 
                                 "numeric", "text", "numeric", "numeric", "numeric",
                                 "numeric", "numeric", "numeric", 

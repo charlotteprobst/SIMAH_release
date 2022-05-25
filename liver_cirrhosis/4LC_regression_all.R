@@ -2,11 +2,16 @@ library(tidyverse)
 library(meta)
 library(metafor)
 library(dosresmeta)
-
 library(mvmeta)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+dataset <- readRDS (paste0(data, "4LC_regression_all.xlsx"))
+
 library(readxl)
-dataset <- read_excel("CAMH/SIMAH/SIMAH_dataset/4LC_regression_all.xlsx", 
+dataset <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/4LC_regression_all.xlsx", 
                     col_types = c("numeric", "numeric", "text", 
                                   "numeric", "text", "numeric", "numeric", "numeric", 
                                   "numeric", "numeric", "numeric", 

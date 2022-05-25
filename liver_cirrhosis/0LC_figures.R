@@ -1,3 +1,5 @@
+
+
 #FIGURE 2 GRAPH LANCET RCS FROM 3modelsLC
 
 regplot(rcs_male, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",

@@ -5,8 +5,14 @@ library(dosresmeta)
 
 library(mvmeta)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+step4_all <- readRDS (paste0(data, "3LC_models_all.xlsx"))
+
 library(readxl)
-step4_all <- read_excel("CAMH/SIMAH/SIMAH_dataset/3LC_models_all.xlsx", 
+step4_all <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/3LC_models_all.xlsx", 
                         col_types = c("numeric", "numeric", "text", 
                                       "numeric", "text", "numeric", "numeric", "numeric", 
                                       "numeric", "numeric", "numeric", 
