@@ -449,7 +449,6 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
 nhis18_clean <- nhis %>%
   # Remove those outside our age range:
   filter(bl_age >= 18) %>% # update the age range for the current analysis
-  
   # Remove those with missing data:
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
   filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
@@ -458,7 +457,6 @@ nhis18_clean <- nhis %>%
 nhis25_clean <- nhis %>%
   # Remove those outside our age range:
   filter(bl_age >= 25) %>% # for sub-analyses with education as the exposure
-  
   # Remove those with missing data:
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
   filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
@@ -466,8 +464,11 @@ nhis25_clean <- nhis %>%
 
 
 # Create database specific to males or females
-# nhis_female <- filter(nhis_clean, female==1)
-# nhis_male <- filter(nhis_clean, female==0)
+nhis18_female <- filter(nhis18_clean, female==1)
+nhis18_male <- filter(nhis18_clean, female==0)
+
+nhis25_female <- filter(nhis25_clean, female==1)
+nhis25_male <- filter(nhis25_clean, female==0)
         
 
 
@@ -497,20 +498,33 @@ nhis25_clean_svy <- nhis_svy %>%
   filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
 
 
-# nhis_female_svy <- filter(nhis_svy, female==1)
-# nhis_male_svy <- filter(nhis_svy, female==0)
+nhis18_female_svy <- filter(nhis18_clean_svy, female==1)
+nhis18_male_svy <- filter(nhis18_clean_svy, female==0)
+
+nhis25_female_svy <- filter(nhis25_clean_svy, female==1)
+nhis25_male_svy <- filter(nhis25_clean_svy, female==0)
 
 
         
 # Save copy of final datasets  
 saveRDS(nhis,        paste0(data_new, "nhis_all.rds"))      # NHIS data with all participants
+
 saveRDS(nhis18_clean,  paste0(data_new, "nhis18_clean.rds"))    # NHIS data to be analyzed, age >= 18
+saveRDS(nhis18_male,   paste0(data_new, "nhis18_male.rds"))     # NHIS data to be analyzed (males only)
+saveRDS(nhis18_female, paste0(data_new, "nhis18_female.rds"))   # NHIS data to be analyzed (females only)
+
 saveRDS(nhis25_clean,  paste0(data_new, "nhis25_clean.rds"))    # NHIS data to be analyzed, age >= 25
-# saveRDS(nhis_male,   paste0(data_new, "nhis_male.rds"))     # NHIS data to be analyzed (males only)
-# saveRDS(nhis_female, paste0(data_new, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
+saveRDS(nhis25_male,   paste0(data_new, "nhis25_male.rds"))     # NHIS data to be analyzed (males only)
+saveRDS(nhis25_female, paste0(data_new, "nhis25_female.rds"))   # NHIS data to be analyzed (females only)
         
+
+
 saveRDS(nhis_svy,        paste0(data_new, "nhis_all_svy.rds"))      # NHIS_svy data with all participants
+
 saveRDS(nhis18_clean_svy,  paste0(data_new, "nhis18_clean_svy.rds"))    # NHIS_svy data to be analyzed, age >= 18
+saveRDS(nhis18_male_svy,   paste0(data_new, "nhis18_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
+saveRDS(nhis18_female_svy, paste0(data_new, "nhis18_female_svy.rds"))   # NHIS_svy data to be analyzed (females only) 
+
 saveRDS(nhis25_clean_svy,  paste0(data_new, "nhis25_clean_svy.rds"))    # NHIS_svy data to be analyzed, age >= 25
-# saveRDS(nhis_male_svy,   paste0(data_new, "nhis_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
-# saveRDS(nhis_female_svy, paste0(data_new, "nhis_female_svy.rds"))   # NHIS_svy data to be analyzed (females only)   
+saveRDS(nhis25_male_svy,   paste0(data_new, "nhis25_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
+saveRDS(nhis25_female_svy, paste0(data_new, "nhis25_female_svy.rds"))   # NHIS_svy data to be analyzed (females only) 
