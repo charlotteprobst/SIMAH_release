@@ -28,6 +28,10 @@ output  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restr
 nhis <- readRDS (paste0(data, "nhis_clean.rds"))
 nhis_svy <- readRDS (paste0(data, "nhis_clean_svy.rds"))
 
+nhis_male   <- filter(nhis, female==0)
+nhis_female <- filter(nhis, female==1)
+
+
 # Need to first create the 'age_group' variable, based on the results of the assumption checks
 
 
@@ -54,7 +58,7 @@ assignInNamespace("svyQuant", svyQuant_alt, ns = "tableone")
 # Table 1: Participant characteristics -----------------------------------------------------------------------------------------------  
 
 # specify the variables to be included in the table
-all_vars <- c("female2", "bl_age", "alc_daily_g", "alc5","smk4", "bmi4", "phy3", "race4", "income5", "married2", "PsyDistr3")
+all_vars <- c("female2", "yrs_followup",  "bl_age", "alc_daily_g", "alc5","smk4", "bmi4", "phy3", "race4", "income5", "married2", "PsyDistr3")
 
 
 # Table 1_v1: Stratified by education *************************************************************************************
@@ -292,6 +296,8 @@ strata_rate_svy(nhis_svy, death_list, "edu3") %>% write.csv(paste0(output, "Tabl
 strata_rate(nhis, death_list, "edu3+female2") %>% write.csv(paste0(output, "Table2_v2 Deaths by education, sex.csv"), row.names=FALSE, na="")
 strata_rate_svy(nhis_svy, death_list, "edu_sex") %>% write.csv(paste0(output, "Table2_v2_svy Deaths by education, sex.csv"), row.names=FALSE, na="")
 
+
+# age_group needs to be defined first
 
 # Table 2_v3: Stratified by education and age group
 strata_rate(nhis, death_list, "edu3+age_group") %>% write.csv(paste0(output, "Table2_v3 Deaths by education, age group.csv"), row.names=FALSE, na="")
