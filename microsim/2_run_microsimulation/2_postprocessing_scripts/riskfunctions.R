@@ -1,4 +1,9 @@
 # plotting for publication the risk functions
+library(dplyr)
+library(tidyr)
+library(ggplot2) 
+
+setwd("~/Google Drive/SIMAH Sheffield/")
 riskfunctioninput <- read.csv("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.csv")
 
 sample <- function(data){
@@ -14,14 +19,24 @@ sample <- function(data){
 list <- split(riskfunctioninput, seq(nrow(riskfunctioninput)))
 samples <- lapply(list, sample) %>% do.call(rbind,.) %>% pivot_wider(names_from=parameter, 
                                                                      values_from=sample)
+# adding PE for prior and posteriors 
+PE <- riskfunctioninput %>% dplyr::select(type, name, mean) %>% 
+  pivot_wider(names_from=name, values_from=mean) %>% 
+  mutate(num=1,
+         type=paste0(type,"PE")) %>% 
+  dplyr::select(type,num,BETA_MALE_MORTALITY:BETA_HEPATITIS)
+
+samples <- rbind(samples, PE)
+
 source("SIMAH_code/microsim/2_run_microsimulation/1_functions/cirrhosis_functions.R")
 
 alcgpd <- seq(from=0, to=150, by=0.5)
 sex <- c("m","f")
-types <- c("age specific", "age standardized")
+types <- unique(samples$type)
 newdata <- expand.grid(microsim.init.alc.gpd=alcgpd, 
                         microsim.init.sex=sex, type=types)
-newdata <- left_join(newdata, samples)
+newdata <- left_join(newdata, samples) %>% 
+  mutate_at(vars(BETA_MALE_MORTALITY:BETA_HEPATITIS), as.numeric)
 
 newdata$RRHeavy <- ifelse(newdata$microsim.init.sex=="m",
                           exp(newdata$BETA_MALE_MORTALITY*newdata$microsim.init.alc.gpd),
@@ -57,28 +72,120 @@ data <- newdata %>% group_by(microsim.init.alc.gpd, microsim.init.sex, type) %>%
   pivot_wider(names_from=minormax, values_from=value) %>% 
   mutate(pathway = ifelse(pathway =="RRHeavy","Heavy alcohol use",
                           ifelse(pathway=="RRMet", "Metabolic interaction",
-                                 "Hepatitis")),
-         type = ifelse(type=="age specific","Age-specific","Age-standardized"))
+                                 "Hepatitis")))
+
+PE <- data %>% filter(type=="priorPE" | type=="age specificPE" | 
+                        type=="age standardizedPE") %>% 
+  mutate(type=ifelse(type=="priorPE","prior",
+                     ifelse(type=="age specificPE","age specific",
+                            ifelse(type=="age standardizedPE","age standardized",NA)))) %>% 
+  mutate(PE = max) %>% 
+  dplyr::select(microsim.init.alc.gpd, microsim.init.sex, type, pathway, PE)
+
+data <- data %>% filter(type!="priorPE") %>% filter(type!="age specificPE") %>% 
+  filter(type!="age standardizedPE")
+
+data <- left_join(data, PE) %>% 
+  mutate(type = ifelse(type=="prior", "Prior belief",
+                       ifelse(type=="age standardized","Posterior belief (age-standardized)",
+                              "Posterior belief (age-specific)")),
+    type=factor(type, levels=c("Prior belief","Posterior belief (age-standardized)",
+                               "Posterior belief (age-specific)")),
+         pathway = factor(pathway, levels=c("Heavy alcohol use","Metabolic interaction", "Hepatitis")))
 
 men <- ggplot(data=subset(data,microsim.init.sex=="Men"), aes(x=microsim.init.alc.gpd)) + 
-  geom_ribbon(aes(ymin=min, ymax=max),fill='grey50', colour=NA) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) +
   facet_grid(cols=vars(type), rows=vars(pathway), scales="free") +
   theme_bw() +
   theme(legend.position="none") + 
-  geom_hline(yintercept=1, linetype="dashed") + 
-  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Men")
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Men") +
+  ylab("Relative Risk (RR)")
+
 men
 
 women <- ggplot(data=subset(data,microsim.init.sex=="Women"), aes(x=microsim.init.alc.gpd)) + 
-  geom_ribbon(aes(ymin=min, ymax=max),fill='grey50', colour=NA) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
   facet_grid(cols=vars(type), rows=vars(pathway), scales="free") +
   theme_bw() +
   theme(legend.position="none") + 
-  geom_hline(yintercept=1, linetype="dashed") + 
-  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Women")
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Women") +
+  ylab("Relative Risk (RR)")
 women
 
+library(gridExtra)
 combined <- grid.arrange(men,women)
 
-ggsave("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.png", combined, dpi=500, width=21, height=29, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.png", combined, dpi=500, width=23, height=31, units="cm")
+
+
+# for paper -split these into the three pathways 
+priors <- data %>% filter(type=="Prior belief")
+
+HeavyUse <- priors %>% filter(pathway=="Heavy alcohol use")
+HeavyUsePlot <- ggplot(data=HeavyUse, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 1: If lifetime alcohol consumption > threshold (100kg)") +
+  ylab("Relative Risk (RR)")
+HeavyUsePlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/HeavyUseRisk.png", HeavyUsePlot, dpi=500, width=33, height=19, units="cm")
+
+Metabolic <- priors %>% filter(pathway=="Metabolic interaction") %>% 
+  mutate(max = ifelse(microsim.init.sex=="Men" & microsim.init.alc.gpd<=9,1.002860,max))
+
+MetabolicPlot <- ggplot(data=Metabolic, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 2: If BMI >= 30") +
+  ylab("Relative Risk (RR)")
+MetabolicPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/MetabolicRisk.png", MetabolicPlot, dpi=500, width=33, height=19, units="cm")
+
+Hepatitis <- priors %>% filter(pathway=="Hepatitis")
+
+HepatitisPlot <- ggplot(data=Hepatitis, aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + ggtitle("Pathway 3: If chronic HBV or HCV") +
+  ylab("Relative Risk (RR)")
+HepatitisPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/HepatitisRisk.png", HepatitisPlot, dpi=500, width=33, height=19, units="cm")
+
+# posterior plot for presentation 
+posteriors <- data %>% 
+  filter(type=="Posterior belief (age-standardized)" | type=="Prior belief") %>% 
+  mutate(max = ifelse(type=="Prior belief" & microsim.init.sex=="Men" & pathway=="Metabolic interaction" & 
+                        microsim.init.alc.gpd<=9,1.002860,max))
+
+PosteriorPlot <- ggplot(data=subset(posteriors,pathway=="Heavy alcohol use"), aes(x=microsim.init.alc.gpd)) + 
+  geom_line(aes(x=microsim.init.alc.gpd, y=PE)) + 
+  geom_ribbon(aes(ymin=min, ymax=max),fill='grey20', colour=NA, alpha=0.2) + 
+  facet_grid(cols=vars(type), rows=vars(microsim.init.sex), scales="free") +
+  theme_bw() +
+  theme(legend.position="none",
+        strip.background=element_rect(fill="white")) + 
+  # geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("grams of alcohol per day") + theme(text = element_text(size=24)) + 
+  ylab("Relative Risk (RR)")
+PosteriorPlot
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/PosteriorPlot.png", PosteriorPlot, dpi=500, width=33, height=19, units="cm")
 
