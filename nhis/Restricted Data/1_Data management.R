@@ -271,7 +271,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     
     
     ## HEALTH STATUS
-    health = PHSTAT, 
+    health = PHSTAT, # self-perceived health
     health = recode(health, `7`=NA_real_, `8`=NA_real_, `9`=NA_real_),  # remove Refused, Not ascertained, Don't know*/
     
     health5 = factor(health,  levels=c(1,2,3,4,5), labels=c("Excellent", "Very good", "Good", "Fair", "Poor")),
@@ -390,15 +390,15 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     UCOD_358_n = as.numeric(UCOD_358),
     
     MVA_Recode_358 = ifelse(UCOD_358_n %in% 385:397, 1, 0), # perfect
-    OUI_Recode_358 = ifelse(UCOD_358_n %in% c(398:423), 1, 0), # imperfect
+    # OUI_Recode_358 = ifelse(UCOD_358_n %in% c(398:423), 1, 0), # imperfect
     ISH_Recode_358 = ifelse(UCOD_358_n %in% 424:431, 1, 0), # looks perfect
-    AUD_Recode_358 = ifelse(UCOD_358_n %in% c(178, 194, 421, 444), 1, 0),  # imperfect
-    LDAC_Recode_358 = ifelse(UCOD_358_n %in% 298:301, 1, 0), # imperfect
+    # AUD_Recode_358 = ifelse(UCOD_358_n %in% c(178, 194, 421, 444), 1, 0),  # imperfect
+    # LDAC_Recode_358 = ifelse(UCOD_358_n %in% 298:301, 1, 0), # imperfect
     DM_Recode_358 = ifelse(UCOD_358_n == 159, 1, 0), # perfect
     IHD_Recode_358 = ifelse(UCOD_358_n %in% 210:215, 1, 0), # perfect
-    IS_Recode_358 = ifelse(UCOD_358_n %in% c(192, 237, 239), 1, 0), # imperfect
+    # IS_Recode_358 = ifelse(UCOD_358_n %in% c(192, 237, 239), 1, 0), # imperfect
     HHD_Recode_358 = ifelse(UCOD_358_n == 207, 1, 0), # perfect
-    Poisoning_Recode_358 = ifelse(UCOD_358_n %in% c(420, 443, 454), 1, 0), # imperfect
+    # Poisoning_Recode_358 = ifelse(UCOD_358_n %in% c(420, 443, 454), 1, 0), # imperfect
     
     
     # ICD-10 Underlying Cause of Death 113 Groups Recode
@@ -424,6 +424,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
           srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
           
           # allcause_death, 
+          # UCOD_113, UCOD_358, 
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
           All9_death, Alcohol_death, Despair_death,
           
@@ -475,7 +476,7 @@ nhis18_clean <- nhis %>%
   filter(bl_age >= 18) %>% # update the age range for the current analysis
   # Remove those with missing data:
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 # When age >= 25
 nhis25_clean <- nhis %>%
@@ -483,7 +484,7 @@ nhis25_clean <- nhis %>%
   filter(bl_age >= 25) %>% # for sub-analyses with education as the exposure
   # Remove those with missing data:
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 
 
@@ -513,13 +514,12 @@ nhis_svy <- nhis %>%
 
 nhis18_clean_svy <- nhis_svy %>%
   filter(bl_age >= 18) %>%
-  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 nhis25_clean_svy <- nhis_svy %>%
   filter(bl_age >= 25) %>%
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 
 nhis18_female_svy <- filter(nhis18_clean_svy, female==1)
