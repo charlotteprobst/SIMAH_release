@@ -21,18 +21,19 @@ memory.limit(size=1e+13)
 
 
 # Specify the data and output file locations
-# Klajdi
-data     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/Restricted Data/"
-output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted data/Output/Assumptions/"
 
 # Yachen
 data    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 output  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
 
 # Load data
-nhis        <- readRDS (file.path(data, "nhis_clean.rds"))
-nhis_male   <- readRDS (file.path(data, "nhis_male.rds"))
-nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
+# nhis        <- readRDS (file.path(data, "nhis25_clean.rds"))
+# nhis_male   <- readRDS (file.path(data, "nhis25_male.rds"))
+# nhis_female <- readRDS (file.path(data, "nhis25_female.rds"))
+
+
+# Load all data all at once
+load("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
 
 
 # ASSUMPTIONS, Additive Hazard Models ------------------------------------------------------------------------------------------------------
@@ -66,43 +67,43 @@ nhis_female <- readRDS (file.path(data, "nhis_female.rds"))
 ## WOMEN: Checking assumptions for Alcohol x Education model 
 # Iteration 1 - Start with all variables as age-varying
 model <- "allcause_alc_f_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4 + srvy_yr22, data = nhis_female)
-        saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-        pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-        assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-        summary(assump_aalen)
-        # RESULT: SrvyYear should be made age-invariant  
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4 + srvy_yr22, data = nhis25_female)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: SrvyYear should be made age-invariant  
 
     
 # Iteration 2 
 model <- "_alc_f_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_female)
-                  saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-                  pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-                  assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-                  summary(assump_aalen)
-                  # RESULT: Marital Status should be made age-invariant
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_female)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: Marital Status should be made age-invariant
     
        
 # Iteration 3 
 model <- "_alc_f_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + const(married2) + race4 + const(srvy_yr22), data = nhis_female)
-                saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-                pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-                assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-                summary(assump_aalen)
-                # RESULT: Education should be made age-invariant
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + const(married2) + race4 + const(srvy_yr22), data = nhis25_female)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: Education should be made age-invariant
         
             
                 
 # Iteration 4
 model <- "_alc_f_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + const(edu3) +  const(married2) + race4 + const(srvy_yr22), data = nhis_female)
-                saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-                pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-                assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-                summary(assump_aalen)
-                 # RESULT: alcohol (former, high risk) and ethnicity should be kept age-varying  
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + const(edu3) +  const(married2) + race4 + const(srvy_yr22), data = nhis25_female)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: alcohol (former, high risk) and ethnicity should be kept age-varying  
         
     
               
@@ -112,42 +113,42 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + const(edu3)
 ## MEN: Checking assumptions for Alcohol x Education model 
 # Iteration 1 - Start with all variables as age-varying
 model <- "_alc_m_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4 + srvy_yr22, data = nhis_male)
-          saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-          pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-          assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-          summary(assump_aalen)
-          # RESULT: SrvyYear should be made age-invariant
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4 + srvy_yr22, data = nhis25_male)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: SrvyYear should be made age-invariant
 
           
 # Iteration 2 
 model <- "_alc_m_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_male)
-          saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-          pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-          assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-          summary(assump_aalen)
-          # RESULT: Education should be made age-invariant
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_male)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: Education should be made age-invariant
               
         
 # Iteration 3
 model <- "_alc_m_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis_male)
-                      saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-                      pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-                      assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-                      summary(assump_aalen)
-                      # RESULT: Marital Status should be made age-invariant
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis25_male)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: Marital Status should be made age-invariant
               
               
 # Iteration 4
 model <- "_alc_m_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_male)
-                    saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
-                    pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
-                    assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
-                    summary(assump_aalen)
-                    # RESULT: alcohol (former, high risk) and ethnicity should be kept age-varying 
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_male)
+saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
+pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
+assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
+summary(assump_aalen)
+# RESULT: alcohol (former, high risk) and ethnicity should be kept age-varying 
               
               
                       
@@ -161,7 +162,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + const(edu3)
 ## WOMEN: 
 # Iteration 1
 model <- "_smk_f_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + married2 +  race4 + srvy_yr22, data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + edu3 + married2 +  race4 + srvy_yr22, data = nhis25_female)
       saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -171,7 +172,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + marr
       
 # Iteration 2     
 model <- "_smk_f_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_female)
       saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -182,7 +183,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + marr
       
 # Iteration 3
 model <- "_smk_f_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + const(married2) + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + edu3 + const(married2) + race4 + const(srvy_yr22), data = nhis25_female)
                       saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
                       pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                       assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -196,7 +197,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + cons
 ## MEN: 
 # Iteration 1
 model <- "_smk_m_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + married2 + race4 + srvy_yr22, data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + edu3 + married2 + race4 + srvy_yr22, data = nhis25_male)
           saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
           pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
           assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -207,7 +208,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + marr
           
 # Iteration 2
 model <- "_smk_m_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_male)
           saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
           pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
           assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -218,7 +219,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + edu3 + marr
                       
 # Iteration 3 
 model <- "_smk_m_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis25_male)
                     saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -228,7 +229,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + const(edu3)
               
 # Iteration 4
 model <- "_smk_m_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ smk4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_male)
                     saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -249,7 +250,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ smk4 + const(edu3)
 ## WOMEN: 
 # Iteration 1
 model <- "_bmi_f_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + married2 + race4 + srvy_yr22, data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + edu3 + married2 + race4 + srvy_yr22, data = nhis25_female)
         saveRDS(assump_aalen, paste0(output,  "assump_aalen", model, ".rds"))                # Save model results
         pdf(paste0(output,  "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
         assump_aalen <-readRDS(paste0(output,  "assump_aalen", model, ".rds"))               # load model results
@@ -260,7 +261,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + marr
         
 # Iteration 2
 model <- "_bmi_f_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_female)
         saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
         pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
         assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -271,7 +272,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + marr
       
 # Iteration 3 
 model <- "_bmi_f_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3) +  married2 + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + const(edu3) +  married2 + race4 + const(srvy_yr22), data = nhis25_female)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -281,7 +282,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3)
               
 # Iteration 4
 model <- "_bmi_f_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_female)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -295,7 +296,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3)
 ## MEN: 
 # Iteration 1
 model <- "_bmi_m_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + married2 + race4 + srvy_yr22, data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + edu3 + married2 + race4 + srvy_yr22, data = nhis25_male)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -305,7 +306,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + marr
       
 # Iteration 2 
 model <- "_bmi_m_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_male)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -316,7 +317,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + edu3 + marr
       
 # Iteration 3
 model <- "_bmi_m_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis25_male)
                   saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                   pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                   assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -327,7 +328,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3)
               
 # Iteration 4
 model <- "_bmi_m_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ bmi4 + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_male)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -348,7 +349,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ bmi4 + const(edu3)
 ## WOMEN
 # Iteration 1
 model <- "_phy_f_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu3 + married2 + race4 + srvy_yr22, data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + edu3 + married2 + race4 + srvy_yr22, data = nhis25_female)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -358,7 +359,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
       
 # Iteration 2
 model <- "_phy_f_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_female)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -369,7 +370,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
       
 # Iteration 3
 model <- "_phy_f_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis25_female)
                   saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                   pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                   assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -380,7 +381,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
                   
 # Iteration 4
 model <- "_phy_f_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_female)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -393,7 +394,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
 ## MEN
 # Iteration 1
 model <- "_phy_m_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu3 + married2 + race4 + srvy_yr22, data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + edu3 + married2 + race4 + srvy_yr22, data = nhis25_male)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -404,7 +405,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
       
 # Iteration 2
 model <- "_phy_m_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + edu3 + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + edu3 + married2 + race4 + const(srvy_yr22), data = nhis25_male)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -414,7 +415,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
       
 # Iteration 3 
 model <- "_phy_m_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + const(edu3) + married2 + race4 + const(srvy_yr22), data = nhis25_male)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -424,7 +425,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
               
 # Iteration 4
 model <- "_phy_m_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ phy_act3.factor + const(edu3) + const(married2) + race4 + const(srvy_yr22), data = nhis25_male)
                     saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                     pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                     assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -446,7 +447,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ phy_act3.factor + 
 
 # FEMALES
 model <- "_CMed_f_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + married2 + race4, data=nhis_female)    
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + married2 + race4, data = nhis25_female)    
         saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
         pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
         assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -456,7 +457,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk
         
 # Iteration 2 
 model <- "_CMed_f_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data=nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data = nhis25_female)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -467,7 +468,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk
         
 # Iteration 3
 model <- "_CMed_f_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data=nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data = nhis25_female)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -477,7 +478,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc
         
 # Iteration 4 
 model <- "_CMed_f_4"   # Used to name the files appropriately
-                assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc5 + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data=nhis_female)
+                assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + alc5 + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data = nhis25_female)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -487,7 +488,7 @@ model <- "_CMed_f_4"   # Used to name the files appropriately
         
 # Iteration 5
 model <- "_CMed_f_5"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + const(alc5) + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data=nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + const(alc5) + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data = nhis25_female)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -503,7 +504,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + con
 
 # MALES
 model <- "_CMed_m_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + married2 + race4, data=nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + married2 + race4, data = nhis25_male)
         saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
         pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
         assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -513,7 +514,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk
         
 # Iteration 2 
 model <- "_CMed_m_2"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data=nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  edu3 + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data = nhis25_male)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -524,7 +525,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  edu3 + alc5 + smk
         
 # Iteration 3   
 model <- "_CMed_m_3"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data=nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + alc5 + smk4 + bmi4 + phy_act3.factor + const(married2) + race4, data = nhis25_male)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -535,7 +536,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc
               
 # Iteration 4 
 model <- "_CMed_m_4"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc5 + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data=nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + alc5 + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data = nhis25_male)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -545,7 +546,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + alc
         
 # Iteration 5  
 model <- "_CMed_m_5"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + const(alc5) + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data=nhis_male)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~  const(edu3) + const(alc5) + smk4 + const(bmi4) + phy_act3.factor + const(married2) + race4, data = nhis25_male)
                 saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
                 pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
                 assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -565,10 +566,12 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(edu3) + con
 
 # FEMALES
 
+                # update: Alcohol_death
+                
 # Time-varying covariates
 # Iteration 1 - Ages 25-65
 model <- "_alc_f_tvc25_65_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4, start.time=25, max.time=64.999, data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4, start.time=25, max.time=64.999, data = nhis25_female)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
@@ -583,7 +586,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + marr
       
 # Iteration 1 - Ages 65+
 model <- "_alc_f_tvc_65up_1"   # Used to name the files appropriately
-assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~ alc5 + edu3 + married2 + race4, start.time=65, max.time=NULL, data = nhis_female)
+assump_aalen <- aalen(Surv(bl_age, end_age, Alcohol_death) ~ alc5 + edu3 + married2 + race4, start.time=65, max.time=NULL, data = nhis25_female)
       saveRDS(assump_aalen, paste0(output, "assump_aalen", model, ".rds"))                # Save model results
       pdf(paste0(output, "assump_aalen", model, ".pdf")); plot(assump_aalen); dev.off()   # save plot 
       assump_aalen <-readRDS(paste0(output, "assump_aalen", model, ".rds"))               # load model results
