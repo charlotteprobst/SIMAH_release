@@ -384,16 +384,37 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     Alcohol_death = MVA_death + OUI_death + ISH_death + AUD_death + LDAC_death,
     Despair_death = ISH_death + (icd10_alpha == "K" & icd10_num1 %in% c(70, 73:74)) + Poisoning_death,
     
-    MVA_Recode_icd358 = ifelse(UCOD_358 %in% 385:397, 1, 0), # perfect
-    OUI_Recode_icd358 = ifelse(UCOD_358 %in% c(398:423), 1, 0), # imperfect
-    ISH_Recode_icd358 = ifelse(UCOD_358 %in% 424:431, 1, 0), # looks perfect
-    AUD_Recode_icd358 = ifelse(UCOD_358 %in% c(178, 194, 421, 444), 1, 0),  # imperfect
-    LDAC_Recode_icd358 = ifelse(UCOD_358 %in% 298:301, 1, 0), # imperfect
-    DM_Recode_icd358 = ifelse(UCOD_358 == 159, 1, 0), # perfect
-    IHD_Recode_icd358 = ifelse(UCOD_358 %in% 210:215, 1, 0), # perfect
-    IS_Recode_icd358 = ifelse(UCOD_358 %in% c(192, 237, 239), 1, 0), # imperfect
-    HHD_Recode_icd358 = ifelse(UCOD_358 == 207, 1, 0), # perfect
-    Poisoning_Recode_icd358 = ifelse(UCOD_358 %in% c(420, 443, 454), 1, 0) # imperfect
+    
+    # ICD-10 Underlying Cause of Death 358 Groups Recode
+    
+    UCOD_358_n = as.numeric(UCOD_358),
+    
+    MVA_Recode_358 = ifelse(UCOD_358_n %in% 385:397, 1, 0), # perfect
+    OUI_Recode_358 = ifelse(UCOD_358_n %in% c(398:423), 1, 0), # imperfect
+    ISH_Recode_358 = ifelse(UCOD_358_n %in% 424:431, 1, 0), # looks perfect
+    AUD_Recode_358 = ifelse(UCOD_358_n %in% c(178, 194, 421, 444), 1, 0),  # imperfect
+    LDAC_Recode_358 = ifelse(UCOD_358_n %in% 298:301, 1, 0), # imperfect
+    DM_Recode_358 = ifelse(UCOD_358_n == 159, 1, 0), # perfect
+    IHD_Recode_358 = ifelse(UCOD_358_n %in% 210:215, 1, 0), # perfect
+    IS_Recode_358 = ifelse(UCOD_358_n %in% c(192, 237, 239), 1, 0), # imperfect
+    HHD_Recode_358 = ifelse(UCOD_358_n == 207, 1, 0), # perfect
+    Poisoning_Recode_358 = ifelse(UCOD_358_n %in% c(420, 443, 454), 1, 0), # imperfect
+    
+    
+    # ICD-10 Underlying Cause of Death 113 Groups Recode
+    
+    UCOD_113_n = as.numeric(UCOD_113),
+    
+    MVA_Recode_113 = ifelse(UCOD_113_n == 114, 1, 0), # perfect
+    OUI_Recode_113 = ifelse(UCOD_113_n %in% c(115:123, 135), 1, 0), # imperfect
+    ISH_Recode_113 = ifelse(UCOD_113_n %in% 124:126, 1, 0), # perfect
+    # imperfect for AUD
+    LDAC_Recode_113 = ifelse(UCOD_113_n %in% 93:95, 1, 0), # imperfect
+    DM_Recode_113 = ifelse(UCOD_113_n == 46, 1, 0), # perfect
+    IHD_Recode_113 = ifelse(UCOD_113_n %in% 58:63, 1, 0), # perfect
+    IS_Recode_113 = ifelse(UCOD_113_n == 70, 1, 0), # imperfect
+    HHD_Recode_113 = ifelse(UCOD_113_n == 56, 1, 0) # perfect
+    # imperfect for poisoning
     
     ) %>%    
     
@@ -406,8 +427,11 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
           All9_death, Alcohol_death, Despair_death,
           
-          MVA_Recode_icd358, OUI_Recode_icd358, ISH_Recode_icd358, AUD_Recode_icd358, LDAC_Recode_icd358,
-          DM_Recode_icd358, IHD_Recode_icd358, IS_Recode_icd358, HHD_Recode_icd358, Poisoning_Recode_icd358, 
+          MVA_Recode_358, OUI_Recode_358, ISH_Recode_358, AUD_Recode_358, LDAC_Recode_358,
+          DM_Recode_358, IHD_Recode_358, IS_Recode_358, HHD_Recode_358, Poisoning_Recode_358, 
+          
+          MVA_Recode_113, OUI_Recode_113, ISH_Recode_113, LDAC_Recode_113, DM_Recode_113, 
+          IHD_Recode_113, IS_Recode_113, HHD_Recode_113, 
           
           # heart_death, cancer_death, accident_death,
           
