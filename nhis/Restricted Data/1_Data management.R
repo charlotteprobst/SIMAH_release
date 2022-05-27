@@ -426,9 +426,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
           female, female2, married, married2, race, race4, edu_sex,
           income, income_v2, income5, income4, K6scale, PsyDistr, PsyDistr3, 
-          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) # %>%
-
-  # filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
+          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) 
 
 
 
@@ -537,3 +535,7 @@ saveRDS(nhis18_female_svy, paste0(data_new, "nhis18_female_svy.rds"))   # NHIS_s
 saveRDS(nhis25_clean_svy,  paste0(data_new, "nhis25_clean_svy.rds"))    # NHIS_svy data to be analyzed, age >= 25
 saveRDS(nhis25_male_svy,   paste0(data_new, "nhis25_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
 saveRDS(nhis25_female_svy, paste0(data_new, "nhis25_female_svy.rds"))   # NHIS_svy data to be analyzed (females only) 
+
+
+## or directly save the image and then import the .RData the next time
+save.image("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
