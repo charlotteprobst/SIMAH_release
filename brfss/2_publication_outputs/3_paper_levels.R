@@ -44,9 +44,11 @@ drinkingcats_baseline <- data %>%
                                                 gramsperday<=60, "Category II",
                                               ifelse(sex_recode=="Female" & gramsperday>20 &
                                                        gramsperday<=40, "Category II",
-                                                     ifelse(sex_recode=="Male" & gramsperday>60,
+                                                     ifelse(sex_recode=="Male" & gramsperday>60 & gramsperday<=100,
                                                             "Category III", 
-                                                            ifelse(sex_recode=="Female" & gramsperday>40, "Category III", NA)))))))) %>% 
+                                                            ifelse(sex_recode=="Female" & gramsperday>40 & gramsperday<=60, "Category III", 
+                                                                   ifelse(sex_recode=="Male" & gramsperday>100, "Category IV",
+                                                                          ifelse(sex_recode=="Female" & gramsperday>60, "Category IV", NA)))))))))) %>% 
   group_by(YEAR, State, sex_recode, alcCAT) %>% tally() %>% mutate(data="baseline")
 
 drinkingcats_adjusted <- data %>% 
@@ -59,27 +61,54 @@ drinkingcats_adjusted <- data %>%
                                                 gramsperday_upshifted_crquotient<=60, "Category II",
                                               ifelse(sex_recode=="Female" & gramsperday_upshifted_crquotient>20 &
                                                        gramsperday_upshifted_crquotient<=40, "Category II",
-                                                     ifelse(sex_recode=="Male" & gramsperday_upshifted_crquotient>60,
+                                                     ifelse(sex_recode=="Male" & gramsperday_upshifted_crquotient>60 & gramsperday_upshifted_crquotient<=100,
                                                             "Category III", 
-                                                            ifelse(sex_recode=="Female" & gramsperday_upshifted_crquotient>40, "Category III", NA)))))))) %>% 
+                                                            ifelse(sex_recode=="Female" & gramsperday_upshifted_crquotient>40 & gramsperday_upshifted_crquotient<=60, "Category III", 
+                                                                   ifelse(sex_recode=="Male" & gramsperday_upshifted_crquotient>100, "Category IV",
+                                                                          ifelse(sex_recode=="Female" & gramsperday_upshifted_crquotient>60, "Category IV", NA)))))))))) %>% 
   group_by(YEAR, State, sex_recode, alcCAT) %>% tally() %>% mutate(data="adjusted")
 
 drinkingcats <- rbind(drinkingcats_baseline, drinkingcats_adjusted) %>% 
   group_by(YEAR, State, sex_recode, data) %>% mutate(percent=n/sum(n)) %>% 
   filter(State=="USA") %>% filter(alcCAT!="Abstainer") %>% 
-  mutate(data = ifelse(data=="baseline","Baseline","Adjusted"),
-         data = factor(data, levels=c("Baseline","Adjusted")),
-         sex_recode=ifelse(sex_recode=="Male","Men","Women"))
+  mutate(data = ifelse(data=="baseline","Initial","Adjusted"),
+         data = factor(data, levels=c("Initial","Adjusted")),
+         sex_recode=ifelse(sex_recode=="Male","Men","Women")) %>% 
+  dplyr::select(YEAR, State, sex_recode, alcCAT, data, percent) %>% 
+  pivot_wider(names_from=data, values_from=percent) %>% 
+  mutate(paired=1:n()) %>% 
+  pivot_longer(cols=Initial:Adjusted) %>% mutate(name=factor(name, levels=c("Initial","Adjusted")))
 
-ggplot(data=drinkingcats, aes(x=YEAR, y=percent, fill=alcCAT)) + geom_bar(position="stack", stat="identity", colour="black") +
-  facet_grid(cols=vars(data), rows=vars(sex_recode)) + theme_bw() + 
-  scale_fill_grey() + 
+Initial <- drinkingcats %>% filter(name=="Initial")
+Adjusted <- drinkingcats %>% filter(name=="Adjusted")
+
+p <- ggplot(drinkingcats) + 
+  geom_segment(data=Initial, 
+               aes(x=value, y=YEAR, 
+                   yend = Adjusted$YEAR, xend = Adjusted$value),
+               color = "grey60", size=4.5, alpha=.5) + 
+  geom_point(aes(x=value, y=YEAR, color=name), size=4, show.legend=TRUE) +
+  scale_colour_manual(values=c("grey50","black")) + 
+  facet_grid(cols=vars(alcCAT), rows=vars(sex_recode), scales="free") +
+  scale_x_continuous(labels=scales::percent_format(accuracy=1L)) + theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position="bottom",
-        strip.background = element_rect(fill="white")) + xlab("") +
-  scale_y_continuous(labels=scales::percent_format(accuracy=5L)) + ylab("Proportion")
+        strip.background = element_rect(fill="white"),
+        text= element_text(size=18)) + xlab("Proportion") +
+  ylab("Year") + scale_y_reverse()
 
-ggsave("SIMAH_workplace/brfss/paper/Figure4_Categories.png", dpi=500, width=33, height=19, units="cm")
+p
+ggsave("SIMAH_workplace/brfss/paper/Figure4_Categories.png", dpi=500, width=33, height=25, units="cm")
+
+# ggplot(data=drinkingcats, aes(x=value, y=YEAR)) + geom_point(aes(colour=name), size=4) + 
+#   geom_line(aes(group=paired)) +
+#   facet_grid(cols=vars(alcCAT), rows=vars(sex_recode)) + theme_bw() + 
+#   scale_fill_grey() + 
+#   theme(legend.title=element_blank(),
+#         legend.position="bottom",
+#         strip.background = element_rect(fill="white")) + xlab("proportion")
+# 
+# ggsave("SIMAH_workplace/brfss/paper/Figure4_Categories.png", dpi=500, width=33, height=19, units="cm")
 
 meanovertime <- rbind(drinkingcats_baseline, drinkingcats_adjusted) %>% 
   group_by(YEAR, State, sex_recode, data) %>% mutate(percent=n/sum(n)) %>% filter(State=="USA") %>% 
@@ -120,10 +149,7 @@ malepop <- 126707757
 femalepop <- 130828335
 
 #original male 
-malepop*1.9/100
-malepop*5/100
+abs(malepop*0.6/100-malepop*1.8/100)
 
-abs(malepop*1.9/100-malepop*5/100)
-
-abs(femalepop*0.8/100-femalepop*2.4/100)
+abs(femalepop*0.2/100-femalepop*0.8/100)
 
