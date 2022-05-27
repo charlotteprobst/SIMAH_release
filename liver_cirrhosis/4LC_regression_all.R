@@ -130,7 +130,8 @@ anova(model9a, model9)
 #final model
 model10 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex+ I(dose^2):sex
                   + dose:type + I(dose^2):type + dose:qualitySC
-                  + dose:usa + dose:mortality + I(dose^2):mortality, data=final, random = ~ 1 | study, method = "REML")
+                  + dose:usa + dose:mortality + I(dose^2):mortality, digits = 6, 
+                  data=final, random = ~ 1 | study, method = "REML")
 model10
 
 anova(model9a, model10)
