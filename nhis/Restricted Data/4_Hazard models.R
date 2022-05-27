@@ -18,27 +18,16 @@ memory.limit(size=1e+13)
 options(scipen=999)
 
 
-# Specify the data and output file locations
-data_path     <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
-output_tables <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
-output_models <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
-output_assump <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
-
 # Yachen
 data_path    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 output_tables <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
 output_models <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
-output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
+output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/
 
 
-# Load data
-nhis_all    <- readRDS (paste0(data_path, "nhis_clean.rds"))
-nhis_male   <- readRDS (paste0(data_path, "nhis_male.rds"))
-nhis_female <- readRDS (paste0(data_path, "nhis_female.rds"))
+# Load all data all at once
+load("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
 
-nhis_all_svy    <- readRDS (paste0(data_path, "nhis_clean_svy.rds"))
-nhis_male_svy   <- readRDS (paste0(data_path, "nhis_male_svy.rds"))
-nhis_female_svy <- readRDS (paste0(data_path, "nhis_female_svy.rds"))
 
 
 ## Create functions and specify causes of death ------------------------------------------------------------------------------------------
@@ -106,7 +95,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
         
         # Aalen joint effects model
         cat("    Aalen Joint effects model in progress", "\n")  
-        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data) # robust = 0 to remove the 2 tests for age-varying effects
         cat("    Completed", "\n")  
         
         # Save model results 
@@ -195,23 +184,19 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 }
 
 
-# Test the function:
-death_list <- c("heart_death", "cancer_death") # specify cause of death for testing
-nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
-table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
-
 
 # Specify the causes of death (to be used below)
-death_list <- c("allcause_deaths", "alc_deaths", "despair_deaths", "vehicle_deaths", "accident_deaths", 
-                "AUD_deaths", "self_harm_deaths", "liver_deaths", "diabetes_deaths", "IHD_deaths", 
-                "stroke_deaths", "hyperten_deaths", "poisoning_deaths", "other_deaths")
+death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OUI_death", "ISH_death",
+                "AUD_death", "LDAC_death", "DM_death", "IHD_death", "IS_death", "HHD_death", "Poisoning_death")
+
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
-table4to9(nhis_all,    death_list, edu3, alc5, "table4a") # All participants
-table4to9(nhis_female, death_list, edu3, alc5, "table4a") # Females
-table4to9(nhis_male,   death_list, edu3, alc5, "table4a") # Males
+table4to9(nhis25_clean, nhis25_clean_svy, death_list, edu3, alc5, "table4a") # All participants
+table4to9(nhis25_female, nhis25_female_svy, death_list, edu3, alc5, "table4a") # Females
+table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # Males
 
+# data, design, deaths_list, SES, lifestyle, table_label
 
 # **NOTE**: Need to change to code for this so that the start time and end time is specified
 # table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
