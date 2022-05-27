@@ -25,20 +25,21 @@ trendovertime <- data %>% filter(State=="USA") %>% group_by(YEAR) %>%
             new_apc = mean(gramspercapita_90),
             new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
   filter(YEAR<=2020) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
-  mutate(name = recode(name, "raw_gpd"="Raw BRFSS",
-                       "raw_apc"="Raw APC", "new_apc"="Adjusted APC",
+  mutate(name = recode(name, "raw_gpd"="Initial BRFSS",
+                       "raw_apc"="Initial APC", "new_apc"="Adjusted APC",
                        "new_gpd"="Adjusted BRFSS"),
-         name = factor(name, levels=c("Raw APC","Adjusted APC", "Adjusted BRFSS","Raw BRFSS")))
+         name = factor(name, levels=c("Initial APC","Adjusted APC", "Adjusted BRFSS","Initial BRFSS")))
 
 ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name, linetype=name)) + geom_line(size=1.5) +
   ylim(0,NA) +
   theme_bw() + 
-  scale_linetype_manual(values=c("solid","solid","solid","solid")) + 
+  scale_linetype_manual(values=c("solid","dashed","dotted","dotdash")) + 
   scale_colour_grey(start=0.8, end=0.2) + 
   # scale_colour_brewer(palette="Greys") + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
-        text = element_text(family="serif",size=18)) +
+        text = element_text(family="serif",size=18),
+        legend.key.width=unit(2,"cm")) +
   # scale_fill_brewer(palette="Set1") +
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
                               1998, 2000, 2002, 2004, 2006, 2008, 2010, 
@@ -76,18 +77,20 @@ trendovertime <- data %>% filter(State=="Colorado" | State=="New York" |
             new_apc = mean(gramspercapita_90),
             new_gpd = mean(gramsperday_upshifted_crquotient)) %>% 
   filter(YEAR<=2020) %>% pivot_longer(cols=raw_gpd:new_gpd) %>% 
-  mutate(name = recode(name, "raw_gpd"="BRFSS",
-                       "raw_apc"="APC", "new_apc"="Adjusted APC",
+  mutate(name = recode(name, "raw_gpd"="Initial BRFSS",
+                       "raw_apc"="Initial APC", "new_apc"="Adjusted APC",
                        "new_gpd"="Adjusted BRFSS"),
-         name = factor(name, levels=c("APC","Adjusted APC", "BRFSS","Adjusted BRFSS")))
+         name = factor(name, levels=c("Initial APC","Adjusted APC", "Initial BRFSS","Adjusted BRFSS")))
 
-ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name)) + geom_line(size=1.5) +
+ggplot(data=trendovertime, aes(x=YEAR, y=value, colour=name, linetype=name)) + geom_line(size=1.5) +
   ylim(0,NA) +
   theme_bw() + 
+  scale_linetype_manual(values=c("solid","dashed","dotted","dotdash")) + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         text = element_text(family="serif",size=18),
-        strip.background=element_rect(fill="white")) +
+        strip.background=element_rect(fill="white"),
+        legend.key.width=unit(2,"cm")) +
   scale_fill_brewer(palette="Set1") +
   scale_colour_grey(start=0.8, end=0.2) + 
   scale_x_continuous(breaks=c(1984, 1986, 1988, 1990, 1992, 1994, 1996, 
@@ -136,8 +139,8 @@ library(usmap)
 means$state <- tolower(means$State)
 means <- means %>% pivot_longer(cols=c(coverage_baseline_mean, coverage_adjusted_mean)) %>% 
   rename(Coverage=value) %>% 
-  mutate(name = ifelse(name=="coverage_baseline_mean","Baseline","Adjusted"),
-         name = factor(name, levels=c("Baseline","Adjusted")))
+  mutate(name = ifelse(name=="coverage_baseline_mean","Initial","Adjusted"),
+         name = factor(name, levels=c("Initial","Adjusted")))
 
 
 plot1 <- plot_usmap(data=means, values="Coverage") +

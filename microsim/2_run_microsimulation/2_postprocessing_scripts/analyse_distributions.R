@@ -2,10 +2,10 @@
 toplhsagesp <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/lhsSamples_wave15.csv") %>% 
   pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
   group_by(name) %>% 
-  summarise(min = round(min(value),digits=4),
-            max = round(max(value),digits=4),
-            mean = round(mean(value),digits=4),
-            sd = round(sd(value),digits=4)) %>% mutate(type="age specific") %>% 
+  summarise(min = round(min(value),digits=10),
+            max = round(max(value),digits=10),
+            mean = round(mean(value),digits=10),
+            sd = round(sd(value),digits=10)) %>% mutate(type="age specific") %>% 
   mutate(name = factor(name, 
                        levels=c("BETA_MALE_MORTALITY","BETA_FEMALE_MORTALITY",
                                 "BETA_FORMER_DRINKERS_MEN","BETA_FORMER_DRINKERS_WOMEN",
@@ -21,10 +21,10 @@ toplhsagesp <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_outp
 toplhsagest <-  read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhsSamples_wave15.csv") %>% 
   pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
   group_by(name) %>% 
-  summarise(min = round(min(value),digits=4),
-            max = round(max(value),digits=4),
-            mean = round(mean(value),digits=4),
-            sd = round(sd(value),digits=4)) %>% mutate(type="age standardized") %>% 
+  summarise(min = round(min(value),digits=10),
+            max = round(max(value),digits=10),
+            mean = round(mean(value),digits=10),
+            sd = round(sd(value),digits=10)) %>% mutate(type="age standardized") %>% 
   mutate(name = factor(name, 
                        levels=c("BETA_MALE_MORTALITY","BETA_FEMALE_MORTALITY",
                                 "BETA_FORMER_DRINKERS_MEN","BETA_FORMER_DRINKERS_WOMEN",
@@ -50,6 +50,9 @@ PE <- data.frame(name = c("BETA_MALE_MORTALITY","BETA_FEMALE_MORTALITY","METABOL
                  mean = c(0.0227414,0.0396643,-1.02011,-0.1274623,3.03,-4.31,0.009854),
                  summarystat = c(0.0111,0.05370378,0.3083,0.0440,1.0536,2.2322,0.0009),
                  type = "prior")
+
+
+
 
 toplhs_forriskfunctions <- rbind(toplhs_forriskfunctions, PE)
 write.csv(toplhs_forriskfunctions, 

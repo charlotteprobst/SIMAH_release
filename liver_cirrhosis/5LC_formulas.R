@@ -2,11 +2,16 @@ library(tidyverse)
 library(meta)
 library(metafor)
 library(dosresmeta)
-
 library(mvmeta)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+dataset <- readRDS (paste0(data, "4LC_regression_all.xlsx"))
+
 library(readxl)
-dataset <- read_excel("CAMH/SIMAH/SIMAH_dataset/4LC_regression_all.xlsx", 
+dataset <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/4LC_regression_all.xlsx", 
                       col_types = c("numeric", "numeric", "text", 
                                     "numeric", "text", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
@@ -18,6 +23,7 @@ dataset <- read_excel("CAMH/SIMAH/SIMAH_dataset/4LC_regression_all.xlsx",
 dataset$sex <- as.factor(dataset$sex)
 dataset$type <- as.factor(dataset$type)
 dataset$mortality <- as.factor(dataset$mortality)
+dataset$usa <- as.factor(dataset$usa)
 
 dataset <- dataset %>%
   filter(dose != 0.00)
@@ -695,3 +701,69 @@ dim(table(male_mort_alc$study))
 male_mort_hcv <- dataset %>%
   filter(sex == 1 & mortality == 1 & type == 3)
 dim(table(male_mort_hcv$study))
+
+#USA female
+us_fem <- dataset %>%
+  filter(sex == 0 & usa == 1)
+dim(table(us_fem$study))
+
+q_us_fem <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=us_fem, digits = 6, 
+                         random = ~ 1 | study, method = "REML")
+summary(q_us_fem)
+
+a <- seq(0,150,length=150)
+pred_us_fem <- predict(q_us_fem, newmods=cbind(a,a^2))
+regplot(q_us_fem, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 40), pred = pred_us_fem, xvals = a, main="US Female")
+
+-(0.060646/(2*-0.000312))
+(0.060646*97.19)+((-0.000312)*(97.19*97.19))
+predict(q_us_fem, c(97.19,97.19^2), transf=exp)
+
+bm <- seq(0,97.19,length=97.19)
+bn <- seq(97.19,150, length=53)
+bo <- rep(19.085129, times=53)
+bp <- rep(12.787579, times=53)
+bq <- rep(28.484057, times=53)
+
+pred_us_fem2 <- predict(q_us_fem, newmods=cbind(bm,bm^2))
+regplot(q_us_fem, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
+        ylim = c(0, 30), pred = pred_us_fem2, xvals = bm, main="US Female")
+lines(bn,bo, lwd = "3", col = "black")
+lines(bn,bp, lwd = "1", lty = "dashed", col = "black")
+lines(bn,bq, lwd = "1", lty = "dashed", col = "black")
+
+#US MALE
+us_male <- dataset %>%
+  filter(sex == 1 & usa == 1)
+dim(table(us_male$study))
+
+q_us_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=us_male, digits = 6, 
+                   random = ~ 1 | study, method = "REML")
+summary(q_us_male)
+
+a <- seq(0,150,length=150)
+pred_us_male <- predict(q_us_male, newmods=cbind(a,a^2))
+regplot(q_us_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 30), pred = pred_us_male, xvals = a, main="US Male")
+
+-(0.052229/(2*-0.000202))
+(0.052229*129.28)+((-0.000202)*(129.28*129.28))
+predict(q_us_male, c(129.28,129.28^2))
+
+br <- seq(0,129.28,length=129.28)
+bs <- seq(129.28,150, length=21)
+bt <- rep(29.227895, times=21)
+bu <- rep(14.246508, times=21)
+bv <- rep(59.963456, times=21)
+
+pred_us_male2 <- predict(q_us_male, newmods=cbind(br,br^2))
+regplot(q_us_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,110), shade =FALSE,
+        ylim = c(0, 30), pred = pred_us_male2, xvals = br, main="US Male")
+lines(bs,bt, lwd = "3", col = "black")
+lines(bs,bu, lwd = "1", lty = "dashed", col = "black")
+lines(bs,bv, lwd = "1", lty = "dashed", col = "black")

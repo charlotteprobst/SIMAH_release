@@ -2,8 +2,14 @@ library(tidyverse)
 library(meta)
 library(metafor)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+exdrinkers <- readRDS (paste0(data, "2LC_exdrinkers.xlsx"))
+
 library(readxl)
-exdrinkers <- read_excel("CAMH/SIMAH/SIMAH_dataset/2LC_exdrinkers.xlsx", 
+exdrinkers <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/2LC_exdrinkers.xlsx", 
                          col_types = c("text", "numeric", "numeric", "numeric", 
                                        "numeric", "numeric", "numeric", 
                                        "numeric", "numeric", "numeric", 

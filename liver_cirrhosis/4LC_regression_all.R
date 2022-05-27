@@ -2,11 +2,16 @@ library(tidyverse)
 library(meta)
 library(metafor)
 library(dosresmeta)
-
 library(mvmeta)
 
+# Personal computer; specify locations 
+data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"    # Location of data
+
+# load data
+dataset <- readRDS (paste0(data, "4LC_regression_all.xlsx"))
+
 library(readxl)
-dataset <- read_excel("CAMH/SIMAH/SIMAH_dataset/4LC_regression_all.xlsx", 
+dataset <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/4LC_regression_all.xlsx", 
                     col_types = c("numeric", "numeric", "text", 
                                   "numeric", "text", "numeric", "numeric", "numeric", 
                                   "numeric", "numeric", "numeric", 
@@ -125,7 +130,8 @@ anova(model9a, model9)
 #final model
 model10 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex+ I(dose^2):sex
                   + dose:type + I(dose^2):type + dose:qualitySC
-                  + dose:usa + dose:mortality + I(dose^2):mortality, data=final, random = ~ 1 | study, method = "REML")
+                  + dose:usa + dose:mortality + I(dose^2):mortality, digits = 6, 
+                  data=final, random = ~ 1 | study, method = "REML")
 model10
 
 anova(model9a, model10)
