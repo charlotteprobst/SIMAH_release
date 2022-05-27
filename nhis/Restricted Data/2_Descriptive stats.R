@@ -1,4 +1,3 @@
-
 # SIMAH Restricted-access Data
 # Descriptive Statistics
 
@@ -25,15 +24,21 @@ output  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restr
 
 
 # Load data
-nhis <- readRDS (paste0(data, "nhis_clean.rds"))
-nhis_svy <- readRDS (paste0(data, "nhis_clean_svy.rds"))
+# nhis18_clean <- readRDS (paste0(data, "nhis18_clean.rds"))
+# nhis25_clean <- readRDS (paste0(data, "nhis25_clean.rds"))
 
-nhis_male   <- filter(nhis, female==0)
-nhis_female <- filter(nhis, female==1)
+# nhis18_clean_svy <- readRDS (paste0(data, "nhis18_clean_svy.rds"))
+# nhis25_clean_svy <- readRDS (paste0(data, "nhis25_clean_svy.rds"))
 
 
-# Need to first create the 'age_group' variable, based on the results of the assumption checks
+# Load all data all at once
+load("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
 
+
+# Need to first create the 'age_group' variable, based on the results of the Aalen assumption checks
+  # First, check the 2 tests for age-varying effect, determine the age-varying variables
+  # Then check the figures for the age-varying variables, determine the categories for age
+  # Run the iterations for Aalen assumption checks stratified by age group
 
 
 # Function to resolve a conflict between {survey} and {tableone} -------------------------------------------------------
@@ -58,18 +63,18 @@ assignInNamespace("svyQuant", svyQuant_alt, ns = "tableone")
 # Table 1: Participant characteristics -----------------------------------------------------------------------------------------------  
 
 # specify the variables to be included in the table
-all_vars <- c("female2", "yrs_followup",  "bl_age", "alc_daily_g", "alc5","smk4", "bmi4", "phy3", "race4", "income5", "married2", "PsyDistr3")
+all_vars <- c("female2", "yrs_followup",  "bl_age", "alc_daily_g", "alc5","smk4", "bmi4", "phy3", "race4", "income5", "married2", "PsyDistr3", "health5")
 
 
 # Table 1_v1: Stratified by education *************************************************************************************
 # Raw Data
-CreateTableOne(vars= all_vars, strata= "edu3", addOverall = TRUE, data=nhis) %>% 
+CreateTableOne(vars = all_vars, strata = "edu3", addOverall = TRUE, data = nhis25_clean) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
   write.csv(paste0(output, "Table1_v1 Demographics by education.csv"))
 
 
 # Survey adjusted Data
-svyCreateTableOne(vars= all_vars, strata= "edu3", addOverall = TRUE, data=nhis_svy) %>% 
+svyCreateTableOne(vars = all_vars, strata = "edu3", addOverall = TRUE, data = nhis25_clean_svy) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
   write.csv(paste0(output, "Table1_v1_svy Demographics by education.csv"))
 
@@ -77,20 +82,20 @@ svyCreateTableOne(vars= all_vars, strata= "edu3", addOverall = TRUE, data=nhis_s
   
 # Table 1_v2: Stratified by education and sex  *****************************************************************************
 # Raw Data
-CreateTableOne(vars= all_vars, strata= c("edu3", "female2"), addOverall = TRUE, data=nhis) %>%
+CreateTableOne(vars = all_vars, strata = c("edu3", "female2"), addOverall = TRUE, data = nhis25_clean) %>%
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
   write.csv(paste0(output, "Table1_v2 Demographics by education, sex.csv"))
  
 
 # Survey adjusted Data
-svyCreateTableOne(vars= all_vars, strata= c("edu3", "female2"), addOverall = TRUE, data=nhis_svy) %>%
+svyCreateTableOne(vars = all_vars, strata = c("edu3", "female2"), addOverall = TRUE, data = nhis25_clean_svy) %>%
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
   write.csv(paste0(output, "Table1_v2_svy Demographics by education, sex.csv"))
   
   
   
 # Table 1_v3: Stratified by education and age group ***************************************************************
-CreateTableOne(vars= all_vars, strata= c("edu3", "age_group"), addOverall = TRUE, data=nhis) %>%
+CreateTableOne(vars = all_vars, strata = c("edu3", "age_group"), addOverall = TRUE, data = nhis25_clean) %>%
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v3 Demographics by education, age group.csv"))
   
@@ -99,34 +104,34 @@ CreateTableOne(vars= all_vars, strata= c("edu3", "age_group"), addOverall = TRUE
 #   The data frame does not have: age_group  Dropped
 
 # Survey adjusted Data
-svyCreateTableOne(vars= all_vars, strata= c("edu3", "age_group"), addOverall = TRUE, data=nhis_svy) %>%
+svyCreateTableOne(vars = all_vars, strata = c("edu3", "age_group"), addOverall = TRUE, data = nhis25_clean_svy) %>%
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v3_svy Demographics by education, age group.csv"))
   
   
     
 # Table 1_v4: Stratified by income  ***********************************************************************************
-CreateTableOne(vars= all_vars, strata= c("income5"), addOverall = TRUE, data=nhis) %>% 
+CreateTableOne(vars = all_vars, strata = c("income5"), addOverall = TRUE, data = nhis18_clean) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v4 Demographics by income.csv"))
   
 ?tableone::print.TableOne
 
 # Survey adjusted Data
-svyCreateTableOne(vars= all_vars, strata= c("income5"), addOverall = TRUE, data=nhis_svy) %>% 
+svyCreateTableOne(vars = all_vars, strata = c("income5"), addOverall = TRUE, data = nhis18_clean_svy) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v4_svy Demographics by income.csv"))
   
   
   
 # Table 1_v5: Stratified by ethnicity  ********************************************************************************
-CreateTableOne(vars= all_vars, strata= c("race4"), addOverall = TRUE, data=nhis) %>% 
+CreateTableOne(vars = all_vars, strata = c("race4"), addOverall = TRUE, data = nhis18_clean_svy) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v5 Demographics by race.csv"))
   
 
 # Survey adjusted Data
-svyCreateTableOne(vars= all_vars, strata= c("race4"), addOverall = TRUE, data=nhis_svy) %>% 
+svyCreateTableOne(vars = all_vars, strata = c("race4"), addOverall = TRUE, data = nhis18_clean_svy) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>% 
   write.csv(paste0(output, "Table1_v5_svy Demographics by race.csv"))
 
@@ -191,6 +196,7 @@ strata_rate <- function(data, death_list, strata){
   return(rate)
 }
 
+
 # Survey-adjusted Function to calculate death rate overall and for each strata to create Table 2
 overall_rate_svy <- function(design, death_list){  
   
@@ -230,6 +236,8 @@ overall_rate_svy <- function(design, death_list){
   final <- do.call(rbind, final)
   return(final)
 }
+
+
 strata_rate_svy <- function(design, death_list, strata){  
   
   combined<-list()
@@ -269,49 +277,43 @@ strata_rate_svy <- function(design, death_list, strata){
   return(combined)
 }
 
-overall_rate_svy(nhis_svy, death_list)
 
 
 # Causes of death *********************************************************************************************************************
 # Specify the causes of death (to be used below)
-death_list <- c("allcause_death", "alc_death", "despair_death", "vehicle_death", "accident_death", 
-                "AUD_death", "self_harm_death", "liver_death", "diabetes_death", "IHD_death", 
-                "stroke_death", "hyperten_death", "poisoning_death", "other_death")
-
-#Temporary list:
-death_list <- c("allcause_death", "heart_death", "cancer_death")
-
+death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OUI_death", "ISH_death",
+                "AUD_death", "LDAC_death", "DM_death", "IHD_death", "IS_death", "HHD_death", "Poisoning_death")
 
 # Table 2 - Overall frequency and rate of death
-overall_rate(nhis, death_list) %>%  write.csv(paste0(output, "Table2 Deaths overall, sex.csv"), row.names=FALSE, na="")
-overall_rate_svy(nhis_svy, death_list) %>% write.csv(paste0(output, "Table2_svy Deaths overall, sex.csv"), row.names=FALSE, na="")
+overall_rate(nhis18_clean, death_list) %>%  write.csv(paste0(output, "Table2 Deaths overall, sex.csv"), row.names=FALSE, na="")
+overall_rate_svy(nhis18_clean_svy, death_list) %>% write.csv(paste0(output, "Table2_svy Deaths overall, sex.csv"), row.names=FALSE, na="")
   
 
 # Table 2_v1: Stratified by education
-strata_rate(nhis, death_list, "edu3") %>% write.csv(paste0(output, "Table2_v1 Deaths by education.csv"), row.names=FALSE, na="")
-strata_rate_svy(nhis_svy, death_list, "edu3") %>% write.csv(paste0(output, "Table2_v1_svy Deaths by education.csv"), row.names=FALSE, na="")
+strata_rate(nhis25_clean, death_list, "edu3") %>% write.csv(paste0(output, "Table2_v1 Deaths by education.csv"), row.names=FALSE, na="")
+strata_rate_svy(nhis25_clean_svy, death_list, "edu3") %>% write.csv(paste0(output, "Table2_v1_svy Deaths by education.csv"), row.names=FALSE, na="")
 
 
 # Table 2_v2: Stratified by education and sex
-strata_rate(nhis, death_list, "edu3+female2") %>% write.csv(paste0(output, "Table2_v2 Deaths by education, sex.csv"), row.names=FALSE, na="")
-strata_rate_svy(nhis_svy, death_list, "edu_sex") %>% write.csv(paste0(output, "Table2_v2_svy Deaths by education, sex.csv"), row.names=FALSE, na="")
+strata_rate(nhis25_clean, death_list, "edu3+female2") %>% write.csv(paste0(output, "Table2_v2 Deaths by education, sex.csv"), row.names=FALSE, na="")
+strata_rate_svy(nhis25_clean_svy, death_list, "edu_sex") %>% write.csv(paste0(output, "Table2_v2_svy Deaths by education, sex.csv"), row.names=FALSE, na="")
 
 
 # age_group needs to be defined first
 
-# Table 2_v3: Stratified by education and age group
-strata_rate(nhis, death_list, "edu3+age_group") %>% write.csv(paste0(output, "Table2_v3 Deaths by education, age group.csv"), row.names=FALSE, na="")
-strata_rate_svy(nhis_svy, death_list, "edu3+age_group") %>% write.csv(paste0(output, "Table2_v3_svy Deaths by education, age group.csv"), row.names=FALSE, na="")
+# Table 2_v3: Stratified by education and age group (age group needs to be defined first)
+strata_rate(nhis25_clean, death_list, "edu3+age_group") %>% write.csv(paste0(output, "Table2_v3 Deaths by education, age group.csv"), row.names=FALSE, na="")
+strata_rate_svy(nhis25_clean_svy, death_list, "edu3+age_group") %>% write.csv(paste0(output, "Table2_v3_svy Deaths by education, age group.csv"), row.names=FALSE, na="")
 
 
 # Table 2_v4: Stratified by income
-strata_rate(nhis, death_list, "income5") %>% write.csv(paste0(output, "Table2_v4 Deaths by income.csv"), row.names=FALSE, na="")
-strata_rate_svy(nhis_svy, death_list, "income5") %>% write.csv(paste0(output, "Table2_v4_svy Deaths by income.csv"), row.names=FALSE, na="")
+strata_rate(nhis18_clean, death_list, "income5") %>% write.csv(paste0(output, "Table2_v4 Deaths by income.csv"), row.names=FALSE, na="")
+strata_rate_svy(nhis18_clean_svy, death_list, "income5") %>% write.csv(paste0(output, "Table2_v4_svy Deaths by income.csv"), row.names=FALSE, na="")
 
 
 # Table 2_v5: Stratified by ethnicity
-strata_rate(nhis, death_list, "race4") %>% write.csv(paste0(output, "Table2_v5 Deaths by race.csv"), row.names=FALSE, na="")
-strata_rate_svy(nhis_svy, death_list, "race4") %>% write.csv(paste0(output, "Table2_v5_svy Deaths by race.csv"), row.names=FALSE, na="")
+strata_rate(nhis18_clean, death_list, "race4") %>% write.csv(paste0(output, "Table2_v5 Deaths by race.csv"), row.names=FALSE, na="")
+strata_rate_svy(nhis18_clean_svy, death_list, "race4") %>% write.csv(paste0(output, "Table2_v5_svy Deaths by race.csv"), row.names=FALSE, na="")
 
 
 
