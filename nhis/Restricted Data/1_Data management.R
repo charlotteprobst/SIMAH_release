@@ -11,9 +11,6 @@ library(srvyr)      # adds dplyr like syntax to the survey package
 
 
 # Specify the data file location
-# Klajdi's 
-# data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
-# data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 
 # Yachen's 
 data_orig <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Original data/"
