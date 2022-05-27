@@ -390,15 +390,10 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     UCOD_358_n = as.numeric(UCOD_358),
     
     MVA_Recode_358 = ifelse(UCOD_358_n %in% 385:397, 1, 0), # perfect
-    # OUI_Recode_358 = ifelse(UCOD_358_n %in% c(398:423), 1, 0), # imperfect
-    ISH_Recode_358 = ifelse(UCOD_358_n %in% 424:431, 1, 0), # looks perfect
-    # AUD_Recode_358 = ifelse(UCOD_358_n %in% c(178, 194, 421, 444), 1, 0),  # imperfect
-    # LDAC_Recode_358 = ifelse(UCOD_358_n %in% 298:301, 1, 0), # imperfect
+    ISH_Recode_358 = ifelse(UCOD_358_n %in% 424:431, 1, 0), # includes a 'U03' code that is unexpected, may double check using ISH_Recode_113
     DM_Recode_358 = ifelse(UCOD_358_n == 159, 1, 0), # perfect
     IHD_Recode_358 = ifelse(UCOD_358_n %in% 210:215, 1, 0), # perfect
-    # IS_Recode_358 = ifelse(UCOD_358_n %in% c(192, 237, 239), 1, 0), # imperfect
     HHD_Recode_358 = ifelse(UCOD_358_n == 207, 1, 0), # perfect
-    # Poisoning_Recode_358 = ifelse(UCOD_358_n %in% c(420, 443, 454), 1, 0), # imperfect
     
     
     # ICD-10 Underlying Cause of Death 113 Groups Recode
@@ -406,15 +401,10 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     UCOD_113_n = as.numeric(UCOD_113),
     
     MVA_Recode_113 = ifelse(UCOD_113_n == 114, 1, 0), # perfect
-    OUI_Recode_113 = ifelse(UCOD_113_n %in% c(115:123, 135), 1, 0), # imperfect
     ISH_Recode_113 = ifelse(UCOD_113_n %in% 124:126, 1, 0), # perfect
-    # imperfect for AUD
-    LDAC_Recode_113 = ifelse(UCOD_113_n %in% 93:95, 1, 0), # imperfect
     DM_Recode_113 = ifelse(UCOD_113_n == 46, 1, 0), # perfect
     IHD_Recode_113 = ifelse(UCOD_113_n %in% 58:63, 1, 0), # perfect
-    IS_Recode_113 = ifelse(UCOD_113_n == 70, 1, 0), # imperfect
     HHD_Recode_113 = ifelse(UCOD_113_n == 56, 1, 0) # perfect
-    # imperfect for poisoning
     
     ) %>%    
     
@@ -423,8 +413,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
   select (PUBLICID, new_weight, new_psu, new_stratum,
           srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
           
-          # allcause_death, 
-          # UCOD_113, UCOD_358, 
+          UCOD_113, UCOD_358, 
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
           All9_death, Alcohol_death, Despair_death,
           
@@ -433,8 +422,6 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
           
           MVA_Recode_113, OUI_Recode_113, ISH_Recode_113, LDAC_Recode_113, DM_Recode_113, 
           IHD_Recode_113, IS_Recode_113, HHD_Recode_113, 
-          
-          # heart_death, cancer_death, accident_death,
           
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
           female, female2, married, married2, race, race4, edu_sex,
@@ -475,7 +462,6 @@ nhis18_clean <- nhis %>%
   # Remove those outside our age range:
   filter(bl_age >= 18) %>% # update the age range for the current analysis
   # Remove those with missing data:
-  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
   filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 # When age >= 25
@@ -483,7 +469,6 @@ nhis25_clean <- nhis %>%
   # Remove those outside our age range:
   filter(bl_age >= 25) %>% # for sub-analyses with education as the exposure
   # Remove those with missing data:
-  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
   filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 
