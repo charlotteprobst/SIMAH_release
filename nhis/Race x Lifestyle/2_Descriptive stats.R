@@ -67,7 +67,8 @@ nhis %>% filter (ethnicity.factor == "Other") %>%
   mutate (perc = round(n / sum(n) *100 ,0))
 
 
-# Figure 2a: Survival plot 
+
+# Figure 2: Survival plot 
 ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis), 
   data=nhis, facet.by="female.factor", censor = FALSE,xlim = c(18, 100), 
   conf.int = TRUE, 
@@ -75,12 +76,12 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity
   ylab = "Overall survival probability")
 
       # Age Medium Survival:
-      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity, data = nhis)
-      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity, data = nhis_female)
-      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity, data = nhis_male)
+      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis)
+      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis_female)
+      survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis_male)
 
       
-# Figure 2b: Survival plot 
+# eFigure 1: Survival plot 
 ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity_detail, data = nhis), 
   data=nhis, facet.by="female.factor", censor = FALSE,xlim = c(18, 100), 
   conf.int = TRUE, 
