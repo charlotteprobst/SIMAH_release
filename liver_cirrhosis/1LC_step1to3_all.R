@@ -100,7 +100,7 @@ predict(LTA.quad, c(150,150^2), transf=exp)
 step2 <- step1to3 %>%
   filter(ref.nonzero==0 & dose != 0.00)
 
-dim(table(a.female$study))
+dim(table(step2$study))
 
 ####LINEAR REGRESSION
 
