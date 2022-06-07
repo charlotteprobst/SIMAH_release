@@ -63,7 +63,7 @@ CirrhosisHeavyUse <- function(data,lhsSample,sex){
                                                      data$Cirrhosis_risk==1,
                                                    BETA_FORMER_DRINKERS_WOMEN,1))))
     # modify the risk of former drinkers depending on how many years since they drank
-    decay_length=8
+    decay_length= as.numeric(lhsSample["DECAY_LENGTH"])
     decay_speed=as.numeric(lhsSample["DECAY_SPEED"])
     t=0:100
     risk_multiplier=1-exp(-(1/decay_speed)*(decay_length-t))
@@ -76,7 +76,6 @@ CirrhosisHeavyUse <- function(data,lhsSample,sex){
     data$RRHeavyUse <- ifelse(data$formerdrinker==1, data$RRHeavyUse*data$risk_multiplier,
                               data$RRHeavyUse)
     data$RRHeavyUse <- ifelse(data$RRHeavyUse<1, 1, data$RRHeavyUse)
-    # data$RRHeavyUse <- ifelse(data$RRHeavyUse>50, 50, data$RRHeavyUse)
     data <- data %>% dplyr::select(-c(risk_multiplier,gpd))
     return(data)
   }
@@ -161,8 +160,7 @@ MetabolicPathway <- function(data,lhsSample,sex){
   data$newgpdsqrt <- NULL
   data$newgpd2 <- NULL
   data$newgpd3 <- NULL
-  data$RRMetabolic <- ifelse(data$RRMetabolic<0, 0, 
-                             ifelse(data$RRMetabolic>50, 50, data$RRMetabolic))
+  data$RRMetabolic <- ifelse(data$RRMetabolic<0, 0,data$RRMetabolic)
   data$RRMetabolic <- exp(data$RRMetabolic)
   return(data)
 }
