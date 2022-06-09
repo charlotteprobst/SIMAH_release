@@ -182,16 +182,16 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
   }   
 }
 
+# Test the function:
+# death_list <- "heart_death" # specify cause of death for testing
+# nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
+# table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
+# table4to9(nhis_male, nhis_male_svy, death_list, edu3, alc5, "table4a")
 
 
 # Specify the causes of death (to be used below)
 death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OUI_death", "ISH_death",
                 "AUD_death", "LDAC_death", "DM_death", "IHD_death", "IS_death", "HHD_death", "Poisoning_death")
-# Test the function:
-death_list <- "heart_death" # specify cause of death for testing
-nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
-table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
-table4to9(nhis_male, nhis_male_svy, death_list, edu3, alc5, "table4a")
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
