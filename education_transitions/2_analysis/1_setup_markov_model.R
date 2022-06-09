@@ -43,11 +43,12 @@ run_markov_model_baseline <- function(data){
               c(0, 0, 0.5, 0.5, 0),
               c(0, 0, 0, 0.5, 0.5),
               c(0, 0, 0, 0, 0.5))
+  data$racefinal2 <- ifelse(data$racefinal2=="Native", "other",data$racefinal2)
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T)) 
   model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                        center=FALSE,
-                       covariates=~agescaled + agesqscaled + sex*racefinal2)
+                       covariates=~agescaled + agesqscaled + sex + racefinal2)
   return(model)
 }
 
@@ -58,21 +59,24 @@ run_markov_model_parent <- function(data){
               c(0, 0, 0.5, 0.5, 0),
               c(0, 0, 0, 0.5, 0.5),
               c(0, 0, 0, 0, 0.5))
+  data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T)) 
   model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                center=FALSE,
-               covariates=~agescaled + agesqscaled + sex*racefinal2 + oneCollegeplus)
+               covariates=~agescaled + agesqscaled + sex + racefinal2*oneCollegeplus)
   return(model)
   
 }
 
-extract_coefficients <- function(model){
+extract_coefficients <- function(model, type, timeperiod, data){
   dat <- print(model)
   if(length(dat)>1){
   dat <- t(dat)
   dat <- data.frame(dat)
   dat$names <- row.names(dat)
+  origsample <- length(unique(data$uniqueID))
+  expandedsample <- length(unique(data$newID))
   dat <- dat %>% 
     mutate(Type = ifelse(grepl("Estimate",names),"Estimate",
                          ifelse(grepl(".L", names), "Lower",
@@ -91,9 +95,45 @@ extract_coefficients <- function(model){
     pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College")) %>% 
     pivot_longer(`LEHS->LEHS_Estimate`:`SomeC3->College_Upper`) %>% 
     separate(name, into=c("Transition","Type"),sep="_") %>% 
-    filter(Type=="Estimate")
+    filter(Variable!="agescaled") %>% filter(Variable!="agesqscaled") %>% 
+    filter(Variable!="base") %>% drop_na() %>%
+    mutate(model = type, time = timeperiod) %>%
+    pivot_wider(names_from=Type, values_from=value) %>%
+    group_by(Variable, Transition, model, time) %>%
+    mutate(SE = (log(Upper) - log(Lower)) / 3.92,
+      SD = SE * sqrt(expandedsample),
+      newSE = SD / sqrt(origsample), 
+      newLower = log(Estimate) - (newSE * 1.96),
+      newUpper = log(Estimate) + (newSE * 1.96),
+      newLower = round(exp(newLower), digits=2),
+      newUpper = round(exp(newUpper), digits=2),
+      newUpper = ifelse(newUpper>100, 100, newUpper))
   }
   return(dat)
+}
+
+bind_imputations <- function(coefs){
+  for(i in 1:length(coefs)){
+    coefs[[paste(i)]]$imp <- i
+  }
+ coefs <- coefs %>% bind_rows() %>% 
+   mutate(SE2 = newSE^2) %>% 
+    group_by(Variable, Transition, model, time) %>% 
+    mutate(PooledEstimate = round(mean(Estimate),2),
+           Vw = 1/20*(sum(SE2)),
+           diffsq = ((Estimate-PooledEstimate)^2),
+           Vb = (1/19)*sum(diffsq),
+           Vtotal  = Vw + Vb + (Vb/20),
+           SEpooled = sqrt(Vtotal)) %>% ungroup() %>% 
+   group_by(Variable, Transition, model, time) %>% 
+   summarise(Estimate = round(mean(Estimate),digits=2),
+             oldLower = round(mean(Lower),digits=2),
+             oldUpper = round(mean(Upper),digits=2),
+             NewLower = round(exp(log(Estimate) - (1.96*SEpooled)),digits=2),
+             NewUpper = round(exp(log(Estimate) + (1.96*SEpooled)),digits=2)) %>% 
+   distinct()
+
+ return(coefs)
 }
 
 extract_covariance <- function(model, type){

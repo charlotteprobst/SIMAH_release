@@ -70,9 +70,11 @@ data <- read_rds("SIMAH_workplace/reweighted_PSID_imp_list.RDS")
 
 # setup the datasets for both time periods
 
-datat1 <- lapply(dataList, setup_markov_model, y=2009)
-datat2 <- lapply(dataList, setup_markov_model, y=2011)
+datat1 <- lapply(data, setup_markov_model, y=2009)
+datat2 <- lapply(data, setup_markov_model, y=2011)
 
+saveRDS(datat1, "SIMAH_workplace/education_transitions/datat1.RDS")
+saveRDS(datat2, "SIMAH_workplace/education_transitions/datat2.RDS")
 
 # who in the data transitions backwards, i.e. education gets lower - not allowed
 # initQt1 <- list()
@@ -82,37 +84,24 @@ datat2 <- lapply(dataList, setup_markov_model, y=2011)
 #   initQt2[[paste(i)]] <- crudeinits.msm(educNUM~year, newID, data=datat2[[paste(i)]], qmatrix=Q)
 # }
 
+
+datat1 <- read_rds("SIMAH_workplace/education_transitions/datat1.RDS")
+datat2 <- read_rds("SIMAH_workplace/education_transitions/datat2.RDS")
+
+# specify baseline models 
 modelst1_baseline <- lapply(datat1, run_markov_model_baseline)
-saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline.RDS")
+saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline_race.RDS")
+
 modelst2_baseline <- lapply(datat2, run_markov_model_baseline)
-saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline.RDS")
+saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline_race.RDS")
 
-source("SIMAH_code/education_transitions/2_analysis/3_adjust_se.R")
-
-modelst1_baseline <- readRDS("SIMAH_workplace/education_transitions/final_models/t1_baseline.RDS")
-
-datat1 <- data[[1]] %>% filter(imp==1) %>% filter(year<=2009)
-datat2 <- data[[1]] %>% filter(imp==1) %>% filter(year>=2011)
-coefst1_baseline <- adjust_se(modelst1_baseline, datat1) %>% mutate(time="1999-2009")
-coefst2_baseline <- adjust_se(modelst2_baseline, datat2) %>% mutate(time="2011-2019")
-
-coefs_baseline <- rbind(coefst1_baseline, coefst2_baseline)
-write.csv(coefs_baseline, "SIMAH_workplace/education_transitions/final_models/coefs_baseline.csv",
-          row.names=F)
-
+# now add parent as covariate - interacting with race and ethnicity
 modelst1_parent <- lapply(datat1, run_markov_model_parent)
-saveRDS(modelst1_parent, "SIMAH_workplace/education_transitions/final_models/t1_parent.RDS")
+saveRDS(modelst1_parent, "SIMAH_workplace/education_transitions/final_models/t1_parent_race.RDS")
 
 modelst2_parent <- lapply(datat2, run_markov_model_parent)
-saveRDS(modelst2_parent, "SIMAH_workplace/education_transitions/final_models/t2_parent.RDS")
+saveRDS(modelst2_parent, "SIMAH_workplace/education_transitions/final_models/t2_parent_race.RDS")
 
-
-coefst1_parent <- adjust_se(modelst1_parent, datat1[[1]]) %>% mutate(time="1999-2009")
-coefst2_parent <- adjust_se(modelst2_parent, datat2[[1]]) %>% mutate(time="2011-2019")
-
-coefs_parent <- rbind(coefst1_parent, coefst2_parent)
-write.csv(coefs_baseline, "SIMAH_workplace/education_transitions/final_models/coefs_parent.csv",
-          row.names=F)
 
 # calculate AIC for paper 
 
