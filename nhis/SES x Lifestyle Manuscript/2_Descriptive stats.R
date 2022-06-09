@@ -21,11 +21,11 @@ data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Proces
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Lifestyle/Output/"      # Location of figures/tables
 
 
-# Load data (participants aged 25-85 years)
-nhis_all    <- readRDS (paste0(data, "nhis_all25_85.rds"))
-nhis        <- readRDS (paste0(data, "nhis25_85.rds"))
-nhis_male   <- filter(nhis, female==0)
-nhis_female <- filter(nhis, female==1)
+# Load data
+nhis_all    <- readRDS (paste0(data, "nhis_all.rds"))
+nhis        <- readRDS (paste0(data, "nhis.rds"))
+nhis_male   <- readRDS (paste0(data, "nhis_male.rds"))
+nhis_female <- readRDS (paste0(data, "nhis_female.rds"))
 
 
 
