@@ -22,12 +22,11 @@ options(scipen=999)
 data_path    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 output_tables <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
 output_models <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
-output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/
+output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Assumptions/"
 
 
 # Load all data all at once
 load("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
-
 
 
 ## Create functions and specify causes of death ------------------------------------------------------------------------------------------
@@ -89,21 +88,21 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
       
         
         # Aalen Interaction model
-        cat("    Aalen Interaction model in progress", "\n")  
-        aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
-        cat("    Completed", "\n")  
+        # cat("    Aalen Interaction model in progress", "\n")  
+        # aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        # cat("    Completed", "\n")  
         
         # Aalen joint effects model
-        cat("    Aalen Joint effects model in progress", "\n")  
-        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data) # robust = 0 to remove the 2 tests for age-varying effects
-        cat("    Completed", "\n")  
+        # cat("    Aalen Joint effects model in progress", "\n")
+        # aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data) # robust = 0 to remove the 2 tests for age-varying effects
+        # cat("    Completed", "\n")
         
         # Save model results 
         saveRDS(cox_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
         saveRDS(cox_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint.rds"))
-        saveRDS(aalen_int,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
-        saveRDS(aalen_joint,paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
-        
+        # saveRDS(aalen_int,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
+        # saveRDS(aalen_joint,paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
+        # 
         # Save assumption plot for Cox model
         pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int), col = "red"); dev.off()   
         
@@ -135,50 +134,50 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                 HR_CI = paste0(estimate, " (",conf.low,", ", conf.high, ")")) %>%
          select(variable, HR_CI, p.value_HR) %>%
          filter(str_detect(variable, "SES")) %>%
-         mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>%
+         mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>% 
          add_row(variable = "JOINT MODELS", .before=1)
 
-   
-    aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
-          mutate (variable = rownames(.),
-                  var = V2,
-                  p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
-                  p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-                  lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
-                  upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-                  estimate_10000py = round(estimate*10000, 1),
-                  Deaths_CI_10000py = paste0(estimate_10000py, " (",lower.ci,", ", upper.ci, ")")) %>%
-          select (variable, Deaths_CI_10000py, p.value_Deaths) %>%
-          filter(str_detect(variable, "SES|lifestyle")) %>%
-          mutate(variable = str_remove(variable, fixed("const(SES)")),
-                variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
-          add_row(variable = "INTERACTION MODELS", .before=1)%>%
-          remove_rownames()
-    
-    
-    aalen_joint_results <- as.data.frame(cbind(aalen_joint$gamma, diag(aalen_joint$robvar.gamma))) %>%
-          mutate (variable = rownames(.),
-                  var = V2,
-                  p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
-                  p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-                  lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1), 
-                  upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-                  estimate_10000 = round(estimate*10000, 1),
-                  Deaths_CI_10000py = paste0(estimate_10000, " (",lower.ci,", ", upper.ci, ")")) %>%
-          select (variable, Deaths_CI_10000py, p.value_Deaths) %>%
-          filter(str_detect(variable, "SES")) %>% 
-          mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
-          add_row(variable = "JOINT MODELS", .before=1) %>%
-          remove_rownames() 
+    # 
+    # aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
+    #       mutate (variable = rownames(.),
+    #               var = V2,
+    #               p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+    #               p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
+    #               lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
+    #               upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
+    #               estimate_10000py = round(estimate*10000, 1),
+    #               Deaths_CI_10000py = paste0(estimate_10000py, " (",lower.ci,", ", upper.ci, ")")) %>%
+    #       select (variable, Deaths_CI_10000py, p.value_Deaths) %>%
+    #       filter(str_detect(variable, "SES|lifestyle")) %>%
+    #       mutate(variable = str_remove(variable, fixed("const(SES)")),
+    #             variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
+    #       add_row(variable = "INTERACTION MODELS", .before=1)%>%
+    #       remove_rownames()
+    # 
+    # 
+    # aalen_joint_results <- as.data.frame(cbind(aalen_joint$gamma, diag(aalen_joint$robvar.gamma))) %>%
+    #       mutate (variable = rownames(.),
+    #               var = V2,
+    #               p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+    #               p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
+    #               lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1), 
+    #               upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
+    #               estimate_10000 = round(estimate*10000, 1),
+    #               Deaths_CI_10000py = paste0(estimate_10000, " (",lower.ci,", ", upper.ci, ")")) %>%
+    #       select (variable, Deaths_CI_10000py, p.value_Deaths) %>%
+    #       filter(str_detect(variable, "SES")) %>% 
+    #       mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
+    #       add_row(variable = "JOINT MODELS", .before=1) %>%
+    #       remove_rownames() 
 
     
     cox_results   <- rbind(cox_int_results, cox_joint_results)
-    aalen_results <- rbind(aalen_int_results, aalen_joint_results)
-    
-    results <- full_join(cox_results, aalen_results, by="variable") %>%
-      add_row(variable = death_name, .before=1) 
+    # aalen_results <- rbind(aalen_int_results, aalen_joint_results)
+    # 
+    # results <- full_join(cox_results, aalen_results, by="variable") %>%
+      # add_row(variable = death_name, .before=1) 
   
-    write_csv(results, paste0(output_tables, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".csv"), na="")
+    write_csv(cox_results, paste0(output_tables, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".csv"), na="")
     cat("    Results were exported", "\n")  # progress indicator
   }   
 }
@@ -188,7 +187,11 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 # Specify the causes of death (to be used below)
 death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OUI_death", "ISH_death",
                 "AUD_death", "LDAC_death", "DM_death", "IHD_death", "IS_death", "HHD_death", "Poisoning_death")
-
+# Test the function:
+death_list <- "heart_death" # specify cause of death for testing
+nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
+table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
+table4to9(nhis_male, nhis_male_svy, death_list, edu3, alc5, "table4a")
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
@@ -198,13 +201,15 @@ table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # M
 
 # data, design, deaths_list, SES, lifestyle, table_label
 
-# **NOTE**: Need to change to code for this so that the start time and end time is specified
+# **NOTE**: Need to change to code for this so that the start age and end age is specified
 # table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
 # table4to9(nhis_fem.age.gp2,  death_list, edu3, alc5, "table4a") # Females, age group 2
 # table4to9(nhis_fem.age.gp3,  death_list, edu3, alc5, "table4a") # Females, age group 3
 # table4to9(nhis_male.age.gp1, death_list, edu3, alc5, "table4a") # Males, age group 1
 # table4to9(nhis_male.age.gp2, death_list, edu3, alc5, "table4a") # Males, age group 2
 # table4to9(nhis_male.age.gp3, death_list, edu3, alc5, "table4a") # Males, age group 3
+
+nhis_fem.white <- nhis25_female %>% filter(race == "white")
 
 table4to9(nhis_fem.white, death_list, edu3, alc5, "table4a") # Females, white
 table4to9(nhis_fem.black, death_list, edu3, alc5, "table4a") # Females, black
