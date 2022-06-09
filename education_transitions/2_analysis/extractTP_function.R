@@ -1,31 +1,32 @@
 # extract transition probabilities
-extractTP <- function(model,age,sex,race,mapping){
+extractTP <- function(model,combo,mapping){
   probs <- list()
-  for(i in age){
-    for(j in sex){{
-      for(l in race){
-        agescaledvar <- (mapping %>% filter(age==i))$agescaled
-        agesqvar <- (mapping %>% filter(age==i))$agesqscaled
-        probs[[paste(i,j,l)]] <- pmatrix.msm(model, covariates=list(sex=j, agescaled=agescaledvar,
+  for(i in 1:nrow(combo)){
+    selectedage <- combo$age[i]
+    selectedsex <- combo$sex[i]
+    selectedrace <- combo$racefinal2[i]
+    selectedcollege <- combo$oneCollegeplus[i]
+    agescaledvar <- (mapping %>% filter(age==selectedage))$agescaled
+    agesqvar <- (mapping %>% filter(age==selectedage))$agesqscaled
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(sex=selectedsex, agescaled=agescaledvar,
                                                                     agesqscaled=agesqvar,
-                                                                    racefinal=paste(l)))
-        probs[[paste(i,j,l)]] <- data.frame(unclass(probs[[paste(i,j,l)]]))
-        probs[[paste(i,j,l)]]$StateFrom <- row.names(probs[[paste(i,j,l)]])
-        probs[[paste(i,j,l)]] <- probs[[paste(i,j,l)]] %>% pivot_longer(cols=State.1:State.5,
+                                                                    racefinal2=selectedrace,
+                                                            oneCollegeplus = selectedcollege))
+        probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
+        probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
+        probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,
                                                                         names_to="StateTo", values_to="prob") %>% 
           mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
                                      endsWith(StateTo,"2") ~ "State 2",
                                      endsWith(StateTo,"3") ~ "State 3",
                                      endsWith(StateTo,"4") ~ "State 4",
                                      endsWith(StateTo,"5") ~ "State 5")) %>% 
-          mutate(age=i,
-                 sex=j,
-                 racefinal=l)
+          mutate(age=selectedage,
+                 sex=selectedsex,
+                 racefinal=selectedrace,
+                 oneCollegeplus = selectedcollege)
         
       }
-    }
-    }
-  }
   probs <- do.call(rbind,probs)
   probs <- probs  %>% mutate(Transition1 = ifelse(StateFrom=="State 1","LEHS",
                                                   ifelse(StateFrom=="State 2","SomeC1",
