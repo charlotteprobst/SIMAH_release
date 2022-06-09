@@ -209,7 +209,7 @@ table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # M
 # table4to9(nhis_male.age.gp2, death_list, edu3, alc5, "table4a") # Males, age group 2
 # table4to9(nhis_male.age.gp3, death_list, edu3, alc5, "table4a") # Males, age group 3
 
-nhis_fem.white <- nhis25_female %>% filter(race == "white")
+nhis_fem.white <- nhis25_female %>% filter(race4 == "White")
 
 table4to9(nhis_fem.white, death_list, edu3, alc5, "table4a") # Females, white
 table4to9(nhis_fem.black, death_list, edu3, alc5, "table4a") # Females, black
