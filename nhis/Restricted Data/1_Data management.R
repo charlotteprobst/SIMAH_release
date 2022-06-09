@@ -11,9 +11,6 @@ library(srvyr)      # adds dplyr like syntax to the survey package
 
 
 # Specify the data file location
-# Klajdi's 
-# data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
-# data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 
 # Yachen's 
 data_orig <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Original data/"
@@ -271,7 +268,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     
     
     ## HEALTH STATUS
-    health = PHSTAT, 
+    health = PHSTAT, # self-perceived health
     health = recode(health, `7`=NA_real_, `8`=NA_real_, `9`=NA_real_),  # remove Refused, Not ascertained, Don't know*/
     
     health5 = factor(health,  levels=c(1,2,3,4,5), labels=c("Excellent", "Very good", "Good", "Fair", "Poor")),
@@ -384,16 +381,27 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     Alcohol_death = MVA_death + OUI_death + ISH_death + AUD_death + LDAC_death,
     Despair_death = ISH_death + (icd10_alpha == "K" & icd10_num1 %in% c(70, 73:74)) + Poisoning_death,
     
-    MVA_Recode_icd358 = ifelse(UCOD_358 %in% 385:397, 1, 0), # perfect
-    OUI_Recode_icd358 = ifelse(UCOD_358 %in% c(398:423), 1, 0), # imperfect
-    ISH_Recode_icd358 = ifelse(UCOD_358 %in% 424:431, 1, 0), # looks perfect
-    AUD_Recode_icd358 = ifelse(UCOD_358 %in% c(178, 194, 421, 444), 1, 0),  # imperfect
-    LDAC_Recode_icd358 = ifelse(UCOD_358 %in% 298:301, 1, 0), # imperfect
-    DM_Recode_icd358 = ifelse(UCOD_358 == 159, 1, 0), # perfect
-    IHD_Recode_icd358 = ifelse(UCOD_358 %in% 210:215, 1, 0), # perfect
-    IS_Recode_icd358 = ifelse(UCOD_358 %in% c(192, 237, 239), 1, 0), # imperfect
-    HHD_Recode_icd358 = ifelse(UCOD_358 == 207, 1, 0), # perfect
-    Poisoning_Recode_icd358 = ifelse(UCOD_358 %in% c(420, 443, 454), 1, 0) # imperfect
+    
+    # ICD-10 Underlying Cause of Death 358 Groups Recode
+    
+    UCOD_358_n = as.numeric(UCOD_358),
+    
+    MVA_Recode_358 = ifelse(UCOD_358_n %in% 385:397, 1, 0), # perfect
+    ISH_Recode_358 = ifelse(UCOD_358_n %in% 424:431, 1, 0), # includes a 'U03' code that is unexpected, may double check using ISH_Recode_113
+    DM_Recode_358 = ifelse(UCOD_358_n == 159, 1, 0), # perfect
+    IHD_Recode_358 = ifelse(UCOD_358_n %in% 210:215, 1, 0), # perfect
+    HHD_Recode_358 = ifelse(UCOD_358_n == 207, 1, 0), # perfect
+    
+    
+    # ICD-10 Underlying Cause of Death 113 Groups Recode
+    
+    UCOD_113_n = as.numeric(UCOD_113),
+    
+    MVA_Recode_113 = ifelse(UCOD_113_n == 114, 1, 0), # perfect
+    ISH_Recode_113 = ifelse(UCOD_113_n %in% 124:126, 1, 0), # perfect
+    DM_Recode_113 = ifelse(UCOD_113_n == 46, 1, 0), # perfect
+    IHD_Recode_113 = ifelse(UCOD_113_n %in% 58:63, 1, 0), # perfect
+    HHD_Recode_113 = ifelse(UCOD_113_n == 56, 1, 0) # perfect
     
     ) %>%    
     
@@ -402,21 +410,20 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
   select (PUBLICID, new_weight, new_psu, new_stratum,
           srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
           
-          # allcause_death, 
+          UCOD_113, UCOD_358, 
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
           All9_death, Alcohol_death, Despair_death,
           
-          MVA_Recode_icd358, OUI_Recode_icd358, ISH_Recode_icd358, AUD_Recode_icd358, LDAC_Recode_icd358,
-          DM_Recode_icd358, IHD_Recode_icd358, IS_Recode_icd358, HHD_Recode_icd358, Poisoning_Recode_icd358, 
+          MVA_Recode_358, OUI_Recode_358, ISH_Recode_358, AUD_Recode_358, LDAC_Recode_358,
+          DM_Recode_358, IHD_Recode_358, IS_Recode_358, HHD_Recode_358, Poisoning_Recode_358, 
           
-          # heart_death, cancer_death, accident_death,
+          MVA_Recode_113, OUI_Recode_113, ISH_Recode_113, LDAC_Recode_113, DM_Recode_113, 
+          IHD_Recode_113, IS_Recode_113, HHD_Recode_113, 
           
           edu, edu3, alc_daily_g, alcohol6, alcohol5, alcohol4, alc6, alc5, alc4, hed, hed4, smk, smk4, bmi, bmi4, phy, phy3,
           female, female2, married, married2, race, race4, edu_sex,
           income, income_v2, income5, income4, K6scale, PsyDistr, PsyDistr3, 
-          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) # %>%
-
-  # filter(srvy_yr <=2014 & !is.na(new_weight))     # TEMPORARY (for testing purposes)
+          US_born, US_born2, health, health5, hypertension, hypertension2, diabet, diabet3) 
 
 
 
@@ -443,18 +450,30 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
 
 
 # Finalize data set ---------------------------------------------------------------------------------------------------------------
-# Create subset of data with relevant participants     
-nhis_clean <- nhis %>%
+# Create subset of data with relevant participants 
+
+# When age >= 18
+nhis18_clean <- nhis %>%
   # Remove those outside our age range:
-  filter(bl_age>=18) %>% # update the age range for the current analysis
-  
+  filter(bl_age >= 18) %>% # update the age range for the current analysis
   # Remove those with missing data:
-  # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
+
+# When age >= 25
+nhis25_clean <- nhis %>%
+  # Remove those outside our age range:
+  filter(bl_age >= 25) %>% # for sub-analyses with education as the exposure
+  # Remove those with missing data:
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
+
+
 
 # Create database specific to males or females
-nhis_female <- filter(nhis_clean, female==1)
-nhis_male <- filter(nhis_clean, female==0)
+nhis18_female <- filter(nhis18_clean, female==1)
+nhis18_male <- filter(nhis18_clean, female==0)
+
+nhis25_female <- filter(nhis25_clean, female==1)
+nhis25_male <- filter(nhis25_clean, female==0)
         
 
 
@@ -473,25 +492,47 @@ nhis_male <- filter(nhis_clean, female==0)
 nhis_svy <- nhis %>%
   as_survey_design(id=new_psu, strata=new_stratum, weights=new_weight, nest = TRUE)
 
-nhis_clean_svy <- nhis_svy %>%
-  filter(bl_age>=18) %>%
+nhis18_clean_svy <- nhis_svy %>%
+  filter(bl_age >= 18) %>%
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
+
+nhis25_clean_svy <- nhis_svy %>%
+  filter(bl_age >= 25) %>%
   # filter(complete.cases(allcause_death, heart_death, end_age, edu3, alc5, bl_age, female, married, race4))
-  filter(complete.cases(end_age, edu3, alc5, bl_age, female, married, race4))
-
-nhis_female_svy <- filter(nhis_svy, female==1)
-nhis_male_svy <- filter(nhis_svy, female==0)
+  filter(complete.cases(new_weight, end_age, edu3, alc5, bl_age, female, married, race4))
 
 
+nhis18_female_svy <- filter(nhis18_clean_svy, female==1)
+nhis18_male_svy <- filter(nhis18_clean_svy, female==0)
+
+nhis25_female_svy <- filter(nhis25_clean_svy, female==1)
+nhis25_male_svy <- filter(nhis25_clean_svy, female==0)
 
 
         
 # Save copy of final datasets  
 saveRDS(nhis,        paste0(data_new, "nhis_all.rds"))      # NHIS data with all participants
-saveRDS(nhis_clean,  paste0(data_new, "nhis_clean.rds"))    # NHIS data to be analyzed
-saveRDS(nhis_male,   paste0(data_new, "nhis_male.rds"))     # NHIS data to be analyzed (males only)
-saveRDS(nhis_female, paste0(data_new, "nhis_female.rds"))   # NHIS data to be analyzed (females only)
+
+saveRDS(nhis18_clean,  paste0(data_new, "nhis18_clean.rds"))    # NHIS data to be analyzed, age >= 18
+saveRDS(nhis18_male,   paste0(data_new, "nhis18_male.rds"))     # NHIS data to be analyzed (males only)
+saveRDS(nhis18_female, paste0(data_new, "nhis18_female.rds"))   # NHIS data to be analyzed (females only)
+
+saveRDS(nhis25_clean,  paste0(data_new, "nhis25_clean.rds"))    # NHIS data to be analyzed, age >= 25
+saveRDS(nhis25_male,   paste0(data_new, "nhis25_male.rds"))     # NHIS data to be analyzed (males only)
+saveRDS(nhis25_female, paste0(data_new, "nhis25_female.rds"))   # NHIS data to be analyzed (females only)
         
+
+
 saveRDS(nhis_svy,        paste0(data_new, "nhis_all_svy.rds"))      # NHIS_svy data with all participants
-saveRDS(nhis_clean_svy,  paste0(data_new, "nhis_clean_svy.rds"))    # NHIS_svy data to be analyzed
-saveRDS(nhis_male_svy,   paste0(data_new, "nhis_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
-saveRDS(nhis_female_svy, paste0(data_new, "nhis_female_svy.rds"))   # NHIS_svy data to be analyzed (females only)   
+
+saveRDS(nhis18_clean_svy,  paste0(data_new, "nhis18_clean_svy.rds"))    # NHIS_svy data to be analyzed, age >= 18
+saveRDS(nhis18_male_svy,   paste0(data_new, "nhis18_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
+saveRDS(nhis18_female_svy, paste0(data_new, "nhis18_female_svy.rds"))   # NHIS_svy data to be analyzed (females only) 
+
+saveRDS(nhis25_clean_svy,  paste0(data_new, "nhis25_clean_svy.rds"))    # NHIS_svy data to be analyzed, age >= 25
+saveRDS(nhis25_male_svy,   paste0(data_new, "nhis25_male_svy.rds"))     # NHIS_svy data to be analyzed (males only)
+saveRDS(nhis25_female_svy, paste0(data_new, "nhis25_female_svy.rds"))   # NHIS_svy data to be analyzed (females only) 
+
+
+## or directly save the image and then import the .RData the next time
+save.image("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
