@@ -28,13 +28,13 @@ nhis_female <- filter(nhis, female==1)
 
 
 # DESCRIPTIVE STATISTICS 
+
 # Table 1: Participant characteristics - STRATIFIED BY SEX
-tab1 <-CreateTableOne(vars= c("age", "yrs_followup","allcause_death.factor", 
-                              "alcohol5v2.factor","smoking4.factor",  "bmi_cat.factor", "phy_act3.factor",
-                               "edu.factor",  "married.factor"),
-                      factorVars = c("allcause_death.factor",
-                                      "alcohol5v2.factor", "smoking4.factor", "bmi_cat.factor", "phy_act3.factor",
-                                     "edu.factor",  "married.factor"), 
+
+tab1 <-CreateTableOne(vars= c("age", "yrs_followup","allcause_death.factor", "alcohol5v2.factor","smoking4.factor",  
+                               "bmi_cat.factor", "phy_act3.factor", "edu.factor",  "married.factor"), 
+                      factorVars = c("allcause_death.factor",  "alcohol5v2.factor", "smoking4.factor", "bmi_cat.factor", 
+                                      "phy_act3.factor", "edu.factor",  "married.factor"), 
                       strata= c("ethnicity.factor", "female.factor"), addOverall = TRUE, data=nhis)
   table1_v1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE)  # Shows sample size and %
   table1_v2 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") # shows % only
@@ -68,6 +68,31 @@ nhis %>% filter (ethnicity.factor == "Other") %>%
 
 
 
+
+
+# eTable 1: Attrition - Participant characteristics - STRATIFIED BY SEX
+nhis_all_male <- filter(nhis_all, female==0)
+nhis_all_female <- filter(nhis_all, female==1)
+
+all_vars <- c("age", "alcohol5v2.factor","smoking4.factor", "bmi_cat.factor", "phy_act3.factor", "edu.factor",  "married.factor")
+factor_vars <- c("alcohol5v2.factor", "smoking4.factor", "bmi_cat.factor", "phy_act3.factor", "edu.factor",  "married.factor")
+
+
+tab_e1 <-CreateTableOne(all_vars, factor_vars, strata="lost", data=nhis_all_male)
+table_e1 <- print(tab_e1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, smd=TRUE, format="p") # shows % only
+write.csv(table_e1, file = file.path(output, "Table e1 (men) Attrition.csv"))
+kableone(table_e1)
+
+
+tab_e1 <-CreateTableOne(all_vars, factor_vars, strata="lost", data=nhis_all_female)
+table_e1 <- print(tab_e1, noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, smd=TRUE, format="p") # shows % only
+write.csv(table_e1, file = file.path(output, "Table e1 (women) Attrition.csv"))
+kableone(table_e1)
+
+
+
+
+
 # Figure 2: Survival plot 
 ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis), 
   data=nhis, facet.by="female.factor", censor = FALSE,xlim = c(18, 100), 
@@ -94,3 +119,84 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity
       survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity_detail, data = nhis_male)
     
       
+      
+
+# Radar plot
+library(fmsb)
+radar <- nhis %>%
+  mutate(high_risk_drinker = ifelse(alcohol5v2.factor %in% c("Category II", "Category III"), 1, 0),
+         everyday_smoker = ifelse(smoking4.factor %in% c("Current everyday smoker"), 1, 0),
+         sedentary = ifelse(phy_act3.factor %in% c("Sedentary"), 1, 0),
+         obese = ifelse(bmi_cat.factor %in% c("Obese"), 1, 0)) %>%
+  group_by(ethnicity.factor) %>%
+  summarise(across(c(high_risk_drinker, everyday_smoker, sedentary, obese), mean)) %>%
+  mutate (across(-ethnicity.factor, ~ round(.x*100, 0))) 
+
+
+
+custom_radarchart <- function(data, color = "#00AFBB", title = NULL){
+  
+  min <- 0
+  max <- 60
+  data <- data %>%
+    add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
+    add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
+  
+  
+  radarchart(data, axistype = 1,
+            # Customize the polygon
+            pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+            # Customize the grid
+            cglcol = "grey", cglty = 1, cglwd = 0.8,
+            # Customize the axis
+            axislabcol = "grey", 
+            # Variable labels
+            vlcex = 0.9, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
+            caxislabels = seq(0,60,15), title = title)
+}
+
+
+op <- par(mar = c(1, 1, 1, 1))
+par(mfrow=c(2,2))
+
+filter(radar, ethnicity.factor %in% c("Max", "Min", "White")) %>%
+  column_to_rownames(var = "ethnicity.factor") %>%
+  custom_radarchart(title="Non-Hispanic White", color="#00AFBB")
+
+filter(radar, ethnicity.factor %in% c("Max", "Min", "Black")) %>%
+  column_to_rownames(var = "ethnicity.factor") %>% 
+  custom_radarchart(title="Non-Hispanic Black", color="#E7B800")
+
+filter(radar, ethnicity.factor %in% c("Max", "Min", "Hispanic")) %>%
+  column_to_rownames(var = "ethnicity.factor") %>%
+  custom_radarchart(title="Hispanic", color="#FC4E07")
+
+filter(radar, ethnicity.factor %in% c("Max", "Min", "Other")) %>%
+  column_to_rownames(var = "ethnicity.factor") %>%
+  custom_radarchart(title="Non-Hispanic Other", color="#02BF54")
+
+par(mfrow=c(1,1))
+
+
+
+radar %>%
+  pivot_longer(cols = c("high_risk_drinker", "everyday_smoker", "sedentary", "obese"),
+    names_to="lifestyle",
+    values_to = "prevalence") %>% 
+  ggplot(aes(x=lifestyle, y=prevalence, fill=ethnicity.factor)) +
+    geom_bar(stat="identity", width=0.6, position=position_dodge()) +
+    coord_flip() + theme_bw() +
+    scale_fill_manual(values=c('#00AFBB','#E7B800','#FC4E07','#02BF54'))
+    theme(
+      panel.grid.minor.y = element_blank(),
+      panel.grid.major.y = element_blank(),
+      axis.text = element_text( size=10)
+    ) +
+    ylim(0,50) +
+    ylab("Prevalence (%)") +
+    xlab("") 
+
+
+  
+  
+  
