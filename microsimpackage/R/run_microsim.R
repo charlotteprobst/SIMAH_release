@@ -1,6 +1,6 @@
 #' Runs microsimulation
 #'
-#' This function allows you to express your love of cats.
+#' This function runs the mirosimulation
 #' @param 
 #' @keywords microsimulation
 #' @export
@@ -73,21 +73,9 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
                                            labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
                                                     "65-74","75-79")))
 basepop <- subset(basepop, microsim.init.age<=79)
-
-
-
 }
 
-for(i in names(PopPerYear)){
-Summary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.init.age,
-                                                                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
-                                                                      labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
-                                                                               "50-54","55-59","60-64","65-69","70-74","75-79"))) %>%
-  group_by(microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% tally() %>%
-  mutate(year=i, seed=seed)
-}
-
-PopPerYear <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                    samplenum=as.factor(samplenum),
                                                    microsim.init.sex=as.factor(microsim.init.sex),
                                                    microsim.init.race=as.factor(microsim.init.race),
@@ -99,7 +87,6 @@ PopPerYear <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(y
                                                    AlcCAT=as.factor(AlcCAT)) %>%
   group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education, agecat,
            AlcCAT, .drop=FALSE) %>% tally()
-Summary <- do.call(rbind,Summary)
 DeathSummary <- do.call(rbind, DeathSummary)
 Summary <- list(Summary, DeathSummary)
 return(Summary)

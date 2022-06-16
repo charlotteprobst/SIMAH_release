@@ -1,13 +1,16 @@
 # SIMAH project 2022 - script for setting up microsimulation model settings
-
-options(scipen=999)
-
+library(devtools)
+library(roxygen2)
+library(tidyverse)
 # load in R package
 # setwd("SIMAH_code/")
 # press enter when prompted
-install("SIMAH_code/microsimpackage")
+install("SIMAH_code/microsimpackage", dep=T)
+library(microsimpackage)
 
 set.seed(42)
+
+options(scipen=999)
 
 ######################EDIT ONLY BELOW HERE ##################################################
 
@@ -24,7 +27,7 @@ migrationdeaths <- 1
 updatingeducation <- 1
 
 # switch on and off alcohol updates
-updatingalcohol <- 0
+updatingalcohol <- 1
 
 ####################EDIT ONLY ABOVE HERE ##################################################
 
