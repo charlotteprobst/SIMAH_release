@@ -3,7 +3,7 @@ library(devtools)
 library(roxygen2)
 library(tidyverse)
 # load in R package
-# setwd("SIMAH_code/")
+
 # press enter when prompted
 install("SIMAH_code/microsimpackage", dep=T)
 library(microsimpackage)
