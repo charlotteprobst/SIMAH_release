@@ -1,3 +1,10 @@
+#' Apply death rates in each year of simulation
+#' @param 
+#' @keywords microsimulation
+#' @export
+#' @examples
+#' apply_death_rates
+
 apply_death_rates <- function(basepop, deathrates, y){
   basepop <- basepop %>% mutate(agecat = cut(microsim.init.age,
                                              breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
@@ -45,17 +52,3 @@ apply_death_rates <- function(basepop, deathrates, y){
   basepop <- basepop %>% dplyr::select(-c(cat, prob))
   return(basepop)
 }
-
-# # testing 
-# test <- basepop %>% mutate(cat=as.factor(cat), cause=as.factor(cause)) %>% 
-#   group_by(cat, cause, .drop=FALSE) %>% filter(dead==1) %>% drop_na() %>% 
-#   tally() %>% mutate(data="simulation") %>% data.frame(.)
-# summarydeaths <- summary %>% mutate(cat=as.factor(cat), cause=as.factor(cause)) %>% 
-#   group_by(cat, cause, .drop=FALSE) %>% summarise(n=sum(count)) %>% 
-#   mutate(data="target",
-#          cause = gsub("mort","",cause)) %>% data.frame(.)
-# summarydeaths <- rbind(summarydeaths, test) %>% group_by(cat, cause,data) %>% 
-#   summarise(sum=sum(n)) %>% pivot_wider(names_from=data, values_from=sum) %>% 
-#   separate(cat, into=c("sex","agecat","race","education"),sep=c(1,6,9)) %>% 
-#   group_by(sex, race, cause) %>% summarise(simulation=sum(simulation),
-#                                            target = sum(target))
