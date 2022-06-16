@@ -3,14 +3,14 @@
 # Code for generating samples from joint prior distribution over the ABM inputs
 # Mark Strong
 # 26.3.18
-implausibilitywave1 <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/implausibility_wave", WAVE-1, ".csv", sep="")) %>% 
+implausibilitywave1 <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/implausibility_wave", WAVE-1, ".csv", sep="")) %>% 
   mutate(percentile=ntile(maximplausibility,100)) %>% rename(implausibility=maximplausibility)
 
-cutoff <- mean(implausibilitywave1$implausibility)*0.95
+cutoff <- mean(implausibilitywave1$implausibility)*0.9
 top <- unique(subset(implausibilitywave1, implausibility<=cutoff)$samplenum)
 # top <- unique(subset(implausibilitywave1, percentile<=15))$samplenum
 
-toplhs <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE-1, ".csv", sep="")) %>% 
+toplhs <- read.csv(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave", WAVE-1, ".csv", sep="")) %>% 
   filter(SampleNum %in% top)
 
 # normalise the data and fit beta distributions
@@ -33,7 +33,8 @@ toplhs <- cbind(toplhs, normalise(toplhs, "BETA_MALE_MORTALITY"), normalise(topl
                 normalise(toplhs, "METABOLIC_BETA2_MALE"), normalise(toplhs, "METABOLIC_BETA1_FEMALE"),
                 normalise(toplhs, "METABOLIC_BETA2_FEMALE"), normalise(toplhs, "BETA_HEPATITIS"),
                 normalise(toplhs, "THRESHOLD"), normalise(toplhs, "THRESHOLD_MODIFIER"),
-                normalise(toplhs, "IRR_correlation"), normalise(toplhs, "DECAY_SPEED"))
+                normalise(toplhs, "IRR_correlation"), normalise(toplhs, "DECAY_SPEED"),
+                normalise(toplhs, "DECAY_LENGTH"))
 
 prior <- list(c("qbeta", toplhs$shape1_BETA_MALE_MORTALITY, toplhs$shape2_BETA_MALE_MORTALITY), #BETA_MALE_MORTALITY
                 c("qbeta", toplhs$shape1_BETA_FEMALE_MORTALITY, toplhs$shape2_BETA_FEMALE_MORTALITY), #BETA_FEMALE_MORTALITY
@@ -47,7 +48,8 @@ prior <- list(c("qbeta", toplhs$shape1_BETA_MALE_MORTALITY, toplhs$shape2_BETA_M
                 c("qbeta", toplhs$shape1_THRESHOLD, toplhs$shape2_THRESHOLD), #THRESHOLD
                 c("qbeta", toplhs$shape1_THRESHOLD_MODIFIER, toplhs$shape2_THRESHOLD_MODIFIER), #THRESHOLD MODIFIER
                c("qbeta", toplhs$shape1_IRR_correlation, toplhs$shape2_IRR_correlation), #IRR CORRELATION
-              c("qbeta", toplhs$shape1_DECAY_SPEED, toplhs$shape2_DECAY_SPEED)) #DECAY SPEED
+              c("qbeta", toplhs$shape1_DECAY_SPEED, toplhs$shape2_DECAY_SPEED),
+              c("qbeta", toplhs$shape1_DECAY_LENGTH, toplhs$shape2_DECAY_LENGTH)) #DECAY SPEED
 
 N_PRIORS <- length(prior)
 set.seed(as.numeric(Sys.time()))
@@ -84,7 +86,7 @@ priors <- data.frame(do.call(cbind,new))
 lhsSample <- cbind(SampleNum, priors)
 
 # Save selected priors
-write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
+write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
 
 list <- list()
 

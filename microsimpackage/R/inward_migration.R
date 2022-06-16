@@ -1,4 +1,9 @@
-# function for adding new migrants in each year of the simulation from BRFSS pool 
+#' Adds new migrants in each year from existing data pool
+#' @param 
+#' @keywords microsimulation
+#' @export
+#' @examples
+#' inward_migration
 inward_migration <- function(basepop, year_rates, y, brfss){
 summary <- basepop %>%
   mutate(n=1,

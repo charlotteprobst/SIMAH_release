@@ -56,7 +56,7 @@ regplot(quad, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk"
 plot(final$dose,final$or, ylim = c(0, 30), xlim = c(0,150))
 lines(exp(pred_quad$pred))
 
-predict(quad_male, c(50,50^2))
+predict(pred_quad, c(50,50^2))
 
 ##RESTRICTED CUBIC SPLINE
 
@@ -75,12 +75,12 @@ regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab=
 abline(v=knots, lty="dotted")
 lines(exp(pred_quad$pred), lwd = "4", col = "blue")
 
-weights(rcs_male)
-plot(weights(rcs_male), male$dose)
+weights(rcs)
+plot(weights(rcs), final$dose)
 
 #basic plot to confirm regression line
-plot(male$dose,male$or, ylim = c(0, 30), xlim = c(0,150))
-lines(exp(pred_rcs_male$pred))
+plot(final$dose,final$or, ylim = c(0, 30), xlim = c(0,150))
+lines(exp(pred_rcs$pred))
 
 #prediction rcs model
 predict(rcs, newmods= rcspline.eval(100, knots, inclx=TRUE), transf=exp)
@@ -111,13 +111,13 @@ visual4<- glm(formula = lnor ~ I((dose/100)^1) + I((dose/100)^3), data = final)
 visreg(visual4,"dose", xlab="Alcohol intake, grams/day", trans=exp, ylab="Relative Risk")
 
 #2 degrees of freedom
-mfp_male2 <- mfp(formula = lnor ~ fp(dose, df = 2)+0,alpha=0.05, 
-                 data = male)
-mfp_male2
-summary(mfp_male2)
+mfp2 <- mfp(formula = lnor ~ fp(dose, df = 2)+0,alpha=0.05, 
+                 data = final)
+mfp2
+summary(mfp2)
 
-visual2<- glm(formula = lnor ~ I((dose/100)^0.5), data = male)
-visreg(visual2,"dose", xlab="Alcohol intake, grams/day - Male", trans=exp, ylab="Relative Risk")
+visual2<- glm(formula = lnor ~ I((dose/100)^0.5), data = final)
+visreg(visual2,"dose", xlab="Alcohol intake, grams/day", trans=exp, ylab="Relative Risk")
 
 ###FRACPOL - mfp using rma function with the selected p from the previous analysis
 mfp_fracpol <- rma.mv(yi=lnor, V=se^2, mods = ~ fracpol(dose, p = c(1, 3)) +0, data=final, 

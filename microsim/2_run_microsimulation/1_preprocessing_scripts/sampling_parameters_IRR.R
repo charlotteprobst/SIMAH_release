@@ -20,7 +20,8 @@ if(PE==0){
                   c("qunif", 50000, 200000), #THRESHOLD
                   c("qunif", 0.5, 1), #THRESHOLD MODIFIER
                   c("qtruncnorm", 0.72, 0.2),#correlation for IRR
-                  c("qunif", 1,3) #decay speed 
+                  c("qunif", 1,3), #decay speed 
+                  c("qunif", 18, 25) #decay length 
     #               # c("qunif", 50,50) #RR cap
     #               # c("qunif", 0.76, 1.06),  # M 18-20 M
     #               # c("qunif", 1.07, 1.36),  # M 21-25 M
@@ -42,7 +43,7 @@ if(PE==0){
                       "METABOLIC_BETA1_MALE", "METABOLIC_BETA2_MALE",
                       "METABOLIC_BETA1_FEMALE", "METABOLIC_BETA2_FEMALE",
                       "BETA_HEPATITIS", "THRESHOLD", "THRESHOLD_MODIFIER", "IRR_correlation",
-                      "DECAY_SPEED")
+                      "DECAY_SPEED", "DECAY_LENGTH")
                       # "M_18.20","M_21.25","M_26.30","M_31.40","M_51.60","M_61.70","M_71.", "max_IRR",
                       # "former_18.24","former_25.34","former_35.44","former_45.54","former_55.64",
                       # "former_65.74","former75.")
@@ -175,7 +176,7 @@ lhsSample <- cbind(version, lhsSample)
 #                       # "F_18.20","F_21.25","F_26.30","F_31.40","F_51.60","F_61.70","F_71.")
 names(lhsSample) <- c("SampleNum",names(prior))
 # Save selected priors
-write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
+write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
 
 list <- list()
 
@@ -201,7 +202,8 @@ if(PE==1){
                                       "THRESHOLD"=100000,
                                       "THRESHOLD_MODIFIER"=0.66,
                                       "IRR_correlation"=0.72,
-                               "DECAY_SPEED"=1
+                               "DECAY_SPEED"=1,
+                               "DECAY_LENGTH"=20
                                )
 }
 

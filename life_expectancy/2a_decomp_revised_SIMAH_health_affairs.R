@@ -90,6 +90,14 @@ for (i in 1:length(v.totals)){
   dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
 } 
 
+
+# Get mortality data aggregated over age groups
+dMort_agg <- aggregate(.~ year + edclass + sex, data =  dMort, FUN=sum)
+for (i in 1:length(v.totals)){
+  dMort_agg[, v.rates[i]] <- (dMort_agg[, v.totals[i]]/dMort_agg$TPop)
+}
+write.csv(dMort_agg, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0018_agg.csv")
+
 # Generate a variable to loop over
 dMort$group <- apply(dMort[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
 
@@ -162,3 +170,5 @@ dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults
 
 write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_contrib_", v.year1[1], "_", max(v.year2), "CPS_v4.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0018.csv")
+
+ 

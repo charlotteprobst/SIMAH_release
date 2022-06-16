@@ -87,13 +87,13 @@ ggplot(data=files, aes(x=year, y=value, colour=name, linetype=name)) +
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
        dpi=1000, width=25, height=21, units="cm")
 
-ggplot(data=subset(files, name!="Observed"), aes(x=year, y=value, colour=name, linetype=name)) + 
+ggplot(data=subset(files, name=="Observed"), aes(x=year, y=value, colour=name, linetype=name)) + 
   # scale_colour_manual(values=c("blue","orange")) +
   # scale_colour_brewer(palette="Dark2") +
   scale_colour_manual(values=c("#D95F02")) + 
   scale_linetype_manual(values=c("solid","solid")) + 
   scale_fill_manual(values=c("#D95F02")) + 
-  geom_ribbon(aes(ymin=min, ymax=max, fill=name), colour=NA, alpha=0.5) + 
+  # geom_ribbon(aes(ymin=min, ymax=max, fill=name), colour=NA, alpha=0.5) + 
   geom_line(size=2) + 
   # scale_linetype_manual(values=c("dashed","solid","dotted")) + 
   facet_grid(rows=vars(sex), cols=vars(agegroup), scales="fixed") + 
@@ -112,10 +112,10 @@ ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_presentation_V1.
 
 ggplot(data=files, aes(x=year, y=value, colour=name, linetype=name)) + 
   # scale_colour_manual(values=c("blue","orange")) +
-  scale_colour_brewer(palette="Dark2") +
-  # scale_colour_manual(values=c("#D95F02")) + 
+  # scale_colour_brewer(palette="Dark2") +
+  scale_colour_manual(values=c("#D95F02", "darkgreen")) +
   scale_linetype_manual(values=c("solid","solid")) + 
-  scale_fill_manual(values=c("white","#D95F02")) + 
+  scale_fill_manual(values=c("white","darkgreen")) + 
   geom_ribbon(aes(ymin=min, ymax=max, fill=name), colour=NA, alpha=0.5) + 
   geom_line(size=2) + 
   # scale_linetype_manual(values=c("dashed","solid","dotted")) + 
@@ -135,7 +135,7 @@ ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_presentation_V2.
 
 
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_alcuse_experiment_agest_2019.RDS") %>%
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS") %>%
   do.call(rbind,.)
 
 age2010 <- files %>% filter(year==2010) %>% 
@@ -210,11 +210,11 @@ ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig1_agest_experiment
 
 
 # for presentation
-ggplot(data=subset(meansim, name!="Observed"), aes(x=Year, y=value, colour=name, linetype=name)) + 
+ggplot(data=subset(meansim, name=="Observed"), aes(x=Year, y=value, colour=name, linetype=name)) + 
   scale_colour_manual(values=c("#D95F02","grey50")) +
   # scale_colour_brewer(palette="Dark2") + 
   scale_linetype_manual(values=c("solid","solid")) + 
-  geom_ribbon(aes(ymin=min, ymax=max, fill=name), alpha=0.5, colour=NA) + 
+  # geom_ribbon(aes(ymin=min, ymax=max, fill=name), alpha=0.5, colour=NA) + 
   geom_line(size=2) + 
   # scale_linetype_manual(values=c("dashed","solid","dotted")) + 
   facet_grid(cols=vars(sex), scales="fixed") + 
@@ -232,10 +232,10 @@ ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig1_presentation1.pn
        dpi=500, width=34, height=18, units="cm")
 
 ggplot(data=meansim, aes(x=Year, y=value, colour=name, linetype=name)) + 
-  # scale_colour_manual(values=c("#D95F02","grey50")) +
-  scale_colour_brewer(palette="Dark2") +
+  scale_colour_manual(values=c("#D95F02","darkgreen")) +
+  # scale_colour_brewer(palette="Dark2") +
   scale_linetype_manual(values=c("solid","solid")) + 
-  scale_fill_manual(values=c("white","#D95F02")) + 
+  scale_fill_manual(values=c("white","darkgreen")) + 
   geom_ribbon(aes(ymin=min, ymax=max, fill=name), alpha=0.5, colour=NA) + 
   geom_line(size=2) + 
   # scale_linetype_manual(values=c("dashed","solid","dotted")) + 
