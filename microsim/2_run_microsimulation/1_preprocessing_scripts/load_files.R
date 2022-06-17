@@ -1,30 +1,8 @@
-###processing data for dynamic microsimulation
+###loading files to be used in microsimulation
 
 # READ IN MICROSIM AND MIGRANT FILES
-if(model=="SIMAH"){
-basepop <- read.csv(paste("SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepop", PopulationSize, ".csv", sep=""))
-}else if(model=="CASCADE"){
-  basepop <- read.csv(paste("SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepopCASCADE", PopulationSize, ".csv", sep=""))
-}
-# migrants <- read.csv(paste("1_input_data/agent_files/", SelectedState, "migrants", PopulationSize, ".csv", sep=""))
 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_brfss.R")
 
-# READ IN INWARD MIGRATION DATA - redundant in final version
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/inward_migration.R")
-
-####READ IN OUTWARD MIGRATION DATA - redundant in final version
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/outward_migration.R")
-
-cirrhosis <- 0
-mortality <- 1
-
-# READ IN DEATH RATES
-if(model=="SIMAH"){
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/death_rates.R")
-}else if(model=="CASCADE"){
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/CASCADE_deathrates.R")
-}
 
 
 ####PREP MICROSIM OUTPUTS
@@ -33,10 +11,6 @@ DeathSummary <- list()
 
 # save a copy of original population files
 baseorig <- basepop
-# migorig <- migrants
-microsim.init.id <- 1:nrow(basepop)
-basepop <- cbind(microsim.init.id, basepop)
-# migrants$microsim.init.id <- nrow(basepop)+1:nrow(migrants)
 
-
-
+# set microsim individuals IDs 
+basepop <- cbind(1:nrow(basepop), basepop)

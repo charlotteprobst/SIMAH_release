@@ -1,5 +1,5 @@
 #' Apply death rates in each year of simulation
-#' @param 
+#' @param
 #' @keywords microsimulation
 #' @export
 #' @examples
@@ -15,15 +15,15 @@ apply_death_rates <- function(basepop, deathrates, y){
                                                                  "somecollege"="SomeC",
                                                                  "collegeplus"="College"),
                                 cat = paste(microsim.init.sex,agecat,microsim.init.race,microsim.init.education, sep=""))
-  summary <- basepop %>% 
-    mutate(n=1) %>% 
+  summary <- basepop %>%
+    mutate(n=1) %>%
     complete(cat, fill=list(n=0)) %>%
-    group_by(cat, .drop=FALSE) %>% 
+    group_by(cat, .drop=FALSE) %>%
     summarise(n=sum(n))
   deathrates <- deathrates %>% dplyr::filter(year==y)
-  summary <- left_join(summary, deathrates)
+  summary <- left_join(summary, deathrates, by=c("cat"))
   summary <- summary %>% pivot_longer(cols=LVDCmort: RESTmort, names_to="cause", values_to="count")
-  summary <- summary %>% 
+  summary <- summary %>%
     mutate(count = round(count, digits=0), proportion = count/n) %>% group_by(cat) %>% mutate(rate=cumsum(proportion))
   options(digits=22)
   basepop$prob <- runif(nrow(basepop))
@@ -42,13 +42,13 @@ apply_death_rates <- function(basepop, deathrates, y){
                                                                        ifelse(x$prob>rates$rate[8] & x$prob<=rates$rate[9], "IJ",
                                                                               ifelse(x$prob>rates$rate[9] & x$prob<=rates$rate[10], "REST",
                                                                                      NA))))))))))
-    
-    
-    
-    
+
+
+
+
     return(x)
   }
   basepop <- basepop %>% group_by(cat) %>% do(fun(., summary))
-  basepop <- basepop %>% dplyr::select(-c(cat, prob))
+  basepop <- basepop %>% ungroup() %>% dplyr::select(-c(cat, prob))
   return(basepop)
 }
