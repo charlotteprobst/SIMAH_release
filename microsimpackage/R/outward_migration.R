@@ -33,7 +33,8 @@ outward_migration <- function(basepop, year_rates,y){
                "65-69","70-74","75-79"))
   basepop <- left_join(basepop,summary, by=c("microsim.init.race","microsim.init.sex","agecat"))
   basepop$toremove[is.na(basepop$toremove)] <- 0
-  toremove <- basepop %>% group_by(agecat, microsim.init.race, microsim.init.sex) %>% sample_n(toremove)
+  toremove <- basepop %>% group_by(agecat, microsim.init.race, microsim.init.sex) %>%
+    do(dplyr::sample_n(.,size=unique(toremove), replace=TRUE))
   ids <- unique(toremove$microsim.init.id)
   basepopremoved <- basepop %>% filter(!microsim.init.id %in% ids) %>% dplyr::select(-toremove)
   return(basepopremoved)

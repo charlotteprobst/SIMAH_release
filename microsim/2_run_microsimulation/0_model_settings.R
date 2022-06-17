@@ -1,6 +1,7 @@
 # SIMAH project 2022 - script for setting up microsimulation model settings
 library(devtools)
 library(roxygen2)
+library(dplyr)
 library(tidyverse)
 options(dplyr.summarise.inform = FALSE)
 

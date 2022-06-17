@@ -4,7 +4,7 @@
 #' @export
 #' @examples
 #' inward_migration
-inward_migration <- function(basepop, year_rates, y, brfss){
+inward_migration <- function(basepop, migration_rates, y, brfss){
 summary <- basepop %>%
   mutate(n=1,
          agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,
@@ -16,7 +16,7 @@ summary <- basepop %>%
   group_by(agecat, microsim.init.race, microsim.init.sex, .drop=FALSE) %>%
   summarise(n=sum(n)) %>% ungroup()
 
-migin <- year_rates %>% filter(Year==y) %>% dplyr::select(agecat, microsim.init.sex,
+migin <- migration_rates %>% filter(Year==y) %>% dplyr::select(agecat, microsim.init.sex,
                                                      microsim.init.race, MigrationInN)
 summary <- left_join(summary, migin, by=c("agecat","microsim.init.race","microsim.init.sex"))
 # convert from a rate to the N to remove
@@ -67,7 +67,10 @@ if(length(missing)>0){
                                percentmissing = 0)
 }
 
-toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>% sample_n(toadd, replace=T) %>%
+toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
+  # mutate(toadd=round(toadd, digits=0)) %>%
+  do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
+  # do(slice_sample(.,n=toadd, replace = T)) %>%
   mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
   dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                 microsim.init.alc.gpd,

@@ -16,6 +16,8 @@ Output <- run_microsim(1,1,basepop,brfss,
                        updatingalcohol, alcohol_transitions, transition_alcohol,
                        2000, 2019, "demographics")
 
+summary <- summarise_education_output(Output, SelectedState)
+
 source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/postprocess_alcohol.R")
 
 # calculate error from target data 
