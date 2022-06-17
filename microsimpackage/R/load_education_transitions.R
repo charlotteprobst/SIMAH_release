@@ -5,12 +5,12 @@
 #' @export
 #' @examples
 #' load_education_transitions
-load_education_transitions <- function(SelectedState, basepop, brfss){
+load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDirectory){
   # allocate basepop and migrants a "tunnel state" within some college cat - dependent on age/sex and race
   if(SelectedState=="USA"){
-    somec <- read.csv("SIMAH_workplace/microsim/1_input_data/somecollege_ACS.csv")
+    somec <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/somecollege_ACS.csv"))
   }else{
-    somec <- read.csv("SIMAH_workplace/microsim/1_input_data/somecollege_ACS_states.csv") %>% filter(STATE==SelectedState) %>%
+    somec <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/somecollege_ACS_states.csv")) %>% filter(STATE==SelectedState) %>%
       dplyr::select(-STATE)
   }
 
@@ -100,7 +100,7 @@ load_education_transitions <- function(SelectedState, basepop, brfss){
   brfss$microsim.init.education <- ifelse(brfss$microsim.init.education=="SomeC1"|
                                             brfss$microsim.init.education=="SomeC2"|
                                             brfss$microsim.init.education=="SomeC3","SomeC",brfss$microsimnewED)
-  transitions <- readRDS(paste0("SIMAH_workplace/microsim/2_output_data/final_ed_transitions", SelectedState, ".RDS"))
+  transitions <- readRDS(paste0(WorkingDirectory,"SIMAH_workplace/microsim/2_output_data/final_ed_transitions", SelectedState, ".RDS"))
 list <- list(transitions, basepop, brfss)
 return(list)
 }

@@ -4,7 +4,7 @@
 \alias{load_education_transitions}
 \title{Loads eduacation transition rate data for SIMAH or CASCADE versions}
 \usage{
-load_education_transitions(SelectedState, basepop, brfss)
+load_education_transitions(SelectedState, basepop, brfss, WorkingDirectory)
 }
 \description{
 Loads eduacation transition rate data for SIMAH or CASCADE versions

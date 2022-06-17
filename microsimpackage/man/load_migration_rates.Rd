@@ -4,7 +4,7 @@
 \alias{load_migration_rates}
 \title{Loads migration rate data for SIMAH or CASCADE versions}
 \usage{
-load_migration_rates(SelectedState)
+load_migration_rates(SelectedState, WorkingDirectory)
 }
 \description{
 Loads migration rate data for SIMAH or CASCADE versions

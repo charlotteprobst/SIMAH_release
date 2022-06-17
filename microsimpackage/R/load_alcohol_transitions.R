@@ -5,8 +5,8 @@
 #' @export
 #' @examples
 #' load_alcohol_transitions
-load_alcohol_transitions <- function(basepop,brfss){
-AlctransitionProbability <- read.csv("SIMAH_workplace/microsim/1_input_data/AlcUse4, Ages7 2-yr TP.csv") %>% 
+load_alcohol_transitions <- function(basepop,brfss, WorkingDirectory){
+AlctransitionProbability <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/AlcUse4, Ages7 2-yr TP.csv")) %>%
   mutate(sex = recode(sex, "Men"="m","Women"="f"),
          race = recode(race, "Hispanic"="SPA", "Black, non-Hispanic"="BLA",
                        "Other, non-Hispanic"="OTH","White, non-Hispanic"="WHI"),
@@ -18,21 +18,21 @@ AlctransitionProbability <- read.csv("SIMAH_workplace/microsim/1_input_data/AlcU
          To = recode(To, "Abstainer"="Lifetime abstainer", "Former"="Former drinker",
                      "Category I" = "Low risk", "Category II" = "Medium risk",
                      "Category III" = "High risk")) %>%
-  mutate(cat = paste(age_cat, sex, race, edu, From, sep="_")) %>% 
-  dplyr::select(cat, To, Probability) %>% group_by(cat) %>% 
+  mutate(cat = paste(age_cat, sex, race, edu, From, sep="_")) %>%
+  dplyr::select(cat, To, Probability) %>% group_by(cat) %>%
   mutate(cumsum = cumsum(Probability))
 
-# set up the grams per day categories for the baseline population and brfss donor populations 
-basepop <- basepop %>% 
+# set up the grams per day categories for the baseline population and brfss donor populations
+basepop <- basepop %>%
   mutate(AlcCAT = ifelse(formerdrinker==1, "Former drinker",
                          ifelse(formerdrinker!=1 & microsim.init.alc.gpd==0, "Lifetime abstainer",
-                                ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 & 
+                                ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 &
                                          microsim.init.alc.gpd<=40, "Low risk",
                                        ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>0 &
                                                 microsim.init.alc.gpd<=20, "Low risk",
                                               ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>40 &
                                                        microsim.init.alc.gpd<=60, "Medium risk",
-                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 & 
+                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 &
                                                               microsim.init.alc.gpd<=40, "Medium risk",
                                                             ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>60,
                                                                    "High risk",
@@ -41,16 +41,16 @@ basepop <- basepop %>%
          AlcCAT = ifelse(AlcCAT=="Former drinker", "Non-drinker",
                          ifelse(AlcCAT=="Lifetime abstainer", "Non-drinker",AlcCAT))
          )
-brfss <- brfss %>% 
+brfss <- brfss %>%
   mutate(AlcCAT = ifelse(formerdrinker==1, "Former drinker",
                          ifelse(formerdrinker!=1 & microsim.init.alc.gpd==0, "Lifetime abstainer",
-                                ifelse(formerdrinker!=1 & microsim.init.sex=="m" & microsim.init.alc.gpd>0 & 
+                                ifelse(formerdrinker!=1 & microsim.init.sex=="m" & microsim.init.alc.gpd>0 &
                                          microsim.init.alc.gpd<=40, "Low risk",
                                        ifelse(formerdrinker!=1 & microsim.init.sex=="f" & microsim.init.alc.gpd>0 &
                                                 microsim.init.alc.gpd<=20, "Low risk",
                                               ifelse(formerdrinker!=1 & microsim.init.sex=="m" & microsim.init.alc.gpd>40 &
                                                        microsim.init.alc.gpd<=60, "Medium risk",
-                                                     ifelse(formerdrinker!=1 & microsim.init.sex=="f" & microsim.init.alc.gpd>20 & 
+                                                     ifelse(formerdrinker!=1 & microsim.init.sex=="f" & microsim.init.alc.gpd>20 &
                                                               microsim.init.alc.gpd<=40, "Medium risk",
                                                             ifelse(formerdrinker!=1 & microsim.init.sex=="m" & microsim.init.alc.gpd>60,
                                                                    "High risk",

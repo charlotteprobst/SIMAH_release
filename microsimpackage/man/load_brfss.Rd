@@ -4,7 +4,7 @@
 \alias{load_brfss}
 \title{Loads BRFSS data for new migrants and 18-year-olds}
 \usage{
-load_brfss(model = "SIMAH", SelectedState)
+load_brfss(model = "SIMAH", SelectedState, WorkingDirectory)
 }
 \description{
 Loads BRFSS data for new migrants and 18-year-olds

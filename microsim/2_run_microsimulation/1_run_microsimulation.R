@@ -1,9 +1,20 @@
 #####SIMAH project 2022 - script for running SIMAH microsimulation model
-
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
+library(devtools)
+library(roxygen2)
+library(dplyr)
+library(tidyverse)
+options(dplyr.summarise.inform = FALSE)
+
 ###set working directory to the main "SIMAH" folder in your directory 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+setwd(paste(WorkingDirectory))
+
+# load in microsim R package
+setwd("SIMAH_code")
+install("microsimpackage", dep=T)
+
 setwd(paste(WorkingDirectory))
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")

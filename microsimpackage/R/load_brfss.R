@@ -1,11 +1,11 @@
 #' Loads BRFSS data for new migrants and 18-year-olds
 #'
-#' @param 
+#' @param
 #' @keywords brfss
 #' @export
 #' @examples
 #' load_brfss
-load_brfss <- function(model="SIMAH", SelectedState){
+load_brfss <- function(model="SIMAH", SelectedState, WorkingDirectory){
   # match the selected state to a region
   division1 <- c("Connecticut","Maine","Massachusetts","New Hampshire","Rhode Island","Vermont")
   division2 <- c("New Jersey","New York","Pennsylvania")
@@ -28,25 +28,25 @@ load_brfss <- function(model="SIMAH", SelectedState){
                                                                           ifelse(!is.na(match(SelectedState,division9)),"division9",
                                                                                  "USA")))))))))
 if(model=="SIMAH"){
-# brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>% 
-#   filter(region==selectedregion) %>% 
-#   filter(age_var<=79) %>% filter(YEAR>=2000) %>% 
-#   mutate(microsim.init.race = recode(race_eth,"White"="WHI", 
+# brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
+#   filter(region==selectedregion) %>%
+#   filter(age_var<=79) %>% filter(YEAR>=2000) %>%
+#   mutate(microsim.init.race = recode(race_eth,"White"="WHI",
 #                                      "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
 #          microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),
 #          microsim.init.education = education_summary,
 #          agecat = cut(age_var,
 #                       breaks=c(0,24,34,44,54,64,79),
 #                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
-#          formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %>% 
-#   rename(microsim.init.age = age_var, 
+#          formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %>%
+#   rename(microsim.init.age = age_var,
 #          microsim.init.drinkingstatus=drinkingstatus_updated,
 #          microsim.init.alc.gpd=gramsperday_upshifted_crquotient,
-#          microsim.init.income = household_income) %>% 
+#          microsim.init.income = household_income) %>%
 #   dplyr::select(YEAR, State, region, microsim.init.race, microsim.init.age,
 #                 microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
 #                 microsim.init.alc.gpd, formerdrinker, microsim.init.income, agecat)
-brfss <- read_rds("SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS")
+brfss <- read_rds(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS"))
 }else if(model=="CASCADE"){
   brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
     filter(age_var<=80) %>% filter(State==SelectedState) %>%

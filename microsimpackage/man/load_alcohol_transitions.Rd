@@ -4,7 +4,7 @@
 \alias{load_alcohol_transitions}
 \title{Loads alcohol transition rate data for SIMAH or CASCADE versions}
 \usage{
-load_alcohol_transitions(basepop, brfss)
+load_alcohol_transitions(basepop, brfss, WorkingDirectory)
 }
 \description{
 Loads alcohol transition rate data for SIMAH or CASCADE versions

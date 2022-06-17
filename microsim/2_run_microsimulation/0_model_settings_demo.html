@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.580">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Model settings demonstration</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="0_model_settings_demo_files/libs/clipboard/clipboard.min.js"></script>
+<script src="0_model_settings_demo_files/libs/quarto-html/quarto.js"></script>
+<script src="0_model_settings_demo_files/libs/quarto-html/popper.min.js"></script>
+<script src="0_model_settings_demo_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="0_model_settings_demo_files/libs/quarto-html/anchor.min.js"></script>
+<link href="0_model_settings_demo_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="0_model_settings_demo_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="0_model_settings_demo_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="0_model_settings_demo_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="0_model_settings_demo_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Model settings demonstration</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<p>This document goes through each of the functions in the model settings script for the SIMAH microsimulation and explains what each function does - each function can be looked at in detail using the drop down menus.</p>
+<p>First set up all of the settings for the simulation run.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(microsimpackage)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>WorkingDirectory <span class="ot">&lt;-</span> <span class="st">"~/Google Drive/SIMAH Sheffield/"</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen=</span><span class="dv">999</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="do">######################EDIT ONLY BELOW HERE ##################################################</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># which geography -  needs to be written as USA or full state name </span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>SelectedState <span class="ot">&lt;-</span> <span class="st">"USA"</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Size of population - needs to be a population size available in the data folder</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>PopulationSize <span class="ot">&lt;-</span> <span class="dv">1000000</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># switch on and off migration and deaths</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>migrationdeaths <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co"># switch on and off education updates</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>updatingeducation <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># switch on and off alcohol updates</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>updatingalcohol <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="co"># switch between modelling mortality and morbidity (mortality = 1)</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>mortality <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="co"># switch on or off liver cirrhosis modelling</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>cirrhosis <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co"># switch between CASCADE and SIMAH versions</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="st">"SIMAH"</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="do">####################EDIT ONLY ABOVE HERE ##################################################</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This next section calculates the proportion of the selected geography that is being simulated - to adjust all the other model settings to this sized population</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># what proportion of the population does this represent</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>WholePopSize <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/fullpopcounts.csv"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(STATE<span class="sc">==</span>SelectedState)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>proportion <span class="ot">&lt;-</span> PopulationSize<span class="sc">/</span>WholePopSize<span class="sc">$</span>total</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>proportion <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(proportion<span class="sc">&gt;</span><span class="dv">1</span>,<span class="dv">1</span>,proportion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This section reads in the baseline population file - this file should already exist in your data folder. There are two different versions of the baseline population for the SIMAH (starts in 2000) and CASCADE (starts in 1984) versions of the simulation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read in base population</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(model<span class="sc">==</span><span class="st">"SIMAH"</span>){</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/agent_files/"</span>, SelectedState, <span class="st">"basepop"</span>, PopulationSize, <span class="st">".csv"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>}<span class="cf">else</span> <span class="cf">if</span>(model<span class="sc">==</span><span class="st">"CASCADE"</span>){</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/agent_files/"</span>, SelectedState, <span class="st">"basepopCASCADE"</span>, PopulationSize, <span class="st">".csv"</span>))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># save a copy of original population files</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>baseorig <span class="ot">&lt;-</span> basepop</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># set microsim individuals IDs </span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>microsim.init.id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(basepop)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>basepop <span class="ot">&lt;-</span> <span class="fu">cbind</span>(microsim.init.id, basepop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This is the first function - reading in the BRFSS data</p>
+<div class="cell" data-file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_brfss.R">
+<details>
+<summary>Function: load_brfss.R</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Loads BRFSS data for new migrants and 18-year-olds</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @keywords brfss</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">#' load_brfss</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>load_brfss <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">model=</span><span class="st">"SIMAH"</span>, SelectedState, WorkingDirectory){</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># match the selected state to a region</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  division1 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Connecticut"</span>,<span class="st">"Maine"</span>,<span class="st">"Massachusetts"</span>,<span class="st">"New Hampshire"</span>,<span class="st">"Rhode Island"</span>,<span class="st">"Vermont"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  division2 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"New Jersey"</span>,<span class="st">"New York"</span>,<span class="st">"Pennsylvania"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  division3 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Illinois"</span>,<span class="st">"Indiana"</span>,<span class="st">"Michigan"</span>,<span class="st">"Ohio"</span>,<span class="st">"Wisconsin"</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  division4 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Iowa"</span>,<span class="st">"Kansas"</span>,<span class="st">"Minnesota"</span>,<span class="st">"Missouri"</span>,<span class="st">"Nebraska"</span>,<span class="st">"North Dakota"</span>,<span class="st">"South Dakota"</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  division5 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Delaware"</span>,<span class="st">"Florida"</span>,<span class="st">"Georgia"</span>,<span class="st">"Maryland"</span>,<span class="st">"North Carolina"</span>,<span class="st">"South Carolina"</span>,<span class="st">"Virginia"</span>,<span class="st">"DC"</span>,<span class="st">"West Virginia"</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  division6 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Alabama"</span>,<span class="st">"Kentucky"</span>,<span class="st">"Mississippi"</span>,<span class="st">"Tennessee"</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  division7 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Arkansas"</span>,<span class="st">"Louisiana"</span>,<span class="st">"Oklahoma"</span>,<span class="st">"Texas"</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  division8 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Arizona"</span>,<span class="st">"Colorado"</span>,<span class="st">"Idaho"</span>,<span class="st">"Montana"</span>,<span class="st">"Nevada"</span>,<span class="st">"New Mexico"</span>,<span class="st">"Utah"</span>,<span class="st">"Wyoming"</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  division9 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Alaska"</span>,<span class="st">"California"</span>,<span class="st">"Hawaii"</span>,<span class="st">"Oregon"</span>,<span class="st">"Washington"</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  selectedregion <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division1)), <span class="st">"division1"</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division2)),<span class="st">"division2"</span>,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                                <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division3)),<span class="st">"division3"</span>,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>                                       <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division4)),<span class="st">"division4"</span>,</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>                                              <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division5)),<span class="st">"division5"</span>,</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>                                                     <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division6)),<span class="st">"division6"</span>,</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>                                                            <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division7)),<span class="st">"division7"</span>,</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>                                                                   <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division8)),<span class="st">"division8"</span>,</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>                                                                          <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">match</span>(SelectedState,division9)),<span class="st">"division9"</span>,</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>                                                                                 <span class="st">"USA"</span>)))))))))</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(model<span class="sc">==</span><span class="st">"SIMAH"</span>){</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a><span class="co"># brfss &lt;- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %&gt;%</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="co">#   filter(region==selectedregion) %&gt;%</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="co">#   filter(age_var&lt;=79) %&gt;% filter(YEAR&gt;=2000) %&gt;%</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(microsim.init.race = recode(race_eth,"White"="WHI",</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="co">#                                      "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="co">#          microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="co">#          microsim.init.education = education_summary,</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="co">#          agecat = cut(age_var,</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a><span class="co">#                       breaks=c(0,24,34,44,54,64,79),</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="co">#                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="co">#          formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0)) %&gt;%</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="co">#   rename(microsim.init.age = age_var,</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a><span class="co">#          microsim.init.drinkingstatus=drinkingstatus_updated,</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a><span class="co">#          microsim.init.alc.gpd=gramsperday_upshifted_crquotient,</span></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a><span class="co">#          microsim.init.income = household_income) %&gt;%</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="co">#   dplyr::select(YEAR, State, region, microsim.init.race, microsim.init.age,</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="co">#                 microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="co">#                 microsim.init.alc.gpd, formerdrinker, microsim.init.income, agecat)</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>brfss <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS"</span>))</span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>}<span class="cf">else</span> <span class="cf">if</span>(model<span class="sc">==</span><span class="st">"CASCADE"</span>){</span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>  brfssorig <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(age_var<span class="sc">&lt;=</span><span class="dv">80</span>) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(State<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">microsim.init.race =</span> <span class="fu">recode</span>(race_eth,<span class="st">"White"</span><span class="ot">=</span><span class="st">"WHI"</span>,</span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"Black"</span><span class="ot">=</span><span class="st">"BLA"</span>, <span class="st">"Hispanic"</span><span class="ot">=</span><span class="st">"SPA"</span>, <span class="st">"Other"</span><span class="ot">=</span><span class="st">"OTH"</span>),</span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.sex =</span> <span class="fu">recode</span>(sex_recode,<span class="st">"Male"</span><span class="ot">=</span><span class="st">"m"</span>,<span class="st">"Female"</span><span class="ot">=</span><span class="st">"f"</span>),</span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.education =</span> education_summary,</span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>           <span class="at">agecat =</span> <span class="fu">cut</span>(age_var,</span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">24</span>,<span class="dv">34</span>,<span class="dv">44</span>,<span class="dv">54</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18.24"</span>,<span class="st">"25.34"</span>,<span class="st">"35.44"</span>,<span class="st">"45.54"</span>,<span class="st">"55.64"</span>,<span class="st">"65.79"</span>)),</span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a>           <span class="at">formerdrinker =</span> <span class="fu">ifelse</span>(drinkingstatus_detailed<span class="sc">==</span><span class="st">"Former drinker"</span>, <span class="dv">1</span>,<span class="dv">0</span>),</span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.BMI =</span> <span class="fu">ifelse</span>(BMI<span class="sc">&lt;</span><span class="dv">15</span>, <span class="dv">15</span>,</span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>                                      <span class="fu">ifelse</span>(BMI<span class="sc">&gt;</span><span class="dv">50</span>, <span class="dv">50</span>, BMI))) <span class="sc">%&gt;%</span></span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rename</span>(<span class="at">microsim.init.age =</span> age_var,</span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.drinkingstatus=</span>drinkingstatus,</span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.alc.gpd=</span>gramsperday,</span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a>           <span class="at">microsim.init.income =</span> household_income) <span class="sc">%&gt;%</span></span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(YEAR, State, region, microsim.init.race, microsim.init.age,</span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>                  microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,</span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>                  microsim.init.alc.gpd, formerdrinker, microsim.init.income, agecat,</span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>                  microsim.init.BMI)</span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>  brfss <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/brfss_subset.RDS"</span>)</span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(brfss)</span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p><em>Note for the purposes of this tutorial - the BRFSS data has been sub-sampled to enable the model to run more quickly</em></p>
+<p>Use the function to read in the BRFSS data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read in BRFSS data for migrants and 18-year-olds entering the model</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>brfss <span class="ot">&lt;-</span> <span class="fu">load_brfss</span>(model,SelectedState,WorkingDirectory)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Function to read in the death rates data</p>
+<div class="cell" data-file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_death_rates.R">
+<details>
+<summary>Function: load_death_rates.R</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Loads death rate data for SIMAH or CASCADE versions</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @keywords death rates</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">#' load_death_rates</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>load_death_rates <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">model=</span><span class="st">"SIMAH"</span>, SelectedState, WorkingDirectory){</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model<span class="sc">==</span><span class="st">"SIMAH"</span>){</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>fun <span class="ot">&lt;-</span> <span class="cf">function</span>(x){</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> x<span class="sc">*</span>proportion</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(x)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(SelectedState<span class="sc">==</span><span class="st">"USA"</span>){</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>deathrates <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/allethn_sumCOD_0019_final.csv"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Sex=</span><span class="fu">recode</span>(sex, <span class="st">"1"</span><span class="ot">=</span><span class="st">"m"</span>,<span class="st">"2"</span><span class="ot">=</span><span class="st">"f"</span>),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>                      <span class="at">agecat =</span> <span class="fu">recode</span>(age_gp, <span class="st">"18"</span><span class="ot">=</span><span class="st">"18-24"</span>,<span class="st">"25"</span><span class="ot">=</span><span class="st">"25-29"</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">"30"</span><span class="ot">=</span><span class="st">"30-34"</span>,<span class="st">"35"</span><span class="ot">=</span><span class="st">"35-39"</span>,<span class="st">"40"</span><span class="ot">=</span><span class="st">"40-44"</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">"45"</span><span class="ot">=</span><span class="st">"45-49"</span>,<span class="st">"50"</span><span class="ot">=</span><span class="st">"50-54"</span>,<span class="st">"55"</span><span class="ot">=</span><span class="st">"55-59"</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>                                         <span class="st">"60"</span><span class="ot">=</span><span class="st">"60-64"</span>,<span class="st">"65"</span><span class="ot">=</span><span class="st">"65-69"</span>,<span class="st">"70"</span><span class="ot">=</span><span class="st">"70-74"</span>,<span class="st">"75"</span><span class="ot">=</span><span class="st">"75-79"</span>,<span class="st">"80"</span><span class="ot">=</span><span class="st">"80+"</span>),</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>                      <span class="at">Race =</span> <span class="fu">recode</span>(race, <span class="st">"White"</span><span class="ot">=</span><span class="st">"WHI"</span>,<span class="st">"Black"</span><span class="ot">=</span><span class="st">"BLA"</span>,<span class="st">"Hispanic"</span><span class="ot">=</span><span class="st">"SPA"</span>,<span class="st">"Other"</span><span class="ot">=</span><span class="st">"OTH"</span>),</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>                      <span class="at">edclass =</span> <span class="fu">recode</span>(edclass, <span class="st">"4+yrs"</span><span class="ot">=</span><span class="st">"College"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cat=</span><span class="fu">paste</span>(Sex,agecat,Race,edclass, <span class="at">sep=</span><span class="st">""</span>)) <span class="sc">%&gt;%</span>   <span class="fu">filter</span>(agecat<span class="sc">!=</span><span class="st">"80+"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(year,cat, LVDCmort, DMmort,</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>         IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort) <span class="sc">%&gt;%</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_at</span>(<span class="fu">vars</span>(LVDCmort, DMmort,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>                 IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>}<span class="cf">else</span>{</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  deathrates <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/sumCOD_0018_mortcount_state.csv"</span>) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(age_gp<span class="sc">!=</span><span class="dv">80</span>) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">Sex=</span><span class="fu">recode</span>(sex, <span class="st">"1"</span><span class="ot">=</span><span class="st">"m"</span>,<span class="st">"2"</span><span class="ot">=</span><span class="st">"f"</span>),</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>       <span class="at">agecat =</span> <span class="fu">recode</span>(age_gp, <span class="st">"18"</span><span class="ot">=</span><span class="st">"18-24"</span>,<span class="st">"25"</span><span class="ot">=</span><span class="st">"25-29"</span>,</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"30"</span><span class="ot">=</span><span class="st">"30-34"</span>,<span class="st">"35"</span><span class="ot">=</span><span class="st">"35-39"</span>,<span class="st">"40"</span><span class="ot">=</span><span class="st">"40-44"</span>,</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"45"</span><span class="ot">=</span><span class="st">"45-49"</span>,<span class="st">"50"</span><span class="ot">=</span><span class="st">"50-54"</span>,<span class="st">"55"</span><span class="ot">=</span><span class="st">"55-59"</span>,</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"60"</span><span class="ot">=</span><span class="st">"60-64"</span>,<span class="st">"65"</span><span class="ot">=</span><span class="st">"65-69"</span>,<span class="st">"70"</span><span class="ot">=</span><span class="st">"70-74"</span>,<span class="st">"75"</span><span class="ot">=</span><span class="st">"75-79"</span>,<span class="st">"80"</span><span class="ot">=</span><span class="st">"80+"</span>),</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>       <span class="at">Race =</span> <span class="fu">recode</span>(race, <span class="st">"White"</span><span class="ot">=</span><span class="st">"WHI"</span>,<span class="st">"Black"</span><span class="ot">=</span><span class="st">"BLA"</span>,<span class="st">"Hispanic"</span><span class="ot">=</span><span class="st">"SPA"</span>,<span class="st">"Other"</span><span class="ot">=</span><span class="st">"OTH"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(agecat<span class="sc">!=</span><span class="st">"80+"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">State =</span> <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"CA"</span>,<span class="st">"California"</span>,</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"CO"</span>,<span class="st">"Colorado"</span>,</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>                                 <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"FL"</span>,<span class="st">"Florida"</span>,</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>                                        <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"IN"</span>,<span class="st">"Indiana"</span>,</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>                                               <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"KY"</span>,<span class="st">"Kentucky"</span>,</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>                                                      <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"LA"</span>,<span class="st">"Louisiana"</span>,</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>             <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"MA"</span>,<span class="st">"Massachusetts"</span>,</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"MI"</span>,<span class="st">"Michigan"</span>,</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"MN"</span>,<span class="st">"Minnesota"</span>,</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"MO"</span>,<span class="st">"Missouri"</span>,</span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"NY"</span>,<span class="st">"New York"</span>,</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>                                                <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"OR"</span>,<span class="st">"Oregon"</span>,</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>                                                       <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"PA"</span>,<span class="st">"Pennsylvania"</span>,</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>               <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"TN"</span>,<span class="st">"Tennessee"</span>,</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">ifelse</span>(fipsstr<span class="sc">==</span><span class="st">"TX"</span>,<span class="st">"Texas"</span>,</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>                             fipsstr)))))))))))))))) <span class="sc">%&gt;%</span></span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(State<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">cat=</span><span class="fu">paste</span>(Sex,agecat,Race,edclass, <span class="at">sep=</span><span class="st">""</span>),</span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>           <span class="at">U_RESTmort =</span> U_RESTmort) <span class="sc">%&gt;%</span></span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(year,cat, U_LVDCmort, U_DMmort,</span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>           U_IHDmort, U_ISTRmort, U_HYPHDmort, U_AUDmort, U_UIJmort, U_MVACCmort, U_IJmort, U_RESTmort)</span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(deathrates)[<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>] <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"U_"</span>, <span class="st">""</span>, <span class="fu">names</span>(deathrates)[<span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>])</span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>  deathrates <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> <span class="fu">mutate_at</span>(<span class="fu">vars</span>(LVDCmort, DMmort,</span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>                   IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)</span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a>latest <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year<span class="sc">==</span><span class="dv">2018</span>)</span>
+<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a>rep <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">sapply</span>(latest, rep.int, <span class="at">times=</span><span class="dv">10</span>))</span>
+<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a>rep<span class="sc">$</span>year <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">2019</span><span class="sc">:</span><span class="dv">2028</span>, <span class="at">each=</span><span class="dv">288</span>)</span>
+<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(rep<span class="sc">$</span>year)</span>
+<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a>deathrates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(deathrates,rep)</span>
+<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a>deathrates <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> <span class="fu">mutate_at</span>(<span class="fu">vars</span>(LVDCmort<span class="sc">:</span>RESTmort), as.numeric)</span>
+<span id="cb10-71"><a href="#cb10-71" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(latest,rep)</span>
+<span id="cb10-72"><a href="#cb10-72" aria-hidden="true" tabindex="-1"></a>}<span class="cf">else</span> <span class="cf">if</span>(model<span class="sc">==</span><span class="st">"CASCADE"</span>){</span>
+<span id="cb10-73"><a href="#cb10-73" aria-hidden="true" tabindex="-1"></a>    <span class="co"># read in 1979-1998 death rates first</span></span>
+<span id="cb10-74"><a href="#cb10-74" aria-hidden="true" tabindex="-1"></a>    deathrates1 <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/Compressed Mortality, 1979-1998 (1).txt"</span>)</span>
+<span id="cb10-75"><a href="#cb10-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-76"><a href="#cb10-76" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1999 death rates onwards come from different CDC Wonder system so read in separately</span></span>
+<span id="cb10-77"><a href="#cb10-77" aria-hidden="true" tabindex="-1"></a>    deathrates2 <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/Compressed Mortality, 1999-2016 (1).txt"</span>)</span>
+<span id="cb10-78"><a href="#cb10-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-79"><a href="#cb10-79" aria-hidden="true" tabindex="-1"></a>    deathrates3 <span class="ot">&lt;-</span> <span class="fu">read.delim</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/Underlying Cause of Death, 1999-2020.txt"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-80"><a href="#cb10-80" aria-hidden="true" tabindex="-1"></a>      <span class="fu">rename</span>(<span class="at">Age.Group=</span>Five.Year.Age.Groups,</span>
+<span id="cb10-81"><a href="#cb10-81" aria-hidden="true" tabindex="-1"></a>             <span class="at">Age.Group.Code =</span> Five.Year.Age.Groups.Code) <span class="sc">%&gt;%</span></span>
+<span id="cb10-82"><a href="#cb10-82" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">Age.Group.Code  =</span> <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"25-29"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"30-34"</span>,<span class="st">"25-34"</span>,</span>
+<span id="cb10-83"><a href="#cb10-83" aria-hidden="true" tabindex="-1"></a>                                      <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"35-39"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"40-44"</span>, <span class="st">"35-44"</span>,</span>
+<span id="cb10-84"><a href="#cb10-84" aria-hidden="true" tabindex="-1"></a>                                             <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"45-49"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"50-54"</span>,<span class="st">"45-54"</span>,</span>
+<span id="cb10-85"><a href="#cb10-85" aria-hidden="true" tabindex="-1"></a>                                                    <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"55-59"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"60-64"</span>, <span class="st">"55-64"</span>,</span>
+<span id="cb10-86"><a href="#cb10-86" aria-hidden="true" tabindex="-1"></a>                                                           <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"65-69"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"70-74"</span>, <span class="st">"65-74"</span>,</span>
+<span id="cb10-87"><a href="#cb10-87" aria-hidden="true" tabindex="-1"></a>                                                                  <span class="fu">ifelse</span>(Age.Group.Code<span class="sc">==</span><span class="st">"75-79"</span> <span class="sc">|</span> Age.Group.Code<span class="sc">==</span><span class="st">"80-84"</span>, <span class="st">"75-84"</span>, Age.Group.Code)))))))</span>
+<span id="cb10-88"><a href="#cb10-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-89"><a href="#cb10-89" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setdiff</span>(<span class="fu">levels</span>(deathrates1<span class="sc">$</span>Age.Group), <span class="fu">levels</span>(deathrates3<span class="sc">$</span>Age.Group))</span>
+<span id="cb10-90"><a href="#cb10-90" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setdiff</span>(<span class="fu">levels</span>(deathrates3<span class="sc">$</span>Age.Group), <span class="fu">levels</span>(deathrates1<span class="sc">$</span>Age.Group))</span>
+<span id="cb10-91"><a href="#cb10-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-92"><a href="#cb10-92" aria-hidden="true" tabindex="-1"></a>    deathrates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(deathrates1, deathrates3)</span>
+<span id="cb10-93"><a href="#cb10-93" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(deathrates1, deathrates2,deathrates3)</span>
+<span id="cb10-94"><a href="#cb10-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-95"><a href="#cb10-95" aria-hidden="true" tabindex="-1"></a>    deathrates <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(Year, Gender, Age.Group.Code, State, Deaths) <span class="sc">%&gt;%</span> <span class="fu">drop_na</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-96"><a href="#cb10-96" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">Gender =</span> <span class="fu">factor</span>(Gender),</span>
+<span id="cb10-97"><a href="#cb10-97" aria-hidden="true" tabindex="-1"></a>             <span class="at">Age =</span> <span class="fu">factor</span>(Age.Group.Code),</span>
+<span id="cb10-98"><a href="#cb10-98" aria-hidden="true" tabindex="-1"></a>             <span class="at">State=</span><span class="fu">factor</span>(State),</span>
+<span id="cb10-99"><a href="#cb10-99" aria-hidden="true" tabindex="-1"></a>             <span class="at">Sex =</span> <span class="fu">recode</span>(Gender, <span class="st">"Male"</span><span class="ot">=</span><span class="st">"m"</span>, <span class="st">"Female"</span><span class="ot">=</span><span class="st">"f"</span>)) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(Age.Group.Code, Gender)) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Year<span class="sc">&gt;=</span><span class="dv">1980</span>)</span>
+<span id="cb10-100"><a href="#cb10-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-101"><a href="#cb10-101" aria-hidden="true" tabindex="-1"></a>    deathratesUSA <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(Year,Age,Sex) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">Deaths=</span><span class="fu">sum</span>(Deaths))</span>
+<span id="cb10-102"><a href="#cb10-102" aria-hidden="true" tabindex="-1"></a>    deathratesUSA<span class="sc">$</span>State <span class="ot">&lt;-</span> <span class="st">"USA"</span></span>
+<span id="cb10-103"><a href="#cb10-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-104"><a href="#cb10-104" aria-hidden="true" tabindex="-1"></a>    deathrates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">data.frame</span>(deathrates), <span class="fu">data.frame</span>(deathratesUSA))</span>
+<span id="cb10-105"><a href="#cb10-105" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(deathratesUSA)</span>
+<span id="cb10-106"><a href="#cb10-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-107"><a href="#cb10-107" aria-hidden="true" tabindex="-1"></a>    deathrates <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> <span class="fu">filter</span>(State<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb10-108"><a href="#cb10-108" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(Age<span class="sc">!=</span><span class="st">"10-14"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-109"><a href="#cb10-109" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">Deaths =</span> Deaths<span class="sc">*</span>proportion,</span>
+<span id="cb10-110"><a href="#cb10-110" aria-hidden="true" tabindex="-1"></a>             <span class="at">Age=</span><span class="fu">as.character</span>(Age),</span>
+<span id="cb10-111"><a href="#cb10-111" aria-hidden="true" tabindex="-1"></a>             <span class="at">Age =</span> <span class="fu">ifelse</span>(Age<span class="sc">==</span><span class="st">"75-84"</span>, <span class="st">"75."</span>, Age),</span>
+<span id="cb10-112"><a href="#cb10-112" aria-hidden="true" tabindex="-1"></a>             <span class="at">Deaths =</span> <span class="fu">ifelse</span>(Age<span class="sc">==</span><span class="st">"15-19"</span>, Deaths<span class="sc">/</span><span class="dv">5</span><span class="sc">*</span><span class="dv">2</span>,</span>
+<span id="cb10-113"><a href="#cb10-113" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">ifelse</span>(Age<span class="sc">==</span><span class="st">"75."</span>, Deaths<span class="sc">/</span><span class="dv">10</span><span class="sc">*</span><span class="dv">6</span>, Deaths)),</span>
+<span id="cb10-114"><a href="#cb10-114" aria-hidden="true" tabindex="-1"></a>             <span class="at">cat =</span> <span class="fu">paste</span>(Age, Sex, <span class="at">sep=</span><span class="st">"_"</span>),</span>
+<span id="cb10-115"><a href="#cb10-115" aria-hidden="true" tabindex="-1"></a>             <span class="at">Count =</span> Deaths) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(Year, cat, Count) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Year<span class="sc">&gt;=</span><span class="dv">1980</span>)</span>
+<span id="cb10-116"><a href="#cb10-116" aria-hidden="true" tabindex="-1"></a>    <span class="co">#adjust for the proportion currently being run in the microsim</span></span>
+<span id="cb10-117"><a href="#cb10-117" aria-hidden="true" tabindex="-1"></a>    <span class="co"># adjust the totals for the age groups that aren't fully in the microsim - 75-84 and 15-19</span></span>
+<span id="cb10-118"><a href="#cb10-118" aria-hidden="true" tabindex="-1"></a>    <span class="co"># assuming equal death rates for each year group</span></span>
+<span id="cb10-119"><a href="#cb10-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-120"><a href="#cb10-120" aria-hidden="true" tabindex="-1"></a>    <span class="co"># READ IN CIRRHOSIS DEATHS - TO WORK REFERENCE RATE AND REMOVE CIRRHOSIS DEATHS FROM THE TOTAL DEATHS</span></span>
+<span id="cb10-121"><a href="#cb10-121" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(cirrhosis<span class="sc">==</span><span class="dv">1</span> <span class="sc">&amp;</span> mortality<span class="sc">==</span><span class="dv">1</span>){</span>
+<span id="cb10-122"><a href="#cb10-122" aria-hidden="true" tabindex="-1"></a>      cirrhosisdata <span class="ot">&lt;-</span> cirrhosismortality <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-123"><a href="#cb10-123" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">cat=</span><span class="fu">paste</span>(agegroup, sex, <span class="at">sep=</span><span class="st">"_"</span>)) <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(Year, cat, count)</span>
+<span id="cb10-124"><a href="#cb10-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-125"><a href="#cb10-125" aria-hidden="true" tabindex="-1"></a>      cirrhosisdeaths1984 <span class="ot">&lt;-</span> cirrhosisdata <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Year<span class="sc">==</span><span class="dv">1984</span>)</span>
+<span id="cb10-126"><a href="#cb10-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-127"><a href="#cb10-127" aria-hidden="true" tabindex="-1"></a>      <span class="co"># # ADJUST DEATH RATES = total deaths - cirrhosis deaths</span></span>
+<span id="cb10-128"><a href="#cb10-128" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setdiff</span>(<span class="fu">names</span>(cirrhosisdata), <span class="fu">names</span>(deathrates))</span>
+<span id="cb10-129"><a href="#cb10-129" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setdiff</span>(<span class="fu">levels</span>(<span class="fu">as.factor</span>(cirrhosisdata<span class="sc">$</span>cat)), <span class="fu">levels</span>(<span class="fu">as.factor</span>(deathrates<span class="sc">$</span>cat)))</span>
+<span id="cb10-130"><a href="#cb10-130" aria-hidden="true" tabindex="-1"></a>      deathrates <span class="ot">&lt;-</span> <span class="fu">left_join</span>(deathrates, cirrhosisdata)</span>
+<span id="cb10-131"><a href="#cb10-131" aria-hidden="true" tabindex="-1"></a>      deathrates[<span class="fu">is.na</span>(deathrates)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb10-132"><a href="#cb10-132" aria-hidden="true" tabindex="-1"></a>      deathrates<span class="sc">$</span>Count <span class="ot">&lt;-</span> deathrates<span class="sc">$</span>Count <span class="sc">-</span> (deathrates<span class="sc">$</span>count<span class="sc">/</span><span class="dv">100</span>)</span>
+<span id="cb10-133"><a href="#cb10-133" aria-hidden="true" tabindex="-1"></a>      deathrates <span class="ot">&lt;-</span> deathrates <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(Year, cat, Count)</span>
+<span id="cb10-134"><a href="#cb10-134" aria-hidden="true" tabindex="-1"></a>      <span class="co"># cirrhosisdeaths1984$count &lt;- cirrhosisdeaths1984$count*100</span></span>
+<span id="cb10-135"><a href="#cb10-135" aria-hidden="true" tabindex="-1"></a>      <span class="co"># cirrhosisdeaths1984 &lt;- cirrhosisdeaths1984 %&gt;% separate(cat, into=c("age","cat"), sep="_") %&gt;%</span></span>
+<span id="cb10-136"><a href="#cb10-136" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   group_by(cat) %&gt;% mutate(count=sum(count))</span></span>
+<span id="cb10-137"><a href="#cb10-137" aria-hidden="true" tabindex="-1"></a>    }<span class="cf">else</span> <span class="cf">if</span>(cirrhosis<span class="sc">==</span><span class="dv">1</span> <span class="sc">&amp;</span> mortality<span class="sc">==</span><span class="dv">0</span>){</span>
+<span id="cb10-138"><a href="#cb10-138" aria-hidden="true" tabindex="-1"></a>      cirrhosisdata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"SIMAH_workplace/microsim/1_input_data/LC_hosp_Output.csv"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-139"><a href="#cb10-139" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="fu">c</span>(year,location,sex_id,tups15to19<span class="sc">:</span>tupsplus80)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-140"><a href="#cb10-140" aria-hidden="true" tabindex="-1"></a>        <span class="fu">filter</span>(location<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb10-141"><a href="#cb10-141" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">tupsplus80 =</span> tupsplus80<span class="sc">/</span><span class="dv">10</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-142"><a href="#cb10-142" aria-hidden="true" tabindex="-1"></a>        <span class="fu">pivot_longer</span>(<span class="at">cols=</span>tups15to19<span class="sc">:</span>tupsplus80) <span class="sc">%&gt;%</span></span>
+<span id="cb10-143"><a href="#cb10-143" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">name=</span><span class="fu">gsub</span>(<span class="st">"tups"</span>,<span class="st">""</span>,name),</span>
+<span id="cb10-144"><a href="#cb10-144" aria-hidden="true" tabindex="-1"></a>               <span class="at">agecat =</span> <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"15to19"</span>,<span class="st">"15-19"</span>,</span>
+<span id="cb10-145"><a href="#cb10-145" aria-hidden="true" tabindex="-1"></a>                               <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"20to24"</span>,<span class="st">"20-24"</span>,</span>
+<span id="cb10-146"><a href="#cb10-146" aria-hidden="true" tabindex="-1"></a>                                      <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"25to29"</span><span class="sc">|</span>name<span class="sc">==</span><span class="st">"30to34"</span>,<span class="st">"25-34"</span>,</span>
+<span id="cb10-147"><a href="#cb10-147" aria-hidden="true" tabindex="-1"></a>                                             <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"35to39"</span><span class="sc">|</span>name<span class="sc">==</span><span class="st">"40to44"</span>,<span class="st">"35-44"</span>,</span>
+<span id="cb10-148"><a href="#cb10-148" aria-hidden="true" tabindex="-1"></a>                                                    <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"45to49"</span><span class="sc">|</span>name<span class="sc">==</span><span class="st">"50to54"</span>,<span class="st">"45-54"</span>,</span>
+<span id="cb10-149"><a href="#cb10-149" aria-hidden="true" tabindex="-1"></a>                                                           <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"55to59"</span><span class="sc">|</span>name<span class="sc">==</span><span class="st">"60to64"</span>,<span class="st">"55-64"</span>,</span>
+<span id="cb10-150"><a href="#cb10-150" aria-hidden="true" tabindex="-1"></a>                                                                  <span class="fu">ifelse</span>(name<span class="sc">==</span><span class="st">"65to69"</span><span class="sc">|</span>name<span class="sc">==</span><span class="st">"70to74"</span>,<span class="st">"65-74"</span>,<span class="st">"75."</span>)))))))) <span class="sc">%&gt;%</span></span>
+<span id="cb10-151"><a href="#cb10-151" aria-hidden="true" tabindex="-1"></a>        <span class="fu">group_by</span>(year, sex_id, agecat) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">value=</span><span class="fu">sum</span>(value)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-152"><a href="#cb10-152" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">value=</span>value<span class="sc">*</span>proportion,</span>
+<span id="cb10-153"><a href="#cb10-153" aria-hidden="true" tabindex="-1"></a>               <span class="at">count=</span><span class="fu">ifelse</span>(agecat<span class="sc">==</span><span class="st">"15-19"</span>,value<span class="sc">/</span><span class="dv">5</span><span class="sc">*</span><span class="dv">2</span>,value),</span>
+<span id="cb10-154"><a href="#cb10-154" aria-hidden="true" tabindex="-1"></a>               <span class="at">sex =</span> <span class="fu">ifelse</span>(sex_id<span class="sc">==</span><span class="st">"female"</span>,<span class="st">"f"</span>,<span class="st">"m"</span>),</span>
+<span id="cb10-155"><a href="#cb10-155" aria-hidden="true" tabindex="-1"></a>               <span class="at">cat=</span><span class="fu">paste</span>(agecat, sex, <span class="at">sep=</span><span class="st">"_"</span>)) <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">Year=</span>year) <span class="sc">%&gt;%</span> <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(Year, cat, count)</span>
+<span id="cb10-156"><a href="#cb10-156" aria-hidden="true" tabindex="-1"></a>      cirrhosisdeaths1984 <span class="ot">&lt;-</span> cirrhosisdata <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Year<span class="sc">==</span><span class="dv">1984</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-157"><a href="#cb10-157" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">count=</span><span class="fu">round</span>(count<span class="sc">*</span><span class="dv">100</span>))</span>
+<span id="cb10-158"><a href="#cb10-158" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-159"><a href="#cb10-159" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-160"><a href="#cb10-160" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(deathrates)</span>
+<span id="cb10-161"><a href="#cb10-161" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Use the function to read in death rates data based on CDC data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>death_rates <span class="ot">&lt;-</span> <span class="fu">load_death_rates</span>(model, SelectedState, WorkingDirectory)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Function to read in the migration in and out rates data</p>
+<div class="cell" data-file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_migration_rates.R">
+<details>
+<summary>Function: load_migration_rates.R</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Loads migration rate data for SIMAH or CASCADE versions</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @keywords migration rates</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">#' load_migration_rates</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>load_migration_rates <span class="ot">&lt;-</span> <span class="cf">function</span>(SelectedState, WorkingDirectory){</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  Rates <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates"</span>,SelectedState,<span class="st">".RDS"</span>))</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  Rates<span class="sc">$</span>agecat <span class="ot">&lt;-</span> <span class="fu">as.character</span>(Rates<span class="sc">$</span>agecat)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  datatopredict <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">Year=</span><span class="fu">c</span>(<span class="dv">2019</span><span class="sc">:</span><span class="dv">2025</span>),<span class="at">microsim.init.sex=</span><span class="fu">unique</span>(Rates<span class="sc">$</span>microsim.init.sex),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>                               <span class="at">agecat =</span> <span class="fu">unique</span>(Rates<span class="sc">$</span>agecat), <span class="at">microsim.init.race=</span><span class="fu">unique</span>(Rates<span class="sc">$</span>microsim.init.race)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">MigrationInN =</span> <span class="cn">NA</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>           <span class="at">MigrationOutN =</span> <span class="cn">NA</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  Rates <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Rates,datatopredict)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  Rates <span class="ot">&lt;-</span> Rates <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(microsim.init.sex, agecat, microsim.init.race) <span class="sc">%&gt;%</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fill</span>(<span class="fu">c</span>(MigrationInN,MigrationOutN), <span class="at">.direction=</span><span class="fu">c</span>(<span class="st">"downup"</span>))</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(Rates)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Use the function to read in the migration in and out rates (derived from ACS data)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read in migration in and out rates and project rates forwards to 2025 (in case needed)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>migration_rates <span class="ot">&lt;-</span> <span class="fu">load_migration_rates</span>(SelectedState, WorkingDirectory)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Function to read in education transitions data and set up the brfss and base population ready for simulating education (imputing a new education level for individuals in the “some college” category based on which year of college they are in (based on ACS data)</p>
+<div class="cell" data-file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_education_transitions.R">
+<details>
+<summary>Function: load_education_transitions.R</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Loads eduacation transition rate data for SIMAH or CASCADE versions</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @keywords education transition rates</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">#' load_education_transitions</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>load_education_transitions <span class="ot">&lt;-</span> <span class="cf">function</span>(SelectedState, basepop, brfss, WorkingDirectory){</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># allocate basepop and migrants a "tunnel state" within some college cat - dependent on age/sex and race</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(SelectedState<span class="sc">==</span><span class="st">"USA"</span>){</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    somec <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/somecollege_ACS.csv"</span>))</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  }<span class="cf">else</span>{</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    somec <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/somecollege_ACS_states.csv"</span>)) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(STATE<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>STATE)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  somec <span class="ot">&lt;-</span> somec <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">microsim.init.sex=</span>SEX,</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>                            <span class="at">microsim.init.age=</span>AGE,</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>                            <span class="at">microsim.init.race=</span>RACE) <span class="sc">%&gt;%</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">microsim.init.sex=</span><span class="fu">ifelse</span>(microsim.init.sex<span class="sc">==</span><span class="st">"F"</span>,<span class="st">"f"</span>,<span class="st">"m"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>           <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex,agecat,microsim.init.race, <span class="at">sep=</span><span class="st">""</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(cat, EDUCdetailed, percent)</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  toimpute <span class="ot">&lt;-</span> basepop <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">==</span><span class="st">"SomeC"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>           <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex, agecat,microsim.init.race, <span class="at">sep=</span><span class="st">""</span>))</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  cats <span class="ot">&lt;-</span> <span class="fu">unique</span>(toimpute<span class="sc">$</span>cat)</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> toimpute <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>i)</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>  samplefunction <span class="ot">&lt;-</span> <span class="cf">function</span>(data, somec, selected){</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">grepl</span>(<span class="st">"18"</span>,selected)<span class="sc">==</span><span class="cn">TRUE</span>){</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>      sampled <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="st">"LEHS"</span>, <span class="at">times=</span><span class="fu">nrow</span>(data))</span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>      somec <span class="ot">&lt;-</span> somec <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>selected)</span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>      sampled <span class="ot">&lt;-</span> <span class="fu">sample</span>(somec<span class="sc">$</span>EDUCdetailed, <span class="at">size=</span><span class="fu">nrow</span>(data), <span class="at">replace=</span>T, <span class="at">prob=</span><span class="fu">c</span>(somec<span class="sc">$</span>percent))</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(sampled)</span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>  selected <span class="ot">&lt;-</span> i</span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>  neweduc <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>    neweduc[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> <span class="fu">samplefunction</span>(catlist[[<span class="fu">paste</span>(i)]], somec, i)</span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]]<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> neweduc[[<span class="fu">paste</span>(i)]]</span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind,catlist)</span>
+<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a>  catlist<span class="sc">$</span>cat <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> basepop <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">!=</span><span class="st">"SomeC"</span>)</span>
+<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> <span class="fu">rbind</span>(basepop, catlist)</span>
+<span id="cb14-63"><a href="#cb14-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-64"><a href="#cb14-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(<span class="fu">as.factor</span>(basepop<span class="sc">$</span>microsim.init.education))</span>
+<span id="cb14-65"><a href="#cb14-65" aria-hidden="true" tabindex="-1"></a>  basepop<span class="sc">$</span>microsimnewED <span class="ot">&lt;-</span> basepop<span class="sc">$</span>microsim.init.education</span>
+<span id="cb14-66"><a href="#cb14-66" aria-hidden="true" tabindex="-1"></a>  basepop<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC1"</span><span class="sc">|</span></span>
+<span id="cb14-67"><a href="#cb14-67" aria-hidden="true" tabindex="-1"></a>                                              basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC2"</span><span class="sc">|</span></span>
+<span id="cb14-68"><a href="#cb14-68" aria-hidden="true" tabindex="-1"></a>                                              basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC3"</span>,<span class="st">"SomeC"</span>,basepop<span class="sc">$</span>microsimnewED)</span>
+<span id="cb14-69"><a href="#cb14-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-70"><a href="#cb14-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-71"><a href="#cb14-71" aria-hidden="true" tabindex="-1"></a>  toimpute <span class="ot">&lt;-</span> brfss <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">==</span><span class="st">"SomeC"</span>) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb14-72"><a href="#cb14-72" aria-hidden="true" tabindex="-1"></a>                                                                                         <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb14-73"><a href="#cb14-73" aria-hidden="true" tabindex="-1"></a>                                                                                         <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb14-74"><a href="#cb14-74" aria-hidden="true" tabindex="-1"></a>                                                                                                  <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb14-75"><a href="#cb14-75" aria-hidden="true" tabindex="-1"></a>                                                                            <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex,</span>
+<span id="cb14-76"><a href="#cb14-76" aria-hidden="true" tabindex="-1"></a>                                                                                      agecat,</span>
+<span id="cb14-77"><a href="#cb14-77" aria-hidden="true" tabindex="-1"></a>                                                                                      microsim.init.race, <span class="at">sep=</span><span class="st">""</span>))</span>
+<span id="cb14-78"><a href="#cb14-78" aria-hidden="true" tabindex="-1"></a>  cats <span class="ot">&lt;-</span> <span class="fu">unique</span>(toimpute<span class="sc">$</span>cat)</span>
+<span id="cb14-79"><a href="#cb14-79" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-80"><a href="#cb14-80" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-81"><a href="#cb14-81" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> toimpute <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>i)</span>
+<span id="cb14-82"><a href="#cb14-82" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-83"><a href="#cb14-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-84"><a href="#cb14-84" aria-hidden="true" tabindex="-1"></a>  neweduc <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-85"><a href="#cb14-85" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-86"><a href="#cb14-86" aria-hidden="true" tabindex="-1"></a>    neweduc[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> <span class="fu">samplefunction</span>(catlist[[<span class="fu">paste</span>(i)]], somec, i)</span>
+<span id="cb14-87"><a href="#cb14-87" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-88"><a href="#cb14-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-89"><a href="#cb14-89" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb14-90"><a href="#cb14-90" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]]<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> neweduc[[<span class="fu">paste</span>(i)]]</span>
+<span id="cb14-91"><a href="#cb14-91" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-92"><a href="#cb14-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-93"><a href="#cb14-93" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind,catlist)</span>
+<span id="cb14-94"><a href="#cb14-94" aria-hidden="true" tabindex="-1"></a>  catlist<span class="sc">$</span>cat <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb14-95"><a href="#cb14-95" aria-hidden="true" tabindex="-1"></a>  <span class="co"># catlist$agecat &lt;- NULL</span></span>
+<span id="cb14-96"><a href="#cb14-96" aria-hidden="true" tabindex="-1"></a>  brfss <span class="ot">&lt;-</span> brfss <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">!=</span><span class="st">"SomeC"</span>)</span>
+<span id="cb14-97"><a href="#cb14-97" aria-hidden="true" tabindex="-1"></a>  brfss <span class="ot">&lt;-</span> <span class="fu">rbind</span>(brfss, catlist)</span>
+<span id="cb14-98"><a href="#cb14-98" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(<span class="fu">as.factor</span>(brfss<span class="sc">$</span>microsim.init.education))</span>
+<span id="cb14-99"><a href="#cb14-99" aria-hidden="true" tabindex="-1"></a>  brfss<span class="sc">$</span>microsimnewED <span class="ot">&lt;-</span> brfss<span class="sc">$</span>microsim.init.education</span>
+<span id="cb14-100"><a href="#cb14-100" aria-hidden="true" tabindex="-1"></a>  brfss<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC1"</span><span class="sc">|</span></span>
+<span id="cb14-101"><a href="#cb14-101" aria-hidden="true" tabindex="-1"></a>                                            brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC2"</span><span class="sc">|</span></span>
+<span id="cb14-102"><a href="#cb14-102" aria-hidden="true" tabindex="-1"></a>                                            brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC3"</span>,<span class="st">"SomeC"</span>,brfss<span class="sc">$</span>microsimnewED)</span>
+<span id="cb14-103"><a href="#cb14-103" aria-hidden="true" tabindex="-1"></a>  transitions <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/2_output_data/final_ed_transitions"</span>, SelectedState, <span class="st">".RDS"</span>))</span>
+<span id="cb14-104"><a href="#cb14-104" aria-hidden="true" tabindex="-1"></a>list <span class="ot">&lt;-</span> <span class="fu">list</span>(transitions, basepop, brfss)</span>
+<span id="cb14-105"><a href="#cb14-105" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span>(list)</span>
+<span id="cb14-106"><a href="#cb14-106" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Use this function to get education transition probabilities and to modify the BRFSS and base population education. The output of this function returns a list with 3 components and the following lines of code extract each component</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load in the education transition rates</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>list <span class="ot">&lt;-</span> <span class="fu">load_education_transitions</span>(SelectedState, basepop, brfss, WorkingDirectory)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>education_transitions <span class="ot">&lt;-</span> list[[<span class="dv">1</span>]]</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>basepop <span class="ot">&lt;-</span> list[[<span class="dv">2</span>]]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>brfss <span class="ot">&lt;-</span> list[[<span class="dv">3</span>]]</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Function to read in alcohol transition probabilities and set up the data for transitioning alcohol use (assigning an alcohol use category to base population and BRFSS individuals)</p>
+<div class="cell" data-file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_education_transitions.R">
+<details>
+<summary>Function: load_education_transitions.R</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Loads eduacation transition rate data for SIMAH or CASCADE versions</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @keywords education transition rates</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">#' load_education_transitions</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>load_education_transitions <span class="ot">&lt;-</span> <span class="cf">function</span>(SelectedState, basepop, brfss, WorkingDirectory){</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># allocate basepop and migrants a "tunnel state" within some college cat - dependent on age/sex and race</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(SelectedState<span class="sc">==</span><span class="st">"USA"</span>){</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    somec <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/somecollege_ACS.csv"</span>))</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  }<span class="cf">else</span>{</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    somec <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/1_input_data/somecollege_ACS_states.csv"</span>)) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(STATE<span class="sc">==</span>SelectedState) <span class="sc">%&gt;%</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>STATE)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>  somec <span class="ot">&lt;-</span> somec <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">microsim.init.sex=</span>SEX,</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>                            <span class="at">microsim.init.age=</span>AGE,</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>                            <span class="at">microsim.init.race=</span>RACE) <span class="sc">%&gt;%</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">microsim.init.sex=</span><span class="fu">ifelse</span>(microsim.init.sex<span class="sc">==</span><span class="st">"F"</span>,<span class="st">"f"</span>,<span class="st">"m"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>           <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex,agecat,microsim.init.race, <span class="at">sep=</span><span class="st">""</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(cat, EDUCdetailed, percent)</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>  toimpute <span class="ot">&lt;-</span> basepop <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">==</span><span class="st">"SomeC"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>           <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex, agecat,microsim.init.race, <span class="at">sep=</span><span class="st">""</span>))</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>  cats <span class="ot">&lt;-</span> <span class="fu">unique</span>(toimpute<span class="sc">$</span>cat)</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> toimpute <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>i)</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>  samplefunction <span class="ot">&lt;-</span> <span class="cf">function</span>(data, somec, selected){</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">grepl</span>(<span class="st">"18"</span>,selected)<span class="sc">==</span><span class="cn">TRUE</span>){</span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>      sampled <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="st">"LEHS"</span>, <span class="at">times=</span><span class="fu">nrow</span>(data))</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>      somec <span class="ot">&lt;-</span> somec <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>selected)</span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>      sampled <span class="ot">&lt;-</span> <span class="fu">sample</span>(somec<span class="sc">$</span>EDUCdetailed, <span class="at">size=</span><span class="fu">nrow</span>(data), <span class="at">replace=</span>T, <span class="at">prob=</span><span class="fu">c</span>(somec<span class="sc">$</span>percent))</span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(sampled)</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>  selected <span class="ot">&lt;-</span> i</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>  neweduc <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>    neweduc[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> <span class="fu">samplefunction</span>(catlist[[<span class="fu">paste</span>(i)]], somec, i)</span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]]<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> neweduc[[<span class="fu">paste</span>(i)]]</span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind,catlist)</span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>  catlist<span class="sc">$</span>cat <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> basepop <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">!=</span><span class="st">"SomeC"</span>)</span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a>  basepop <span class="ot">&lt;-</span> <span class="fu">rbind</span>(basepop, catlist)</span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(<span class="fu">as.factor</span>(basepop<span class="sc">$</span>microsim.init.education))</span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a>  basepop<span class="sc">$</span>microsimnewED <span class="ot">&lt;-</span> basepop<span class="sc">$</span>microsim.init.education</span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a>  basepop<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC1"</span><span class="sc">|</span></span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a>                                              basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC2"</span><span class="sc">|</span></span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a>                                              basepop<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC3"</span>,<span class="st">"SomeC"</span>,basepop<span class="sc">$</span>microsimnewED)</span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a>  toimpute <span class="ot">&lt;-</span> brfss <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">==</span><span class="st">"SomeC"</span>) <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">cut</span>(microsim.init.age,</span>
+<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a>                                                                                         <span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">18</span>,<span class="dv">19</span>,<span class="dv">20</span>,<span class="dv">21</span>,<span class="dv">24</span>,<span class="dv">29</span>,<span class="dv">34</span>,<span class="dv">39</span>,<span class="dv">44</span>,<span class="dv">49</span>,<span class="dv">54</span>,<span class="dv">59</span>,<span class="dv">64</span>,<span class="dv">100</span>),</span>
+<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a>                                                                                         <span class="at">labels=</span><span class="fu">c</span>(<span class="st">"18"</span>,<span class="st">"19"</span>,<span class="st">"20"</span>,<span class="st">"21"</span>,<span class="st">"22-24"</span>,<span class="st">"25-29"</span>,<span class="st">"30-34"</span>,<span class="st">"35-39"</span>,<span class="st">"40-44"</span>,<span class="st">"45-49"</span>,</span>
+<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a>                                                                                                  <span class="st">"50-54"</span>,<span class="st">"55-59"</span>,<span class="st">"60-64"</span>,<span class="st">"65+"</span>)),</span>
+<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a>                                                                            <span class="at">cat=</span><span class="fu">paste</span>(microsim.init.sex,</span>
+<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a>                                                                                      agecat,</span>
+<span id="cb16-77"><a href="#cb16-77" aria-hidden="true" tabindex="-1"></a>                                                                                      microsim.init.race, <span class="at">sep=</span><span class="st">""</span>))</span>
+<span id="cb16-78"><a href="#cb16-78" aria-hidden="true" tabindex="-1"></a>  cats <span class="ot">&lt;-</span> <span class="fu">unique</span>(toimpute<span class="sc">$</span>cat)</span>
+<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> toimpute <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cat<span class="sc">==</span>i)</span>
+<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a>  neweduc <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a>    neweduc[[<span class="fu">paste</span>(i)]] <span class="ot">&lt;-</span> <span class="fu">samplefunction</span>(catlist[[<span class="fu">paste</span>(i)]], somec, i)</span>
+<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> cats){</span>
+<span id="cb16-90"><a href="#cb16-90" aria-hidden="true" tabindex="-1"></a>    catlist[[<span class="fu">paste</span>(i)]]<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> neweduc[[<span class="fu">paste</span>(i)]]</span>
+<span id="cb16-91"><a href="#cb16-91" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a>  catlist <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind,catlist)</span>
+<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a>  catlist<span class="sc">$</span>cat <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a>  <span class="co"># catlist$agecat &lt;- NULL</span></span>
+<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a>  brfss <span class="ot">&lt;-</span> brfss <span class="sc">%&gt;%</span> <span class="fu">filter</span>(microsim.init.education<span class="sc">!=</span><span class="st">"SomeC"</span>)</span>
+<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a>  brfss <span class="ot">&lt;-</span> <span class="fu">rbind</span>(brfss, catlist)</span>
+<span id="cb16-98"><a href="#cb16-98" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>(<span class="fu">as.factor</span>(brfss<span class="sc">$</span>microsim.init.education))</span>
+<span id="cb16-99"><a href="#cb16-99" aria-hidden="true" tabindex="-1"></a>  brfss<span class="sc">$</span>microsimnewED <span class="ot">&lt;-</span> brfss<span class="sc">$</span>microsim.init.education</span>
+<span id="cb16-100"><a href="#cb16-100" aria-hidden="true" tabindex="-1"></a>  brfss<span class="sc">$</span>microsim.init.education <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC1"</span><span class="sc">|</span></span>
+<span id="cb16-101"><a href="#cb16-101" aria-hidden="true" tabindex="-1"></a>                                            brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC2"</span><span class="sc">|</span></span>
+<span id="cb16-102"><a href="#cb16-102" aria-hidden="true" tabindex="-1"></a>                                            brfss<span class="sc">$</span>microsim.init.education<span class="sc">==</span><span class="st">"SomeC3"</span>,<span class="st">"SomeC"</span>,brfss<span class="sc">$</span>microsimnewED)</span>
+<span id="cb16-103"><a href="#cb16-103" aria-hidden="true" tabindex="-1"></a>  transitions <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">paste0</span>(WorkingDirectory,<span class="st">"SIMAH_workplace/microsim/2_output_data/final_ed_transitions"</span>, SelectedState, <span class="st">".RDS"</span>))</span>
+<span id="cb16-104"><a href="#cb16-104" aria-hidden="true" tabindex="-1"></a>list <span class="ot">&lt;-</span> <span class="fu">list</span>(transitions, basepop, brfss)</span>
+<span id="cb16-105"><a href="#cb16-105" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span>(list)</span>
+<span id="cb16-106"><a href="#cb16-106" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Use this function to generate alcohol transition probabilities and corresponding adjusted data files</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load in alcohol transition rates</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>list <span class="ot">&lt;-</span> <span class="fu">load_alcohol_transitions</span>(basepop, brfss, WorkingDirectory)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>alcohol_transitions <span class="ot">&lt;-</span> list[[<span class="dv">1</span>]]</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>basepop <span class="ot">&lt;-</span> list[[<span class="dv">2</span>]]</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>brfss <span class="ot">&lt;-</span> list[[<span class="dv">3</span>]]</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

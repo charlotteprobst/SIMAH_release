@@ -45,7 +45,9 @@ summarise_education_output <- function(outputdata, SelectedState, plot=TRUE){
     xlab("") + theme_bw() + theme(legend.position = "bottom",
                                   legend.title=element_blank(),
                                   strip.background=element_rect(fill="white"),
-                                  text = element_text(size=18))
+                                  text = element_text(size=18)) +
+    scale_colour_manual(values=c("#93aebf","#132268"))
+    
   list <- list(summary, plot)
   return(list)
 }
