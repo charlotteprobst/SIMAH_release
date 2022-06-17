@@ -8,27 +8,25 @@ run_microsim(
   seed,
   samplenum,
   basepop,
-  outwardmigrants,
-  inwardmigrants,
-  deathrates,
+  brfss,
+  death_rates,
   apply_death_rates,
   updatingeducation,
   education_setup,
-  transitionroles,
-  calculate_migration_rates,
+  education_transitions,
   outward_migration,
   inward_migration,
-  brfss,
-  Rates,
-  AlctransitionProbability,
-  transitions,
-  PopPerYear,
-  minyear,
-  maxyear
+  migration_rates,
+  updatingalcohol,
+  alcohol_transitions,
+  transition_alcohol,
+  minyear = 2000,
+  maxyear = 2019,
+  output = "demographics"
 )
 }
 \description{
-This function allows you to express your love of cats.
+This function runs the microsimulation
 }
 \examples{
 run_microsim

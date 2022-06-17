@@ -1,16 +1,21 @@
 # SIMAH project 2022 - script for setting up microsimulation model settings
 library(devtools)
 library(roxygen2)
+library(dplyr)
 library(tidyverse)
+options(dplyr.summarise.inform = FALSE)
 # load in R package
 
-# press enter when prompted
 install("SIMAH_code/microsimpackage", dep=T)
 library(microsimpackage)
 
 set.seed(42)
 
 options(scipen=999)
+
+# press enter if prompted
+install("SIMAH_code/microsimpackage")
+library(microsimpackage)
 
 ######################EDIT ONLY BELOW HERE ##################################################
 
@@ -29,6 +34,12 @@ updatingeducation <- 1
 # switch on and off alcohol updates
 updatingalcohol <- 1
 
+# switch between modelling mortality and morbidity (mortality = 1)
+mortality <- 1
+
+# switch on or off liver cirrhosis modelling
+cirrhosis <- 0
+
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -41,16 +52,40 @@ proportion <- ifelse(proportion>1,1,proportion)
 model <- "SIMAH"
 
 #####first read in and process all the necessary data files 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_files.R")
 
-# read in migration in and out rates 
-Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates",SelectedState,".RDS",sep=""))
-Rates$agecat <- as.character(Rates$agecat)
-# project those migration rates forwards - to get rates for 2020 onwards 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
+# read in base population
+if(model=="SIMAH"){
+  basepop <- read_csv(paste("SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepop", PopulationSize, ".csv", sep=""),
+                      show_col_types = FALSE)
+}else if(model=="CASCADE"){
+  basepop <- read_csv(paste("SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepopCASCADE", PopulationSize, ".csv", sep=""))
+}
 
-# load in the education transitions data
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/education_transitions.R")
+# read in BRFSS data for migrants and 18-year-olds entering the model
+brfss <- load_brfss(model,SelectedState)
 
-# load in the alcohol transitions data 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/alcohol_transitions.R")
+# read in death rates data
+death_rates <- load_death_rates(model, SelectedState)
+
+# read in migration in and out rates and optionally project forwards to 2025
+migration_rates <- load_migration_rates(SelectedState)
+
+# load in the education transition rates
+list <- load_education_transitions(SelectedState, basepop, brfss)
+education_transitions <- list[[1]]
+basepop <- list[[2]]
+brfss <- list[[3]]
+rm(list)
+# load in alcohol transition rates
+list <- load_alcohol_transitions(basepop, brfss)
+alcohol_transitions <- list[[1]]
+basepop <- list[[2]]
+brfss <- list[[3]]
+rm(list)
+
+# save a copy of original population files
+baseorig <- basepop
+
+# set microsim individuals IDs 
+microsim.init.id <- 1:nrow(basepop)
+basepop <- cbind(microsim.init.id, basepop)

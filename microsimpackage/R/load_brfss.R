@@ -1,3 +1,10 @@
+#' Loads BRFSS data for new migrants and 18-year-olds
+#'
+#' @param 
+#' @keywords brfss
+#' @export
+#' @examples
+#' load_brfss
 load_brfss <- function(model="SIMAH", SelectedState){
   # match the selected state to a region
   division1 <- c("Connecticut","Maine","Massachusetts","New Hampshire","Rhode Island","Vermont")
@@ -63,5 +70,6 @@ brfss <- read_rds("SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS"
                   microsim.init.BMI)
   brfss <- read_rds("SIMAH_workplace/microsim/1_input_data/brfss_subset.RDS")
 }
+  return(brfss)
 }
 
