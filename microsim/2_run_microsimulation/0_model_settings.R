@@ -4,6 +4,10 @@ library(roxygen2)
 library(dplyr)
 library(tidyverse)
 options(dplyr.summarise.inform = FALSE)
+# load in R package
+
+install("SIMAH_code/microsimpackage", dep=T)
+library(microsimpackage)
 
 set.seed(42)
 

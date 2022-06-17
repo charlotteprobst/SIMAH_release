@@ -21,11 +21,11 @@ data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Proces
 output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/SES x Lifestyle/Output/"      # Location of figures/tables
 
 
-# Load data (participants aged 25-85 years)
-nhis_all    <- readRDS (paste0(data, "nhis_all25_85.rds"))
-nhis        <- readRDS (paste0(data, "nhis25_85.rds"))
-nhis_male   <- filter(nhis, female==0)
-nhis_female <- filter(nhis, female==1)
+# Load data
+nhis_all    <- readRDS (paste0(data, "nhis_all.rds"))
+nhis        <- readRDS (paste0(data, "nhis.rds"))
+nhis_male   <- readRDS (paste0(data, "nhis_male.rds"))
+nhis_female <- readRDS (paste0(data, "nhis_female.rds"))
 
 
 
@@ -93,4 +93,61 @@ tab_e1 <-CreateTableOne(all_vars, factor_vars, strata="lost", data=nhis_all_fema
     write.csv(table_e1, file = file.path(output, "eTable 1 (women) Attrition.csv"))
     kableone(table_e1)
     
-      
+    
+    
+    
+    
+    
+    
+    
+# Radar plot
+radar <- nhis %>%
+  mutate( high_risk_drinker = ifelse(alcohol5v2.factor %in% c("Category II", "Category III"), 1, 0),
+          everyday_smoker = ifelse(smoking4.factor %in% c("Current everyday smoker"), 1, 0),
+          sedentary = ifelse(phy_act3.factor %in% c("Sedentary"), 1, 0),
+          obese = ifelse(bmi_cat.factor %in% c("Obese"), 1, 0)) %>%
+  group_by(edu.factor, female) %>%
+  summarise(across(c(high_risk_drinker, everyday_smoker, sedentary, obese), mean)) %>% 
+  mutate (across(c(high_risk_drinker, everyday_smoker, sedentary, obese), ~ round(.x*100, 0))) 
+
+
+
+custom_radarchart <- function(data, color = "#00AFBB", title = NULL){
+  
+  min <- 0
+  max <- 60
+  data <- data %>%
+    add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
+    add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
+  
+  library(fmsb)
+  radarchart(data, axistype = 1,
+    # Customize the polygon
+    pcol = color, plwd = 4, plty = 1,
+    # Customize the grid
+    cglcol = "gray", cglty = 1, cglwd = 2,
+    # Customize the axis
+    axislabcol = "black", 
+    # Variable labels
+    vlcex = 1.25, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
+    caxislabels = seq(0,60,15), title = title, cex.main = 2)
+}
+
+op <- par(mar = c(1,1,1,1)) # edit margins
+par(mfrow=c(1,2))
+
+radar %>%
+  filter (female==1 & edu.factor %in% c("Max", "Min", "Highschool", "Bachelors")) %>%
+  dplyr::select(-female) %>%
+  column_to_rownames(var = "edu.factor") %>% 
+  custom_radarchart(title="Women", color=c("#FC4E07", "#00AFBB"))
+
+
+radar %>%
+  filter (female==0& edu.factor %in% c("Max", "Min", "Highschool", "Bachelors")) %>%
+  dplyr::select(-female) %>%
+  column_to_rownames(var = "edu.factor") %>%
+  custom_radarchart(title="Men", color=c("#FC4E07", "#00AFBB"))
+
+par(mfrow=c(1,1))
+
