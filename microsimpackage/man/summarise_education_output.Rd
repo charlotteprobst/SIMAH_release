@@ -4,7 +4,7 @@
 \alias{summarise_education_output}
 \title{Summarises microsimulation output by education and compares to target data}
 \usage{
-summarise_education_output(outputdata, SelectedState, plot = TRUE)
+summarise_education_output(outputdata, SelectedState, WorkingDirectory)
 }
 \description{
 This function computes summary statistics for educational attainment with optional plot

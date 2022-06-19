@@ -33,6 +33,9 @@ cirrhosis <- 0
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
 
+# output (which version of the output is required) options are education alcohol or mortality
+output_type <- "alcohol"
+
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -76,7 +79,7 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 # load in alcohol transition rates
-list <- load_alcohol_transitions(basepop, brfss, WorkingDirectory)
+list <- load_alcohol_transitions(SelectedState, basepop, brfss, WorkingDirectory)
 alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
