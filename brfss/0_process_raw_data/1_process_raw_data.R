@@ -68,10 +68,14 @@ dataFiles <- lapply(dataFiles, recode_BMI)
 
 dataFiles <- lapply(dataFiles, recode_derived_BMI)
 
-#### recode alcohol variables
-# for(i in 1:37){
-#   print(years[i])
-#   print(summary(dataFiles[[i]]$BMI))
+# Summary <- list()
+# ### recode alcohol variables
+# for(i in 1984:2020){
+#   Summary[[paste(i)]] <- 
+#     dataFiles[[paste(i)]] %>% filter(BMI_final>60 | BMI_final<13) %>% dplyr::select(YEAR,State,race_eth,
+#                                                               age_var, sex_recode,
+#                                                               height_cm, weight_kg,
+#                                                               BMI, BMI_derived, BMI_final)
 # }
 
 # frequency - drinking days per month

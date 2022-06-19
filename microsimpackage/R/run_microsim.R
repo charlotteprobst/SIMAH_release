@@ -7,10 +7,10 @@
 #' @examples
 #' run_microsim
 run_microsim <- function(seed,samplenum,basepop,brfss,
-                         death_rates, apply_death_rates,
-                         updatingeducation, education_setup,education_transitions,
-                         outward_migration, inward_migration, migration_rates,
-                         updatingalcohol, alcohol_transitions, transition_alcohol,
+                         death_rates,
+                         updatingeducation, education_setup,
+                         migration_rates,
+                         updatingalcohol, alcohol_transitions,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
 Summary <- list()

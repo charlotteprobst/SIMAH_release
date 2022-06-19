@@ -2,7 +2,7 @@
 microsim <- microsim %>% dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex,
                                 microsim.init.education,
                                 microsim.init.drinkingstatus, microsim.init.alc.gpd, formerdrinker,
-                                microsim.init.income) %>% 
+                                microsim.init.income, microsim.init.BMI, formerdrinker) %>% 
   mutate(microsim.init.spawn.year=2000,
          agecat = cut(microsim.init.age,
                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,100),

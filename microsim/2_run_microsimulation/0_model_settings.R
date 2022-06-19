@@ -27,13 +27,13 @@ updatingalcohol <- 1
 # switch between modelling mortality and morbidity (mortality = 1)
 mortality <- 1
 
-# switch on or off liver cirrhosis modelling
-cirrhosis <- 0
+# switch between mortality causes
+disease <- "cirrhosis"
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
 
-# output (which version of the output is required) options are education alcohol or mortality
+# output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "alcohol"
 
 ####################EDIT ONLY ABOVE HERE ##################################################
@@ -67,7 +67,7 @@ basepop <- cbind(microsim.init.id, basepop)
 brfss <- load_brfss(model,SelectedState, WorkingDirectory)
 
 # read in death rates data
-death_rates <- load_death_rates(model, SelectedState, WorkingDirectory)
+death_rates <- load_death_rates(model, proportion, SelectedState, WorkingDirectory)
 
 # read in migration in and out rates and project rates forwards to 2025 (in case needed)
 migration_rates <- load_migration_rates(SelectedState, WorkingDirectory)

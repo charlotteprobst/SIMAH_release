@@ -5,9 +5,10 @@
 #' @export
 #' @examples
 #' load_death_rates
-load_death_rates <- function(model="SIMAH", SelectedState, WorkingDirectory){
+load_death_rates <- function(model="SIMAH", proportion, SelectedState, WorkingDirectory){
 
   if(model=="SIMAH"){
+
 fun <- function(x){
   x <- x*proportion
   return(x)

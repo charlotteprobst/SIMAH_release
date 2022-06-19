@@ -30,7 +30,7 @@ setwd(WorkingDirectory)
 
 SelectedState <- "USA"
 
-PopulationSize <- 500000
+PopulationSize <- 1000000
 
 ####EDIT ONLY ABOVE HERE ##
 

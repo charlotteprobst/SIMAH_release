@@ -11,23 +11,25 @@ return(data)
 }
 
 remove_missing_data <- function(data){
-  data <- data %>% mutate(BMI = ifelse(BMI<=15, 15,
-                                       ifelse(BMI>=45, 45, BMI))) %>% 
+  data <- data %>% 
+    rename(BMI=BMI_final) %>% 
+    mutate(BMI = ifelse(BMI<=12, NA,
+                        ifelse(BMI>=65, NA, BMI)),
+           BMI = ifelse(BMI<=15, 15,
+                        ifelse(BMI>=45, 45, BMI))) %>% 
     dplyr::select(YEAR, State, StateOrig, final_sample_weight, race_eth,
                   race_eth_detailed,
                   sex_recode, age_var,
-                  employment, employment_detailed,
+                  employment,
                   education_summary,
                   household_income,
-                  marital_status,
-                  marital_status_detailed,
-                  BMI, drinkingstatus,
+                  marital_status, drinkingstatus,
                   alc_frequency, quantity_per_occasion,
-                  gramsperday, 
+                  gramsperday, BMI,
                   mentalhealth,physicalhealth,
                   # household_income
                   hed)  %>% drop_na(YEAR, State, race_eth, sex_recode, age_var,
-                                    education_summary, employment, marital_status,
+                                    education_summary, BMI, employment, marital_status,
                                                   gramsperday, drinkingstatus) %>% 
     filter(StateOrig!="Puerto Rico") %>% filter(StateOrig!="Guam") %>% filter(StateOrig!="territories")
   return(data)

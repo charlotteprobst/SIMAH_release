@@ -21,11 +21,11 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
-                       death_rates, apply_death_rates,
-                       updatingeducation, education_setup,education_transitions,
-                       outward_migration, inward_migration, migration_rates,
-                       updatingalcohol, alcohol_transitions, transition_alcohol,
-                       2000, 2019, output_type)
+                       death_rates,
+                       updatingeducation, education_setup,
+                       migration_rates,
+                       updatingalcohol, alcohol_transitions,
+                       2000, 2019, output="mortality")
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, WorkingDirectory)
