@@ -1,1 +1,0 @@
-# SIMAH project April 2022 - analysing state-level covid-19 policies for supplement

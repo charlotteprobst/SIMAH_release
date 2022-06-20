@@ -35,14 +35,19 @@ nesarc1 <- nesarc1_orig %>%
     S2AQ4A, S2AQ4B, s2aq4cr, S2AQ4D, S2AQ4E, S2AQ4F, S2AQ4G, coolecf, 
     S2AQ5A, S2AQ5B, s2aq5cr, S2AQ5D, S2AQ5E, S2AQ5F, S2AQ5G, beerecf, 
     S2AQ6A, S2AQ6B, s2aq6cr, S2AQ6D, S2AQ6E, S2AQ6F, S2AQ6G, wineecf, 
-    S2AQ7A, S2AQ7B, s2aq7cr, S2AQ7D, S2AQ7E, S2AQ7F, S2AQ7G, liqrecf, S2AQ8E, S2AQ9) %>%
+    S2AQ7A, S2AQ7B, s2aq7cr, S2AQ7D, S2AQ7E, S2AQ7F, S2AQ7G, liqrecf, S2AQ8E, S2AQ9,
+    etotlca2, alcabdep12dx, alcabdepp12dx) %>%
   
   # recode / create new variables
   mutate (
     wave = 1,
     age_diff = 0, # age difference from wave 1
     age = NA,    # placeholder variable - age as NA since it will be extracted from Wave 2
-    nw1age = NA, # Placeholder variable - matches  age1 from wave 2
+    nw1age = NA, # Placeholder variable - matches  age1 from wave 2,
+    AUD_lifetime = case_when(
+      alcabdep12dx == 0 & alcabdepp12dx==0 ~ 0,                  # No AUD
+      alcabdep12dx %in% c(2,3) | alcabdepp12dx %in% c(2,3) ~ 2,  # alcohol dependence, with or without abuse
+      alcabdep12dx == 1 | alcabdepp12dx==1 ~ 1),                 # alcohol abuse only
     female = recode(sex, `1` = 0, `2` = 1),
     race = case_when(olds1q1d5==1 & olds1q1d3 ==2 & olds1q1c==2  ~ 1, # white, non-hispanic
                      olds1q1d3==1 & olds1q1c==2 ~ 2, # black, non-hispanic
@@ -54,6 +59,7 @@ nesarc1 <- nesarc1_orig %>%
     marital_stat = MARITAL,
     edu = S1Q6A,
     fam_income = olds1q11b,
+    alcohol_daily_oz = etotlca2, 
     drinking_stat = CONSUMER,
     drank5plus_freq = S2AQ8E,
     drank4plus_freq = S2AQ9)
@@ -62,9 +68,10 @@ nesarc1 <- nesarc1_orig %>%
   # check
   # count(nesarc1, olds1q1d5, olds1q1c, olds1q1d3, race) 
   # count(nesarc1, sex, female)
+  # count(nesarc1, AUD_lifetime, alcabdep12dx, alcabdepp12dx)
   
   # Remove extra variables  
-  nesarc1 <- select(nesarc1, -olds1q1d5, -olds1q1d3, -olds1q1c, -sex)
+  nesarc1 <- select(nesarc1, -olds1q1d5, -olds1q1d3, -olds1q1c, -sex, -alcabdepp12dx, -alcabdep12dx)
   
 # Wave 2  -------------------------------------------------------------------------------------------------------------  
 
@@ -76,7 +83,8 @@ nesarc2 <- nesarc2_orig %>%
     w2S2AQ5A, w2S2AQ5B, w2s2aq5cr, w2S2AQ5D, w2S2AQ5E, w2S2AQ5F, w2S2AQ5G, w2coolecf, 
     w2S2AQ6A, w2S2AQ6B, w2s2aq6cr, w2S2AQ6D, w2S2AQ6E, w2S2AQ6F, w2S2AQ6G, w2beerecf, 
     w2S2AQ7A, w2S2AQ7B, w2s2aq7cr, w2S2AQ7D, w2S2AQ7E, w2S2AQ7F, w2S2AQ7G, W2WINEECF, 
-    w2S2AQ8A, w2S2AQ8B, w2s2aq8cr, w2S2AQ8D, w2S2AQ8E, w2S2AQ8F, w2S2AQ8G, w2liqrecf, w2S2AQ4F, w2S2AQ4E) %>%
+    w2S2AQ8A, w2S2AQ8B, w2s2aq8cr, w2S2AQ8D, w2S2AQ8E, w2S2AQ8F, w2S2AQ8G, w2liqrecf, w2S2AQ4F, w2S2AQ4E,
+    w2etotlca2, w2everalcabdep) %>%
     
   # recode / create new variables
   mutate (
@@ -89,7 +97,8 @@ nesarc2 <- nesarc2_orig %>%
   rename(
     psu = w2psu, stratum = w2stratum, weight = w2weight, CDAY = w2cday, CMON = w2cmon, CYEAR = w2cyear, 
     age = w2AGE, marital_stat = W2MARITAL, edu = w2s1q15ar,
-    fam_income = w2s1q19br, drinking_stat = w2CONSUMER, 
+    AUD_lifetime = w2everalcabdep,
+    fam_income = w2s1q19br, drinking_stat = w2CONSUMER, alcohol_daily_oz = w2etotlca2,
     S2AQ4A = w2S2AQ5A,  S2AQ4B = w2S2AQ5B,  s2aq4cr = w2s2aq5cr,  S2AQ4D = w2S2AQ5D,  S2AQ4E = w2S2AQ5E,  S2AQ4F = w2S2AQ5F,  S2AQ4G = w2S2AQ5G,  coolecf = w2coolecf,  
     S2AQ5A = w2S2AQ6A,  S2AQ5B = w2S2AQ6B,  s2aq5cr = w2s2aq6cr,  S2AQ5D = w2S2AQ6D,  S2AQ5E = w2S2AQ6E,  S2AQ5F = w2S2AQ6F,  S2AQ5G = w2S2AQ6G,  beerecf = w2beerecf,  
     S2AQ6A = w2S2AQ7A,  S2AQ6B = w2S2AQ7B,  s2aq6cr = w2s2aq7cr,  S2AQ6D = w2S2AQ7D,  S2AQ6E = w2S2AQ7E,  S2AQ6F = w2S2AQ7F,  S2AQ6G = w2S2AQ7G,  wineecf = W2WINEECF,  
@@ -126,7 +135,7 @@ saveRDS(nesarc_raw, paste0(data_new, "nesarc_raw.rds"))
 nesarc3 <- nesarc3_orig %>%
   # specify variables to keep
   select( idnum, AUDWEIGHT, NAGE, NSEX, nethrace, NMARITAL, NEDUC, 
-          n1q19br, nconsumer, n2aq4h, n2aq4f,
+          n1q19br, nconsumer, n2aq4h, n2aq4f, netotlca2,
           n2aq5a, n2aq5b, n2aq5cr, n2aq5d, n2aq5e, n2aq5f, n2aq5g, ncoolecf,
           n2aq6a, n2aq6b, n2aq6cr, n2aq6d, n2aq6e, n2aq6f, n2aq6g, nbeerecf, 
           n2aq7a, n2aq7b, n2aq7cr, n2aq7d, n2aq7e, n2aq7f, n2aq7g, nwineecf, 

@@ -1,8 +1,11 @@
+#' Updates alcohol use through matching with distributions from the BRFSS data
+#'
+#' @param
+#' @keywords update alcohol 
+#' @export
+#' @examples
+#' update alcohol
 updating_alcohol <- function(data,CDF,y, ...){
-  
-# y <- ifelse(y==1996, 1997, 
-#             ifelse(y==2000, 2001, 
-#                    ifelse(y==1998, 1999, y)))
 
 CDFs <- CDF %>% filter(YEAR==y) %>% 
     mutate(BMIcat = cut(microsim.init.BMI, breaks=c(0,18,25,30,100),

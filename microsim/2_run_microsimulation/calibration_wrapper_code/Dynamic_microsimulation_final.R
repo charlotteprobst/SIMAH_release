@@ -1,7 +1,7 @@
 #####Wrapper code for dynamic microsimulation
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 gc()
-suppressPackageStartupMessages(library("dplyr"))
+
 library(dplyr)
 library(knitr)
 library(ipfp)

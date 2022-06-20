@@ -281,7 +281,9 @@ recode_derived_BMI <- function(data){
                                                      ifelse(YEAR>=2002 & YEAR<=2010 & BMI_derived==9999, NA,
                                                             ifelse(YEAR>=2002 & YEAR<=2010, BMI_derived/100,
                                                                    ifelse(YEAR>=2011 & BMI_derived>9000, NA,
-                                                                          ifelse(YEAR>=2011, BMI_derived/100, NA))))))))))
+                                                                          ifelse(YEAR>=2011, BMI_derived/100, NA))))))))),
+    BMI_final = ifelse(is.na(BMI_derived), BMI, BMI_derived))
+  
   return(data)
   }
 
@@ -472,7 +474,7 @@ subset_data <- function(data){
     dplyr::select(YEAR, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
                   education_summary, employment, marital_status,
                   household_income,
-                  height_cm, weight_kg, BMI, BMI_derived, drinkingstatus, 
+                  height_cm, weight_kg, BMI_final, drinkingstatus, 
                   mentalhealth, physicalhealth,
                   alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)
