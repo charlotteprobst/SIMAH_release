@@ -1,8 +1,8 @@
 # libraries required:
-library("tidyverse")
-library("dplyr")
-library("reshape")
-library("data.table")
+#library("tidyverse")
+#library("dplyr")
+#library("reshape")
+library(ggplot2)
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
@@ -15,7 +15,7 @@ levels(dle_results$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = 
 levels(dle_results$Sex) <- list(Men = "1", Women = "2")
 
 
-color.vec <- c("#cf82a6", "#a14d72", "#732946")
+color.vec <- c("#46B39A", "#1A5464", "#FC1456")
 color.vec <- c("#69AA9E", "#447a9e",  "#d72c40") # high  middle low
 
 # Plot on life expectancy by SES over time
@@ -32,4 +32,4 @@ ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour = SES)) +
    geom_line(aes(color = SES), size = .9, alpha = .7) +
    geom_point(size = 1, aes(color = SES)) 
 #ggsave("1_LE_by_sex_and_SES_v1.jpg", dpi=600, width = 15, height = 10, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/1_LE_by_sex_and_SES.jpg", dpi=600, width=18, height=13, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/1_LE_by_sex_and_SES.jpg", dpi=600, width=18, height=8.5, units="cm")

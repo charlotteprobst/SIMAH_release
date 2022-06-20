@@ -35,7 +35,6 @@ v.vars <- c("TI", "AB", "AU", "YR", "JN", "PT", "VO", "IP", "PG", "DB", "DP")
 dWOS <- dWOS[,v.vars]
 dOVID <- dOVID[,v.vars]
 
-
 dDB <- rbind(dWOS, dOVID)
 
 write.csv(dDB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)

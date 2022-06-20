@@ -5,7 +5,7 @@
 ## Load libraries
 library(stringi) ## To wrap the abstract in the console window
 
-k.file == "Complete"
+k.file <- "Complete"
 if(k.file == "ReveiwerA"){
   dSUB <- read.csv("SIMAH_workplace/lit_reviews/ReviewerA_clean.csv")  
 } else if (k.file == "Complete") {
