@@ -7,13 +7,13 @@ library(dplyr)
 library(tidyverse)
 options(dplyr.summarise.inform = FALSE)
 
+# load in microsim R package
+setwd("~/Google Drive/SIMAH Sheffield/SIMAH_code")
+install("microsimpackage", dep=T)
+
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-setwd(paste(WorkingDirectory))
-
-# load in microsim R package
-setwd("SIMAH_code")
-install("microsimpackage", dep=T)
+DataDirectory <- "~/Google Drive/SIMAH Sheffield/RSA/workshop_data/"
 
 setwd(paste(WorkingDirectory))
 
@@ -31,4 +31,7 @@ if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, WorkingDirectory)
 }else if(output_type=="alcohol"){
 summary <- summarise_alcohol_output(Output, SelectedState, WorkingDirectory)
+}else if(output_type=="mortality"){
+summary <- summarise_mortality_output(Output, death_rates, SelectedState, WorkingDirectory)
 }
+

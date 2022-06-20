@@ -39,7 +39,7 @@ output_type <- "alcohol"
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
-WholePopSize <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/fullpopcounts.csv")) %>% 
+WholePopSize <- read.csv(paste0(DataDirectory,"fullpopcounts.csv")) %>% 
   filter(STATE==SelectedState)
 
 proportion <- PopulationSize/WholePopSize$total
@@ -50,10 +50,10 @@ proportion <- ifelse(proportion>1,1,proportion)
 
 # read in base population
 if(model=="SIMAH"){
-  basepop <- read_csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
+  basepop <- read_csv(paste0(DataDirectory, SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
 }else if(model=="CASCADE"){
-  basepop <- read_csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
+  basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
 }
 
 # save a copy of original population files
@@ -64,22 +64,22 @@ microsim.init.id <- 1:nrow(basepop)
 basepop <- cbind(microsim.init.id, basepop)
 
 # read in BRFSS data for migrants and 18-year-olds entering the model
-brfss <- load_brfss(model,SelectedState, WorkingDirectory)
+brfss <- load_brfss(model,SelectedState, DataDirectory)
 
 # read in death rates data
-death_rates <- load_death_rates(model, proportion, SelectedState, WorkingDirectory)
+death_rates <- load_death_rates(model, proportion, SelectedState, DataDirectory)
 
 # read in migration in and out rates and project rates forwards to 2025 (in case needed)
-migration_rates <- load_migration_rates(SelectedState, WorkingDirectory)
+migration_rates <- load_migration_rates(SelectedState, DataDirectory)
 
 # load in the education transition rates
-list <- load_education_transitions(SelectedState, basepop, brfss, WorkingDirectory)
+list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
 education_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 # load in alcohol transition rates
-list <- load_alcohol_transitions(SelectedState, basepop, brfss, WorkingDirectory)
+list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)
 alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]

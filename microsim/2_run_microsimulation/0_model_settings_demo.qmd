@@ -61,6 +61,8 @@ proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 ```
 
+## Representative synthetic population
+
 This section reads in the baseline population file - this file should already exist in your data folder.
 There are two different versions of the baseline population for the SIMAH (starts in 2000) and CASCADE (starts in 1984) versions of the simulation.
 
@@ -96,6 +98,8 @@ Use the function to read in the BRFSS data
 brfss <- load_brfss(model,SelectedState,WorkingDirectory)
 ```
 
+## Add and remove individuals due to births and migration
+
 Function to read in the death rates data
 
 ```{r, file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_death_rates.R"}
@@ -123,6 +127,8 @@ Use the function to read in the migration in and out rates (derived from ACS dat
 migration_rates <- load_migration_rates(SelectedState, WorkingDirectory)
 ```
 
+## Update education
+
 Function to read in education transitions data and set up the brfss and base population ready for simulating education (imputing a new education level for individuals in the "some college" category based on which year of college they are in (based on ACS data)
 
 ```{r, file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_education_transitions.R"}
@@ -142,9 +148,11 @@ brfss <- list[[3]]
 rm(list)
 ```
 
+## Update alcohol consumption
+
 Function to read in alcohol transition probabilities and set up the data for transitioning alcohol use (assigning an alcohol use category to base population and BRFSS individuals)
 
-```{r, file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_education_transitions.R"}
+```{r, file="~/Google Drive/SIMAH Sheffield/SIMAH_code/microsimpackage/R/load_alcohol_transitions.R"}
 #| code-fold: true
 #| code-summary: "Function: load_education_transitions.R"
 ```

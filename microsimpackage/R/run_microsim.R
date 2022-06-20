@@ -82,8 +82,27 @@ basepop <- subset(basepop, microsim.init.age<=79)
 }
 # save output - depending on which was selected
 if(output=="mortality"){
-  Summary <- do.call(rbind, DeathSummary)
-}else if(output=="demographics"){
+  Summary <- do.call(rbind, DeathSummary) %>%
+    mutate(agecat = as.factor(agecat),
+           microsim.init.sex=as.factor(microsim.init.sex),
+           microsim.init.race=as.factor(microsim.init.race),
+           microsim.init.education = as.factor(microsim.init.education),
+           year = as.factor(year)) %>%
+    group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education,
+             cause) %>% tally(name="ndeaths") %>%
+    complete(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education, cause)
+
+  PopSummary <- do.call(rbind,PopPerYear) %>%
+    mutate(agecat = as.factor(agecat),
+           microsim.init.sex=as.factor(microsim.init.sex),
+           microsim.init.race=as.factor(microsim.init.race),
+           microsim.init.education = as.factor(microsim.init.education),
+           year = as.factor(year)) %>%
+  group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education)
+           tally(name="totalpop") %>%
+      complete(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education)
+  Summary <- list(Summary,PopSummary)
+  }else if(output=="demographics"){
   Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
