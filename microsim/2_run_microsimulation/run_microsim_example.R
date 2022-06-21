@@ -1,25 +1,12 @@
-#' Runs microsimulation
-#'
-#' This function runs the microsimulation
-#' @param
-#' @keywords microsimulation
-#' @export
-#' @examples
-#' run_microsim
-run_microsim <- function(seed,samplenum,basepop,brfss,
-                         death_rates,
-                         updatingeducation, education_setup,
-                         migration_rates,
-                         updatingalcohol, alcohol_transitions,
-                         policy=0, percentreduction=0.1,
-                         minyear=2000, maxyear=2019, output="demographics"){
+# simplified version of microsimulation function to demonstrate for SIMAH workshop
+# runs one year of the simulation (2002)
+seed <- (Sys.time())
+samplenum <- 1
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
 PopPerYear <- list()
-transitionyears <- seq(2002,2018, by=2)
-for(y in minyear:maxyear){
-print(y)
+y <- 2001
 
 # add and remove migrants
 if(y>=2001){
@@ -54,7 +41,6 @@ if(updatingeducation==1 & y>2000){
 
 # update alcohol use categories
 if(updatingalcohol==1 & y>2000){
-  if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
                  breaks=c(0,20,25,29,39,49,64,100),
@@ -68,7 +54,6 @@ if(updatingalcohol==1 & y>2000){
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
   # allocate a numeric gpd for individuals within category bounds
   # basepop <- allocate_gramsperday(basepop, DataDirectory)
-  }
 }
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
@@ -88,9 +73,9 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
                                            labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
                                                     "65-74","75-79")))
 basepop <- subset(basepop, microsim.init.age<=79)
-}
+
 # save output - depending on which was selected
-if(output=="mortality"){
+if(output_type=="mortality"){
   Summary <- do.call(rbind, DeathSummary) %>%
     mutate(agecat = as.factor(agecat),
            microsim.init.sex=as.factor(microsim.init.sex),
@@ -114,7 +99,7 @@ if(output=="mortality"){
   group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education, .drop=FALSE) %>%
            tally(name="totalpop")
 Summary <- list(Summary,PopSummary)
-  }else if(output=="demographics"){
+  }else if(output_type=="demographics"){
   Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
@@ -127,7 +112,7 @@ Summary <- list(Summary,PopSummary)
                                                   AlcCAT=as.factor(AlcCAT)) %>%
     group_by(year, samplenum, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
              .drop=FALSE) %>% tally()
-}else if(output=="alcohol"){
+}else if(output_type=="alcohol"){
   CatSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
@@ -147,7 +132,5 @@ Summary <- list(Summary,PopSummary)
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
-}
-return(Summary)
 }
 

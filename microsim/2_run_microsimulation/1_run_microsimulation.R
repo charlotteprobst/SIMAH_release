@@ -27,16 +27,15 @@ Output <- run_microsim(1,1,basepop,brfss,
                        migration_rates,
                        updatingalcohol, alcohol_transitions,
                        policy, percentreduction,
-                       2000, 2005, output="alcohol")
+                       2000, 2005, output_type)
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="alcohol"){
-summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
+summary <- summarise_alcohol_output(Output[[1]], SelectedState, DataDirectory)
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory)
 }
 
-summary
 summary[[1]]
-
+summary[[2]]

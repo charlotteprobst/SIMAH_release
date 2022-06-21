@@ -7,7 +7,7 @@
 #' load_death_rates
 load_death_rates <- function(model="SIMAH", proportion, SelectedState, WorkingDirectory){
 
-  if(model=="SIMAH"){
+if(model=="SIMAH"){
 
 fun <- function(x){
   x <- x*proportion
@@ -28,8 +28,7 @@ deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0019_final.csv"))
          IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort) %>%
   mutate_at(vars(LVDCmort, DMmort,
                  IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
-}else{
-  deathrates <- read.csv("SIMAH_workplace/microsim/1_input_data/sumCOD_0018_mortcount_state.csv") %>% filter(age_gp!=80) %>% mutate(Sex=recode(sex, "1"="m","2"="f"),
+}else{deathrates <- read.csv(paste0(WorkingDirectory,"sumCOD_0018_mortcount_state.csv")) %>% filter(age_gp!=80) %>% mutate(Sex=recode(sex, "1"="m","2"="f"),
        agecat = recode(age_gp, "18"="18-24","25"="25-29",
                        "30"="30-34","35"="35-39","40"="40-44",
                        "45"="45-49","50"="50-54","55"="55-59",
@@ -62,7 +61,6 @@ deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0019_final.csv"))
                    IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
 
 }
-
 latest <- deathrates %>% filter(year==2018)
 rep <- as.data.frame(sapply(latest, rep.int, times=10))
 rep$year <- rep(2019:2028, each=288)

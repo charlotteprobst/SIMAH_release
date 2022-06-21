@@ -4,7 +4,7 @@
 \alias{allocate_gramsperday}
 \title{Allocate individuals a grams per day of consumption - based on categories}
 \usage{
-allocate_gramsperday(basepop)
+allocate_gramsperday(basepop, DataDirectory)
 }
 \description{
 Allocate individuals a grams per day of consumption - based on categories

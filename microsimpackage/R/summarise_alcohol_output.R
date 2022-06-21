@@ -43,7 +43,7 @@ summarise_alcohol_output <- function(Output, SelectedState, WorkingDirectory){
   # group_by(YEAR, State, microsim.init.sex, microsim.init.race,microsim.init.education, AlcCAT) %>%
   # tally() %>% ungroup()
 
-target <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/brfss_alcohol_summary.csv")) %>%
+target <- read.csv(paste0(WorkingDirectory,"brfss_alcohol_summary.csv")) %>%
   group_by(YEAR, microsim.init.sex, AlcCAT) %>%
   summarise(n=sum(n)) %>% rename(sex=microsim.init.sex, year=YEAR) %>%
   group_by(year, sex) %>%

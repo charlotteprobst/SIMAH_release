@@ -14,7 +14,8 @@ library(dplyr)
 library(readr)
 library(tidyr)
 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+###set working directory to the main "SIMAH" folder in your directory 
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/RSA/Microsim_workshop/workshop_data/"
 
 set.seed(42)
 
@@ -54,7 +55,7 @@ This next section calculates the proportion of the selected geography that is be
 
 ```{r}
 # what proportion of the population does this represent
-WholePopSize <- read.csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/fullpopcounts.csv")) %>% 
+WholePopSize <- read.csv(paste0(WorkingDirectory,"fullpopcounts.csv")) %>% 
   filter(STATE==SelectedState)
 
 proportion <- PopulationSize/WholePopSize$total
@@ -69,10 +70,10 @@ There are two different versions of the baseline population for the SIMAH (start
 ```{r}
 # read in base population
 if(model=="SIMAH"){
-  basepop <- read_csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
+  basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
 }else if(model=="CASCADE"){
-  basepop <- read_csv(paste0(WorkingDirectory,"SIMAH_workplace/microsim/1_input_data/agent_files/", SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
+  basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
 }
 # save a copy of original population files
 baseorig <- basepop
@@ -110,7 +111,7 @@ Function to read in the death rates data
 Use the function to read in death rates data based on CDC data
 
 ```{r}
-death_rates <- load_death_rates(model, SelectedState, WorkingDirectory)
+death_rates <- load_death_rates(model, proportion, SelectedState, WorkingDirectory)
 ```
 
 Function to read in the migration in and out rates data
@@ -161,9 +162,101 @@ Use this function to generate alcohol transition probabilities and corresponding
 
 ```{r}
 # load in alcohol transition rates
-list <- load_alcohol_transitions(basepop, brfss, WorkingDirectory)
+list <- load_alcohol_transitions(SelectedState, basepop,brfss, WorkingDirectory)
 alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
+```
+
+# Example running microsimulation 
+
+## Run microsimulation for one year - first set up the output variables and settings not covered in model settings section
+
+```{r}
+seed <- (Sys.time())
+samplenum <- 1
+set.seed(seed)
+Summary <- list()
+DeathSummary <- list()
+PopPerYear <- list()
+#set y to 2001 - for demonstration purposes 
+y <- 2001
+```
+
+## Now apply functions to run microsimulation
+
+```{r}
+#add and remove migrants
+if(y>=2001){
+  basepop <- inward_migration(basepop,migration_rates,y, brfss)
+  basepop <- outward_migration(basepop,migration_rates,y)
+}
+```
+
+```{r}
+# apply death rates and summarise deaths by cause
+if(y>=2000){
+basepop <- apply_death_rates(basepop, death_rates, y)
+DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
+                                              dead, cause) %>% mutate(year=y, seed=seed)
+basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause))
+}
+```
+
+```{r}
+# transition education for individuals aged 34 and under
+if(updatingeducation==1 & y>2000){
+  totransition <- basepop %>% filter(microsim.init.age<=34)
+  tostay <- basepop %>% filter(microsim.init.age>34)
+  totransition <- education_setup(totransition,y)
+  totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
+  totransition$microsimnewED <- totransition$newED
+  totransition$microsim.init.education <- ifelse(totransition$microsimnewED=="LEHS","LEHS",
+                                                 ifelse(totransition$microsimnewED=="SomeC1","SomeC",
+                                                        ifelse(totransition$microsimnewED=="SomeC2","SomeC",
+                                                               ifelse(totransition$microsimnewED=="SomeC3","SomeC",
+                                                                      ifelse(totransition$microsimnewED=="College","College",NA)
+                                                                      ))))
+  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, cat, newED))
+  basepop <- rbind(totransition, tostay)
+}
+```
+
+```{r}
+# update alcohol use categories
+if(updatingalcohol==1 & y>2000){
+  basepop <- basepop %>% ungroup() %>% mutate(
+    agecat = cut(microsim.init.age,
+                 breaks=c(0,20,25,29,39,49,64,100),
+                 labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+    cat = paste(agecat, microsim.init.sex,
+                                      microsim.init.race, microsim.init.education,
+                                      AlcCAT, sep="_"),
+                                prob = runif(nrow(.)))
+  basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
+  basepop <- basepop %>%
+    mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
+  # allocate a numeric gpd for individuals within category bounds
+  # basepop <- allocate_gramsperday(basepop, DataDirectory)
+  }
+
+# if policy flag switched on - simulate a reduction in alcohol consumption
+# if(policy==1){
+# basepop <- reduce_consumption(basepop, percentreduction)
+# }
+```
+
+```{r}
+# save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+
+#delete anyone over 79
+###then age everyone by 1 year and update age category
+basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
+                              agecat = cut(microsim.init.age,
+                                           breaks=c(0,19,24,34,44,54,64,74,100),
+                                           labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
+                                                    "65-74","75-79")))
+basepop <- subset(basepop, microsim.init.age<=79)
 ```
