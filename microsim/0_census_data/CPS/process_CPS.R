@@ -44,7 +44,12 @@ summary <- data %>% filter(AGE>=18) %>%
   summarise(TPop = round(sum(weight),digits=0)) %>% 
   rename(year=YEAR, sex=SEX) %>% 
   mutate(age_gp=as.integer(age_gp)) %>% data.frame() %>% 
-  mutate(type="CB_CPS") %>% filter(year<=2020) %>% filter(year>=2015)
+  mutate(type="CB_CPS") %>% filter(year<=2020) %>% filter(year>=2000)
+
+final_series <- summary %>% 
+  dplyr::select(-type)
+  
+write.csv(final_series, "SIMAH_workplace/CPS/CPS_2000_2020_agegp.csv", row.names=F)
 
 # compare with Yu's data 
 CPS <- read.csv("SIMAH_workplace/CPS/allethn_rates_0018_final.csv") %>% 
@@ -65,6 +70,7 @@ compare <- rbind(summary, CPS) %>% pivot_wider(names_from=type, values_from=TPop
 
 # for YU 
 write.csv(summary, "SIMAH_workplace/CPS/CPS_2015_2020_agegp.csv", row.names=F)
+
 
 summary <- data %>% filter(AGE>=18) %>% 
   group_by(YEAR, AGE, SEX, race, edclass) %>% 

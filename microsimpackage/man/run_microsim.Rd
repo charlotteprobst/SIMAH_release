@@ -15,6 +15,8 @@ run_microsim(
   migration_rates,
   updatingalcohol,
   alcohol_transitions,
+  policy = 0,
+  percentreduction = 0.1,
   minyear = 2000,
   maxyear = 2019,
   output = "demographics"

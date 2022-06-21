@@ -36,6 +36,14 @@ model <- "SIMAH"
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "alcohol"
 
+# do you want policy effects switched on? at the moment this is binary but 
+# as the simulation develops there will be more options for policy scenarios
+# default value is 0
+policy <- 0
+# percentage to reduce alcohol consumption by -> this is overall for the population
+# as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
+percentreduction <- 0.1
+
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent

@@ -5,6 +5,7 @@ library(devtools)
 library(roxygen2)
 library(dplyr)
 library(tidyverse)
+library(fitdistrplus)
 options(dplyr.summarise.inform = FALSE)
 
 # load in microsim R package
@@ -13,7 +14,7 @@ install("microsimpackage", dep=T)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-DataDirectory <- "~/Google Drive/SIMAH Sheffield/RSA/workshop_data/"
+DataDirectory <- "~/Google Drive/SIMAH Sheffield/RSA/Microsim_workshop/workshop_data/"
 
 setwd(paste(WorkingDirectory))
 
@@ -25,13 +26,17 @@ Output <- run_microsim(1,1,basepop,brfss,
                        updatingeducation, education_setup,
                        migration_rates,
                        updatingalcohol, alcohol_transitions,
-                       2000, 2019, output="mortality")
+                       policy, percentreduction,
+                       2000, 2005, output="alcohol")
 
 if(output_type=="demographics"){
-summary <- summarise_education_output(Output, SelectedState, WorkingDirectory)
+summary <- summarise_education_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="alcohol"){
-summary <- summarise_alcohol_output(Output, SelectedState, WorkingDirectory)
+summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output(Output, death_rates, SelectedState, WorkingDirectory)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory)
 }
+
+summary
+summary[[1]]
 
