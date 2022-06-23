@@ -408,7 +408,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
   
   # Select variables to keep
   select (PUBLICID, new_weight, new_psu, new_stratum,
-          srvy_yr, srvy_yr22, bl_age, end_age, yrs_followup, 
+          SRVY_YR, srvy_yr22, bl_age, end_age, yrs_followup, 
           
           UCOD_113, UCOD_358, 
           MVA_death, OUI_death, ISH_death, AUD_death, LDAC_death, DM_death, IHD_death, IS_death, HHD_death, Poisoning_death,
