@@ -40,18 +40,21 @@ dDB <- rbind(dWOS, dOVID)
 write.csv(dDB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)
 
 ## Remove/Indicate duplicates
-dDB$AU <- as.character(dDB$AU) 
-dDB$AU1 <- NA
-for(i in 1:dim(dDB)[1]) {
-  if(dDB$DB[i] == "OVID") {
-    dDB$AU1[i] <- strsplit(dDB$AU, " ")[[i]][1]
-  } else {
-    dDB$AU1[i] <- strsplit(dDB$AU, ",")[[i]][1]
 
-  }
-  
-}
+#Author loop - with change in WoS it doesn't work
+#dDB$AU <- as.character(dDB$AU) 
+#dDB$AU1 <- NA
+#for(i in 1:dim(dDB)[1]) {
+#  if(dDB$DB[i] == "OVID") {
+#    dDB$AU1[i] <- strsplit(dDB$AU, " ")[[i]][1]
+#  } else {
+#    dDB$AU1[i] <- strsplit(dDB$AU, ",")[[i]][1]
+#
+#  }
+#  
+#}
 
+#remove duplicates by title
 dDB$TI_3 <-  dDB$TI
 
 c.seps1 <- c("-")
@@ -64,10 +67,10 @@ for (j in c.seps2){
   dDB$TI_3 <-  gsub(j,"", dDB$TI_3)  
 }
 
-dDB$TI_3 <- tolower(word(dDB$TI_3, start = 1, end = 5, sep=" "))
+dDB$TI_3 <- tolower(word(dDB$TI_3, start = 1, end = 7, sep=" "))
 
 dDB$DUPLICATE <- NA
-ind <- duplicated(dDB[,c("AU1", "YR", "TI_3", "VO")])
+ind <- duplicated(dDB[,c("YR", "TI_3", "VO")])
 dDB$DUPLICATE[ind] <- 1
 
 table(dDB$DUPLICATE) ## Duplicates to be removed
