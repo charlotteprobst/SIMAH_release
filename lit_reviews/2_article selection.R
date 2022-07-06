@@ -8,7 +8,7 @@ library(dplyr)
 
 k.file <- "Complete"
 library(readr)
-if(k.file == "ReveiwerA"){
+if(k.file == "ReviewerA"){
   dSUB <- read.csv("SIMAH_workplace/lit_reviews/ReviewerA_clean.csv")  
 } else if (k.file == "Complete") {
   dSUB <- read.csv("SIMAH_workplace/lit_reviews/COMPLETE_clean.csv")
@@ -84,7 +84,7 @@ for(i in k.begin:(k.begin+k.number.screen)) {
 
 write.csv(dSUB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)
 
-if(k.file == "ReveiwerA"){
+if(k.file == "ReviewerA"){
   write.csv(dSUB, "SIMAH_workplace/lit_reviews/ReviewerA_clean.csv", na = "", row.names = F)
 } else if (k.file == "Complete") {
   write.csv(dSUB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)
