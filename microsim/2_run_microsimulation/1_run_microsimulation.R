@@ -14,7 +14,7 @@ install("microsimpackage", dep=T)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-DataDirectory <- "~/Google Drive/SIMAH Sheffield/RSA/Microsim_workshop/workshop_data/"
+DataDirectory <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/1_input_data/"
 
 setwd(paste(WorkingDirectory))
 

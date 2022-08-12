@@ -15,7 +15,7 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 # read in datafiles 
-gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-education-StandardRates-25plus.dta")
+gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-eduation-StandardRates-25plus-00-20.dta")
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 
 gendereducation <- gendereducation %>% remove_all_labels() %>% 
@@ -35,9 +35,9 @@ gendereducation <- gendereducation %>% remove_all_labels() %>%
          type = recode(type, "alc_only"="Alcohol",
                        "opioid_only"="Opioid",
                        "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid")))
+         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid"))) %>% 
+  filter(year<=2019)
 devtools::install_github("zeehio/facetscales")
-library(g)
 library(facetscales)
 
 type <- c("Alcohol","Opioid","Alcohol and Opioid")
@@ -63,14 +63,15 @@ Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) +
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  geom_point(data=ff,x=NA, colour=NA)
+  geom_point(data=ff,x=NA, colour=NA) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2019))
   # scale_colour_brewer(palette="Set1")
 Fig1
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_differentscale.png",
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_2019.png",
        Fig1, width=33, height=19, units="cm", dpi=300)
 
 # read in rates by race data file 
-gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus.dta")
+gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus-00-20.dta")
 
 gendereducationrace <- gendereducationrace %>% remove_all_labels() %>% 
   zap_formats() %>% 
@@ -97,7 +98,8 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
          race = factor(race, levels=c("Non-Hispanic White",
                                       "Non-Hispanic Black",
                                       "Hispanic",
-                                      "Non-Hispanic Others")))
+                                      "Non-Hispanic Others"))) %>% 
+  filter(year<=2019)
 
 type <- c("Alcohol","Opioid","Alcohol and Opioid")
 sex <- c("Men","Women")
@@ -129,7 +131,9 @@ Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"),
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Men") +
-  scale_colour_manual(values=color.vec) + geom_point(data=ff,x=NA, colour=NA)
+  scale_colour_manual(values=color.vec) + geom_point(data=ff,x=NA, colour=NA) +
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2019)) +
+  theme(panel.spacing=unit(1,"lines"))
 
 
 Fig2p1
@@ -147,7 +151,9 @@ Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"),
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") + scale_colour_manual(values=color.vec) +
-  ggtitle("Women") + geom_point(data=ff,x=NA, colour=NA)
+  ggtitle("Women") + geom_point(data=ff,x=NA, colour=NA) +
+  scale_x_continuous(breaks=c(2000,2005, 2010,2015,2019)) + 
+  theme(panel.spacing=unit(1,"lines"))
 Fig2p2
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Women.png",
        Fig2p2, width=33, height=19, units="cm", dpi=300)
@@ -159,8 +165,8 @@ library(ggpubr)
 
 combined <- ggarrange(Fig2p1, Fig2p2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")
 combined
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_combined.png",
-       combined, width=33, height=40, units="cm", dpi=300)
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_2019.png",
+       combined, width=35, height=40, units="cm", dpi=300)
 
 # alternative method of combining
 gendereducationrace$typesex <- paste(gendereducationrace$sex, gendereducationrace$type, 
@@ -181,7 +187,7 @@ ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_alternative.png",
 
 
 # Supplementary Figure 1 - poisonings by race/ethnicity and NOT education
-genderrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-StandardRates-25plus.dta")
+genderrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-StandardRates-25plus-00-20.dta")
 
 genderrace <- genderrace %>% remove_all_labels() %>% 
   zap_formats() %>% 
@@ -202,7 +208,8 @@ genderrace <- genderrace %>% remove_all_labels() %>%
          type = recode(type, "alc_only"="Alcohol",
                        "opioid_only"="Opioid",
                        "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid")))
+         type=factor(type, levels=c("Alcohol","Opioid","Alcohol and Opioid"))) %>% 
+  filter(year<=2019)
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF", "#000000")
 
@@ -213,16 +220,18 @@ Fig1Supp <- ggplot(data=genderrace, aes(x=year, y=rate, colour=race)) +
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
-  xlab("Year") + scale_colour_brewer(palette="Set1")
+  xlab("Year") + scale_colour_brewer(palette="Set1") + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2019))
+
 Fig1Supp
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_supplementary.png",
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_supplementary2019.png",
        Fig1Supp, width=33, height=40, units="cm", dpi=300)
 
 
 # supplementary Figure 2. 
 # education ratios by race and ethnicity 
 # read in rates by race data file 
-gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus.dta")
+gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus-00-20.dta")
 
 gendereducationrace <- gendereducationrace %>% remove_all_labels() %>% 
   zap_formats() %>% 
@@ -255,7 +264,7 @@ gendereducationrace <- gendereducationrace %>% remove_all_labels() %>%
          HighMed = `Some college`/`College degree or more`) %>% 
   pivot_longer(cols=c(HighLow:HighMed)) %>% 
   mutate(name = recode(name, "HighLow"="Low Ed to High",
-                       "HighMed"="Med Ed to High"))
+                       "HighMed"="Med Ed to High")) %>% filter(year<=2019)
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF", "#000000")
 
@@ -268,7 +277,8 @@ SuppFig2P1 <- ggplot(data=subset(gendereducationrace, sex=="Men" & race!="Non-Hi
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Men") +
-  scale_colour_manual(values=color.vec)
+  scale_colour_manual(values=color.vec) +
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2019))
 SuppFig2P1
 
 SuppFig2P2 <- ggplot(data=subset(gendereducationrace, sex=="Women" & race!="Non-Hispanic Others"), 
@@ -280,7 +290,9 @@ SuppFig2P2 <- ggplot(data=subset(gendereducationrace, sex=="Women" & race!="Non-
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=18, family="serif")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Women") +
-  scale_colour_manual(values=color.vec)
+  scale_colour_manual(values=color.vec) +
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2019))
+
 SuppFig2P2
 
 combined <- ggarrange(SuppFig2P1, SuppFig2P2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")

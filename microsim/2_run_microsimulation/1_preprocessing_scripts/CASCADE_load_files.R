@@ -11,6 +11,7 @@ basepop <- read.csv(paste("SIMAH_workplace/microsim/1_input_data/agent_files/", 
 # migrants <- read.csv(paste("1_input_data/agent_files/", SelectedState, "migrants", PopulationSize, ".csv", sep=""))
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_brfss.R")
+brfss <- load_brfss(model="CASCADE","USA")
 
 # READ IN INWARD MIGRATION DATA - redundant in final version
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/inward_migration.R")
