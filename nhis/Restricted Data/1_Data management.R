@@ -102,7 +102,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
                         SEX==2 & alc_daily_g >0 & alc_daily_g <= 20 ~ 3, # Category I
                         SEX==2 & alc_daily_g >20 & alc_daily_g <=40 ~ 4, # Cateogry II
                         SEX==2 & alc_daily_g >40 & alc_daily_g <=60 ~ 5, # Category III
-                        SEX==2 & alc_daily_g >60                            ~ 6, # Category IV
+                        SEX==2 & alc_daily_g >60                    ~ 6, # Category IV
                     
                         # Males
                         SEX==1 & alc_daily_g == 0 & drink_hist == 0  ~ 1, # Lifetime abstainer
@@ -110,7 +110,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
                         SEX==1 & alc_daily_g >0 & alc_daily_g <= 40  ~ 3, # Category I
                         SEX==1 & alc_daily_g >40 & alc_daily_g <=60  ~ 4, # Cateogry II
                         SEX==1 & alc_daily_g >60 & alc_daily_g <=100 ~ 5, # Category III
-                        SEX==1 & alc_daily_g >100                            ~6, # Category IV
+                        SEX==1 & alc_daily_g >100                    ~ 6, # Category IV
   		                  TRUE ~ NA_real_), 
       
       alcohol5 = recode(alcohol6, `1`=1, `2`=2, `3`=3, `4`=4, `5`=5, `6`=5),  # merge category III and IV
@@ -139,6 +139,20 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
       hed4 = factor(hed, levels=c(1,2,3,4), labels=c("No HED", "HED <1/month", "HED >1/month, <1/week", "HED >=1/week")), 
 
     
+    # accounting for HED
+    
+    alched = case_when(alc5 == 1 ~ 1,  # Lifetime abstainer
+                        alc5 == 2 ~ 2,  # Former drinker
+                        alc5 == 3 & hed %in% 1:2 ~ 3, # Category I without HED
+                        alc5 == 3 & hed %in% 3:4 ~ 4, # Category I with HED
+                        alc5 == 4 & hed %in% 1:2 ~ 5, # Category II without HED
+                        alc5 == 4 & hed %in% 3:4 ~ 6, # Category II with HED
+                        alc5 == 5 ~ 7  # Category III
+    ),
+    
+    alched7 = factor(alched, levels = c(3, 1, 2, 4, 5, 6, 7), labels = c("Lifetime abstainer", "Former drinker", "Category I without HED", "Category I without HED",
+                                                                         "Category II without HED", "Category II with HED", "Category III")),
+        
     ## SMOKING - 1997-2018 
     smk = recode (SMKSTAT2, `1`=4, `2`=3, `3`=2, `4`=1, `5`=NA_real_, `9`=NA_real_),
   
