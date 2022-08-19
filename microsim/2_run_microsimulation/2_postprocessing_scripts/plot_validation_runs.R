@@ -22,21 +22,20 @@ WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/const
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
 proportion <- PopulationSize/WholePopSize$total
 
-PE <- read_rds("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_PE.RDS") %>% 
-  do.call(rbind,.) %>% 
-  group_by(year, microsim.init.sex, agegroup) %>% 
-  summarise(microsim = mean(rateper100000),
-            microsim = ifelse(is.na(microsim),0,microsim)) %>% 
-  mutate(samplenum="PE") %>% 
-  rename(sex=microsim.init.sex)
+# PE <- read_rds("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_PE.RDS") %>% 
+#   do.call(rbind,.) %>% 
+#   group_by(year, microsim.init.sex, agegroup) %>% 
+#   summarise(microsim = mean(rateper100000),
+#             microsim = ifelse(is.na(microsim),0,microsim)) %>% 
+#   mutate(samplenum="PE") %>% 
+#   rename(sex=microsim.init.sex)
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agesp.RDS") %>% 
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agesp_2019-1.RDS") %>% 
   do.call(rbind,.) %>% group_by(year, samplenum, microsim.init.sex, agegroup) %>% 
   summarise(microsim = mean(rateper100000),
             microsim = ifelse(is.na(microsim),0,microsim)) %>% 
   rename(sex=microsim.init.sex) %>% 
   mutate(samplenum=as.character(samplenum))
-files <- rbind(files,PE)
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/process_cirrhosis_1984_2016.R")
 
@@ -45,29 +44,44 @@ cirrhosismortality <- cirrhosismortality %>%
   dplyr::select(year, sex, agegroup, rate) %>% 
   rename(target=rate)
 
-files <- left_join(files,cirrhosismortality) %>% 
-  group_by(year, sex, agegroup) %>% 
-  mutate(min=min(microsim), max=max(microsim),
-         sex = ifelse(sex=="m","Men","Women"),
-         agegroup = ifelse(agegroup=="75.","75+", agegroup)) %>% 
-  filter(agegroup!="15-19") %>% filter(agegroup!="20-24") %>% 
-  mutate(PE = ifelse(samplenum=="PE",microsim, NA)) %>% 
-  group_by(year, sex,agegroup) %>% 
-  fill(PE, .direction="downup")
+# files <- left_join(files,cirrhosismortality) %>% 
+#   group_by(year, sex, agegroup) %>% 
+#   mutate(min=min(microsim), max=max(microsim),
+#          sex = ifelse(sex=="m","Men","Women"),
+#          agegroup = ifelse(agegroup=="75.","75+", agegroup)) %>% 
+#   filter(agegroup!="15-19") %>% filter(agegroup!="20-24") %>% 
+#   mutate(PE = ifelse(samplenum=="PE",microsim, NA)) %>% 
+#   group_by(year, sex,agegroup) %>% 
+#   fill(PE, .direction="downup")
 
-ggplot(data=files, aes(x=year, y=target)) + 
-  geom_ribbon(aes(ymin=min, ymax=max), colour="grey70", alpha=0.5) + 
-  geom_line() + geom_line(aes(x=year, y=PE),colour="red") + 
-  facet_grid(cols=vars(sex), rows=vars(agegroup), scales="fixed") + 
+meansim <- left_join(files, cirrhosismortality) %>% 
+  mutate(sex=ifelse(sex=="m","Men","Women")) %>% 
+  group_by(year, sex,agegroup) %>% 
+  summarise(min=min(microsim),
+            max=max(microsim),
+            Simulated = mean(microsim),
+            Observed=mean(target)) %>% 
+  pivot_longer(cols=c(Simulated,Observed)) %>% 
+  filter(agegroup=="35-44" | agegroup=="45-54" | agegroup=="55-64" | agegroup=="65-74")
+
+
+ggplot(data=meansim, aes(x=year, y=value, colour=name)) + 
+  geom_line(size=2) + 
+  scale_colour_manual(values=c("black","grey70")) + 
+  geom_ribbon(aes(ymin=min, ymax=max), colour=NA, alpha=0.3) + 
+  facet_grid(rows=vars(sex), cols=vars(agegroup), scales="fixed") + 
   theme_bw() +
   theme(strip.background = element_rect(fill="white"),
-        text = element_text(size=14)) + 
+        text = element_text(size=18),
+        legend.title=element_blank(),
+        legend.position="bottom") + 
   ylab("Mortality rate per 100,000 population") +
-  geom_vline(xintercept=2010, linetype="dashed") + xlab("")
-ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig1_agesp.png",
-       dpi=500, width=30, height=30, units="cm")
+  geom_vline(xintercept=2010, linetype="dashed") + xlab("") + ylim(0,NA)
 
-files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest.RDS") %>% 
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
+       dpi=500, width=38, height=30, units="cm")
+
+files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019-1.RDS") %>% 
   do.call(rbind,.)
 
 age2010 <- files %>% filter(year==2010) %>% 
@@ -90,18 +104,24 @@ meansim <- left_join(meansim, cirrhosismortality_agest) %>%
   rename(target=agestrate) %>% 
   mutate(sex=ifelse(sex=="m","Men","Women")) %>% 
   group_by(Year, sex) %>% 
-  mutate(min=min(microsim),
-         max=max(microsim))
+  summarise(min=min(microsim),
+         max=max(microsim),
+         Simulated = mean(microsim),
+         Observed=mean(target)) %>% 
+  pivot_longer(cols=c(Simulated,Observed))
 
-ggplot(data=meansim, aes(x=Year, y=target)) + 
-  geom_ribbon(aes(ymin=min, ymax=max), colour="grey70", alpha=0.5) + 
-  geom_line() + 
+ggplot(data=meansim, aes(x=Year, y=value, colour=name)) + 
+  geom_line(size=2) + 
+  scale_colour_manual(values=c("black","grey70")) + 
+  geom_ribbon(aes(ymin=min, ymax=max), colour=NA, alpha=0.3) + 
   facet_grid(rows=vars(sex), scales="fixed") + 
   theme_bw() +
   theme(strip.background = element_rect(fill="white"),
-        text = element_text(size=14)) + 
+        text = element_text(size=18),
+        legend.title=element_blank(),
+        legend.position="bottom") + 
   ylab("Age-standardized mortality rate per 100,000 population") +
-  geom_vline(xintercept=2010, linetype="dashed") + xlab("")
+  geom_vline(xintercept=2010, linetype="dashed") + xlab("") + ylim(0,NA)
 
-ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agest.png",
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig1_agest.png",
        dpi=500, width=30, height=30, units="cm")

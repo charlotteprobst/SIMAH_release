@@ -9,6 +9,7 @@ DeathSummary <- list()
 Cirrhosis <- list()
 alcohol <- list()
 PopPerYear <- list()
+DrinkingSummary <- list()
 # lhsSample <- lhsSample[[1]]
 names <- names(lhsSample)
 lhsSample <- as.numeric(lhsSample)
@@ -188,6 +189,21 @@ Summary$rateper100000 <- (Summary$cirrhosistotal/Summary$populationtotal)*100000
 # Cirrhosis <- Cirrhosis %>% group_by(Year, seed, samplenum, microsim.init.sex,agecat) %>% tally()
 # DeathSummary <- do.call(rbind, DeathSummary)
 # Summary <- list(Summary, DeathSummary)
-return(Summary)
+for(i in names(PopPerYear)){
+  DrinkingSummary[[paste(i)]] <- PopPerYear[[paste(i)]] %>% mutate(agecat = cut(microsim.init.age,
+                                                                    breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
+                                                                    labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
+                                                                             "50-54","55-59","60-64","65-69","70-74","75-79")),
+                                                       agegroup = cut(microsim.init.age, 
+                                                                      breaks=c(0,19,24,34,44,54,64,74,100),
+                                                                      labels=c("15-19","20-24","25-34","35-44","45-54","55-64","65-74","75.")),
+                                                       obese = ifelse(microsim.init.BMI>=30, 1,0)) %>%
+    group_by(microsim.init.sex, agegroup) %>%
+    filter(microsim.init.drinkingstatus==1) %>% summarise(meanGPD = mean(microsim.init.alc.gpd)) %>% 
+    mutate(year=i, seed=seed, samplenum=samplenum)
+}
+
+DrinkingSummary <- do.call(rbind,DrinkingSummary)
+return(DrinkingSummary)
 }
 

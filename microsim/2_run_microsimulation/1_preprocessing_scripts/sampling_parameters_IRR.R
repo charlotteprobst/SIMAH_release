@@ -176,7 +176,7 @@ lhsSample <- cbind(version, lhsSample)
 #                       # "F_18.20","F_21.25","F_26.30","F_31.40","F_51.60","F_61.70","F_71.")
 names(lhsSample) <- c("SampleNum",names(prior))
 # Save selected priors
-write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
+write.csv(lhsSample, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/lhsSamples_wave", WAVE, ".csv", sep=""), row.names=F)
 
 list <- list()
 

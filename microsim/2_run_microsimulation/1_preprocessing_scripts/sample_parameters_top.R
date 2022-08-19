@@ -4,9 +4,9 @@
 # Mark Strong
 # 26.3.18
 if(agest==0){
-toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/lhsSamples_wave15.csv")
+toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/lhsSamples_wave15.csv")
 }else if(agest==1){
-  toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhsSamples_wave15.csv")
+  toplhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave15.csv")
 }
 
 if(PE==0){
@@ -29,7 +29,8 @@ toplhs <- cbind(toplhs, normalise(toplhs, "BETA_MALE_MORTALITY"), normalise(topl
                 normalise(toplhs, "METABOLIC_BETA2_MALE"), normalise(toplhs, "METABOLIC_BETA1_FEMALE"),
                 normalise(toplhs, "METABOLIC_BETA2_FEMALE"), normalise(toplhs, "BETA_HEPATITIS"),
                 normalise(toplhs, "THRESHOLD"), normalise(toplhs, "THRESHOLD_MODIFIER"),
-                normalise(toplhs, "IRR_correlation"), normalise(toplhs, "DECAY_SPEED"))
+                normalise(toplhs, "IRR_correlation"), normalise(toplhs, "DECAY_SPEED"),
+                normalise(toplhs, "DECAY_LENGTH"))
 
 prior <- list(c("qbeta", toplhs$shape1_BETA_MALE_MORTALITY, toplhs$shape2_BETA_MALE_MORTALITY), #BETA_MALE_MORTALITY
               c("qbeta", toplhs$shape1_BETA_FEMALE_MORTALITY, toplhs$shape2_BETA_FEMALE_MORTALITY), #BETA_FEMALE_MORTALITY
@@ -43,8 +44,8 @@ prior <- list(c("qbeta", toplhs$shape1_BETA_MALE_MORTALITY, toplhs$shape2_BETA_M
               c("qbeta", toplhs$shape1_THRESHOLD, toplhs$shape2_THRESHOLD), #THRESHOLD
               c("qbeta", toplhs$shape1_THRESHOLD_MODIFIER, toplhs$shape2_THRESHOLD_MODIFIER), #THRESHOLD MODIFIER
               c("qbeta", toplhs$shape1_IRR_correlation, toplhs$shape2_IRR_correlation), #IRR CORRELATION
-              c("qbeta", toplhs$shape1_DECAY_SPEED, toplhs$shape2_DECAY_SPEED)) #DECAY SPEED
-
+              c("qbeta", toplhs$shape1_DECAY_SPEED, toplhs$shape2_DECAY_SPEED), #DECAY SPEED
+              c("qbeta", toplhs$shape1_DECAY_LENGTH, toplhs$shape2_DECAY_LENGTH)) #DECAY LENGTH 
 N_PRIORS <- length(prior)
 set.seed(as.numeric(Sys.time()))
 lhsSampleUniforms <- maximinLHS(N_SAMPLES, N_PRIORS)
@@ -102,6 +103,7 @@ if(PE==1){
                                "THRESHOLD"=100000,
                                "THRESHOLD_MODIFIER"=0.66,
                                "IRR_correlation"=0.72,
-                               "DECAY_SPEED"=1
+                               "DECAY_SPEED"=1,
+                               "DECAY_LENGTH"=20
   )
 }

@@ -28,7 +28,7 @@ PE <- riskfunctioninput %>% dplyr::select(type, name, mean) %>%
 
 samples <- rbind(samples, PE)
 
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/cirrhosis_functions.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/cirrhosis_functions.R")
 
 alcgpd <- seq(from=0, to=150, by=0.5)
 sex <- c("m","f")
@@ -53,7 +53,7 @@ newdata$RRMetabolic = ifelse(newdata$microsim.init.sex=="m",
                                        log((newdata$microsim.init.alc.gpd+2)/100)+.0002221693),NA))
 newdata$RRMetabolic <- ifelse(newdata$RRMetabolic<0, 0, newdata$RRMetabolic)
 newdata$RRMetabolic <- exp(newdata$RRMetabolic)
-newdata$RRMetabolic <- ifelse(newdata$RRMetabolic>100, 100, newdata$RRMetabolic)
+newdata$RRMetabolic <- ifelse(newdata$RRMetabolic>50, 50, newdata$RRMetabolic)
 
 newdata$RRHep <- exp(newdata$microsim.init.alc.gpd*newdata$BETA_HEPATITIS)
 
@@ -100,7 +100,8 @@ men <- ggplot(data=subset(data,microsim.init.sex=="Men"), aes(x=microsim.init.al
   theme_bw() +
   theme(legend.position="none") + 
   # geom_hline(yintercept=1, linetype="dashed") + 
-  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Men") +
+  xlab("grams of alcohol per day") + theme(text = element_text(size=15),
+                                           strip.background=element_rect(fill="white")) + ggtitle("Men") +
   ylab("Relative Risk (RR)")
 
 men
@@ -112,14 +113,15 @@ women <- ggplot(data=subset(data,microsim.init.sex=="Women"), aes(x=microsim.ini
   theme_bw() +
   theme(legend.position="none") + 
   # geom_hline(yintercept=1, linetype="dashed") + 
-  xlab("grams of alcohol per day") + theme(text = element_text(size=15)) + ggtitle("Women") +
+  xlab("grams of alcohol per day") + theme(text = element_text(size=15),
+                                           strip.background=element_rect(fill="white")) + ggtitle("Women") +
   ylab("Relative Risk (RR)")
 women
 
 library(gridExtra)
 combined <- grid.arrange(men,women)
 
-ggsave("SIMAH_workplace/microsim/2_output_data/publication/riskfunctions.png", combined, dpi=500, width=23, height=31, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/publication/Figure3.png", combined, dpi=500, width=23, height=31, units="cm")
 
 
 # for paper -split these into the three pathways 
@@ -189,3 +191,20 @@ PosteriorPlot <- ggplot(data=subset(posteriors,pathway=="Heavy alcohol use"), ae
 PosteriorPlot
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/PosteriorPlot.png", PosteriorPlot, dpi=500, width=33, height=19, units="cm")
 
+# now create a summary table for posteriors 
+gpd <- c(20,40,60,80,100)
+post_summary <- data %>% filter(microsim.init.alc.gpd %in% gpd) %>% 
+  mutate(PE = round(PE, digits=2),
+         min = round(min, digits=2),
+         max = round(max, digits=2),
+         summary = paste0(PE, " (",min,"-",max,")")) %>% 
+  dplyr::select(pathway, microsim.init.alc.gpd, microsim.init.sex, type, summary) %>% 
+  pivot_wider(names_from=microsim.init.sex, values_from=summary) %>% 
+  pivot_wider(names_from=type, values_from=c(Men,Women)) %>% 
+  rename(gpd = microsim.init.alc.gpd) %>% 
+  dplyr::select(pathway, gpd, `Men_Prior belief`, `Men_Posterior belief (age-standardized)`,
+                `Men_Posterior belief (age-specific)`,
+                `Women_Prior belief`, `Women_Posterior belief (age-standardized)`,
+                `Women_Posterior belief (age-specific)`)
+write.csv(post_summary, "SIMAH_workplace/microsim/2_output_data/publication/posterior_summary.csv", row.names=FALSE)
+  
