@@ -2,12 +2,11 @@
 # Race x Lifestyle Differential Vulnerability & Exposure Project
 ## Functions for Causal Mediation 
 
-# Create function to Run Causal Mediation with a single mediator -----------------------------------------------------------------------
+# Create function to Run Causal Mediation with a single mediator and WITHOUT AN EXPOSURE-MEDIATOR INTERACTION ------------------------------------
 # Data preparation for Causal Mediation
 
-CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef, hispanic_coef, other_coef) {
+CMed_oneVar_noINT <-function(data, mediator, cov1, cov2, cov3, M_ref_level) {
 
-  
   ### Step 0: Select data to use *****************************************************************************************************************
   # **********************************************************************************************************************************************
   mydata <- data %>%
@@ -84,7 +83,7 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
   # **************************************************************************************************************************************************
   
   # Run model
-  model <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(A.race) * const(race_M) + 
+  model <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(A.race) + const(race_M) + 
                                                           const(factor(Cov1)) +  const(factor(Cov2)) + const(factor(Cov3)) + 
                                                           const(married) + const(factor(edu)) + const(factor(srvy_yr)),
                 data=newMyData, weights=newMyData$weightM, clusters=newMyData$ID, robust=0)  
@@ -93,16 +92,16 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
 
   
   # List the coefficients of interest for each race/ethnicity
-  Black    <- black_coef
-  Hispanic <- hispanic_coef
-  Other    <- other_coef
-  
-  
-  # Get and format results 
-  results_black <- format_CMed (model, Black)  
+  Black    <- c(1,4)
+  Hispanic <- c(2,5)
+  Other    <- c(3,6)
+
+
+  # Get and format results
+  results_black <- format_CMed (model, Black)
   results_hisp  <- format_CMed (model, Hispanic)
   results_other <- format_CMed (model, Other)
-  
+
   # Combine
   combined <- rbind (results_black, results_hisp, results_other)
   return(combined)
@@ -123,44 +122,6 @@ getTE <- function(CMed_model, v){
   rownames(output) <- c(rownames(CMed_model$gamma)[v],"TE")
   return(output)}
 
-# Function to get the (Not-Robust) total combined indirect effect  
-getIE <- function(CMed_model, v){
-  IE <- sum(CMed_model$gamma[v])
-  mu <- CMed_model$gamma[v]
-  Omega <- CMed_model$var.gamma[v,v] # To obtain non-robust estimates
-  require(MASS)
-  temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-  temp_IE <- apply(temp,1,sum)
-  med_prop <- c(mu/IE,1)
-  med_prop_CI <- rbind(t(apply(temp/temp_IE, 2, quantile, c(0.025, 0.975))), c(1,1))
-  output <- cbind(c(mu,IE), c(apply(temp,2,sd),sd(temp_IE)), med_prop, med_prop_CI)
-  colnames(output) <- c("Est.", "SE", "med_prop", "lowerCI", "UpperCI")
-  rownames(output) <- c(rownames(CMed_model$gamma)[v],"IE")
-  return(output)}
-
-# Function to get the (Not Robust)  proportion mediated of the combined indirect effect
-getTE_IE <- function(CMed_model, v, z){
-  #total effect
-  TE <- sum(CMed_model$gamma[v])
-  mu <- CMed_model$gamma[v]
-  # Omega <- CMed_model$robvar.gamma[v,v]  # To obtain robust estimates
-  Omega <- CMed_model$var.gamma[v,v]     # To obtain non-robust estimates
-  require(MASS)
-  temp <- mvrnorm(n=10^4, mu=mu, Sigma=Omega)
-  temp_TE <- apply(temp,1,sum)
-  IE <- sum(CMed_model$gamma[z])
-  muIE <- CMed_model$gamma[z]
-  #OmegaIE <- CMed_model$robvar.gamma[z,z] # To obtain robust estimates
-  OmegaIE <- CMed_model$var.gamma[z,z]    # To obtain non-robust estimates
-  require(MASS)
-  tempIE <- mvrnorm(n=10^4, mu=muIE, Sigma=OmegaIE)
-  temp_IE <- apply(tempIE,1,sum)
-  med_prop <- c(IE/TE,1)
-  med_prop_CI <- (temp_IE/temp_TE)
-  output <- cbind(IE, med_prop, quantile)
-  quantile <- quantile(med_prop_CI, c(0.025, 0.975))
-  output <- cbind(IE, med_prop, quantile)
-  return(output)}
 
 
 
@@ -199,52 +160,22 @@ format_CMed <- function (model, coef_list) {
       upper = round(UpperCI * 100,0),
       prop_CI = paste0(prop, " (", lower, ", ", upper, ")")) %>% 
     dplyr::select(term, prop_CI) 
-
   
-  
-  # Function to get the total combined indirect effect  (coef_list excluding 1st item)
-  IE <- getIE(model, coef_list[-1]) %>% 
-    as.data.frame() %>% rownames_to_column(var = "term") %>% 
-    filter (term == "IE") %>% 
-    mutate (lower = round((`Est.` - (1.96 * SE))*10000,1), 
-      upper = round((`Est.` + (1.96 * SE))*10000,1), 
-      deaths_10000py = round(`Est.` * 10000,1),
-      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>%
-    dplyr::select(term, deaths_10000py_CI) 
-  
-  
-  
-  # Function to get the proportion mediated of the combined indirect effect
-  IE_prop <- getTE_IE(model, coef_list, coef_list[-1]) %>% 
-    as.data.frame() %>% rownames_to_column(var = "term") %>%
-    pivot_wider(names_from="term", values_from=c("IE", "med_prop", "quantile")) %>%
-    mutate (IE_prop = round(`med_prop_2.5%` * 100, 0),
-      lower = round(`quantile_2.5%` *100, 0), 
-      upper = round(`quantile_97.5%` *100, 0),
-      prop_CI = paste0(IE_prop, " (", lower, ", ", upper, ")"),
-      term = "IE") %>% 
-    dplyr::select(term, prop_CI) 
-
   
   
   # Edit and combine results
   one <- full_join(coef, prop, by="term") %>% 
     mutate(label = c(paste0("02 Direct effect of ", group, " (ref=White)"),
-                            "04 Differential exposure",
-                            "05 Differential vulnerability")) %>% 
+                     paste0("03 Indirect effect of ", group, " (ref=White)"))) %>%
     dplyr::select(term, label, deaths_10000py_CI, prop_CI)
   
   two <- TE %>%
     mutate (label = ifelse(term == "TE", paste0("01 Total effect of ", group, " (ref=White)"), NA),
-            prop_CI = "1") %>% 
+      prop_CI = "1") %>% 
     dplyr::select(term, label, deaths_10000py_CI, prop_CI)
   
-  three <- full_join(IE, IE_prop, by="term") %>% 
-    mutate (label = ifelse(term == "IE", paste0("03 Indirect effect of ", group, " (ref=White)"), NA)) %>% 
-    dplyr::select(term, label, deaths_10000py_CI, prop_CI) 
   
-  
-  final <- rbind(one, two, three) %>% 
+  final <- rbind(one, two) %>% 
     arrange(label)
   
   return(final)

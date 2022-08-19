@@ -13,7 +13,8 @@ library(survminer)  # surivval analyses
 library(timereg)    # additive survival models
 library(survey)     # for survey weighted cox model
 library(biostat3)   # survRate command
-library(broom)
+library(broom)      # data/model management
+library(fmsb)       # Radar plots
 
 
 # Specify the data and output file locations
@@ -44,15 +45,16 @@ tab1 <-CreateTableOne(vars= c("age", "yrs_followup","allcause_death.factor", "al
 
   
 # Person years and death rate: tstop = person years; event = # events; rate = events per person year 
-survRate(Surv(yrs_followup, allcause_death)~female.factor+ethnicity.factor, data=nhis) %>%
+survRate(Surv(yrs_followup, allcause_death)~female.factor+ethnicity.factor, data=nhis) %>% view
   mutate(group = paste(female.factor, ethnicity.factor, sep=", "),
          rate_10000py = rate * 10000) %>% remove_rownames() %>%
   dplyr::select (group, tstop, rate_10000py) %>% t()%>%
   write.csv(file = file.path(output, "Table1 Demographics_V3.csv"))
   
-survRate(Surv(yrs_followup, allcause_death)~ethnicity.factor, data=nhis) %>%
+survRate(Surv(yrs_followup, allcause_death)~ethnicity.factor, data=nhis) %>%view
   mutate(rate_10000py = round(rate * 10000, 0)) %>% 
   dplyr::select (ethnicity.factor, rate_10000py)
+
 
 
 
@@ -119,66 +121,112 @@ ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity
       survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity_detail, data = nhis_male)
     
       
+    
       
+# Radar plot - men/women combined
 
-# Radar plot
-library(fmsb)
 radar <- nhis %>%
+  mutate(high_risk_drinker = ifelse(alcohol5v2.factor %in% c("Category II", "Category III"), 1, 0),
+    everyday_smoker = ifelse(smoking4.factor %in% c("Current everyday smoker"), 1, 0),
+    sedentary = ifelse(phy_act3.factor %in% c("Sedentary"), 1, 0),
+    obese = ifelse(bmi_cat.factor %in% c("Obese"), 1, 0)) %>%
+  group_by(ethnicity.factor) %>%
+  summarise(across(c(high_risk_drinker, everyday_smoker, sedentary, obese), mean)) %>%
+  mutate (across(c(high_risk_drinker, everyday_smoker, sedentary, obese), ~ round(.x*100, 0)))  %>% 
+  ungroup()
+
+
+    my_radarchart <- function(data, ethnicity, color = "#00AFBB", title = NULL){
+      
+      min <- 0
+      max <- 60
+      
+      data <- data %>%
+        filter(ethnicity.factor==ethnicity) %>% 
+        column_to_rownames(var = "ethnicity.factor") %>%
+        add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
+        add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
+      
+      
+      radarchart(data, axistype = 1,
+        # Customize the polygon
+        pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+        # Customize the grid
+        cglcol = "grey", cglty = 1, cglwd = 0.8,
+        # Customize the axis
+        axislabcol = "grey", 
+        # Variable labels
+        vlcex = 0.9, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
+        caxislabels = seq(0,60,15), title = title)
+    }
+    
+    op <- par(mar = c(1, 1, 1, 1))
+    par(mfrow=c(2,2))
+    my_radarchart(radar, "White", title="Non-Hispanic White", color="#00AFBB")
+    my_radarchart(radar, "Black", title="Non-Hispanic Black", color="#E7B800")
+    my_radarchart(radar, "Hispanic", title="Hispanic", color="#FC4E07")
+    my_radarchart(radar, "Other", title="Non-Hispanic Other", color="#02BF54")
+    par(mfrow=c(1,1))
+          
+
+
+# Radar plot - men/women stratified
+radar2 <- nhis %>%
   mutate(high_risk_drinker = ifelse(alcohol5v2.factor %in% c("Category II", "Category III"), 1, 0),
          everyday_smoker = ifelse(smoking4.factor %in% c("Current everyday smoker"), 1, 0),
          sedentary = ifelse(phy_act3.factor %in% c("Sedentary"), 1, 0),
          obese = ifelse(bmi_cat.factor %in% c("Obese"), 1, 0)) %>%
-  group_by(ethnicity.factor) %>%
+  group_by(ethnicity.factor, female.factor) %>%
   summarise(across(c(high_risk_drinker, everyday_smoker, sedentary, obese), mean)) %>%
-  mutate (across(-ethnicity.factor, ~ round(.x*100, 0))) 
+  mutate (across(c(high_risk_drinker, everyday_smoker, sedentary, obese), ~ round(.x*100, 0)))  %>% 
+  ungroup()
 
 
-
-custom_radarchart <- function(data, color = "#00AFBB", title = NULL){
+    my_radarchart2 <- function(data, ethnicity, title = NULL, legend=FALSE){
+      
+      min <- 0
+      max <- 60
+      
+      data <- data %>%
+        filter(ethnicity.factor==ethnicity) %>% 
+        dplyr::select(-ethnicity.factor) %>%
+        mutate(female.factor = recode(female.factor, "Male" = "Men", "Female" = "Women")) %>%
+        column_to_rownames(var = "female.factor") %>%
+        add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
+        add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
+      
+      
+      radarchart(data, axistype = 1,
+                # Customize the polygon
+                pcol = c("#00AFBB", "#FC4E07"), pfcol = scales::alpha(c("#00AFBB", "#FC4E07"), 0.15), 
+                plwd = 2, plty = 1,
+                # Customize the grid
+                cglcol = "grey", cglty = 1, cglwd = 0.8,
+                # Customize the axis
+                axislabcol = "grey", 
+                # Variable labels
+                vlcex = 1, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
+                caxislabels = seq(0,60,15), title = title)
+      
+      if(legend==TRUE){
+        legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col= c("#00AFBB", "#FC4E07") , text.col = "black", cex=1.2, pt.cex=3)
+      }
+    }
+    
+    tiff(file.path(output, "Figure 2 - Prevalence of risk factors.tiff"), width=2200, height = 2000, res=300)
+    op <- par(mar = c(1, 1, 1, 1))
+    par(mfrow=c(2,2))
+    my_radarchart2(radar2, "White", title="Non-Hispanic White")
+    my_radarchart2(radar2, "Black", title="Non-Hispanic Black", legend=TRUE)
+    my_radarchart2(radar2, "Hispanic", title="Hispanic/Latinx")
+    my_radarchart2(radar2, "Other", title="Non-Hispanic Other")
+    par(mfrow=c(1,1))
+    dev.off()
+    
+    
   
-  min <- 0
-  max <- 60
-  data <- data %>%
-    add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
-    add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
-  
-  
-  radarchart(data, axistype = 1,
-            # Customize the polygon
-            pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
-            # Customize the grid
-            cglcol = "grey", cglty = 1, cglwd = 0.8,
-            # Customize the axis
-            axislabcol = "grey", 
-            # Variable labels
-            vlcex = 0.9, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
-            caxislabels = seq(0,60,15), title = title)
-}
 
-
-op <- par(mar = c(1, 1, 1, 1))
-par(mfrow=c(2,2))
-
-filter(radar, ethnicity.factor %in% c("Max", "Min", "White")) %>%
-  column_to_rownames(var = "ethnicity.factor") %>%
-  custom_radarchart(title="Non-Hispanic White", color="#00AFBB")
-
-filter(radar, ethnicity.factor %in% c("Max", "Min", "Black")) %>%
-  column_to_rownames(var = "ethnicity.factor") %>% 
-  custom_radarchart(title="Non-Hispanic Black", color="#E7B800")
-
-filter(radar, ethnicity.factor %in% c("Max", "Min", "Hispanic")) %>%
-  column_to_rownames(var = "ethnicity.factor") %>%
-  custom_radarchart(title="Hispanic", color="#FC4E07")
-
-filter(radar, ethnicity.factor %in% c("Max", "Min", "Other")) %>%
-  column_to_rownames(var = "ethnicity.factor") %>%
-  custom_radarchart(title="Non-Hispanic Other", color="#02BF54")
-
-par(mfrow=c(1,1))
-
-
-
+# Alternative plot
 radar %>%
   pivot_longer(cols = c("high_risk_drinker", "everyday_smoker", "sedentary", "obese"),
     names_to="lifestyle",

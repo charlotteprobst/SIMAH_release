@@ -61,5 +61,5 @@ CMed_table <- CMed_table[c(1,3:5,9:10)] %>%
   rename(mediator = men_mediator, label = men_label)
 
 view(CMed_table)
-write.csv(CMed_table, file=paste0(output, "Table_e1 Causal Mediation, one mediator.csv")) # save results
+write.csv(CMed_table, file=paste0(output, "Table_e2 Causal Mediation, one mediator.csv")) # save results
 
