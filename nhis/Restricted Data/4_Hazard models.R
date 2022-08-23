@@ -68,13 +68,21 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
         
         # Cox interaction model adjusted for survey weights
         cat("    Svy Cox Interaction model in progress", "\n")  # progress indicator
-        cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, design = design)
+        if(data_name == "all"){
+          cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + female + married2 + race4 + srvy_yr22, design = design)
+        } else if(data_name %in% c("female", "male")){
+          cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, design = design)
+        }
         cat("    Completed", "\n")  # progress indicator
         
         # Cox joint effect model adjusted for survey weights
         cat("    Svy Cox Joint effects model in progress", "\n")  
-        cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, design = design)
-        cat("    Completed", "\n")  
+        if(data_name == "all"){
+          cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + female + married2 + race4 + srvy_yr22, design = design)
+        } else if(data_name %in% c("female", "male")){
+          cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, design = design)
+        }
+        cat("    Completed", "\n")    
         
         # Cox interaction model NOT adjusting for survey weights
         # cat("    Cox Interaction model in progress", "\n")  # progress indicator
@@ -89,12 +97,20 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
         
         # Aalen Interaction model
         cat("    Aalen Interaction model in progress", "\n")
-        aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        if(data_name == "all"){
+          aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        } else if(data_name %in% c("female", "male")){
+          aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+        }
         cat("    Completed", "\n")
         
         # Aalen joint effects model
         cat("    Aalen Joint effects model in progress", "\n")
-        aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data) # robust = 0 to remove the 2 tests for age-varying effects
+        if(data_name == "all"){
+          aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22), data = data)
+        } else if(data_name %in% c("female", "male")){
+          aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22), data = data) # robust = 0 to remove the 2 tests for age-varying effects
+        }
         cat("    Completed", "\n")
         
         # Save model results 
