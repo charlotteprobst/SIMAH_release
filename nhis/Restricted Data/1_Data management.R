@@ -141,16 +141,16 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
     
     # accounting for HED
     
-    alched = case_when(alc5 == 1 ~ 1,  # Lifetime abstainer
-                        alc5 == 2 ~ 2,  # Former drinker
-                        alc5 == 3 & hed %in% 1:2 ~ 3, # Category I without HED
-                        alc5 == 3 & hed %in% 3:4 ~ 4, # Category I with HED
-                        alc5 == 4 & hed %in% 1:2 ~ 5, # Category II without HED
-                        alc5 == 4 & hed %in% 3:4 ~ 6, # Category II with HED
-                        alc5 == 5 ~ 7  # Category III
+    alched = case_when(alcohol5 == 1 ~ 1,  # Lifetime abstainer
+                       alcohol5 == 2 ~ 2,  # Former drinker
+                       alcohol5 == 3 & hed %in% 1:2 ~ 3, # Category I without HED
+                       alcohol5 == 3 & hed %in% 3:4 ~ 4, # Category I with HED
+                       alcohol5 == 4 & hed %in% 1:2 ~ 5, # Category II without HED
+                       alcohol5 == 4 & hed %in% 3:4 ~ 6, # Category II with HED
+                       alcohol5 == 5 ~ 7  # Category III
     ),
     
-    alched7 = factor(alched, levels = c(3, 1, 2, 4, 5, 6, 7), labels = c("Lifetime abstainer", "Former drinker", "Category I without HED", "Category I without HED",
+    alched7 = factor(alched, levels = c(3, 1, 2, 4, 5, 6, 7), labels = c( "Category I without HED", "Lifetime abstainer", "Former drinker", "Category I without HED",
                                                                          "Category II without HED", "Category II with HED", "Category III")),
         
     ## SMOKING - 1997-2018 
