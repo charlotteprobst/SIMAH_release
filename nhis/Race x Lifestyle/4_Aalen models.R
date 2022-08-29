@@ -23,6 +23,7 @@ nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
 
 
+
 # Aalen model - Sequentially adding covariates
 
 
