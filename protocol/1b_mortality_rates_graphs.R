@@ -121,7 +121,33 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=sex)) +
   guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) + 
   geom_point(data=ff,x=NA, colour=NA)
 
-ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4.pdf", width=18, height=25, units="cm")
+
+for (i in levels(data_graph$cause)) {
+  for (j in levels(data_graph$edclass)) {
+    ggplot(data=data_graph[which(data_graph$cause == i & data_graph$edclass == j),], aes(x=year, y=(rate), colour=sex)) + 
+      theme_light() + 
+      theme(strip.background = element_rect(fill = "white"), 
+            strip.text = element_text(colour = 'black'), 
+            text = element_text(size = 14),
+            axis.text = element_text(size = 12), legend.position="bottom", 
+            legend.title = element_text(size = 12),
+            strip.placement = "outside") +
+      ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
+      scale_color_manual(values = color.vec) +
+      geom_line(aes(linetype=datatype, size = datatype), alpha= .72) + 
+      scale_linetype_manual(values = c(1, 3, 3, 3)) +
+      scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
+      
+      labs(color="Sex", linetype = "Data type", size = "Data type") +
+      guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) 
+
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4",i, j, ".eps"), 
+           width=18, height=14, units="cm", device = "eps")
+    
+  }
+}
+
 
 LiverC <- data_graph %>% filter(datatype=="Observed") %>% filter(cause=="Liver C.")
 

@@ -57,12 +57,7 @@ dat5year <- dat5year %>%
                         `2` = "2005-2010",
                         `3` = "2010-2015", 
                         `4` = "2015-2018"))
-#write.csv(dat5year, "2_LE decomposition_5year.csv")
-write.csv(dat5year, "SIMAH_workplace/life_expectancy/2_out_data/2_LE decomposition_5year.csv")
 dat5year_wide <- spread(data = dat5year, key = Cause_of_death, value = Contribution)
-#write.csv(dat5year_wide, "2_LE decomposition_5year_wide.csv")
-write.csv(dat5year_wide, "SIMAH_workplace/life_expectancy/2_out_data/2_LE decomposition_5year_wide.csv")
-
 dat5year <- dat5year[which(dat5year$Cause_of_death != "Rest" &
                              dat5year$Cause_of_death != "Pancreatitis" &
                              dat5year$Cause_of_death != "LRI" &
@@ -72,7 +67,9 @@ dat5year <- dat5year[which(dat5year$Cause_of_death != "Rest" &
                              dat5year$Cause_of_death != "Hemorrhagic Stroke" &
                              dat5year$Cause_of_death != "IHD & ischemic stroke" &
                              
-                             dat5year$SES!="Middle"),]
+                             dat5year$SES!="Middle" &
+                             dat5year$Years != "2000-2005" &
+                             dat5year$Years != "2005-2010"),]
 
 color.vec <- c("#22577a", "#00b4d8", "#450920", "#a53860", "#da627d" ,"#1b4332", "#1a936f", "#88d498", "#FFCA09")
 color.vec <- c("#fa8a8d", "#da315e", "#cf82a6", "#a14d72", "#732946" ,"#80a6bd", "#447a9e", "#132268", "#69AA9E")
@@ -82,12 +79,12 @@ color.vec <- c("#ed7a6d", "#d72c40", "#B2E1D6", "#69AA9E", "#1A5464")
 ## version 1 (dark green) Celine
 ggplot(data = dat5year, aes(y = Contribution, x = Years, fill = Cause_of_death)) +
   geom_bar(position = "stack", stat = "identity", width = 0.8) +
-  #facet_grid(cols = vars(Sex), rows = vars(SES),  scales = "free") +
-  facet_grid(cols = vars(SES), rows = vars(Sex)) +
+  facet_grid(rows = vars(SES), cols= vars(Sex)) +
   theme_light() +
   theme(strip.background = element_rect(fill = "white")) +
   theme(strip.text = element_text(colour = 'black'), text = element_text(size = 14)) +
-  #theme(legend.position = "right") +
+  theme(legend.position = "right") +
+  #guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
   scale_fill_manual("Cause of death", values = color.vec)+ 
   ylab("Contribution to changes in life expectancy (years)") +
   #xlab("Years") +
@@ -95,5 +92,5 @@ ggplot(data = dat5year, aes(y = Contribution, x = Years, fill = Cause_of_death))
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   coord_flip() + scale_x_discrete(limits=rev)
 #ggsave("2_LE decomposition_5year_v1.jpeg", dpi = 600, width = 23, height = 15, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2_LE decomposition_5year_selected_causes.jpeg", 
-       dpi=600, width=18, height=8.5, units="cm")
+ggsave("C:/Users/marie/Dropbox/NIH2020/Presentations/RSA/2_LE decomposition_5year_selected_causes_mf.jpeg", 
+       dpi=600, width=21, height=9, units="cm")

@@ -9,6 +9,7 @@ library(ggplot2)
 library(forcats)
 library(readr)
 library(plotrix) 
+library(extrafont)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
@@ -94,10 +95,6 @@ summarycompare <- rbind(summary, brfss) %>%
                                       "Category IV")),
          drinkercat = fct_rev(drinkercat))
 
-
-col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
-col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
-col.vec <- c('#124165', '#168aad','#76c893', '#e1f1a7') #Heavy to light use
 col.vec <- c('#062D59', '#576F81','#A8B0AA', '#F9F2D2') #Heavy to light use
 
 summarycompare <- summarycompare[summarycompare$drinkercat != "Abstainer",]
@@ -117,6 +114,8 @@ summarycompare$cat <- factor(summarycompare$cat,
 
 summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
+loadfonts(device = "win")
+
 # plot graph
 ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
@@ -124,7 +123,7 @@ ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
         strip.text = element_text(size = 12, colour = 'black'), 
-        text = element_text(size = 12, colour="black"),
+        text = element_text(size = 12, colour="black", family="TT Arial"),
         axis.text.y = element_text(size = 12), 
         axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
         legend.position="bottom", 
@@ -132,20 +131,31 @@ ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) +
         strip.placement = "outside") +
   ylab("Prevalence (%)")+ xlab("") + 
   scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85))
-  # scale_x_discrete(breaks=c("High school degree or less microsimulation",
-  #                            "High school degree or less brfss",
-  #                            "Some college microsimulation",
-  #                            "Some college brfss",
-  #                            "College degree or more microsimulation",
-  #                            "College degree or more brfss"),
-  #                  labels=addline_format(c("High school degree or less microsimulation",
-  #                                          "High school degree or less brfss",
-  #                                          "Some college microsimulation",
-  #                                          "Some college brfss",
-  #                                          "College degree or more microsimulation",
-  #                                          "College degree or more brfss")))
-
-ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V3.jpeg", dpi = 600, width = 20, height = 16, units = "cm")
+  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
+  scale_fill_grey()
+  
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 20, height = 16, units = "cm")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 
+for (i in unique(summarycompare$microsim.init.sex)) {
+  for (j in unique(summarycompare$microsim.init.education)) {
+    ggplot(data=summarycompare[summarycompare$microsim.init.sex == i & summarycompare$microsim.init.education == j,],
+           aes(x=data, y=percent, fill=drinkercat)) + 
+      geom_col(position=position_stack(reverse=T), width = 0.7 ) +
+      theme_light() + 
+      theme(strip.background = element_rect(fill = "white"), 
+            strip.text = element_text(size = 12, colour = 'black'), 
+            text = element_text(size = 12, colour="black"),
+            axis.text.y = element_text(size = 12), 
+            axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
+            legend.position="bottom", 
+            legend.title = element_blank(),
+            strip.placement = "outside") +
+      ylab("Prevalence (%)")+ xlab("") + 
+      scale_fill_manual(values=col.vec) + 
+      scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85))
+    
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",i,j,".eps"), width = 20, height = 16, units = "cm")
+    
+  }
+}
