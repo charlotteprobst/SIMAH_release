@@ -9,7 +9,6 @@ library(ggplot2)
 library(forcats)
 library(readr)
 library(plotrix) 
-library(extrafont)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
@@ -114,8 +113,8 @@ summarycompare$cat <- factor(summarycompare$cat,
 
 summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
-loadfonts(device = "win")
 
+windowsFonts() # To identify available fonts, and their 'name' in R; Arial font is called "sans"
 # plot graph
 ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
@@ -123,7 +122,7 @@ ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
         strip.text = element_text(size = 12, colour = 'black'), 
-        text = element_text(size = 12, colour="black", family="TT Arial"),
+        text = element_text(size = 12, colour="black", family="sans"),
         axis.text.y = element_text(size = 12), 
         axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
         legend.position="bottom", 
