@@ -7,9 +7,10 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(tidyverse)
-library(janitor)    # clean variable names
-library(skimr)      # descriptive statistics
 library(ipumsr)     # load in data extracted from IPUMS website
+library(labelled)
+library(haven)
+library(naniar)
 
 ## Clear environment
 rm(list = ls())
@@ -18,6 +19,14 @@ rm(list = ls())
 wd <- setwd("U:/SIMAH/")
 data_path <- "SIMAH_workplace/nhis/intersectionality/"
 code_path <- "SIMAH_code/nhis/intersectionality/"
+
+##  Source required functions:
+source(paste0(code_path,"functions/convert_missing_data.R"))
+source(paste0(code_path,"functions/assign_grams_alcohol.R"))
+source(paste0(code_path,"functions/remove_na.R"))
+source(paste0(code_path,"functions/generate_ALCSTAT.R"))
+source(paste0(code_path,"functions/recode_alc_cats.R"))
+
 
 ## Extract NHIS data obtained from nhis.ipums.org (Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021).
 # Avilable at: https://doi.org/10.18128/D070.V7.1
@@ -152,21 +161,70 @@ code_path <- "SIMAH_code/nhis/intersectionality/"
 # P	      EDUC_POP	Educational attainment [of father]
 # P	      EDUC_POP2	Educational attainment [of same sex father]
 
-## Read in data extracted from IPUMS:
-ddi <- read_ipums_ddi(paste0(data_path,"raw_data/nhis_00002.xml"))
-data <- read_ipums_micro(ddi)
+# ## Read in data extracted from IPUMS:
+# ddi <- read_ipums_ddi(paste0(data_path,"raw_data/nhis_00002.xml"))
+# data <- read_ipums_micro(ddi)
+
+## Save extracted data as .RDS file
+# saveRDS(data, paste0(data_path,"cleaned_data/nhis_full_extract.RDS"))
+
+# ## Read in extracted data:
+# nhis_full_extract <- readRDS(paste0(data_path,"cleaned_data/nhis_full_extract.RDS"))
+# # 
+# # ## Create subset of data for primary variables of interest for intersectional analysis 1
+# # # Dependent variables: alcohol consumption AND mortality
+# # # intersections: age,sex,race/ethnicity/SES(education and income)/migrant status
+# # # controlling for: ?? smoking status
+#  
+# nhis_subset_raw <- nhis_full_extract %>% select(YEAR, NHISPID, AGE, SEX, SEXORIEN,
+#                                              EDUCREC2, RACENEW, USBORN, CITIZEN,
+#                                              INCFAM97ON2,
+#                                              starts_with("ALC"), starts_with("MORT"),
+#                                              SMOKFREQNOW)
+# 
+# ## Save raw subset of data as .RDS file
+# saveRDS(nhis_subset_raw, paste0(data_path,"cleaned_data/nhis_subset_raw.RDS"))
+ 
+## Read back in raw subset1 data (1,841,207 individuals)
+nhis_subset1_raw <- readRDS(paste0(data_path,"cleaned_data/nhis_subset_raw.RDS"))
+
+## create data dictionary ----
+dictionary <- labelled::generate_dictionary(nhis_subset1_raw)
+
+## Zap labels from the dataframe
+nhis_subset1_zapped <- nhis_subset1_raw %>% zap_formats() %>% zap_labels()
+
+# convert 'refused', 'not ascertained', 'don't know', 'inconsistent' and 'NIU' to NA
+nhis_subset1_NA <- convert_missing_data_NA(nhis_subset1_zapped)
+
+# Drop individuals missing key demographic data 
+variables <- c("YEAR", "AGE", "SEXORIEN","RACENEW", "EDUCREC2", "INCFAM97ON2")  # list the variables to drop missing data from
+nhis_subset1_no_missing_demo <- remove_na(nhis_subset1_NA, variables)
+nhis_subset1_no_missing_demo %>% count(NHISPID)  # 494,489 individuals
+
+# Generate broad drinking status category (lifetime abstainer, former drinker, current drinker)
+nhis_subset1_alcstat <- generate_ALCSTAT(nhis_subset1_no_missing_demo)
+
+# Drop individuals with no alcohol consumption data:
+variables <- c("ALCSTAT")  # list the variables to drop
+nhis_subset1_no_missing_alc <-  remove_na(nhis_subset1_alcstat, variables)
+nhis_subset1_no_missing_alc %>% count(NHISPID)  # 169,614 individuals
 
 
+### CONTINUE FROM HERE (CHECK ASSIGNMENT MAKES SENSE TO ME - REWORD/ CHANGE ORDER AS NEEDED.  ALSO CHECK ASSUMPTION ABOUT BEING OK TO GROUP ABSTAINERS AND MINIMAL DRINKERS)
+# Assign average grams of alcohol use per person (based on average # days drinking, average drinks per occasion, and number of heavy drinking days):
+nhis_subset1_grams <- assign_grams_alcohol(nhis_subset1_no_missing_alc)
 
-## Rename variables of interest
-# nhis_raw_all_years <- mutate(survey_year == SRVY_YR, etc....
+# Check face validity of alcohol grams data:
+grams_summary <- nhis_subset1_grams %>% select(ALCSTAT, ALCDAYSYR, ALCAMT, ALC5UPYR, alc_daily_g_crude, alc_daily_g_heavy, alc_daily_g)
+view(grams_summary)
 
+# Create more detailed sub-categories of alcohol use based on average alcohol consumption (grams):
+nhis_subset1 <- recode_alc_cats(nhis_subset1)
 
-## Use functions to clean the data...
+## Recategorise race/ethnicity into groupings needed for intersectional analysis
 
+## Recategorise wealth into groupings needed for intersectional analysis
 
+## Recategorise education into groupings needed for intersectional analysis
 
-
-
-
-# Save data outputs in a clean data file
