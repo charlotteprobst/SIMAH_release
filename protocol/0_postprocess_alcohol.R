@@ -116,29 +116,35 @@ summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
 windowsFonts() # To identify available fonts, and their 'name' in R; Arial font is called "sans"
 # plot graph
-ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
+summarycompare %>%
+  mutate(drinkercat = recode(drinkercat, "Category I"= "I", "Category II"= "II","Category III"= "III","Category IV"= "IV")) %>%
+  ggplot(aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
   facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
-        strip.text = element_text(size = 12, colour = 'black'), 
-        text = element_text(size = 12, colour="black", family="sans"),
-        axis.text.y = element_text(size = 12, colour="black"), 
-        axis.text.x = element_text(size = 12, colour="black"), #angle = 47, hjust=1),
-        legend.position="bottom", 
-        legend.title = element_blank(),
-        panel.grid = element_blank(),
-        strip.placement = "outside", 
-        panel.border = element_blank()) +
+    strip.text = element_text(size = 12, colour = 'black'), 
+    text = element_text(size = 12, colour="black", family="sans"),
+    axis.text.y = element_text(size = 12, colour="black"), 
+    axis.text.x = element_text(size = 12, colour="black", angle = 47, hjust=1),
+    legend.position= c(0.945, 0.80),
+    legend.background = element_rect(size=0.35, linetype = "solid", color = "black", fill=NA),
+    #legend.title = element_text(face="underline"),
+    #legend.title = element_blank(),
+    panel.grid = element_blank(),
+    strip.placement = "outside", 
+    panel.border = element_blank()) +
+  labs(fill=expression(underline("Category"))) +  
   ylab("Prevalence (%)")+ xlab("") + 
-  scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
+  # scale_fill_manual(values=col.vec) + 
+  scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,95)) +
+  scale_x_discrete (expand=c(0.2,0.25), limits = c("BRFSS", "Microsimulation", "")) +
   scale_fill_grey() +
   annotate("segment", x=-Inf, xend=Inf, y=-Inf, yend=-Inf)+
-  annotate("segment", x=-Inf, xend=-Inf, y=-Inf, yend=Inf)
+  annotate("segment", x=-Inf, xend=-Inf, y=-Inf, yend=Inf) 
 
   
-ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 6, units = "in")
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 5, units = "in")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 
 for (i in unique(summarycompare$microsim.init.sex)) {
