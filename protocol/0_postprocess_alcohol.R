@@ -118,22 +118,27 @@ windowsFonts() # To identify available fonts, and their 'name' in R; Arial font 
 # plot graph
 ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
-  facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education), switch="x") +
+  facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
         strip.text = element_text(size = 12, colour = 'black'), 
         text = element_text(size = 12, colour="black", family="sans"),
-        axis.text.y = element_text(size = 12), 
-        axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
+        axis.text.y = element_text(size = 12, colour="black"), 
+        axis.text.x = element_text(size = 12, colour="black"), #angle = 47, hjust=1),
         legend.position="bottom", 
         legend.title = element_blank(),
-        strip.placement = "outside") +
+        panel.grid = element_blank(),
+        strip.placement = "outside", 
+        panel.border = element_blank()) +
   ylab("Prevalence (%)")+ xlab("") + 
   scale_fill_manual(values=col.vec) + 
   scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
-  scale_fill_grey()
+  scale_fill_grey() +
+  annotate("segment", x=-Inf, xend=Inf, y=-Inf, yend=-Inf)+
+  annotate("segment", x=-Inf, xend=-Inf, y=-Inf, yend=Inf)
+
   
-ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 20, height = 16, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 6, units = "in")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 
 for (i in unique(summarycompare$microsim.init.sex)) {
@@ -143,18 +148,24 @@ for (i in unique(summarycompare$microsim.init.sex)) {
       geom_col(position=position_stack(reverse=T), width = 0.7 ) +
       theme_light() + 
       theme(strip.background = element_rect(fill = "white"), 
-            strip.text = element_text(size = 12, colour = 'black'), 
-            text = element_text(size = 12, colour="black"),
-            axis.text.y = element_text(size = 12), 
-            axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
+            strip.text = element_text(size = 10, colour = 'black'), 
+            text = element_text(size = 10, colour="black", family="sans"),
+            axis.text.y = element_text(size = 10, colour="black"), 
+            axis.text.x = element_text(size = 10, colour="black"), #angle = 47, hjust=1),
             legend.position="bottom", 
             legend.title = element_blank(),
-            strip.placement = "outside") +
+            panel.grid = element_blank(),
+            strip.placement = "outside", 
+            panel.border = element_blank(), 
+            axis.line = element_line(colour = "black"), 
+            axis.ticks = element_line(color="black") ) +
       ylab("Prevalence (%)")+ xlab("") + 
       scale_fill_manual(values=col.vec) + 
-      scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85))
+      scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
+      scale_fill_grey()
     
-    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",i,j,".eps"), width = 20, height = 16, units = "cm")
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",i,j,".eps"), 
+           width = 5, height = 3.5, units = "in")
     
   }
 }
