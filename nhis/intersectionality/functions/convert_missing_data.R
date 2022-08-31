@@ -38,6 +38,7 @@ convert_missing_data_NA <- function(data){
   data$MORTUCODLD[data$MORTUCODLD==96] <- NA
   data$MORTNDI[data$MORTNDI==96] <- NA
   data$SMOKFREQNOW[data$SMOKFREQNOW==0|data$SMOKFREQNOW==7|data$SMOKFREQNOW==8|data$SMOKFREQNOW==9] <- NA
+  data$HISPETH[data$HISPETH==90|data$HISPETH==91|data$HISPETH==93|data$HISPETH==99] <- NA
 
   return(data)
   

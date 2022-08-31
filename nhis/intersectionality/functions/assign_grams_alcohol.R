@@ -1,4 +1,5 @@
 # This script assigns grams of alcohol based on days drank in past year and frequency of drinks per drinking day
+# (guided by NHIS/Restricted Data/Data management)
 
 # Relevant variables:
 # ALC5UPYR	Days had 5+ drinks, past year
@@ -6,30 +7,36 @@
 # ALCSTAT
 # ALCDAYSYR	Frequency drank alcohol in past year: Days in past year
 
+#ALCSTAT1 == 1 ~ 1,
+
 assign_grams_alcohol <- function(data){
   data %>% mutate(
     
-    # Input missing data for lifetime abstainers, as these questions would not be asked
-    ALCDAYSYR = dplyr::if_else(ALCSTAT == 1, 0L, ALCDAYSYR),
-    ALC5UPYR = dplyr::if_else(ALCSTAT == 1, 0L, ALC5UPYR),
-    ALCAMT = dplyr::if_else(ALCSTAT == 1, 0L, ALCAMT),
+  # Convert variables about alcohol use to doubles to facilitate data manipulation
+  ALCAMT = as.double(data$ALCAMT),
+  ALC5UPYR = as.double(data$ALC5UPYR),
+  ALCDAYSYR =  as.double(data$ALCDAYSYR), 
+    
+  # Assign 0 to alcohol-related Qs for lifetime abstainers and former drinkers (otherwise recorded as NA):
+  ALCDAYSYR = dplyr::if_else(ALCSTAT == 1 | ALCSTAT == 2, 0, ALCDAYSYR),
+  ALC5UPYR = dplyr::if_else(ALCSTAT == 1 | ALCSTAT == 2, 0, ALC5UPYR),
+  ALCAMT = dplyr::if_else(ALCSTAT == 1 | ALCSTAT == 2, 0, ALCAMT),
 
-    # Calculate average daily grams of alcohol over a year, from days of drinking and average drinks (assuming 14 grams per drink)
-      alc_daily_g_crude = (ALCDAYSYR*ALCAMT*14)/ 365 ,   
-
-    # input alcohol_grams for those who didn't drink in past year	
-      alc_daily_g_crude = if_else(ALCDAYSYR == 0, 0, alc_daily_g_crude),
-
-    # input alcohol_grams if avg # drinks per drinking day is missing but # drinks a year is very small
-      alc_daily_g_crude = if_else(ALCDAYSYR>0 & ALCDAYSYR<12 & is.na(ALCAMT) & (is.na(ALC5UPYR) | ALC5UPYR==0 | ALC5UPYR==1), 1, alc_daily_g_crude),
-
-    # Add grams alcohol from heavy drinking days, among those whose avg drinks per day was <5 drinks; assume 5 drinks on heavy drinking days
-      alc_daily_g_heavy = ALC5UPYR / 365 * 5 * 14,  # (heavy drinking days in past year) / 365 * (assume 5 drinks per day) * (14 grams per drink) 
-
-    # Missing alc_grams_heavy set to 0 so that future calculations can still be calculated
-     alc_daily_g_heavy = if_else(is.na(alc_daily_g_heavy), 0, alc_daily_g_heavy),
-
-    # If avg drinks per drinking data <5, then add heavy drinking grams to overall grams
-     alc_daily_g = if_else(ALCAMT < 5, alc_daily_g_crude + alc_daily_g_heavy, alc_daily_g_crude),
-     alc_daily_g = if_else(is.na(alc_daily_g), alc_daily_g_crude, alc_daily_g)) 
+  ## Generate a column to populate with estimates of average daily grams of alcohol...
+  alc_daily_g = case_when(
+  
+  #...Assign 0 grams to people who didn't drink in last year
+  ALCDAYSYR == 0 ~ 0,
+  
+  #... Assign 1 gram to people with unknown # drinks per occasion, but known to drink < 12 times a year & drink 5+ drinks < twice a year
+  ALCDAYSYR > 0 & ALCDAYSYR < 12 & (ALC5UPYR==0 | ALC5UPYR==1) ~ 1,
+  
+  #... Assign a crude estimate for people who drink >5 drinks on average, those who always consume <5 drinks,
+  # and those who drink < 5 drinks on average and for whom data on number of days consuming 5+ drinks is missing
+  # (i.e. applying basic quantity/frequency approach)
+  ALCAMT > 5 | (ALCAMT <= 5 & ALC5UPYR < 1) | (ALCAMT <= 5 & is.na(ALC5UPYR)) ~ (ALCDAYSYR * ALCAMT * 14)/ 365,  #(assuming 14 grams per drink) ## PROBLEM AFTER THE TILDA
+  
+  #...Generate a more detailed estimate for people who usually drink <= 5 drinks but sometimes drink >5(expanded quantity/frequency approach)
+  ALCAMT <= 5 & ALC5UPYR >0 ~ ((((ALCAMT*(ALCDAYSYR - ALC5UPYR)) + (ALC5UPYR*5)) *14) / 365))
+  )
 }
