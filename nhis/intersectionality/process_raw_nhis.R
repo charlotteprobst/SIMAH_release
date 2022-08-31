@@ -169,15 +169,15 @@ source(paste0(code_path,"functions/recode_education.R"))
 # data <- read_ipums_micro(ddi)
 
 ## Save extracted data as .RDS file
-# saveRDS(data, paste0(data_path,"cleaned_data/nhis_full_extract.RDS"))
+saveRDS(data, paste0(data_path,"cleaned_data/nhis_full_extract.RDS"))
  
 ## Read in extracted data:
 nhis_full_extract <- readRDS(paste0(data_path,"cleaned_data/nhis_full_extract.RDS"))
 
 ## Create subset of data for primary variables of interest for intersectional analysis 1
-## Dependent variables: alcohol consumption AND mortality
-## intersections: age,sex,race/ethnicity/SES(education and income)/migrant status
-## controlling for: smoking status ?
+"Dependent variable:      Alcohol consumption
+Potential intersections:  Age,sex,race/ethnicity/SES/migrant status
+Control variables:        Smoking status ... ?"
 
 nhis_subset_raw <- nhis_full_extract %>% 
   select(YEAR, NHISPID, AGE, SEX, SEXORIEN,
@@ -191,31 +191,26 @@ saveRDS(nhis_subset_raw, paste0(data_path,"cleaned_data/nhis_subset_raw.RDS"))
 ## Read in raw subset of data
 nhis_subset_raw <- readRDS(paste0(data_path,"cleaned_data/nhis_subset_raw.RDS")) # 1,841,207 individuals
 
-## create data dictionary
+## Create data dictionary for reference
 dictionary <- labelled::generate_dictionary(nhis_subset_raw)
 
-## Zap labels from the data
+## Zap labels from the dataframe to facilitate data manipulation
 nhis_subset_zapped <- nhis_subset_raw %>% zap_formats() %>% zap_labels()
 
-# convert 'refused', 'not ascertained', 'don't know', 'inconsistent' and 'NIU' to NA
+## Convert 'refused', 'not ascertained', 'don't know', 'inconsistent' and 'NIU' to NA
 nhis_subset_converted_NA <- convert_missing_data_NA(nhis_subset_zapped)
 
-# # Drop individuals missing key demographic data
+## Drop individuals missing key demographic data
 variables <- c("YEAR", "AGE", "SEXORIEN","RACENEW","EDUCREC2", "INCFAM97ON2", "HISPETH")
 nhis_subset_dropped_NA_demogr <- remove_na(nhis_subset_converted_NA, variables)
 # 494,489 individuals remaining.  Lose years pre-2013 as sexual-orientation not available pre-2013.
 
-## Review available categorisations for ALCSTAT 1 & 2:
-nhis_subset_raw %>% count(ALCSTAT1)
-nhis_subset_raw %>% count(ALCSTAT2)
-
-## Generate broad drinking status ("ALCSTAT", lifetime abstainer/former drinker/current drinker)
-## by combining info from ALCSTAT1 & ALCSTAT2:
+## Generate broad drinking status ("ALCSTAT") by combining info from ALCSTAT1 & ALCSTAT2:
 nhis_subset_alcstat <- generate_ALCSTAT(nhis_subset_dropped_NA_demogr)
 nhis_subset_alcstat %>% count(ALCSTAT, ALCSTAT1, ALCSTAT2) # Check face validity of output
 
 ## Drop individuals with no info on drinking status:
-variables <- c("ALCSTAT")  # variable to drop
+variables <- c("ALCSTAT")
 nhis_subset_dropped_na_alcstat <- remove_na(nhis_subset_alcstat, variables) # 169,614 individuals remaining
 
 ## Estimate average grams of alcohol use per person and assign as a new variable ("alc_daily_g")
@@ -224,6 +219,22 @@ nhis_subset_grams_alc <- assign_grams_alcohol(nhis_subset_dropped_na_alcstat)
 
 ## Create more detailed sub-categories of alcohol use based on average alcohol consumption (grams):
 nhis_subset_alc_cats <- recode_alc_cats(nhis_subset_grams_alc)
+
+## Label new categories:
+nhis_subset_alc_cats$alc_4_cats <- factor(nhis_subset_alc_cats$alc_4_cats,
+                                          levels = c(1,2,3,4),
+                                          labels = c("Abstainers (lifetime abstainers & former drinkers)", 
+                                                     "Category I", "Category II", "Category III"))
+
+nhis_subset_alc_cats$alc_5_cats <- factor(nhis_subset_alc_cats$alc_5_cats,
+                                          levels = c(1,2,3,4,5),
+                                          labels = c("lifetime abstainers","former drinkers",
+                                                     "Category I", "Category II", "Category III"))
+
+nhis_subset_alc_cats$alc_6_cats <- factor(nhis_subset_alc_cats$alc_6_cats,
+                                          levels = c(1,2,3,4,5,6),
+                                          labels = c("lifetime abstainers","former drinkers",
+                                                     "Category I", "Category II", "Category III","Category IV"))
 
 ## Check face validity of new alcohol variables:
 alc_summary <- nhis_subset_alc_cats %>%
@@ -237,53 +248,46 @@ saveRDS(nhis_subset_alc_cats, paste0(data_path,"cleaned_data/nhis_subset_process
 ## Read in subset of data with alcohol data processed
 nhis_subset_alc_processed <- readRDS(paste0(data_path,"cleaned_data/nhis_subset_processed_alc.RDS"))
 
-## Recode race/ethnicity:
-
 ## Create a binary variable for hispanic ethnicity
 nhis_subset_hisp <- nhis_subset_alc_processed %>% mutate(hisp = ifelse(HISPETH != 10, 1, 0))
 
 ## Recategorise based on race and (hispanic) ethnicity
 nhis_subset_race <- recode_race(nhis_subset_hisp) 
 
-## View resulting group numbers/ proportions
-169614*0.01
-# [1] 1696.14 (1%)
-nhis_subset_race %>% group_by(race) %>% count()  
-## 1 110315
-## 2  20846
-## 3   1319  <1%
-## 4   8952
-## 5    339  <1%
-## 6   2950  
-## 7  22243
-## 8    978  <1%
-## 9    560  <1%
-## 10   454  <1%
-## 11    74  <1%
-## 12   584  <1%
-
-## Re-categorise so that no group <1% (i.e. combine groups 3,4 & 8-12 to 'other')
+## Re-categorise so that no group <1% of total sample (combine groups 3,4 & 8-12 to 'other')
 nhis_subset_race_1_percent <- recode_race_1_percent(nhis_subset_race)
 
-## Creates groups:
-## race == 1, Non-hispanic, White
-## race == 2, Non-hispanic, Black/African American
-## race == 3, Non-hispanic, Asian
-## race == 4, Non-hispanic, race group not releasable 
-## race == 5, Hispanic,  White
-## race == 6, Other
-
+## Label new categories:
+nhis_subset_race_1_percent$race_1_percent <- factor(nhis_subset_race_1_percent$race_1_percent,
+                    levels = c(1,2,3,4,5,6),
+                    labels = c("Non-hispanic,White", "Non-hispanic, Black/African American", "Non-hispanic, Asian",
+                               "Non-hispanic, race group not releasable", "Hispanic, White", "Other"))
 
 ## Recode income:
 nhis_subset_income <- recode_income(nhis_subset_race_1_percent)
 
-## Creates groups:
-## Income == 1, $0 - $34,999 
-## Income == 2, $35,000-$74,999
-## Income == 3, $75,000-$99,999
-## Income == 4, $100,000 and over
-
+## Label new categories:
+nhis_subset_income$income <- factor(nhis_subset_income$income,
+                    levels = c(1,2,3,4),
+                    labels = c("$0 - $34,999", "$35,000-$74,999", "$75,000-$99,999","$100,000 and over"))
 
 ## Recategorise education (into 3, 4 and 5 categories):
 nhis_subset_education <- recode_education(nhis_subset_income)
 
+# Label new categories:
+nhis_subset_education$education_3_cats <- factor(nhis_subset_education$education_3_cats,
+                                    levels = c(1,2,3),
+                                    labels = c("high school or less", "some college", "4+ years college"))
+
+nhis_subset_education$education_4_cats <- factor(nhis_subset_education$education_4_cats,
+                                    levels = c(1,2,3,4),
+                                    labels = c("no high school (<= grade 8)", "some high school (grade 9-12)",
+                                               "some college", "4+ years college"))       
+
+nhis_subset_education$education_5_cats <- factor(nhis_subset_education$education_5_cats,
+                                    levels = c(1,2,3,4,5),
+                                    labels = c("no high school (<= grade 8)", "some high school (grade 9-11)",
+                                              "finished high school (grade 12)", "some college", "4+ years college"))
+
+## Save cleaned subset of data
+saveRDS(nhis_subset_education, paste0(data_path,"cleaned_data/nhis_subset_clean.RDS"))
