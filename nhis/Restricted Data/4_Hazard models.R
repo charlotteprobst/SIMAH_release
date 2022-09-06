@@ -178,9 +178,9 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                   p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
                   lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
                   upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-                  estimate_10000 = round(estimate*10000, 1),
+                  estimate_10000py = round(estimate*10000, 1),
                   Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-          select (variable, estimate_10000, Deaths_CI_10000py, p.value_Deaths) %>%
+          select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
           filter(str_detect(variable, "SES")) %>%
           mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
           add_row(variable = "JOINT MODELS", .before=1) %>%
@@ -211,11 +211,63 @@ death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OU
 
 # Table 4: Alcohol ----------------------------------------------------------------------------------------
 ## Edu x Alcohol
-table4to9(nhis25_clean, nhis25_clean_svy, death_list, edu3, alc5, "table4a") # All participants
+table4to9(nhis25_all, nhis25_all_svy, death_list, edu3, alc5, "table4a") # All participants
 table4to9(nhis25_female, nhis25_female_svy, death_list, edu3, alc5, "table4a") # Females
 table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # Males
 
-# data, design, deaths_list, SES, lifestyle, table_label
+
+
+##### compute RERI and merge with the output table --------------------------------------------------------
+
+## load the function for RERI
+load("0_Function Additive Interaction.R")
+
+## categories excluding the reference
+educat <- c("edu3Highschool", "edu3Some college")
+alccat <- c("alc5Former drinker", "alc5Lifetime abstainer", "alc5Category II", "alc5Category III")
+
+edu3 <- rep(educat, 4)
+alc5 <- rep(alccat, each = 2)
+RERI <- CI.lo <- CI.hi <- p.value <- rep(NA, 8)
+
+add_int <- data.frame(edu3, alc5, RERI, CI.lo, CI.hi, p.value)
+
+
+foreach(i = 1:8)%do%{
+  
+  rs <- additive_interactions( cox_int, add_int[i, "edu3"], add_int[i, "alc5"] )
+  
+  add_int[i, "RERI"] <- rs[1,2]
+  add_int[i, "CI.lo"] <- rs[1,3]
+  add_int[i, "CI.hi"] <- rs[1,4]
+  add_int[i, "p.value"] <- rs[1,5]
+  
+}
+
+# load the cox_int_results for saved model first, and then merge with the add_int table for RERI and CI
+# cox_int_results <- readRDS(cox_int, paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
+
+cox_int_results_RERI <- cox_int_results %>%
+  left_join(  cox_int_results %>% 
+                filter(str_detect(variable, ":")) %>% select(variable) %>%
+                separate(variable, into = c("edu3", "alc5"), sep = ":", remove = FALSE) %>% 
+                left_join(add_int %>%
+                            mutate(RERI = round(RERI, 2),
+                                   CI.lo = round(CI.lo, 2),
+                                   CI.hi = round(CI.hi, 2),
+                                   CI_RERI = paste0("(", CI.lo,", ", CI.hi, ")"),
+                                   p.value_RERI = round(p.value, 3),
+                                   p.value_RERI = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
+                            ) %>%
+                            select(-CI.lo, -CI.hi, -p.value) %>%
+                            mutate(edu3 = str_remove(edu3, fixed("edu3")), 
+                                   alc5 = str_remove(alc5, fixed("alc5"))), 
+                          by = c("edu3", "alc5")),
+              by = "variable" )
+
+
+
+
 
 # **NOTE**: Need to change to code for this so that the start age and end age is specified
 # table4to9(nhis_fem.age.gp1,  death_list, edu3, alc5, "table4a") # Females, age group 1 # NOTE: Need to change to code for this so that the start time and end time is specified
@@ -236,6 +288,7 @@ table4to9(nhis_male.white, death_list, edu3, alc5, "table4a") # Males, white
 table4to9(nhis_male.black, death_list, edu3, alc5, "table4a") # Males, black
 table4to9(nhis_male.hisp,  death_list, edu3, alc5, "table4a") # Males, Hispanic
 table4to9(nhis_male.other, death_list, edu3, alc5, "table4a") # Males, Other
+
 
 
 ## Income x Alcohol
