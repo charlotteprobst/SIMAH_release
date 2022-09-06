@@ -245,6 +245,21 @@ radar %>%
     xlab("") 
 
 
+    
+# Race by education counts
+library(plotly)   
+library(htmlwidgets)
+race_edu <- nhis %>%
+  dplyr::select(female.factor, ethnicity.factor, edu.factor) %>% 
+  count(female.factor, ethnicity.factor, edu.factor) %>%
+  rename(sex = female.factor, ethnicity = ethnicity.factor, edu = edu.factor) %>% 
+  mutate(edu = factor(edu, levels=c("Highschool", "Some college", "Bachelors"))) %>% 
+  ggplot(aes(ethnicity, edu, fill= n)) + geom_tile() + facet_wrap(~sex)
+
+ggplotly(race_edu)  
+ggplotly(race_edu) %>% saveWidget(file=paste0(output, "Race by education counts.html"))
+    
+
   
   
   
