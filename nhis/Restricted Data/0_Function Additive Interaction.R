@@ -40,9 +40,9 @@ additive_interactions = function( model, exposure1, exposure2, monotone=0, CI.le
   OR11 = exp( b10 + b01 + bint )
   
   # check if we are already in causative case
-  if( !causative( OR10 = OR10, OR01 = OR01 ) ) {
-    stop("Error: At least one exposure has negative association with outcome.")
-  }
+  # if( !causative( OR10 = OR10, OR01 = OR01 ) ) {
+  #   stop("Error: At least one exposure has negative association with outcome.")
+  # }
   
   
   # RERI (VanderWeele pg. 258-259)
@@ -113,6 +113,6 @@ additive_interactions = function( model, exposure1, exposure2, monotone=0, CI.le
   
   if (monotone == 1) cat("\nAssuming AT LEAST ONE of exposures has positive monotonic effect\n\n")
   if (monotone == 2) cat("\nAssuming BOTH exposures have positive monotonic effect\n\n")
-  print(rs)
+  #print(rs)
   invisible(rs)
 }
