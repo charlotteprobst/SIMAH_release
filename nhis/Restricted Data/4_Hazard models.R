@@ -28,6 +28,9 @@ output_assump  <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhi
 # Load all data all at once
 load("C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/NHIS_Data.RData")
 
+## load the function for RERI
+load("0_Function Additive Interaction.R")
+
 
 ## Create functions and specify causes of death ------------------------------------------------------------------------------------------
 # Function to run the Cox and Aalen models; also exports figures for the Cox PH assumption
@@ -135,10 +138,10 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                  CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
                  select(variable, HR, CI, p.value_HR) %>%
                  filter(str_detect(variable, "SES|lifestyle")) %>%
-          mutate(variable = str_remove(variable, fixed("SES")), 
-                 variable = str_remove(variable, fixed("lifestyle"))) %>%
+          # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
+          #        variable = str_remove(variable, fixed("lifestyle"))) %>%
           add_row(variable = "INTERACTION MODELS", .before=1)
-
+   
    
    cox_joint_results <- cox_joint %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
          mutate(variable = term,
@@ -187,10 +190,44 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
           remove_rownames()
 
     
-    cox_results   <- rbind(cox_int_results, cox_joint_results)
+    cox_results <- rbind(cox_int_results, cox_joint_results) 
+    
+    ## compute RERI for the cox_int model
+    add_int <- cox_int_results %>% 
+      filter(str_detect(variable, ":")) %>% select(variable) %>%
+      separate(variable, into = c("SES", "lifestyle"), sep = ":", remove = FALSE) %>%
+      data.frame()
+    
+    foreach(i = 1:nrow(add_int))%do%{
+      
+      rs <- additive_interactions( cox_int, add_int[i, "SES"], add_int[i, "lifestyle"] )
+      
+      add_int[i, "RERI"] <- rs[1,2]
+      add_int[i, "CI.lo"] <- rs[1,3]
+      add_int[i, "CI.hi"] <- rs[1,4]
+      add_int[i, "p.value"] <- rs[1,5]
+      
+    }
+    
+    ## merge the RERI output with the cox_int_results
+    cox_results_RERI <- cox_results %>% 
+      left_join(add_int %>%
+                  mutate(RERI = round(RERI, 2),
+                         CI.lo = round(CI.lo, 2),
+                         CI.hi = round(CI.hi, 2),
+                         CI_RERI = paste0("(", CI.lo,", ", CI.hi, ")"),
+                         p.value_RERI = round(p.value, 3),
+                         p.value_RERI = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
+                  ) %>%
+                  select(-SES, -lifestyle, -CI.lo, -CI.hi, -p.value), 
+                by = "variable") %>%
+      mutate(variable = str_remove(variable, fixed("SES")), 
+             variable = str_remove(variable, fixed("lifestyle")))
+     
+            
     aalen_results <- rbind(aalen_int_results, aalen_joint_results)
-    # 
-    results <- full_join(cox_results, aalen_results, by="variable") %>%
+     
+    results <- full_join(cox_results_RERI, aalen_results, by="variable") %>%
       add_row(variable = death_name, .before=1) 
   
     write_csv(results, paste0(output_tables, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".csv"), na="")
@@ -198,11 +235,17 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
   }   
 }
 
+
 # Test the function:
-# death_list <- "heart_death" # specify cause of death for testing
-# nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
-# table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
-# table4to9(nhis_male, nhis_male_svy, death_list, edu3, alc5, "table4a")
+death_list <- "heart_death" # specify cause of death for testing
+
+nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
+nhis_female_svy <- nhis_female %>%
+  as_survey_design(id=new_psu, strata=new_stratum, weights=new_weight, nest = TRUE)
+
+table4to9(nhis_female, nhis_female_svy, death_list, edu3, alc5, "table4a") # run function for testing
+
+table4to9(nhis_male, nhis_male_svy, death_list, edu3, alc5, "table4a")
 
 
 # Specify the causes of death (to be used below)
@@ -217,10 +260,8 @@ table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # M
 
 
 
-##### compute RERI and merge with the output table --------------------------------------------------------
+##### compute RERI and merge with the output table based on previously saved model ----------------------------------------------------
 
-## load the function for RERI
-load("0_Function Additive Interaction.R")
 
 ## categories excluding the reference
 educat <- c("edu3Highschool", "edu3Some college")
