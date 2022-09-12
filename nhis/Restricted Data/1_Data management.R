@@ -150,7 +150,7 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
                        alcohol5 == 5 ~ 7  # Category III
     ),
     
-    alched7 = factor(alched, levels = c(3, 1, 2, 4, 5, 6, 7), labels = c( "Category I without HED", "Lifetime abstainer", "Former drinker", "Category I without HED",
+    alched7 = factor(alched, levels = c(3, 1, 2, 4, 5, 6, 7), labels = c("Category I without HED", "Lifetime abstainer", "Former drinker", "Category I without HED",
                                                                          "Category II without HED", "Category II with HED", "Category III")),
         
     ## SMOKING - 1997-2018 
