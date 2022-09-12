@@ -1,10 +1,8 @@
 
 # Race x Lifestyle Differential Vulnerability & Exposure Project
-## Functions for Causal Mediation 
+## Sensitivity Analysis (one mediator at a time)
 
-# Create function to Run Causal Mediation with a single mediator -----------------------------------------------------------------------
-# Data preparation for Causal Mediation
-
+# Causal Mediation Analysis
 CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef, hispanic_coef, other_coef) {
 
   
@@ -35,7 +33,6 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
   fit_Med <- vglm(Mediator ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr) +
                              factor(Cov1) + factor(Cov2) + factor(Cov3),
                              data = mydata, family=multinomial(refLevel = M_ref_level))
-  
   
   cat(paste0("     Step 1 Complete (Fit model for mediator)", "\n")) # progress indicator
   
@@ -92,13 +89,13 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
   cat(paste0("     Step 4 Complete (data analysis)", "\n")) # progress indicator
 
   
+  
   # List the coefficients of interest for each race/ethnicity
   Black    <- black_coef
   Hispanic <- hispanic_coef
   Other    <- other_coef
   
-  
-  # Get and format results 
+  # Get and format results (Function defined below)
   results_black <- format_CMed (model, Black)  
   results_hisp  <- format_CMed (model, Hispanic)
   results_other <- format_CMed (model, Other)
@@ -108,6 +105,91 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
   return(combined)
 }
 
+# Format results to export bootstrapped results
+format_CMed <- function (model, coef_list) {
+  
+  group <- enexpr(coef_list)
+  
+  # All_coef model coefficients   
+  All_coef <- coef(model) %>%
+    as.data.frame() %>% 
+    rownames_to_column(var = "term") %>% 
+    mutate (deaths_10000py = round(Coef. * 10000, 1),
+      lower = round(`lower2.5%` * 10000, 1),
+      upper = round(`upper97.5%` * 10000, 1),
+      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>% 
+    dplyr::select (term, deaths_10000py_CI)
+  
+  coef <- slice(All_coef, coef_list)
+  
+  
+  # Function to get the total effect and proportion mediated
+  TE_prop <- getTE(model, coef_list) %>% 
+    as.data.frame() %>% rownames_to_column(var = "term")
+  
+  TE <- filter(TE_prop, term =="TE") %>% 
+    mutate (lower = round((`Est.` - (1.96 * SE))*10000,1), 
+      upper = round((`Est.` + (1.96 * SE))*10000,1), 
+      deaths_10000py = round(`Est.` * 10000,1),
+      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>%
+    dplyr::select(term, deaths_10000py_CI)
+  
+  prop <- filter(TE_prop, term !="TE") %>%
+    mutate(prop = round(med_prop * 100,0),
+      lower = round(lowerCI * 100,0),
+      upper = round(UpperCI * 100,0),
+      prop_CI = paste0(prop, " (", lower, ", ", upper, ")")) %>% 
+    dplyr::select(term, prop_CI) 
+  
+  
+  
+  # Function to get the total combined indirect effect  (coef_list excluding 1st item)
+  IE <- getIE(model, coef_list[-1]) %>% 
+    as.data.frame() %>% rownames_to_column(var = "term") %>% 
+    filter (term == "IE") %>% 
+    mutate (lower = round((`Est.` - (1.96 * SE))*10000,1), 
+      upper = round((`Est.` + (1.96 * SE))*10000,1), 
+      deaths_10000py = round(`Est.` * 10000,1),
+      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>%
+    dplyr::select(term, deaths_10000py_CI) 
+  
+  
+  
+  # Function to get the proportion mediated of the combined indirect effect
+  IE_prop <- getTE_IE(model, coef_list, coef_list[-1]) %>% 
+    as.data.frame() %>% rownames_to_column(var = "term") %>%
+    pivot_wider(names_from="term", values_from=c("IE", "med_prop", "quantile")) %>%
+    mutate (IE_prop = round(`med_prop_2.5%` * 100, 0),
+      lower = round(`quantile_2.5%` *100, 0), 
+      upper = round(`quantile_97.5%` *100, 0),
+      prop_CI = paste0(IE_prop, " (", lower, ", ", upper, ")"),
+      term = "IE") %>% 
+    dplyr::select(term, prop_CI) 
+  
+  
+  
+  # Edit and combine results
+  one <- full_join(coef, prop, by="term") %>% 
+    mutate(label = c(paste0("02 Direct effect of ", group, " (ref=White)"),
+      "04 Differential exposure",
+      "05 Differential vulnerability")) %>% 
+    dplyr::select(term, label, deaths_10000py_CI, prop_CI)
+  
+  two <- TE %>%
+    mutate (label = ifelse(term == "TE", paste0("01 Total effect of ", group, " (ref=White)"), NA),
+      prop_CI = "1") %>% 
+    dplyr::select(term, label, deaths_10000py_CI, prop_CI)
+  
+  three <- full_join(IE, IE_prop, by="term") %>% 
+    mutate (label = ifelse(term == "IE", paste0("03 Indirect effect of ", group, " (ref=White)"), NA)) %>% 
+    dplyr::select(term, label, deaths_10000py_CI, prop_CI) 
+  
+  
+  final <- rbind(one, two, three) %>% 
+    arrange(label)
+  
+  return(final)
+}
 
 # Function to get the (Not-Robust) total effect and proportion mediated
 getTE <- function(CMed_model, v){
@@ -162,90 +244,3 @@ getTE_IE <- function(CMed_model, v, z){
   output <- cbind(IE, med_prop, quantile)
   return(output)}
 
-
-
-# Format results to export bootstrapped results
-format_CMed <- function (model, coef_list) {
-        
-  group <- enexpr(coef_list)
-  
-  # All_coef model coefficients   
-  All_coef <- coef(model) %>%
-    as.data.frame() %>% 
-    rownames_to_column(var = "term") %>% 
-    mutate (deaths_10000py = round(Coef. * 10000, 1),
-      lower = round(`lower2.5%` * 10000, 1),
-      upper = round(`upper97.5%` * 10000, 1),
-      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>% 
-    dplyr::select (term, deaths_10000py_CI)
-  
-  coef <- slice(All_coef, coef_list)
-  
-  
-  # Function to get the total effect and proportion mediated
-  TE_prop <- getTE(model, coef_list) %>% 
-    as.data.frame() %>% rownames_to_column(var = "term")
-  
-  TE <- filter(TE_prop, term =="TE") %>% 
-    mutate (lower = round((`Est.` - (1.96 * SE))*10000,1), 
-      upper = round((`Est.` + (1.96 * SE))*10000,1), 
-      deaths_10000py = round(`Est.` * 10000,1),
-      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>%
-    dplyr::select(term, deaths_10000py_CI)
-  
-  prop <- filter(TE_prop, term !="TE") %>%
-    mutate(prop = round(med_prop * 100,0),
-      lower = round(lowerCI * 100,0),
-      upper = round(UpperCI * 100,0),
-      prop_CI = paste0(prop, " (", lower, ", ", upper, ")")) %>% 
-    dplyr::select(term, prop_CI) 
-
-  
-  
-  # Function to get the total combined indirect effect  (coef_list excluding 1st item)
-  IE <- getIE(model, coef_list[-1]) %>% 
-    as.data.frame() %>% rownames_to_column(var = "term") %>% 
-    filter (term == "IE") %>% 
-    mutate (lower = round((`Est.` - (1.96 * SE))*10000,1), 
-      upper = round((`Est.` + (1.96 * SE))*10000,1), 
-      deaths_10000py = round(`Est.` * 10000,1),
-      deaths_10000py_CI = paste0(deaths_10000py, " (", lower, ", ", upper, ")")) %>%
-    dplyr::select(term, deaths_10000py_CI) 
-  
-  
-  
-  # Function to get the proportion mediated of the combined indirect effect
-  IE_prop <- getTE_IE(model, coef_list, coef_list[-1]) %>% 
-    as.data.frame() %>% rownames_to_column(var = "term") %>%
-    pivot_wider(names_from="term", values_from=c("IE", "med_prop", "quantile")) %>%
-    mutate (IE_prop = round(`med_prop_2.5%` * 100, 0),
-      lower = round(`quantile_2.5%` *100, 0), 
-      upper = round(`quantile_97.5%` *100, 0),
-      prop_CI = paste0(IE_prop, " (", lower, ", ", upper, ")"),
-      term = "IE") %>% 
-    dplyr::select(term, prop_CI) 
-
-  
-  
-  # Edit and combine results
-  one <- full_join(coef, prop, by="term") %>% 
-    mutate(label = c(paste0("02 Direct effect of ", group, " (ref=White)"),
-                            "04 Differential exposure",
-                            "05 Differential vulnerability")) %>% 
-    dplyr::select(term, label, deaths_10000py_CI, prop_CI)
-  
-  two <- TE %>%
-    mutate (label = ifelse(term == "TE", paste0("01 Total effect of ", group, " (ref=White)"), NA),
-            prop_CI = "1") %>% 
-    dplyr::select(term, label, deaths_10000py_CI, prop_CI)
-  
-  three <- full_join(IE, IE_prop, by="term") %>% 
-    mutate (label = ifelse(term == "IE", paste0("03 Indirect effect of ", group, " (ref=White)"), NA)) %>% 
-    dplyr::select(term, label, deaths_10000py_CI, prop_CI) 
-  
-  
-  final <- rbind(one, two, three) %>% 
-    arrange(label)
-  
-  return(final)
-}
