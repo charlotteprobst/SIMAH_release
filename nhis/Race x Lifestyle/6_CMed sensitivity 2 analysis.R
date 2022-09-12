@@ -1,9 +1,7 @@
 
 # Race x Lifestyle Differential Vulnerability & Exposure Project
-# Causal Mediation File 
+# Sensitivity Analysis 2 - SES not included as covariate
 
-
-# LOAD DATA AND SET FILE LOCATIONS
 
 # load libraries
 library(tidyverse)  # data management
@@ -15,22 +13,20 @@ library(foreach)    # to bootstrap
 
 # Personal computer; specify locations 
 data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"            # Location of data
-model <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/CausMed/"  # Location of model output
+model <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/Sensitivity/"  # Location of model output
 output <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Race x Lifestyle/Output/"
-
 
 # SCC; ; specify locations 
 # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
 # data    <- "Data/"
-# model  <- "model/"
-
+# model  <- "Model/"
 
 
 # Load data
 nhis        <- readRDS (paste0(data, "nhis18_85.rds"))
 nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
-source("4_Causal Mediation function.R")
+source("6_CMed sensitivity 2 function.R")
 
 
 # Set up parallel processing ************************************************************************************************
@@ -40,7 +36,6 @@ source("4_Causal Mediation function.R")
 # foreach::getDoParWorkers()      # Identify # of cores that will be used
 # registerDoMC(5)                 # Specify number of cores to use  
 # foreach::getDoParWorkers()      # Identify # of cores that will be used
-
 
 
 # Windows 
@@ -57,10 +52,11 @@ source("4_Causal Mediation function.R")
 set.seed(1235)
 
 # Analysis
-# CMed_boot_w <- bootstrap_CMed(nhis_female, reps=1000, prop=0.20)  # Run analysis using bootstrap
-# saveRDS(CMed_boot_w, file.path(model, "CMed_boot_w.rds"))        # Save bootstrap results
-CMed_boot_w <- readRDS(file.path(model, "CMed_boot_w.rds"))        # load bootstrap results
-
+# CMed_boot_w <- bootstrap_CMed(nhis_female, reps=3, prop=0.002)  # Run analysis using bootstrap
+# saveRDS(CMed_boot_w, file.path(model, "CMed_boot_noEDU_w.rds"))        # Save bootstrap results
+CMed_boot_w_1_50 <- readRDS(file.path(model, "CMed_boot_noEDU_w_1_50.rds"))        # load bootstrap results
+CMed_boot_w_51_500 <- readRDS(file.path(model, "CMed_boot_noEDU_w_51_500.rds"))    # load bootstrap results
+CMed_boot_w <- c(CMed_boot_w_1_50, CMed_boot_w_51_500)
 
 # Results 
 CMed_women <- as.data.frame(do.call(cbind, CMed_boot_w)) %>% 
@@ -75,21 +71,20 @@ set.seed(1235)
 
 # Analysis
 # CMed_boot_m <- bootstrap_CMed(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
-# saveRDS(CMed_boot_m, file.path(model, "CMed_boot_m.rds"))       # Save bootstrap results
-CMed_boot_m <- readRDS(file.path(model, "CMed_boot_m.rds"))       # load bootstrap results
+# saveRDS(CMed_boot_m, file.path(model, "CMed_boot_noEDU_m.rds"))       # Save bootstrap results
+CMed_boot_m <- readRDS(file.path(model, "CMed_boot_noEDU_m_1_500.rds"))       # load bootstrap results
 
 # Results 
 CMed_men <- as.data.frame(do.call(cbind, CMed_boot_m)) %>%
-  format_CMed()                                                    # Compute CI and format results 
+ format_CMed()                                                    # Compute CI and format results 
 CMed_men                                                           # print results 
 
 
 # COMBINE Results
-
 colnames(CMed_men)   <- paste0("men_", colnames(CMed_men))
 colnames(CMed_women) <- paste0("women_", colnames(CMed_women))
 CMed_table <- cbind(CMed_men, CMed_women) %>% rename(race = men_race, term = men_term)
 CMed_table <- CMed_table[c(1:4, 7:8)]
 CMed_table
-write.csv(CMed_table, file=paste0(output, "Table2 Causal Mediation results.csv")) # save results
+write.csv(CMed_table, file=paste0(output, "Causal Mediation Results noEDU.csv")) # save results
 

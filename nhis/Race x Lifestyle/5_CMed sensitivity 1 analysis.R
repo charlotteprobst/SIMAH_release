@@ -1,35 +1,30 @@
 
 # Race x Lifestyle Differential Vulnerability & Exposure Project
-# Causal Mediation File 
+# Sensitivity Analysis - One Mediator at a time
 
-
-# LOAD DATA AND SET FILE LOCATIONS
 
 # load libraries
 library(tidyverse)  # data management
 library(timereg)    # additive survival models
 library(VGAM)       # multinomial regression, needed for causal mediation
 library(MASS)       # needed for causal mediation functions
-memory.limit(size=1e+13)
-
 
 # Personal computer; specify locations 
 data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"            # Location of data
 output <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Race x Lifestyle/Output/"
-source("Function - CausalMed sensitivity.R")
 
 
 # SCC; ; specify locations 
 # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
 # data    <- "Data/"
 # model  <- "model/"
-# source("Function - CausalMed.R")
 
 
 # Load data
 nhis        <- readRDS (paste0(data, "nhis18_85.rds"))
 nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
+source("5_CMed sensitivity 1 function.R")
 
 
 # MEN: Causal mediation with one mediator: 
