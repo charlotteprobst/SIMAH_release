@@ -1,4 +1,5 @@
 # SIMAH - protocol paper. June 2021
+# Figure 2
 # This code reads in the baseline population and generates a Figure for the 
 # protocol paper showing drinking patterns in the baseline population
 
@@ -12,7 +13,7 @@ library(plotrix)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
-k.wd <- c("~/Google Drive/SIMAH Sheffield")
+#k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
 basepop <- read.csv("SIMAH_workplace/microsim/1_input_data/agent_files/USAbasepop1000000.csv") %>% dplyr::select(microsim.init.age, microsim.init.sex,
@@ -118,59 +119,61 @@ windowsFonts() # To identify available fonts, and their 'name' in R; Arial font 
 # plot graph
 summarycompare %>%
   mutate(drinkercat = recode(drinkercat, "Category I"= "I", "Category II"= "II","Category III"= "III","Category IV"= "IV")) %>%
+  mutate(microsim.init.education = recode(microsim.init.education, 
+                                          "High school degree or less" = "High School Degree or Less",
+                                          "Some college" = "Some College",
+                                          "College degree or more" = "College Degree or More")) %>%
   ggplot(aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
-  facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
+  #facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
+  facet_wrap(c("microsim.init.sex", "microsim.init.education"), scales = "free") + 
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
-    strip.text = element_text(size = 12, colour = 'black'), 
-    text = element_text(size = 12, colour="black", family="sans"),
-    axis.text.y = element_text(size = 12, colour="black"), 
-    axis.text.x = element_text(size = 12, colour="black", angle = 47, hjust=1),
-    legend.position= c(0.945, 0.80),
-    legend.background = element_rect(size=0.35, linetype = "solid", color = "black", fill=NA),
-    #legend.title = element_text(face="underline"),
-    #legend.title = element_blank(),
+    strip.text = element_text(size = 9, colour = 'black'), 
+    axis.text = element_text(size = 9, colour="black"), 
+    axis.ticks = element_line(colour="black", size = 0.352), 
+    axis.line = element_line(colour="black", size = 0.352),
+    text = element_text(size = 9, colour="black", family="sans"),
+    legend.background = element_rect(size=0.352, linetype = "solid", color = "black", fill=NA),
+    legend.position= "right",
+    legend.justification = "top",
+    legend.title.align = 0.5,
     panel.grid = element_blank(),
-    strip.placement = "outside", 
-    panel.border = element_blank()) +
-  labs(fill=expression(underline("Category"))) +  
-  ylab("Prevalence (%)")+ xlab("") + 
-  # scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,95)) +
-  scale_x_discrete (expand=c(0.2,0.25), limits = c("BRFSS", "Microsimulation", "")) +
-  scale_fill_grey() +
-  annotate("segment", x=-Inf, xend=Inf, y=-Inf, yend=-Inf)+
-  annotate("segment", x=-Inf, xend=-Inf, y=-Inf, yend=Inf) 
-
+    panel.border = element_blank(), 
+    strip.placement = "outside") +
+  labs(fill=expression(underline("Category")), colour = "black", 
+       y = "Prevalence, %", 
+       x= "") + 
+  #scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,95)) +
+  scale_fill_grey() 
   
 ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 5, units = "in")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
+k <- 0
 
 for (i in unique(summarycompare$microsim.init.sex)) {
   for (j in unique(summarycompare$microsim.init.education)) {
+    k <- k+1
+    v.letter<- LETTERS[k]
     ggplot(data=summarycompare[summarycompare$microsim.init.sex == i & summarycompare$microsim.init.education == j,],
            aes(x=data, y=percent, fill=drinkercat)) + 
       geom_col(position=position_stack(reverse=T), width = 0.7 ) +
       theme_light() + 
       theme(strip.background = element_rect(fill = "white"), 
             strip.text = element_text(size = 10, colour = 'black'), 
-            text = element_text(size = 10, colour="black", family="sans"),
-            axis.text.y = element_text(size = 10, colour="black"), 
-            axis.text.x = element_text(size = 10, colour="black"), #angle = 47, hjust=1),
-            legend.position="bottom", 
-            legend.title = element_blank(),
+            axis.text = element_text(size = 10, colour="black"), 
+            axis.ticks = element_line(colour="black"), 
+            axis.line = element_line(colour="black"),
+            text = element_text(size = 10, colour="black"),
             panel.grid = element_blank(),
-            strip.placement = "outside", 
             panel.border = element_blank(), 
-            axis.line = element_line(colour = "black"), 
-            axis.ticks = element_line(color="black") ) +
-      ylab("Prevalence (%)")+ xlab("") + 
-      scale_fill_manual(values=col.vec) + 
-      scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85)) +
-      scale_fill_grey()
+            strip.placement = "outside", 
+            legend.position="none") +
+      labs(fill=expression(underline("Category")), colour = "black") +  
+      ylab("Prevalence, %")+ xlab("") + 
+      scale_fill_grey() 
     
-    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",i,j,".eps"), 
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",v.letter,".eps"), 
            width = 5, height = 3.5, units = "in")
     
   }
