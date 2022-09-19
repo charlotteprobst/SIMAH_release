@@ -105,6 +105,7 @@ CMed_oneVar <-function(data, mediator, cov1, cov2, cov3, M_ref_level, black_coef
   return(combined)
 }
 
+
 # Format results to export bootstrapped results
 format_CMed <- function (model, coef_list) {
   

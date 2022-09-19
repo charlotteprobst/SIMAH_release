@@ -49,34 +49,31 @@ source("6_CMed sensitivity 2 function.R")
 
 # WOMEN: Bootstrap Causal Mediation *****************************************************************************************
 
-set.seed(1235)
-
 # Analysis
-# CMed_boot_w <- bootstrap_CMed(nhis_female, reps=3, prop=0.002)  # Run analysis using bootstrap
+# set.seed(1235)
+# CMed_boot_w <- bootstrap_CMed_noEDU(nhis_female, reps=1000, prop=0.20)  # Run analysis using bootstrap
 # saveRDS(CMed_boot_w, file.path(model, "CMed_boot_noEDU_w.rds"))        # Save bootstrap results
-CMed_boot_w_1_50 <- readRDS(file.path(model, "CMed_boot_noEDU_w_1_50.rds"))        # load bootstrap results
-CMed_boot_w_51_500 <- readRDS(file.path(model, "CMed_boot_noEDU_w_51_500.rds"))    # load bootstrap results
-CMed_boot_w <- c(CMed_boot_w_1_50, CMed_boot_w_51_500)
+CMed_boot_w <- readRDS(file.path(model, "CMed_boot_noEDU_w.rds"))        # load bootstrap results
 
 # Results 
 CMed_women <- as.data.frame(do.call(cbind, CMed_boot_w)) %>% 
-    format_CMed()                                                    # Compute CI and format results 
+  format_CMed_noEDU()                                                # Compute CI and format results 
 CMed_women                                                           # print results 
 
 
 
 # MEN: Bootstrap Causal Mediation ********************************************************************************************
 
-set.seed(1235)
-
 # Analysis
-# CMed_boot_m <- bootstrap_CMed(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
+# set.seed(1235)
+# CMed_boot_m <- bootstrap_CMed_noEDU(nhis_male, reps=1000, prop=0.20)  # Run analysis using bootstrap
 # saveRDS(CMed_boot_m, file.path(model, "CMed_boot_noEDU_m.rds"))       # Save bootstrap results
-CMed_boot_m <- readRDS(file.path(model, "CMed_boot_noEDU_m_1_500.rds"))       # load bootstrap results
+CMed_boot_m <- readRDS(file.path(model, "CMed_boot_noEDU_m.rds"))       # load bootstrap results
+
 
 # Results 
 CMed_men <- as.data.frame(do.call(cbind, CMed_boot_m)) %>%
- format_CMed()                                                    # Compute CI and format results 
+  format_CMed_noEDU()                                                    # Compute CI and format results 
 CMed_men                                                           # print results 
 
 

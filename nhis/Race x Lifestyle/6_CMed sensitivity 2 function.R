@@ -4,7 +4,7 @@
 
 # Main functions ------------------------------------------------------------------------------------------------------------------
 # Bootstrap Causal Mediation 
-bootstrap_CMed <- function(data, reps, prop) {
+bootstrap_CMed_noEDU <- function(data, reps, prop) {
   
   foreach(i = 1:reps, .combine="c", 
           # need to specify the packages and functions that will be used
@@ -58,7 +58,7 @@ bootstrap_CMed <- function(data, reps, prop) {
 }
  
 # Format results from the bookstrapping
-format_CMed <- function(bootstrap_results){
+format_CMed_noEDU <- function(bootstrap_results){
   
   # Compute CI and format results 
   mean <- rowMeans(bootstrap_results) # get mean estimate
