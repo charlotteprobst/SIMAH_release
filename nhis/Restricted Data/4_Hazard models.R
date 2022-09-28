@@ -1,4 +1,3 @@
-
 # # SIMAH Restricted-access Data
 # Cox and Aalen Hazard models 
 
@@ -14,6 +13,8 @@ library(timereg)    # additive survival models
 library(survey)     # Survey adjusted results
 library(srvyr)
 library(foreach)    # loops 
+library(tidycmprsk)
+
 memory.limit(size=1e+13)
 options(scipen=999)
 
@@ -42,155 +43,211 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
   
   # Create labels, to be used later
   data_name  <- sub(".*_", "", enexpr(data))
-
-  foreach (i = deaths_list) %do% {
   
-    # 1) Data preparation 
-        data <- mutate (data, 
-                        cause_of_death = .data[[i]],
-                        SES = {{SES}},
-                        lifestyle = {{lifestyle}},
-                        SES_lifestyle = interaction(SES, lifestyle)) # Create an 'interaction' variable, combining the SES and lifestyle
-        
-        design <- mutate (design,
-                          cause_of_death = .data[[i]],
-                          SES = {{SES}},
-                          lifestyle = {{lifestyle}},
-                          SES_lifestyle = interaction(SES, lifestyle))
-
-        
-        # Create labels, to be used later
-        death_name <- sub("_.*", "", enexpr(i))
-        SES_name   <- enexpr(SES)
-        lifestyle_name <- enexpr(lifestyle)
-        
-        cat(death_name, "\n") # progress indicator
-
-
-    # 2) Run analyses     
-        
-        # Cox interaction model adjusted for survey weights
-        cat("    Svy Cox Interaction model in progress", "\n")  # progress indicator
-        if(data_name == "all"){
-          cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + female + married2 + race4 + srvy_yr22, design = design)
-        } else if(data_name %in% c("female", "male")){
-          cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, design = design)
-        }
-        cat("    Completed", "\n")  # progress indicator
-        
-        # Cox joint effect model adjusted for survey weights
-        cat("    Svy Cox Joint effects model in progress", "\n")  
-        if(data_name == "all"){
-          cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + female + married2 + race4 + srvy_yr22, design = design)
-        } else if(data_name %in% c("female", "male")){
-          cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, design = design)
-        }
-        cat("    Completed", "\n")    
-        
-        # Cox interaction model NOT adjusting for survey weights
-        # cat("    Cox Interaction model in progress", "\n")  # progress indicator
-        # cox_int <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, data = data)
-        # cat("    Completed", "\n")  # progress indicator
-      
-        # Cox joint effect model NOT adjusting for survey weights
-        # cat("    Cox Joint effects model in progress", "\n")  
-        # cox_joint <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, data = data)
-        # cat("    Completed", "\n")  
-      
-        
-        # Aalen Interaction model
-        cat("    Aalen Interaction model in progress", "\n")
-        if(data_name == "all"){
-          aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22),  data = data)
-        } else if(data_name %in% c("female", "male")){
-          aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
-        }
-        cat("    Completed", "\n")
-        
-        # Aalen joint effects model
-        cat("    Aalen Joint effects model in progress", "\n")
-        if(data_name == "all"){
-          aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22), data = data)
-        } else if(data_name %in% c("female", "male")){
-          aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22), data = data) # robust = 0 to remove the 2 tests for age-varying effects
-        }
-        cat("    Completed", "\n")
-        
-        # Save model results 
-        saveRDS(cox_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
-        saveRDS(cox_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint.rds"))
-        saveRDS(aalen_int,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
-        saveRDS(aalen_joint,paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
-
-        # Save assumption plot for Cox model
-        pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int), col = "red"); dev.off()   
-        
-
-        
-  # 3) Format and save results 
-   cox_int_results <- cox_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
-          mutate(variable = term,
-                 HR = round(estimate, 2),
-                 conf.low = round(conf.low, 2),
-                 conf.high = round(conf.high, 2),
-                 p.value_HR = round(p.value, 3),
-                 p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
-                 CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
-                 select(variable, HR, CI, p.value_HR) %>%
-                 filter(str_detect(variable, "SES|lifestyle")) %>%
-          # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
-          #        variable = str_remove(variable, fixed("lifestyle"))) %>%
-          add_row(variable = "INTERACTION MODELS", .before=1)
-   
-   
-   cox_joint_results <- cox_joint %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
-         mutate(variable = term,
-                HR = round(estimate, 2),
-                conf.low = round(conf.low, 2),
-                conf.high = round(conf.high, 2),
-                p.value_HR = round(p.value, 3),
-                p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
-                CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
-         select(variable, HR, CI, p.value_HR) %>%
-         filter(str_detect(variable, "SES")) %>%
-         mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>% 
-         add_row(variable = "JOINT MODELS", .before=1)
-
-
-    aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
-          mutate (variable = rownames(.),
-                  var = V2,
-                  p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
-                  p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-                  lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
-                  upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-                  estimate_10000py = round(estimate*10000, 1),
-                  Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-          select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
-          filter(str_detect(variable, "SES|lifestyle")) %>%
-          mutate(variable = str_remove(variable, fixed("const(SES)")),
-                variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
-          add_row(variable = "INTERACTION MODELS", .before=1)%>%
-          remove_rownames()
-
-
-    aalen_joint_results <- as.data.frame(cbind(aalen_joint$gamma, diag(aalen_joint$robvar.gamma))) %>%
-          mutate (variable = rownames(.),
-                  var = V2,
-                  p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
-                  p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-                  lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
-                  upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-                  estimate_10000py = round(estimate*10000, 1),
-                  Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-          select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
-          filter(str_detect(variable, "SES")) %>%
-          mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
-          add_row(variable = "JOINT MODELS", .before=1) %>%
-          remove_rownames()
-
+  foreach (i = deaths_list) %do% {
     
-    cox_results <- rbind(cox_int_results, cox_joint_results) 
+    # 1) Data preparation 
+    data <- mutate (data, 
+                    cause_of_death = .data[[i]],
+                    SES = {{SES}},
+                    lifestyle = {{lifestyle}},
+                    SES_lifestyle = interaction(SES, lifestyle)) # Create an 'interaction' variable, combining the SES and lifestyle
+    
+    design <- mutate (design,
+                      cause_of_death = .data[[i]],
+                      SES = {{SES}},
+                      lifestyle = {{lifestyle}},
+                      SES_lifestyle = interaction(SES, lifestyle))
+    
+    
+    cat("    Compute n total and n with outcome by interaction variable", "\n")
+    ns <- data %>%
+      group_by(SES_lifestyle) %>%
+      summarize(n_total = n()) %>%
+      left_join(data %>%
+                  filter(cause_of_death == 1) %>%
+                  group_by(SES_lifestyle) %>%
+                  summarize(n_case = n()) %>%
+                  data.frame(), by = "SES_lifestyle") %>%
+      data.frame() %>% 
+      rename(variable = SES_lifestyle)
+    cat("    Completed", "\n")
+    
+    
+    # Create labels, to be used later
+    death_name <- sub("_.*", "", enexpr(i))
+    SES_name   <- enexpr(SES)
+    lifestyle_name <- enexpr(lifestyle)
+    
+    cat(death_name, "\n") # progress indicator
+    
+    
+    # 2) Run analyses     
+    
+    # Cox interaction model adjusted for survey weights
+    cat("    Svy Cox Interaction model in progress", "\n")  # progress indicator
+    if(data_name == "all"){
+      cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + female + married2 + race4 + srvy_yr22, design = design)
+    } else if(data_name %in% c("female", "male")){
+      cox_int <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, design = design)
+    }
+    cat("    Completed", "\n")  # progress indicator
+    
+    # Cox joint effect model adjusted for survey weights
+    cat("    Svy Cox Joint effects model in progress", "\n")  
+    if(data_name == "all"){
+      cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + female + married2 + race4 + srvy_yr22, design = design)
+    } else if(data_name %in% c("female", "male")){
+      cox_joint <- svycoxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, design = design)
+    }
+    cat("    Completed", "\n")    
+    
+    
+    # Cox interaction model NOT adjusting for survey weights
+    cat("    Cox Interaction model NOT adjusting for survey weights in progress", "\n")  # progress indicator
+    cox_int_unwt <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES * lifestyle + married2 + race4 + srvy_yr22, data = data)
+    cat("    Completed", "\n")  # progress indicator
+    
+    # Cox joint effect model NOT adjusting for survey weights
+    cat("    Cox Joint effects model NOT adjusting for survey weights in progress", "\n")
+    cox_joint_unwt <- coxph(Surv(bl_age, end_age, cause_of_death) ~ SES_lifestyle + married2 + race4 + srvy_yr22, data = data)
+    cat("    Completed", "\n")
+    
+    
+    # Aalen Interaction model
+    cat("    Aalen Interaction model in progress", "\n")
+    if(data_name == "all"){
+      aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22), data = data)
+    } else if(data_name %in% c("female", "male")){
+      aalen_int <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES)*const(lifestyle) + const(married2) + race4 + const(srvy_yr22),  data = data)
+    }
+    cat("    Completed", "\n")
+    
+    # Aalen joint effects model
+    cat("    Aalen Joint effects model in progress", "\n")
+    if(data_name == "all"){
+      aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(female) + const(married2) + race4 + const(srvy_yr22), data = data)
+    } else if(data_name %in% c("female", "male")){
+      aalen_joint <- aalen(Surv(bl_age, end_age, cause_of_death) ~ const(SES_lifestyle) + const(married2) + race4 + const(srvy_yr22), data = data) # robust = 0 to remove the 2 tests for age-varying effects
+    }
+    cat("    Completed", "\n")
+    
+    # Save model results 
+    saveRDS(cox_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
+    saveRDS(cox_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint.rds"))
+    saveRDS(cox_int_unwt,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int_unwt.rds"))
+    saveRDS(cox_joint_unwt,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint_unwt.rds"))
+    saveRDS(aalen_int,   paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
+    saveRDS(aalen_joint, paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
+    
+    # Save assumption plot for Cox model
+    pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int), col = "red"); dev.off()   
+    pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int_unwt), col = "red"); dev.off()
+    
+    
+    # 3) Format and save results 
+    cox_int_results <- cox_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR, CI, p.value_HR) %>%
+      filter(str_detect(variable, "SES|lifestyle")) %>%
+      # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
+      #        variable = str_remove(variable, fixed("lifestyle"))) %>%
+      add_row(variable = "INTERACTION MODELS", .before=1)
+    
+    
+    cox_joint_results <- cox_joint %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR, CI, p.value_HR) %>%
+      filter(str_detect(variable, "SES")) %>%
+      mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>% 
+      add_row(variable = "JOINT MODELS", .before=1)
+    
+    
+    cox_int_unwt_results <- cox_int_unwt %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR, CI, p.value_HR) %>%
+      rename(HR_unwt = HR, CI_unwt = CI, p.value_HR_unwt = p.value_HR) %>%
+      filter(str_detect(variable, "SES|lifestyle")) %>%
+      # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
+      #        variable = str_remove(variable, fixed("lifestyle"))) %>%
+      add_row(variable = "INTERACTION MODELS", .before=1)
+    
+    
+    cox_joint_unwt_results <- cox_joint_unwt %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR, CI, p.value_HR) %>%
+      rename(HR_unwt = HR, CI_unwt = CI, p.value_HR_unwt = p.value_HR) %>%
+      filter(str_detect(variable, "SES")) %>%
+      mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>% 
+      add_row(variable = "JOINT MODELS", .before=1)
+    
+    
+    aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
+      mutate (variable = rownames(.),
+              var = V2,
+              p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+              p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
+              lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
+              upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
+              estimate_10000py = round(estimate*10000, 1),
+              Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
+      select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
+      filter(str_detect(variable, "SES|lifestyle")) %>%
+      mutate(variable = str_remove(variable, fixed("const(SES)")),
+             variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
+      add_row(variable = "INTERACTION MODELS", .before=1)%>%
+      remove_rownames()
+    
+    
+    aalen_joint_results <- as.data.frame(cbind(aalen_joint$gamma, diag(aalen_joint$robvar.gamma))) %>%
+      mutate (variable = rownames(.),
+              var = V2,
+              p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
+              p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
+              lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
+              upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
+              estimate_10000py = round(estimate*10000, 1),
+              Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
+      select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
+      filter(str_detect(variable, "SES")) %>%
+      mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
+      add_row(variable = "JOINT MODELS", .before=1) %>%
+      remove_rownames()
+    
+    
+    cox_results <- rbind(cox_int_results, cox_joint_results) %>%
+      left_join(ns, by = "variable") %>%
+      relocate(n_case, .after = variable) %>%
+      relocate(n_total, .after = n_case)
+    
+    cox_unwt_results <- rbind(cox_int_unwt_results, cox_joint_unwt_results)
+    
+    
+    
     
     ## compute RERI for the cox_int model
     add_int <- cox_int_results %>% 
@@ -223,17 +280,53 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                 by = "variable") %>%
       mutate(variable = str_remove(variable, fixed("SES")), 
              variable = str_remove(variable, fixed("lifestyle")))
-     
-            
+    
+    
+    ## compute RERI for the cox_int_unwt model
+    add_int_unwt <- cox_int_unwt_results %>% 
+      filter(str_detect(variable, ":")) %>% select(variable) %>%
+      separate(variable, into = c("SES", "lifestyle"), sep = ":", remove = FALSE) %>%
+      data.frame()
+    
+    foreach(i = 1:nrow(add_int_unwt))%do%{
+      
+      rs <- additive_interactions( cox_int_unwt, add_int_unwt[i, "SES"], add_int_unwt[i, "lifestyle"] )
+      
+      add_int_unwt[i, "RERI"] <- rs[1,2]
+      add_int_unwt[i, "CI.lo"] <- rs[1,3]
+      add_int_unwt[i, "CI.hi"] <- rs[1,4]
+      add_int_unwt[i, "p.value"] <- rs[1,5]
+      
+    }
+    
+    ## merge the RERI output with the cox_int_unwt_results
+    cox_unwt_results_RERI <- cox_unwt_results %>% 
+      left_join(add_int_unwt %>%
+                  mutate(RERI = round(RERI, 2),
+                         CI.lo = round(CI.lo, 2),
+                         CI.hi = round(CI.hi, 2),
+                         CI_RERI = paste0("(", CI.lo,", ", CI.hi, ")"),
+                         p.value_RERI = round(p.value, 3),
+                         p.value_RERI = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
+                  ) %>%
+                  select(-SES, -lifestyle, -CI.lo, -CI.hi, -p.value) %>%
+                  rename(RERI_unwt = RERI, CI_RERI_unwt = CI_RERI, p.value_RERI_unwt = p.value_RERI), 
+                by = "variable") %>%
+      mutate(variable = str_remove(variable, fixed("SES")), 
+             variable = str_remove(variable, fixed("lifestyle")))
+    
+    
     aalen_results <- rbind(aalen_int_results, aalen_joint_results)
-     
-    results <- full_join(cox_results_RERI, aalen_results, by="variable") %>%
+    
+    results <- full_join(cox_results_RERI, cox_unwt_results_RERI, by="variable") %>%
+      full_join(aalen_results, by="variable") %>%
       add_row(variable = death_name, .before=1) 
-  
+    
     write_csv(results, paste0(output_tables, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".csv"), na="")
     cat("    Results were exported", "\n")  # progress indicator
   }   
 }
+
 
 
 # Test the function:
