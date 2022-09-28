@@ -211,11 +211,11 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
               var = V2,
               p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
               p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-              lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
-              upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-              estimate_10000py = round(estimate*10000, 1),
-              Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-      select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
+              lower.ci = round((estimate - (1.96 * sqrt(var)))*100000, 1),
+              upper.ci = round((estimate + (1.96 * sqrt(var)))*100000, 1),
+              estimate_100000py = round(estimate*100000, 1),
+              Deaths_CI_100000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
+      select (variable, estimate_100000py, Deaths_CI_100000py, p.value_Deaths) %>%
       filter(str_detect(variable, "SES|lifestyle")) %>%
       mutate(variable = str_remove(variable, fixed("const(SES)")),
              variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
@@ -228,11 +228,11 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
               var = V2,
               p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
               p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-              lower.ci = round((estimate - (1.96 * sqrt(var)))*10000, 1),
-              upper.ci = round((estimate + (1.96 * sqrt(var)))*10000, 1),
-              estimate_10000py = round(estimate*10000, 1),
-              Deaths_CI_10000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-      select (variable, estimate_10000py, Deaths_CI_10000py, p.value_Deaths) %>%
+              lower.ci = round((estimate - (1.96 * sqrt(var)))*100000, 1),
+              upper.ci = round((estimate + (1.96 * sqrt(var)))*100000, 1),
+              estimate_100000py = round(estimate*100000, 1),
+              Deaths_CI_100000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
+      select (variable, estimate_100000py, Deaths_CI_100000py, p.value_Deaths) %>%
       filter(str_detect(variable, "SES")) %>%
       mutate(variable = str_remove(variable, fixed("const(SES_lifestyle)"))) %>%
       add_row(variable = "JOINT MODELS", .before=1) %>%
