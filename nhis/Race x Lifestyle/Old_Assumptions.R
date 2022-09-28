@@ -6,27 +6,20 @@
 
 # load libraries
 library(tidyverse)  # data management
-library(skimr)      # descriptive statistics
-library(gmodels)    # CrossTable command
-library(tableone)   # create table one
-library(survival)   # surivval analyses
-library(survminer)  # surivval analyses
 library(timereg)    # additive survival models
-library(survey)     # for survey weighted cox model
-library(biostat3)   # survRate command
 library(VGAM)       # multinomial regression, needed for causal mediation
 library(MASS)       # needed for causal mediation functions
 
 
 # Specify the data and output file locations
 data   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"                # Location of data
-output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/\Assumptions/" # Location of output
+output <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Race x Lifestyle/Assumptions/" # Location of output
 
 
 # SCC; ; specify locations 
 # setwd("/external/mgmt3/imaging/scratch/Imhpr/kpuka/nhis/")
 # data    <- "Data/"
-# model  <- "model/"
+# output  <- "Output/"
 
 
 # Load data
@@ -105,7 +98,7 @@ assump_aalen <- aalen(Surv(bl_age, end_age, allcause_death) ~  ethnicity.factor 
         
         # Final result: 
         # Age-invariant variables: marital status, education, BMI, alcohol
-        # Age-varying variables: smoking4, physical activity, race/ethnicity
+        # Age-varying variables: smoking, physical activity, race/ethnicity
 
 
 

@@ -89,9 +89,11 @@ kableone(table_e1)
 
 
 
-# Figure 2: Survival plot 
-ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = nhis), 
-  data=nhis, facet.by="female.factor", censor = FALSE,xlim = c(18, 100), 
+# Figure 2: Survival plot
+
+data_noOther <- filter(nhis, ethnicity.factor !="Other")
+ggsurvplot_facet(fit = survfit(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor, data = data_noOther), 
+  data=data_noOther, facet.by="female.factor", censor = FALSE,xlim = c(18, 100), 
   conf.int = TRUE, 
   xlab = "Age (years)", 
   ylab = "Overall survival probability")
@@ -176,7 +178,7 @@ my_radarchart <- function(data, ethnicity, title = NULL, legend=FALSE){
 my_radarchart2 <- function(data, sex, title = NULL, legend=FALSE){
   
   min <- 0
-  max <- 60
+  max <- 50
   
   data <- data %>%
     filter(female.factor==sex) %>% 
@@ -187,32 +189,34 @@ my_radarchart2 <- function(data, sex, title = NULL, legend=FALSE){
     add_row(high_risk_drinker=min, everyday_smoker=min, sedentary=min, obese=min, .before=1) %>%
     add_row(high_risk_drinker=max, everyday_smoker=max, sedentary=max, obese=max, .before=1) 
   
-  radarchart(data, axistype = 1,
+  mycolors <-c("#E7B800", "#5C5C5C", "#FC4E07")
+  
+  radarchart(data, axistype = 1, seg=5, 
     # Customize the polygon
-    pcol = c("#00AFBB", "#FC4E07", "#E7B800", "#99999980"), 
-            pfcol = scales::alpha(c("#00AFBB", "#FC4E07", "#E7B800"), 0.15), 
+    pcol = mycolors, 
+    pfcol = scales::alpha(mycolors, 0.15), 
     plwd = 2, plty = 1,
     # Customize the grid
     cglcol = "grey", cglty = 1, cglwd = 0.8,
     # Customize the axis
     axislabcol = "grey", 
     # Variable labels
-    vlcex = 1, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
-    caxislabels = seq(0,60,15), title = title)
+    vlcex = 1.25, vlabels = c("Category II/III \n drinker", "Current \n everyday \n smoker", "Sedentary", "Obese"),
+    caxislabels = seq(0,50,10))
   
   if(legend==TRUE){
     legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , 
-          col= c("#00AFBB", "#FC4E07", "#E7B800") , text.col = "black", cex=1.2, pt.cex=3)
+          col= mycolors, text.col = "black", cex=1.2, pt.cex=3)
   }
 }
-
-
-    tiff(file.path(output, "Figure 2_v2 - Prevalence of risk factors.tiff"), width=1400, height = 2500, res=300)
-    op <- par(mar = c(1, 1, 1, 1))
-    par(mfrow=c(2,1))
-    my_radarchart2(radar, "Male", title="Men", legend=TRUE)
-    my_radarchart2(radar, "Female", title="Women")
-    par(mfrow=c(1,1))
+    op <- par(mar = c(0, 0, 0, 0))
+        
+    tiff(file.path(output, "Figure 2_men.tiff"), width=2000, height = 2000, res=300)
+    my_radarchart2(radar, "Male", title="Men")
+    dev.off()
+    
+    tiff(file.path(output, "Figure 2_women.tiff"), width=2000, height = 2000, res=300)
+    my_radarchart2(radar, "Female", title="Women", legend=TRUE)
     dev.off()
     
 

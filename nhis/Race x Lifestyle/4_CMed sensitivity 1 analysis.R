@@ -24,7 +24,7 @@ output <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Race x Lifestyle/O
 nhis        <- readRDS (paste0(data, "nhis18_85.rds"))
 nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
-source("5_CMed sensitivity 1 function.R")
+source("4_CMed sensitivity 1 function.R")
 
 
 # MEN: Causal mediation with one mediator: 

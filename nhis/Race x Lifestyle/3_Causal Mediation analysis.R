@@ -30,7 +30,7 @@ output <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Race x Lifestyle/O
 nhis        <- readRDS (paste0(data, "nhis18_85.rds"))
 nhis_male   <- filter(nhis, female==0)
 nhis_female <- filter(nhis, female==1)
-source("4_Causal Mediation function.R")
+source("3_Causal Mediation function.R")
 
 
 # Set up parallel processing ************************************************************************************************
