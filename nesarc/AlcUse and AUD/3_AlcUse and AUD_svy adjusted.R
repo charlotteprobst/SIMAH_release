@@ -7,6 +7,7 @@ library(skimr)       # descriptive statistics
 library(janitor)     # descriptive statistics (tabyl function)
 library(survey)      # to work with survey data
 library(srvyr)       # adds dplyr like syntax to the survey package
+library(broom)       # model results
 library(splines)
 
  
@@ -40,9 +41,10 @@ nesarc <- readRDS(paste0(data, "nesarc_all.rds")) %>%
   
 # Prepare dataframe, accounting for survey design
 nesarc_srvyr <- nesarc %>%
-  as_survey_design(id=psu, strata=stratum, weights=weight_wave2, nest = TRUE, survey.lonely.psu = "adjust") %>%
+  as_survey_design(id=psu, strata=stratum, weights=weight_wave2, nest = TRUE) %>%
   filter(AUD_lifetime2_wave1=="No AUD") %>%             # keep those with no AUD at wave 1
   filter(!is.na(alc5_wave1) & !is.na(incident_AUD))     # remove those with no baseline alcohol use
+options(survey.lonely.psu="adjust")
 
 nesarc_srvyr_female <- filter(nesarc_srvyr, female==1)
 nesarc_srvyr_male <- filter(nesarc_srvyr, female==0)
@@ -63,8 +65,9 @@ nesarc_srvyr %>%
 # WOMEN *******************************************************************************************
 
 model1 <- svyglm(incident_AUD ~ alc5_wave1 + age, family = quasibinomial, design = nesarc_srvyr_female)
-  OR_CI(model1)
-  
+    tidy(model1, conf.int = TRUE, exponentiate = TRUE)
+    OR_CI(model1)
+    
 # MEN *********************************************************************************************
 model1 <- svyglm(incident_AUD ~ alc5_wave1 + age, family = quasibinomial, design = nesarc_srvyr_male)
   OR_CI(model1)  
@@ -73,14 +76,14 @@ model1 <- svyglm(incident_AUD ~ alc5_wave1 + age, family = quasibinomial, design
   
   
   
-# Analyses, Continous Alcohol use ---------------------------------------------------------------------------------------------------------
+# Analyses, Continuous Alcohol use ---------------------------------------------------------------------------------------------------------
 
 # WOMEN *******************************************************************************************
 model2 <- svyglm(incident_AUD ~ alc_daily_g_wave1 + age, family = quasibinomial, design = nesarc_srvyr_female)
-  OR_CI(model2, unit=10)  
+  OR_CI(model2, unit=14)  
  
   
 # MEN *******************************************************************************************
 model2 <- svyglm(incident_AUD ~ alc_daily_g_wave1 + age, family = quasibinomial, design = nesarc_srvyr_male)
-  OR_CI(model2, unit=10)  
+  OR_CI(model2, unit=14)  
 
