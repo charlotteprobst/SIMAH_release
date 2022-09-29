@@ -6,9 +6,10 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(lemon)
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
-k.wd <- c("~/Google Drive/SIMAH Sheffield/")
+#k.wd <- c("~/Google Drive/SIMAH Sheffield/")
 setwd(k.wd)
 
 weights <- read.csv("SIMAH_workplace/protocol/output_data/1_population_weights_2018.csv")
@@ -23,13 +24,13 @@ symbol <- c(16, 21)
 symbol <- symbol[as.numeric(as.factor(df$datatype))]
 
 df$edclass <- recode(df$edclass,
-                             "LEHS" = "High school degree or less",
-                             "SomeC" = "Some college",
-                             "College" = "College degree or more")
+                             "LEHS" = "High School Degree or Less",
+                             "SomeC" = "Some College",
+                             "College" = "College Degree or More")
 df$edclass <- factor(df$edclass,
-                             levels = c("High school degree or less",
-                                        "Some college",
-                                        "College degree or more"))
+                             levels = c("High School Degree or Less",
+                                        "Some College",
+                                        "College Degree or More"))
 
 df$sex <- recode(df$sex, "m" = "Men", "f" = "Women")
 
@@ -96,32 +97,73 @@ ff <- with(facet_bounds,
                       sex =c(sex,sex),
                       edclass=c(edclass,edclass)))
 
+v.ylim <- c(rep(25, 9), rep(50, 15), rep(300, 3))
+  
+col.vec <- c("#062D59", "#76868D", "#E6DFC0")
+col.vec <- c("black",  "gray75", "black",  "gray75")
 
-color.vec <- c("#132268", "#447a9e", "#93AEBF")
-color.vec <- c("#062D59", "#76868D", "#E6DFC0")
 
 ggplot(data=data_graph, aes(x=year, y=(rate), colour=sex)) + 
-  facet_grid(rows = vars(cause), cols = vars(edclass), scales = "free") +
-  theme_light() + 
+  facet_rep_grid(rows = vars(cause), cols = vars(edclass), scales = "free", repeat.tick.labels = TRUE) +
+  #facet_wrap(c("edclass", "cause"), scales = "free", nrow = 3) +
+  theme_light() +
   theme(strip.background = element_rect(fill = "white"), 
-        strip.text = element_text(colour = 'black'), 
-        text = element_text(size = 14),
-        axis.text = element_text(size = 12), legend.position="bottom", 
-        legend.title = element_text(size = 12),
-        strip.placement = "outside") +
-  ylab("Age standardized mortality rate per 100,000") + xlab("Year") +
+        panel.grid = element_blank(),
+        panel.border = element_blank(), 
+        axis.ticks = element_line(colour="black", size = 0.352), 
+        axis.line = element_line(colour="black", size = 0.352),
+        strip.text = element_text(size = 8, colour = 'black'), 
+        axis.text = element_text(size = 8, colour="black"), 
+        text = element_text(size = 8, colour="black", family="sans"), 
+        strip.placement = "outside",
+        legend.position="none") +
   ylim(0, NA) +
-  scale_color_manual(values = color.vec) +
-  geom_line(aes(linetype=datatype, size = datatype), alpha= .72) + 
+  xlim(2000, 2020) +
+  scale_color_manual(values = col.vec) +
+  geom_line(aes(linetype=datatype), size = 0.352) + 
+  geom_point(data=ff,x=NA, colour=NA) +
   
   scale_linetype_manual(values = c(1, 3, 3, 3)) +
-  scale_size_manual(breaks=c("Microsimulation", "Observed"), values=c(1, 0.7, 0.7, 0.7)) +
 
-  labs(color="Sex", linetype = "Data type", size = "Data type") +
-  guides(color = guide_legend(nrow = 3), linetype = guide_legend(nrow = 2), size = guide_legend(nrow = 2)) + 
-  geom_point(data=ff,x=NA, colour=NA)
+  labs(y = "Mortality Rate per 100,000", 
+       x = "Year") 
 
-ggsave("SIMAH_workplace/protocol/graphs/1_mortality_rates_ses.jpeg", dpi=600, width=18, height=25, units="cm")
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4.pdf", width=7, height=9, units="in")
+
+k <- 0
+
+for (i in levels(data_graph$cause)) {
+  for (j in levels(data_graph$edclass)) {
+    k <- k+1
+    ggplot(data=data_graph[which(data_graph$cause == i & data_graph$edclass == j),], aes(x=year, y=(rate), colour=sex)) + 
+      theme_light() +
+      theme(strip.background = element_rect(fill = "white"), 
+            panel.grid = element_blank(),
+            panel.border = element_blank(), 
+            axis.ticks = element_line(colour="black", size = 0.352), 
+            axis.line = element_line(colour="black", size = 0.352),
+            strip.text = element_text(size = 8, colour = 'black'), 
+            axis.text = element_text(size = 8, colour="black"), 
+            text = element_text(size = 8, colour="black"), 
+            strip.placement = "outside",
+            legend.position="none") +
+      ylim(0, v.ylim[k]) +
+      xlim(2000, 2020) +
+      scale_color_manual(values = col.vec) +
+      geom_line(aes(linetype=datatype), size = 0.352) + 
+      geom_point(data=ff,x=NA, colour=NA) +
+      
+      scale_linetype_manual(values = c(1, 3, 3, 3)) +
+      
+      labs(y = "Mortality Rate per 100,000", 
+           x = "Year")
+    
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4", LETTERS[k], ".eps"), 
+           width=2, height=1.8, units="in", device = "eps")
+    
+  }
+}
+
 
 LiverC <- data_graph %>% filter(datatype=="Observed") %>% filter(cause=="Liver C.")
 

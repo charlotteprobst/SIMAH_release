@@ -8,13 +8,10 @@ library(janitor)    # data management
 library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 library(knitr)      # create descriptives table
-# options(scipen=999) # prevent the use of scientific notation
-memory.limit(size=1e+13)
 
- 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Output/"                     # Location of tables and figures 
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions Manuscript/Output/"                     # Location of tables and figures 
 models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
 
 # Load data / functions
@@ -34,69 +31,49 @@ hed.msm        <- readRDS(paste0(models, "hed.msm.RDS"))
 
 # 1) Descriptives ------------------------------------------------------------------------------------------
 
-# years follow-up
-nesarc %>%
-  filter(wave==2) %>%
-  select (years) %>% 
-  skim()
-
-
 # Variables of interest
 variables <- c("female", "age", "age7", "race.factor", "edu3", "alc4.factor", "hed.factor")
 factor_vars <- c("female", "age7", "race.factor", "edu3", "alc4.factor", "hed.factor")
 
 # Descriptives of expanded data
-tab_exp <- CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc_expanded)
-table1_exp <- print(tab_exp, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, format="p")  # Shows only % 
-write.csv(table1_exp, file=paste0(output,"Table 1 - Descriptives of expanded data.csv")) 
-kable(table1_exp)
+CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc_expanded) %>%
+  print(noSpaces = TRUE, catDigits =0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%  
+  write.csv(paste0(output,"Table 1 - Descriptives of expanded data.csv")) 
 
 
 # Descriptives at basleine and follow-up of included participants 
-tab1 <- CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc)
-table1 <- print(tab1, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE)   
-write.csv(table1, file=paste0(output,"Table S1 - Descriptives of original data.csv"))  # export to excel, to copy/paste into manuscript
-kable(table1)
-
-
-# Descriptives for attrition 
-nesarc1_all <- filter(nesarc_all, wave==1) # select baseline data
-tab1_attr <- CreateTableOne(vars= variables, factorVars = factor_vars, strata="lost.factor", data=nesarc1_all)
-table1_attr <- print(tab1_attr, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, smd=TRUE)   
-write.csv(table1_attr, file=paste0(output,"Table S2 - Attrition Descriptives.csv"))  # export to excel, to copy/paste into manuscript
-kable(table1_attr)                             # view in R; R Markdown friendly version
+CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc) %>%
+  print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
+  write.csv(paste0(output,"Table S1 - Descriptives of original data.csv"))  
 
 
 # Descriptives NESARC I and III (expanded data)
-tab1_exp3 <- CreateTableOne(vars= variables, factorVars = factor_vars, data=nesarc3_expanded)
-table1_exp3 <- print(tab1_exp3, noSpaces = TRUE, catDigits = 0, contDigits = 1, pDigits = 2, printToggle = FALSE, test=FALSE, format="p")  # Shows only % 
-write.csv(table1_exp3, file=paste0(output,"Table S6 - NESARC III Descriptives of expanded data.csv")) 
-kable(table1_exp3)
+CreateTableOne(vars= variables, factorVars = factor_vars, data=nesarc3_expanded) %>%
+  print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%
+  write.csv(paste0(output,"Table S5 - NESARC III Descriptives of expanded data.csv")) 
+
 
 
 
 # 2) ALCOHOL CONSUMPTION  ---------------------------------------------------------------------------------------
 #   2.1) Average annual TP (Table 2a)   ---------------------------------------------------------------------------
 
-    # The MSM Model are loaded above, and were created in Model Selection file
+    # The MSM Model are loaded above, and were created in 'Model Selection' file
     
     # 2.1.1) Preliminary view of model results 
     alc4.msm                              # model summary
     pmatrix.msm(alc4.msm, t=1, ci="norm") # Transition probabilities at year = t; covariates set to their mean value
     hazard.msm(alc4.msm)                  # Hazard ratios for transition
     
-    
-    
-    # 2.1.2) Function to extract Annual Transition Probabilities (aTP) and correct CI to original sample size 
-    # Final, adjusted model
+    # Print results
     predicted_TP(model=alc4.msm, year=1) %>% 
-      write_csv(paste0(output, "Table 2a - AlcUse Annual TP.csv")) %>% 
+      #write_csv(paste0(output, "Table 2a - AlcUse Annual TP.csv")) %>% 
       kable()
     
     
     # Crude (unadjusted) model
     predicted_TP(model=alc4_crude.msm, year=1) %>% 
-      write_csv(paste0(output, "Table S5a - AlcUse Unadjusted Annual TP.csv")) %>%
+      write_csv(paste0(output, "Table S4a - AlcUse Unadjusted Annual TP.csv")) %>%
       kable()
 
 
@@ -114,13 +91,12 @@ aTP_alc4 <- predicted_TP_covs (alc4.msm, 1) %>%
                         "State.2" = "Category I",
                         "State.3" = "Category II",
                         "State.4" = "Category III")) %>% 
-  write_csv(paste0(output, "Supplement 1 - AlcUse Annual Transition Probabilities.csv")) %>%    # Save a copy of the TP
+  write_csv(paste0(output, "Supplement 1 - AlcUse Annual Transition Probabilities.csv"))  %>%    # Save a copy of the TP
   mutate(cat = paste(sex, age_cat, edu, race, From, sep="_")) %>% 
   select(cat, To, Probability) %>% 
   group_by(cat) %>% 
-  mutate(cumsum = cumsum(Probability)) %>%
+  mutate(cumsum = cumsum(Probability)) %>%  # eliminates rounding errors
   ungroup() 
-
 
 
 # Load and set up the initial population (based on NESARC wave 1)
@@ -148,7 +124,7 @@ AlcUse_observed_pop <- nesarc3_expanded %>%  # starts with observed data
 
 
 
-#   2.3) Simulate and compare to NESARC 3 (Table S7) ----------------------------------------------------------
+#   2.3) Simulate and compare to NESARC 3 (Table S6) ----------------------------------------------------------
 
 # Function to simulate population at 11 years follow-up
 AlcUse_predicted_pop <- simulate_pop(AlcUse_basepop, aTP_alc4, transition_alc4, 11)
@@ -163,7 +139,7 @@ edu  <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, edu)
 race <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, race)
 age  <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, age7)
     
-rbind(all, sex, edu, race, age) %>% write_csv(paste0(output, "Table S7.csv"))
+rbind(all, sex, edu, race, age) %>% write_csv(paste0(output, "Table S6 - AlcUse external validation.csv"))
 
 
 

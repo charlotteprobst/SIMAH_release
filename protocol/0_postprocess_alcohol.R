@@ -1,4 +1,5 @@
 # SIMAH - protocol paper. June 2021
+# Figure 2
 # This code reads in the baseline population and generates a Figure for the 
 # protocol paper showing drinking patterns in the baseline population
 
@@ -12,7 +13,7 @@ library(plotrix)
 
 
 k.wd <- c("C:/Users/Marie/Dropbox/NIH2020/")
-k.wd <- c("~/Google Drive/SIMAH Sheffield")
+#k.wd <- c("~/Google Drive/SIMAH Sheffield")
 setwd(k.wd)
 
 basepop <- read.csv("SIMAH_workplace/microsim/1_input_data/agent_files/USAbasepop1000000.csv") %>% dplyr::select(microsim.init.age, microsim.init.sex,
@@ -94,10 +95,6 @@ summarycompare <- rbind(summary, brfss) %>%
                                       "Category IV")),
          drinkercat = fct_rev(drinkercat))
 
-
-col.vec <- c('#cccccc', '#93aebf','#447a9e', '#132268','#d72c40')
-col.vec <- c('#d72c40', '#132268', '#447a9e','#93aebf', '#cccccc')
-col.vec <- c('#124165', '#168aad','#76c893', '#e1f1a7') #Heavy to light use
 col.vec <- c('#062D59', '#576F81','#A8B0AA', '#F9F2D2') #Heavy to light use
 
 summarycompare <- summarycompare[summarycompare$drinkercat != "Abstainer",]
@@ -117,36 +114,67 @@ summarycompare$cat <- factor(summarycompare$cat,
 
 summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
+
+windowsFonts() # To identify available fonts, and their 'name' in R; Arial font is called "sans"
 # plot graph
-ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) + 
+summarycompare %>%
+  mutate(drinkercat = recode(drinkercat, "Category I"= "I", "Category II"= "II","Category III"= "III","Category IV"= "IV")) %>%
+  mutate(microsim.init.education = recode(microsim.init.education, 
+                                          "High school degree or less" = "High School Degree or Less",
+                                          "Some college" = "Some College",
+                                          "College degree or more" = "College Degree or More")) %>%
+  ggplot(aes(x=data, y=percent, fill=drinkercat)) + 
   geom_col(position=position_stack(reverse=T), width = 0.7 ) +
-  facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education), switch="x") +
+  #facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
+  facet_wrap(c("microsim.init.sex", "microsim.init.education"), scales = "free") + 
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
-        strip.text = element_text(size = 12, colour = 'black'), 
-        text = element_text(size = 12, colour="black"),
-        axis.text.y = element_text(size = 12), 
-        axis.text.x = element_text(size = 12), #angle = 47, hjust=1),
-        legend.position="bottom", 
-        legend.title = element_blank(),
-        strip.placement = "outside") +
-  ylab("Prevalence (%)")+ xlab("") + 
-  scale_fill_manual(values=col.vec) + 
-  scale_y_continuous(breaks = seq(0, 70, 10), expand=c(0,0.05), limits=c(0,85))
-  # scale_x_discrete(breaks=c("High school degree or less microsimulation",
-  #                            "High school degree or less brfss",
-  #                            "Some college microsimulation",
-  #                            "Some college brfss",
-  #                            "College degree or more microsimulation",
-  #                            "College degree or more brfss"),
-  #                  labels=addline_format(c("High school degree or less microsimulation",
-  #                                          "High school degree or less brfss",
-  #                                          "Some college microsimulation",
-  #                                          "Some college brfss",
-  #                                          "College degree or more microsimulation",
-  #                                          "College degree or more brfss")))
-
-ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V3.jpeg", dpi = 600, width = 20, height = 16, units = "cm")
+    strip.text = element_text(size = 9, colour = 'black'), 
+    axis.text = element_text(size = 9, colour="black"), 
+    axis.ticks = element_line(colour="black", size = 0.352), 
+    axis.line = element_line(colour="black", size = 0.352),
+    text = element_text(size = 9, colour="black", family="sans"),
+    legend.background = element_rect(size=0.352, linetype = "solid", color = "black", fill=NA),
+    legend.position= "right",
+    legend.justification = "top",
+    legend.title.align = 0.5,
+    panel.grid = element_blank(),
+    panel.border = element_blank(), 
+    strip.placement = "outside") +
+  labs(fill=expression(underline("Category")), colour = "black", 
+       y = "Prevalence, %", 
+       x= "") + 
+  #scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,95)) +
+  scale_fill_grey() 
+  
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 5, units = "in")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
+k <- 0
 
-
+for (i in unique(summarycompare$microsim.init.sex)) {
+  for (j in unique(summarycompare$microsim.init.education)) {
+    k <- k+1
+    v.letter<- LETTERS[k]
+    ggplot(data=summarycompare[summarycompare$microsim.init.sex == i & summarycompare$microsim.init.education == j,],
+           aes(x=data, y=percent, fill=drinkercat)) + 
+      geom_col(position=position_stack(reverse=T), width = 0.7 ) +
+      theme_light() + 
+      theme(strip.background = element_rect(fill = "white"), 
+            strip.text = element_text(size = 10, colour = 'black'), 
+            axis.text = element_text(size = 10, colour="black"), 
+            axis.ticks = element_line(colour="black"), 
+            axis.line = element_line(colour="black"),
+            text = element_text(size = 10, colour="black"),
+            panel.grid = element_blank(),
+            panel.border = element_blank(), 
+            strip.placement = "outside", 
+            legend.position="none") +
+      labs(fill=expression(underline("Category")), colour = "black") +  
+      ylab("Prevalence, %")+ xlab("") + 
+      scale_fill_grey() 
+    
+    ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",v.letter,".eps"), 
+           width = 5, height = 3.5, units = "in")
+    
+  }
+}

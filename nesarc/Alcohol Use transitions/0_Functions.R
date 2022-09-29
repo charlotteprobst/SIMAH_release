@@ -292,7 +292,7 @@ simulate_pop <- function(initial_pop, aTP, apply_transitions, years) {
   for (i in 1:years) {
     pop <- pop %>% 
       mutate( year= i,
-              cat = paste(sex, age_cat, edu, race, predicted_cat, sep="_"),
+              cat = paste(sex, age7, edu, race, predicted_cat, sep="_"),
               prob = runif(nrow(.))) %>%  # generate random prob
       group_by(cat) %>%
         do(apply_transitions(., aTP)) %>% # use 'do( )' to run the function defined earlier

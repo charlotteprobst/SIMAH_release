@@ -1,7 +1,104 @@
 
 # Race x Lifestyle Differential Vulnerability & Exposure Project
-## Functions for Causal Mediation 
+## Functions Sensitivity analysis (no education)
 
+# Main functions ------------------------------------------------------------------------------------------------------------------
+# Bootstrap Causal Mediation 
+bootstrap_CMed_noEDU <- function(data, reps, prop) {
+  
+  foreach(i = 1:reps, .combine="c", 
+          # need to specify the packages and functions that will be used
+          .packages = c("tidyverse", "timereg", "VGAM", "MASS"), 
+          .export = c("CMed_prep", "getTE", "getIE", "getTE_IE", "format_CMed_bootstrap")) %dopar% {    
+    
+    cat(paste0("Iteration: ", i, "\n")) # progress indicator
+    
+    expandedData <- CMed_prep(data, prop) # Causal mediation data preparation
+    
+    # Run model
+    model <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(A.race) * const(race_M1.alc) + 
+                                                            const(A.race) * const(race_M2.smk) +
+                                                            const(A.race) * const(race_M3.bmi) +
+                                                            const(A.race) * const(race_M4.phy) +
+                                                            const(married) + const(factor(srvy_yr)),
+                                     data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)  
+    
+    cat(paste0("     Step 4 Complete (data analysis)", "\n")) # progress indicator
+    
+    
+    # List the coefficients of interest for each race/ethnicity
+    Black    <- c(1,4,7,10,13,34,43,52,61)
+    Hispanic <- c(2,5,8,11,14,38,47,56,65)
+    Other    <- c(3,6,9,12,15,42,51,60,69)
+
+    
+    # Review model coefficients and selected coefficients to ensure they align
+    if (i==rep) {
+      model_coefficients <- coef(model) %>%
+      row.names() %>% 
+      as.data.frame() %>%
+      rownames_to_column()
+    
+      print("model coefficients")
+      print(model_coefficients)
+      print("Black"); print(Black)
+      print("Hispanic"); print(Hispanic)
+      print("Other"); print(Other)
+    }
+
+    
+    # Get and format results
+    results_black <- format_CMed_bootstrap (model, Black)
+    results_hisp  <- format_CMed_bootstrap (model, Hispanic)
+    results_other <- format_CMed_bootstrap (model, Other)
+
+    final <- rbind (results_black, results_hisp, results_other)
+
+  } 
+}
+ 
+# Format results from the bookstrapping
+format_CMed_noEDU <- function(bootstrap_results){
+  
+  # Compute CI and format results 
+  mean <- rowMeans(bootstrap_results) # get mean estimate
+  
+  ci <- apply(bootstrap_results, 1, quantile, probs=c(0.025, 0.975)) %>% t() #get 95% CI
+  
+  results <- cbind(mean, ci) %>% as.data.frame() %>% 
+    
+    # add labels
+    mutate (term = rep(c( "Total effect of race (ref=White)", 
+      "Direct effect of raca (ref=White)", 
+      "Indirect effect of race (ref=White)", 
+      "     Alcohol use: differential exposure", 
+      "     Alcohol use: differential vulnerability ", 
+      "     Smoking: differential exposure", 
+      "     Smoking: differential vulnerability ", 
+      "     BMI: differential exposure", 
+      "     BMI: differential vulnerability ", 
+      "     Physical activity: differential exposure", 
+      "     Physical activity: differential vulnerability"), 6),
+      race = rep(c("Black", "Hispanic", "Other"), each=22),
+      type = rep(c("deaths", "prop"), 3, each=11)) %>% 
+    
+    # Separate the 'additional deaths' and 'proportion' estimates 
+    pivot_wider (names_from="type", values_from=c("mean", "2.5%", "97.5%")) %>%
+    
+    # reformat 
+    mutate (deaths = round(mean_deaths*10000,1),
+      deaths_lower = round(`2.5%_deaths`*10000,1),
+      deaths_upper = round(`97.5%_deaths`*10000,1),
+      prop = round(mean_prop*100,0),
+      prop_lower = round(`2.5%_prop`*100,0),
+      prop_upper = round(`97.5%_prop`*100,0),
+      deaths_10000py_ci = paste0(deaths, " (", deaths_lower, ", ", deaths_upper, ")"),
+      prop_ci = paste0(prop, " (", prop_lower, ", ", prop_upper, ")"))%>%
+    dplyr::select(race, term, deaths_10000py_ci, prop_ci)
+}
+      
+# Supporting functions ------------------------------------------------------------------------------------------------------------------
+# Functions below have been utilized in the two functions above 
 
 # Data preparation for Causal Mediation
 CMed_prep <-function(data, prop = 1) {
@@ -15,7 +112,7 @@ CMed_prep <-function(data, prop = 1) {
       M2.smk = smoking4,
       M3.bmi = bmi_cat,
       M4.phy = phy_act3) %>%
-    dplyr::select(A.race, M1.alc, M2.smk, M3.bmi, M4.phy, allcause_death, bl_age, end_age, married, edu, srvy_yr) %>%
+    dplyr::select(A.race, M1.alc, M2.smk, M3.bmi, M4.phy, allcause_death, bl_age, end_age, married, srvy_yr) %>%
     sample_frac(prop, replace=FALSE) # sample a fraction of the data
   
   cat(paste0("     Step 0 Complete (select data)", "\n")) # progress indicator
@@ -30,10 +127,10 @@ CMed_prep <-function(data, prop = 1) {
   # Fit model for each mediator, conditioning on exposure (race) and all confounders
   
   mydata$ATemp <- mydata$A.race # first, create and use a copy of the exposure variable (for technical reasons related to R)
-  fitM1 <- vglm(M1.alc ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
-  fitM2 <- vglm(M2.smk ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 1))
-  fitM3 <- vglm(M3.bmi ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 2))
-  fitM4 <- vglm(M4.phy ~ ATemp + bl_age + married + factor(edu) + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
+  fitM1 <- vglm(M1.alc ~ ATemp + bl_age + married + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
+  fitM2 <- vglm(M2.smk ~ ATemp + bl_age + married + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 1))
+  fitM3 <- vglm(M3.bmi ~ ATemp + bl_age + married + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 2))
+  fitM4 <- vglm(M4.phy ~ ATemp + bl_age + married + factor(srvy_yr), data = mydata, family=multinomial(refLevel = 3))
   
   cat(paste0("     Step 1 Complete (Fit model for each mediator)", "\n")) # progress indicator
  
@@ -99,7 +196,6 @@ CMed_prep <-function(data, prop = 1) {
   tempIndir1 <- as.matrix(predict(fitM1,type = "response", newdata=newMyData))[cbind(1:nrow(newMyData),newMyData$M1.alc)]
   
   newMyData$weight1 <- tempIndir1/tempDir1
-  cat(paste0("     Step 3.1 Complete (weghts for alcohol)", "\n")) # progress indicator
   
   
   #M2: Smoking
@@ -110,8 +206,7 @@ CMed_prep <-function(data, prop = 1) {
   tempIndir2 <- as.matrix(predict(fitM2,type = "response", newdata=newMyData))[cbind(1:nrow(newMyData),newMyData$M2.smk)]
   
   newMyData$weight2 <- tempIndir2/tempDir2
-  cat(paste0("     Step 3.2 Complete (weghts for smoking)", "\n")) # progress indicator
-  
+
   
   #M3: BMI
   newMyData$ATemp <- newMyData$A.race
@@ -121,8 +216,7 @@ CMed_prep <-function(data, prop = 1) {
   tempIndir3 <- as.matrix(predict(fitM3,type = "response", newdata=newMyData))[cbind(1:nrow(newMyData),newMyData$M3.bmi)]
   
   newMyData$weight3 <- tempIndir3/tempDir3
-  cat(paste0("     Step 3.3 Complete (weghts for BMI)", "\n")) # progress indicator
-  
+
   
   #M4: Physical activity
   newMyData$ATemp <- newMyData$A.race
@@ -132,21 +226,19 @@ CMed_prep <-function(data, prop = 1) {
   tempIndir4 <- as.matrix(predict(fitM4,type = "response", newdata=newMyData))[cbind(1:nrow(newMyData),newMyData$M4.phy)]
   
   newMyData$weight4 <- tempIndir4/tempDir4
-  cat(paste0("     Step 3.4 Complete (weghts for physical activity)", "\n")) # progress indicator
-  
+
   
   # Final weight
   newMyData$weightM <- newMyData$weight1 * newMyData$weight2 * newMyData$weight3 * newMyData$weight4
   
   newMyData <- newMyData %>%
-    dplyr::select(ID, bl_age, end_age, allcause_death, A.race, race_M1.alc, race_M2.smk, race_M3.bmi, race_M4.phy, married, edu, srvy_yr, weightM)
+    dplyr::select(ID, bl_age, end_age, allcause_death, A.race, race_M1.alc, race_M2.smk, race_M3.bmi, race_M4.phy, married, srvy_yr, weightM)
   
   
   return(newMyData)
   cat(paste0("     Step 3 Complete (weghts combined)", "\n")) # progress indicator
   
 }
-
 
 # Function to get the (Not-Robust) total effect and proportion mediated
 getTE <- function(CMed_model, v){
@@ -200,7 +292,6 @@ getTE_IE <- function(CMed_model, v, z){
   quantile <- quantile(med_prop_CI, c(0.025, 0.975))
   output <- cbind(IE, med_prop, quantile)
   return(output)}
-
 
 # Format results to export bootstrapped results
 format_CMed_bootstrap <- function (model, coef_list) {
@@ -265,7 +356,6 @@ format_CMed_bootstrap <- function (model, coef_list) {
           mutate (label = ifelse(term == "IE", paste0("03 Indirect effect of ", group, " (ref=White)"), NA)) %>% 
           dplyr::select(label, estimate, med_prop) 
         
-        
         final <- rbind(one, two, three) %>%
           mutate (med_prop = as.numeric(med_prop)) %>% 
           pivot_longer(cols = c("estimate", "med_prop"), names_to = "type", values_to = "estimate") %>%
@@ -274,83 +364,3 @@ format_CMed_bootstrap <- function (model, coef_list) {
         
         return(final)
 }
-      
-
-# Bootstrap Causal Mediation (combines the functions above)
-bootstrap_CMed <- function(data, reps, prop) {
-  
-  foreach(i = 1:reps, .combine="c", 
-          # need to specify the packages and functions that will be used
-          .packages = c("tidyverse", "timereg", "VGAM", "MASS"), 
-          .export = c("CMed_prep", "getTE", "getIE", "getTE_IE", "format_CMed_bootstrap")) %dopar% {    
-    
-    cat(paste0("Iteration: ", i, "\n")) # progress indicator
-    
-    expandedData <- CMed_prep(data, prop) # Causal mediation data preparation
-    
-    # Run model
-    model <- aalen(Surv(bl_age, end_age, allcause_death) ~  const(A.race) * const(race_M1.alc) + 
-                                                            const(A.race) * const(race_M2.smk) +
-                                                            const(A.race) * const(race_M3.bmi) +
-                                                            const(A.race) * const(race_M4.phy) +
-                                                            const(married) + const(factor(edu)) + const(factor(srvy_yr)),
-                                     data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)  
-    
-    cat(paste0("     Step 4 Complete (data analysis)", "\n")) # progress indicator
-    
-    # List the coefficients of interest for each race/ethnicity
-    Black    <- c(1,4,7,10,13,36,45,54,63)
-    Hispanic <- c(2,5,8,11,14,40,49,58,67)
-    Other    <- c(3,6,9,12,15,44,53,62,71)
-    
-    # Get and format results 
-    results_black <- format_CMed_bootstrap (model, Black)  
-    results_hisp  <- format_CMed_bootstrap (model, Hispanic)
-    results_other <- format_CMed_bootstrap (model, Other)
-    
-    final <- rbind (results_black, results_hisp, results_other)
-  } 
-}
-
-      
-# Format results from the bookstrapping
-
-format_CMed <- function(bootstrap_results){
-  
-  # Compute CI and format results 
-  mean <- rowMeans(bootstrap_results) # get mean estimate
-  
-  ci <- apply(bootstrap_results, 1, quantile, probs=c(0.025, 0.975)) %>% t() #get 95% CI
-  
-  results <- cbind(mean, ci) %>% as.data.frame() %>% 
-    
-    # add labels
-    mutate (term = rep(c( "Total effect of race (ref=White)", 
-      "Direct effect of raca (ref=White)", 
-      "Indirect effect of race (ref=White)", 
-      "     Alcohol use: differential exposure", 
-      "     Alcohol use: differential vulnerability ", 
-      "     Smoking: differential exposure", 
-      "     Smoking: differential vulnerability ", 
-      "     BMI: differential exposure", 
-      "     BMI: differential vulnerability ", 
-      "     Physical activity: differential exposure", 
-      "     Physical activity: differential vulnerability"), 6),
-      race = rep(c("Black", "Hispanic", "Other"), each=22),
-      type = rep(c("deaths", "prop"), 3, each=11)) %>% 
-    
-    # Separate the 'additional deaths' and 'proportion' estimates 
-    pivot_wider (names_from="type", values_from=c("mean", "2.5%", "97.5%")) %>%
-    
-    # reformat 
-    mutate (deaths = round(mean_deaths*10000,1),
-      deaths_lower = round(`2.5%_deaths`*10000,1),
-      deaths_upper = round(`97.5%_deaths`*10000,1),
-      prop = round(mean_prop*100,0),
-      prop_lower = round(`2.5%_prop`*100,0),
-      prop_upper = round(`97.5%_prop`*100,0),
-      deaths_10000py_ci = paste0(deaths, " (", deaths_lower, ", ", deaths_upper, ")"),
-      prop_ci = paste0(prop, " (", prop_lower, ", ", prop_upper, ")"))%>%
-    dplyr::select(race, term, deaths_10000py_ci, prop_ci)
-}
-      
