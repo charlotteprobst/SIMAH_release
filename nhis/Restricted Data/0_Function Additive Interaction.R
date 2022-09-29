@@ -13,7 +13,7 @@ causative = function( OR10, OR01 ) {
 }
 
 ##### Fn: Compute additive interaction measures with inference
-additive_interactions = function( model, exposure1, exposure2, monotone=0, CI.level=0.95) {
+additive_interactions = function( model, exposure1, exposure2, monotone=0, CI.level=0.95, cmprsk=FALSE) {
   
   # variables to keep for delta method
   #in order to get the right variables in the interaction string
@@ -27,7 +27,18 @@ additive_interactions = function( model, exposure1, exposure2, monotone=0, CI.le
   
   
   # get variance-covariance matrix of the model
-  V = as.matrix( vcov(model) )
+  if(cmprsk == TRUE){
+    
+    V = as.matrix(model$cmprsk$var)
+    rownames(V) <- names(coef(model))
+    colnames(V) <- names(coef(model))
+    
+  } else if (cmprsk == FALSE){
+    
+    V = as.matrix( vcov(model) )
+    
+  }
+  
   V2 = V[keepers, keepers]  # subset to just the coefficients of interest
   
   # calculate various coefficients and ORs
