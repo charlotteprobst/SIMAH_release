@@ -30,7 +30,7 @@ setwd(WorkingDirectory)
 
 SelectedState <- "USA"
 
-PopulationSize <- 200000
+PopulationSize <- 10000
 
 ####EDIT ONLY ABOVE HERE ##
 
@@ -41,5 +41,22 @@ tokeep <- c("SelectedState", "PopulationSize", "WorkingDirectory", "microsim", "
 
 source("SIMAH_code/microsim/1_generate_baseline_population/scripts/CASCADE_basepop_IPF.R")
 
+microsimon <- 0
+if(microsimon==1){
 source("SIMAH_code/microsim/1_generate_baseline_population/scripts/CASCADE_process_for_microsim.R")
+}else if(microsimon==0){
+microsim <- microsim %>% 
+  mutate(microsim.init.sex= ifelse(microsim.init.sex=="M",1,0),
+         microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
+         microsim.init.annual.frequency = alcdays*12,
+         microsim.init.heavy.episodic.drinking = NA) %>% 
+  dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.race,
+                microsim.roles.employment.status, microsim.roles.parenthood.status,
+                microsim.roles.marital.status, microsim.init.education,
+                microsim.init.income, microsim.init.drinkingstatus,
+                microsim.init.heavy.episodic.drinking, microsim.init.alc.gpd,
+                microsim.init.annual.frequency, microsim.init.drinks.per.month,
+                microsim.init.BMI, formerdrinker)
+}
+
 write.csv(microsim, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "basepopCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)

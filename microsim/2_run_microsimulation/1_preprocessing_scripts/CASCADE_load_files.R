@@ -19,7 +19,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/inward
 ####READ IN OUTWARD MIGRATION DATA - redundant in final version
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/outward_migration.R")
 
-cirrhosis <- 1
+cirrhosis <- 0
 
 # READ IN DEATH RATES
 if(model=="SIMAH"){
@@ -39,8 +39,8 @@ DeathSummary <- list()
 
 # save a copy of original population files
 # migorig <- migrants
-microsim.init.id <- 1:nrow(basepop)
-basepop <- cbind(microsim.init.id, basepop)
+# microsim.init.id <- 1:nrow(basepop)
+# basepop <- cbind(microsim.init.id, basepop)
 baseorig <- basepop
 
 # migrants$microsim.init.id <- nrow(basepop)+1:nrow(migrants)
@@ -50,3 +50,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/baseli
 
 # read in ages for drinking history imputation
 ages <- read_csv("SIMAH_workplace/microsim/1_input_data/agesforhistory.csv")
+
+basepop <- basepop %>% dplyr::select(-c(microsim.roles.employment.status, microsim.roles.parenthood.status,
+                                        microsim.roles.marital.status, microsim.init.heavy.episodic.drinking,
+                                        microsim.init.annual.frequency, microsim.init.drinks.per.month))

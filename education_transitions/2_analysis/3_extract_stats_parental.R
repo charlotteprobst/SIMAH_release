@@ -78,8 +78,9 @@ ggplot(data=coefs, aes(x=Estimate, y=Variable, colour=model)) + geom_point(posit
   scale_y_discrete(limits=rev) + theme_bw() + 
   scale_colour_manual(values=c("grey70","black")) + theme(legend.title=element_blank(),
                                                           strip.background = element_rect(fill="white"),
-                                                          text = element_text(size=18)) + 
-  xlab("Hazard Ratio (+/- 95% CI") + ylab("")
+                                                          text = element_text(size=18),
+                                                          legend.position = "bottom") + 
+  xlab("Hazard Ratio (+/- 95% CI)") + ylab("")
 
 
 # plotting interaction effects 

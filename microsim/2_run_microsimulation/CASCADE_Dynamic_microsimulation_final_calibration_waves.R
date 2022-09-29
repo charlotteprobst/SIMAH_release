@@ -30,14 +30,15 @@ set.seed(42)
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+# WorkingDirectory <- "/home/cbuckley/"
+OutputDirectory <- "/calibration_output_heavyonly/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 200000
+PopulationSize <- 10000
 
 # run model for CASCADE (1984 start) or SIMAH (2000 start)?
 # run model for CASCADE (1984 start) or SIMAH (2000 start)?
@@ -106,17 +107,19 @@ Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CA
 Rates$agecat <- as.character(Rates$agecat)
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
-PE <- 0
-N_SAMPLES <- 500
-N_WAVES <- 15
+PE <- 1
+N_SAMPLES <- 1
+N_WAVES <- 2
 WAVE <- 1
-N_REPS <- 2
+N_REPS <- 1
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/sampling_parameters_IRR.R")
-# 
+#
 sampleseeds <- expand.grid(seed=1:N_REPS, SampleNum=1:N_SAMPLES)
 sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
-# 
+
+
+# # 
 baseorig <- basepop
 # 
 # # adjust parallel settings
@@ -127,6 +130,7 @@ registerDoParallel(15)
 # # options(future.globals.maxSize = 10000 * 1024^3)
 # # options(future.fork.multithreading.enable = FALSE)
 # # 
+i<-1
 Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
                      .packages=c("dplyr","tidyr","foreach")) %dopar% {
 samplenum <- as.numeric(sampleseeds$SampleNum[i])
@@ -135,28 +139,34 @@ print(i)
 set.seed(as.numeric(Sys.time()))
 basepop <- baseorig
 selectedlhs <- lhsSample[[samplenum]]
-history <- HistoryFunction(basepop, ages, selectedlhs)
-basepop <- left_join(basepop, history)
-basepop <- formerdrinkers_history(basepop,selectedlhs)
-basepop <- basepop %>%
-  mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" &
-                                   grams_10years>= as.numeric(lhsSample[[samplenum]]["THRESHOLD"]), 1,
-                                 ifelse(formerdrinker==0 & microsim.init.sex=="f" &
-                                          grams_10years>=as.numeric(lhsSample[[samplenum]]["THRESHOLD"])*
-                                          as.numeric(lhsSample[[samplenum]]["THRESHOLD_MODIFIER"]), 1,
-                                        ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
-         grams_10years = ifelse(formerdrinker==1, former_history,
-                                grams_10years)) %>% dplyr::select(-former_history)
-run_microsim(seed,samplenum,lhsSample[[samplenum]], basepop, deathrates, apply_death_rates,
+# history <- HistoryFunction(basepop, ages, selectedlhs)
+# basepop <- left_join(basepop, history)
+# basepop <- formerdrinkers_history(basepop,selectedlhs)
+# basepop <- basepop %>%
+#   mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" &
+#                                    grams_10years>= as.numeric(lhsSample[[samplenum]]["THRESHOLD"]), 1,
+#                                  ifelse(formerdrinker==0 & microsim.init.sex=="f" &
+#                                           grams_10years>=as.numeric(lhsSample[[samplenum]]["THRESHOLD"])*
+#                                           as.numeric(lhsSample[[samplenum]]["THRESHOLD_MODIFIER"]), 1,
+#                                         ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
+#          grams_10years = ifelse(formerdrinker==1, former_history,
+#                                 grams_10years)) %>% dplyr::select(-former_history)
+basepop$grams_10years <- sample(0:200000,nrow(basepop))
+basepop$Cirrhosis_risk <- 1
+basepop$yearsincedrink <- 0
+brfss$yearsincedrink <- 0
+basepop$microsim.init.sex <- ifelse(basepop$microsim.init.sex==0,"f","m")
+migrants <- run_microsim(seed,samplenum,lhsSample[[samplenum]], basepop, deathrates, apply_death_rates,
                         outward_migration, inward_migration, mortality,
                         AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis,
              MetabolicPathway,
-                        brfss,Rates, 1984, 2010)
+                        brfss,Rates, 1984, 2019)
                      }
-# 
-saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/Cirrhosis_output_wave", WAVE, ".RDS", sep=""))
+
+saveRDS(Cirrhosis, paste0("SIMAH_workplace/microsim/2_output_data",OutputDirectory, "Cirrhosis_output_wave", WAVE, ".RDS"))
 # # #
-Cirrhosis <- readRDS("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/Cirrhosis_output_wave1.RDS")
+Cirrhosis <- readRDS(paste0("SIMAH_workplace/microsim/2_output_data", OutputDirectory, "Cirrhosis_output_wave1.RDS"))
+
 # # #
 # # for calculating implausibility based on age-specific mortality rates
 source("SIMAH_code/microsim/2_run_microsimulation/0_functions/calculate_implausibility_age.R")
@@ -164,7 +174,8 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_functions/calculate_implausi
 
 output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
 implausibility <- output[[1]]
-write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
+
+write.csv(implausibility, paste0("SIMAH_workplace/microsim/2_output_data", OutputDirectory,"implausibility_wave", WAVE, ".csv"), row.names=F)
 
 Cirrhosis <- list()
 gc()
@@ -204,11 +215,12 @@ for(w in 2:N_WAVES){
                                       brfss,Rates, 1984, 2010)
                        }
   # save wave 2 output
-  saveRDS(Cirrhosis, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/Cirrhosis_output_wave", WAVE, ".RDS", sep=""))
+
+  saveRDS(Cirrhosis, paste0("SIMAH_workplace/microsim/2_output_data", OutputDirectory, "Cirrhosis_output_wave", WAVE, ".RDS"))
   # calculate implausibility for each sample
   output <- calculateimplausibility(Cirrhosis, cirrhosismortality, N_REPS)
   implausibility <- output[[1]]
-  write.csv(implausibility, paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/implausibility_wave", WAVE, ".csv", sep=""), row.names=F)
+  write.csv(implausibility, paste0("SIMAH_workplace/microsim/2_output_data", OutputDirectory, "implausibility_wave", WAVE, ".csv"), row.names=F)
   # save implausibility for wave 2
   Cirrhosis <- list()
   gc()

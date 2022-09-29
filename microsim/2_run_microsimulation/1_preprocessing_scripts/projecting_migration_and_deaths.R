@@ -30,7 +30,7 @@
 #   geom_line() + facet_grid(rows=vars(agecat),cols=vars(microsim.init.race), scales="free") + 
 #   theme_bw()
 
-datatopredict <- expand.grid(Year=c(2019:2025),microsim.init.sex=unique(Rates$microsim.init.sex),
+datatopredict <- expand.grid(Year=c(2017:2025),microsim.init.sex=unique(Rates$microsim.init.sex),
                              agecat = unique(Rates$agecat), microsim.init.race=unique(Rates$microsim.init.race)) %>% 
   mutate(MigrationInN = NA,
          MigrationOutN = NA)

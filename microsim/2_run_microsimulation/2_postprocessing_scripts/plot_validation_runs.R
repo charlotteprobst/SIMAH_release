@@ -10,7 +10,7 @@ options(scipen=999)
 
 ###set working directory to the main "Microsimulation" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+# WorkingDirectory <- "/home/cbuckley/"
 setwd(paste(WorkingDirectory))
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
@@ -64,6 +64,12 @@ meansim <- left_join(files, cirrhosismortality) %>%
   pivot_longer(cols=c(Simulated,Observed)) %>% 
   filter(agegroup=="35-44" | agegroup=="45-54" | agegroup=="55-64" | agegroup=="65-74")
 
+quant <- meansim %>% dplyr::select(-c(min,max)) %>% 
+  pivot_wider(names_from=sex, values_from=value) %>% 
+  filter(name=="Simulated") %>% ungroup() %>% 
+  mutate(pct_change_men = (Men / lead(Men)-1)*100,
+         pct_change_women = (Women / lead(Women)-1)*100) %>% 
+  filter(agegroup=="65-74")
 
 ggplot(data=meansim, aes(x=year, y=value, colour=name)) + 
   geom_line(size=2) + 
@@ -79,7 +85,7 @@ ggplot(data=meansim, aes(x=year, y=value, colour=name)) +
   geom_vline(xintercept=2010, linetype="dashed") + xlab("") + ylim(0,NA)
 
 ggsave("SIMAH_workplace/microsim/2_output_data/publication/Fig2_agesp.png",
-       dpi=500, width=38, height=30, units="cm")
+       dpi=500, width=30, height=30, units="cm")
 
 files <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019-1.RDS") %>% 
   do.call(rbind,.)
@@ -109,6 +115,19 @@ meansim <- left_join(meansim, cirrhosismortality_agest) %>%
          Simulated = mean(microsim),
          Observed=mean(target)) %>% 
   pivot_longer(cols=c(Simulated,Observed))
+
+quant <- meansim %>% dplyr::select(-c(min,max)) %>% 
+  pivot_wider(names_from=sex, values_from=value) %>% 
+  filter(name=="Simulated") %>% ungroup() %>% 
+  mutate(pct_change_men = (Men / lead(Men)-1)*100,
+         pct_change_women = (Women / lead(Women)-1)*100)
+
+quant <- meansim %>% dplyr::select(Year, sex, name, value) %>% 
+  filter(Year>=1985) %>% 
+  pivot_wider(names_from=name, values_from=value) %>% 
+  mutate(percentdiff = ((abs(Observed-Simulated)) / mean(Observed+Simulated))*100) %>% 
+  group_by(sex) %>% 
+  summarise(mean = mean(percentdiff))
 
 ggplot(data=meansim, aes(x=Year, y=value, colour=name)) + 
   geom_line(size=2) + 

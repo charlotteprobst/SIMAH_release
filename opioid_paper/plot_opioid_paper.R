@@ -56,19 +56,19 @@ ff <- with(facet_bounds,
                       edclass=c(edclass,edclass)))
 
 Fig1 <- ggplot(data=gendereducation, aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
+  geom_line(size=1.5) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18, family="serif")) + 
+                     text = element_text(size=22, family="Times")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
   geom_point(data=ff,x=NA, colour=NA) + 
   scale_x_continuous(breaks=c(2000,2005,2010,2015,2019))
   # scale_colour_brewer(palette="Set1")
 Fig1
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_2019.png",
-       Fig1, width=33, height=19, units="cm", dpi=300)
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_2019.eps",
+       Fig1, width=14.4, height=7.89, dpi=1200, device="eps", family="Times")
 
 # read in rates by race data file 
 gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus-00-20.dta")
@@ -124,16 +124,17 @@ ff <- with(facet_bounds,
 
 Fig2p1 <- ggplot(data=subset(gendereducationrace, sex=="Men"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
+  geom_line(size=1.5) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
+                     text = element_text(size=23, family="Times"),
+                     plot.margin = margin(0.2,1.1,0.2,0.2, "cm")) + ylim(0,NA) + 
   xlab("Year") +  ggtitle("Men") +
   scale_colour_manual(values=color.vec) + geom_point(data=ff,x=NA, colour=NA) +
   scale_x_continuous(breaks=c(2000,2005,2010,2015,2019)) +
-  theme(panel.spacing=unit(1,"lines"))
+  theme(panel.spacing=unit(1.6,"lines"))
 
 
 Fig2p1
@@ -144,16 +145,17 @@ ff <- ff %>% filter(sex=="Women")
 
 Fig2p2 <- ggplot(data=subset(gendereducationrace, sex=="Women"), 
                  aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
+  geom_line(size=1.5) + facet_grid(cols=vars(race), rows=vars(type), scales="free", switch="y") +
   ylab("Mortality rate per 100,000 population") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=18, family="serif")) + ylim(0,NA) + 
+                     text = element_text(size=23, family="Times"),
+                     plot.margin = margin(0.2,1.1,0.2,0.2, "cm")) + ylim(0,NA) + 
   xlab("Year") + scale_colour_manual(values=color.vec) +
   ggtitle("Women") + geom_point(data=ff,x=NA, colour=NA) +
   scale_x_continuous(breaks=c(2000,2005, 2010,2015,2019)) + 
-  theme(panel.spacing=unit(1,"lines"))
+  theme(panel.spacing=unit(1.6,"lines"))
 Fig2p2
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_Women.png",
        Fig2p2, width=33, height=19, units="cm", dpi=300)
@@ -165,8 +167,8 @@ library(ggpubr)
 
 combined <- ggarrange(Fig2p1, Fig2p2, ncol=1, nrow=2, common.legend = TRUE, legend="bottom")
 combined
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_2019.png",
-       combined, width=35, height=40, units="cm", dpi=300)
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_2019.eps",
+       combined, width=35, height=45, units="cm", dpi=1200, device="eps", family="Times")
 
 # alternative method of combining
 gendereducationrace$typesex <- paste(gendereducationrace$sex, gendereducationrace$type, 

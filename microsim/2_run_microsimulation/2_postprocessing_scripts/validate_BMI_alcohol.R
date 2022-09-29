@@ -33,6 +33,15 @@ alcohol_data <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/Alcoh
 
 alcohol_data <- rbind(alcohol_data, brfss) %>% filter(agegroup!="15-19" & agegroup!="20-24") %>% filter(year<=2019 & year>=1985)
 
+test <- alcohol_data %>% pivot_wider(names_from=data, values_from=meanGPD) %>% 
+  mutate(pct_diff = (abs(Simulated-Observed))/((Simulated+Observed)/2)*100,
+         abs_diff = abs(Simulated-Observed)) %>% 
+  group_by(microsim.init.sex, agegroup) %>% 
+  summarise(mean_abs = mean(abs_diff),
+            min_abs = min(abs_diff),
+            max_abs = max(abs_diff),
+            sd_abs = sd(abs_diff))
+
 ggplot(data=alcohol_data, aes(x=year, y=meanGPD, colour=data, linetype=data)) + geom_line(size=1, alpha=0.8) + 
   facet_grid(cols=vars(agegroup), rows=vars(microsim.init.sex)) + ylim(0,NA) + xlab("") + 
   ylab("Mean grams per day") + theme_bw() + 
@@ -62,6 +71,15 @@ BMI_data <- readRDS("SIMAH_workplace/microsim/2_output_data/validation/BMI_valid
   dplyr::select(-c(seed,samplenum))
 
 BMI_data <- rbind(BMI_data, brfss) %>% filter(agegroup!="15-19" & agegroup!="20-24") %>% filter(year<=2019 & year>=1985)
+
+test <- BMI_data %>% pivot_wider(names_from=data, values_from=meanBMI) %>% 
+  mutate(pct_diff = (abs(Simulated-Observed))/((Simulated+Observed)/2)*100,
+         abs_diff = abs(Simulated-Observed)) %>% 
+  group_by(microsim.init.sex, agegroup) %>% 
+  summarise(mean_abs = mean(abs_diff),
+            min_abs = min(abs_diff),
+            max_abs = max(abs_diff),
+            sd_abs = sd(abs_diff))
 
 ggplot(data=BMI_data, aes(x=year, y=meanBMI, colour=data, linetype=data)) + geom_line(size=1, alpha=0.8) + 
   facet_grid(cols=vars(agegroup), rows=vars(microsim.init.sex)) + ylim(0,NA) + xlab("") + 

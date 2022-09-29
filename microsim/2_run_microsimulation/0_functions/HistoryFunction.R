@@ -1,30 +1,30 @@
 # historic ages of agents 
 HistoryFunction <- function(basepop, ages, lhsSample){
-# ages <- basepop %>% dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd) %>%
-#   mutate(yearstoadd = microsim.init.age-17)
-# ages <- expandRows(ages, "yearstoadd", drop=FALSE)
-# 
-# AgeFunction <- function(data){
-#   from <- 18
-#   to <- unique(data$microsim.init.age)
-#   age <- from:to
-#   data$newage <- age
-#   return(data)
-# }
-# # # apply the function to each unique individual
-# ages <- ages %>% group_by(microsim.init.id) %>%
-#    group_modify(~AgeFunction(.))
-# # categorise age in same categories as Kerr 2013
-# ages <- ages %>% mutate(agecatnew = cut(newage,
-#                    breaks=c(0,20,25,30,40,50,60,70,100),
-#                    labels=c("18-20","21-25","26-30","31-40",
-#                             "41-50","51-60","61-70","71+")),
-#                    agecatorig = cut(microsim.init.age,
-#                                     breaks=c(0,20,25,30,40,50,60,70,100),
-#                                     labels=c("18-20","21-25","26-30","31-40",
-#                                              "41-50","51-60","61-70","71+"))) %>%
-#   dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd, newage, agecatnew, agecatorig)
-# write.csv(ages, "SIMAH_workplace/microsim/1_input_data/agesforhistory.csv")
+ages <- basepop %>% dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd) %>%
+  mutate(yearstoadd = microsim.init.age-17)
+ages <- expandRows(ages, "yearstoadd", drop=FALSE)
+
+AgeFunction <- function(data){
+  from <- 18
+  to <- unique(data$microsim.init.age)
+  age <- from:to
+  data$newage <- age
+  return(data)
+}
+# # apply the function to each unique individual
+ages <- ages %>% group_by(microsim.init.id) %>%
+   group_modify(~AgeFunction(.))
+# categorise age in same categories as Kerr 2013
+ages <- ages %>% mutate(agecatnew = cut(newage,
+                   breaks=c(0,20,25,30,40,50,60,70,100),
+                   labels=c("18-20","21-25","26-30","31-40",
+                            "41-50","51-60","61-70","71+")),
+                   agecatorig = cut(microsim.init.age,
+                                    breaks=c(0,20,25,30,40,50,60,70,100),
+                                    labels=c("18-20","21-25","26-30","31-40",
+                                             "41-50","51-60","61-70","71+"))) %>%
+  dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd, newage, agecatnew, agecatorig)
+write.csv(ages, "SIMAH_workplace/microsim/1_input_data/agesforhistory_SIMAH.csv")
 age <- levels(as.factor(ages$agecatnew))
 age <- c("18-20","21-25","26-30","31-40","41-50","51-60","61-70","71+")
 IRR <- data.frame(microsim.init.sex = rep(c("m","f"), each=8), agecatnew = rep(age, times=2),

@@ -106,7 +106,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projec
 
 agest <- 1
 N_SAMPLES <- 1
-PE <- 0
+PE <- 1
 tomerge <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates", SelectedState, ".RDS", sep="")) %>% 
   filter(Year>=2017)
 Rates <- rbind(Rates,tomerge)
@@ -197,5 +197,5 @@ Cirrhosis <- foreach(i=1:1, .inorder=FALSE,
                                     brfss,Rates, 1984, 2019)
                      }
 
-saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS")
+saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_MetabolicOnly.RDS")
 

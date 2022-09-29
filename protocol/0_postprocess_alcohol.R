@@ -149,3 +149,4 @@ ggplot(data=summarycompare, aes(x=data, y=percent, fill=drinkercat)) +
 ggsave("SIMAH_workplace/protocol/graphs/0_microsim_alcohol_graph_V3.jpeg", dpi = 600, width = 20, height = 16, units = "cm")
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 
+

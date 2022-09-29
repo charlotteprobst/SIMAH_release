@@ -75,6 +75,7 @@ cons <- apply(cons, 2, as.numeric) # convert the constraints to 'numeric'
 ind_catt <- t(ind_cat) # transpose the dummy variables for ipfp
 x0 <- rep(1, nrow(individual)) # set the initial weights - 1 
 options(scipen=999)
+
 ##IPF to generate new weights - should print v small numbers e-05 etc.
 weights <- ipfp(cons, ind_catt, x0, maxit=100, v=T)
 
@@ -99,6 +100,9 @@ microsim <- data.frame(microsim.init.id=1:nrow(ints_df),
                        microsim.init.sex=ints_df$SEX, 
                        microsim.init.age=ints_df$age_var, 
                        microsim.init.race=ints_df$RACE, 
+                       microsim.roles.employment.status = ints_df$employment,
+                       microsim.roles.parenthood.status = ints_df$EMPLOYED,
+                       microsim.roles.marital.status = ints_df$marital_status,
                        microsim.init.education=ints_df$EDUCATION, 
                        microsim.init.BMI=ints_df$BMI, 
                        microsim.init.income=ints_df$household_income, 

@@ -77,44 +77,51 @@ brfss <- read_rds("SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS"
                                "DECAY_SPEED"=1,
                                "DECAY_LENGTH"=20
   )
-  brfss <- formerdrinkers_history(brfss, lhsSample)
-  brfss$microsim.init.id <- 1:nrow(brfss)
-  
-  agesbrfss <- brfss %>% dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd) %>%
-    mutate(yearstoadd = microsim.init.age-17)
-  agesbrfss <- expandRows(agesbrfss, "yearstoadd", drop=FALSE)
-  
-  AgeFunction <- function(data){
-    from <- 18
-    to <- unique(data$microsim.init.age)
-    age <- from:to
-    data$newage <- age
-    return(data)
-  }
-  # # apply the function to each unique individual
-  agesbrfss <- agesbrfss %>% group_by(microsim.init.id) %>%
-    group_modify(~AgeFunction(.))
-  # categorise age in same categories as Kerr 2013
-  agesbrfss <- agesbrfss %>% mutate(agecatnew = cut(newage,
-                                                    breaks=c(0,20,25,30,40,50,60,70,100),
-                                                    labels=c("18-20","21-25","26-30","31-40",
-                                                             "41-50","51-60","61-70","71+")),
-                                    agecatorig = cut(microsim.init.age,
-                                                     breaks=c(0,20,25,30,40,50,60,70,100),
-                                                     labels=c("18-20","21-25","26-30","31-40",
-                                                              "41-50","51-60","61-70","71+"))) %>%
-    dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd, newage, agecatnew, agecatorig)
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/HistoryFunction.R")
-  history <- HistoryFunction(brfss,agesbrfss, lhsSample)
-  brfss <- left_join(brfss,history, by=c("microsim.init.id")) %>% 
-    mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" & 
+  # brfss <- formerdrinkers_history(brfss, lhsSample)
+  # brfss$microsim.init.id <- 1:nrow(brfss)
+  # 
+  # agesbrfss <- brfss %>% dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd) %>%
+  #   mutate(yearstoadd = microsim.init.age-17)
+  # agesbrfss <- expandRows(agesbrfss, "yearstoadd", drop=FALSE)
+  # 
+  # AgeFunction <- function(data){
+  #   from <- 18
+  #   to <- unique(data$microsim.init.age)
+  #   age <- from:to
+  #   data$newage <- age
+  #   return(data)
+  # }
+  # # # apply the function to each unique individual
+  # agesbrfss <- agesbrfss %>% group_by(microsim.init.id) %>%
+  #   group_modify(~AgeFunction(.))
+  # # categorise age in same categories as Kerr 2013
+  # agesbrfss <- agesbrfss %>% mutate(agecatnew = cut(newage,
+  #                                                   breaks=c(0,20,25,30,40,50,60,70,100),
+  #                                                   labels=c("18-20","21-25","26-30","31-40",
+  #                                                            "41-50","51-60","61-70","71+")),
+  #                                   agecatorig = cut(microsim.init.age,
+  #                                                    breaks=c(0,20,25,30,40,50,60,70,100),
+  #                                                    labels=c("18-20","21-25","26-30","31-40",
+  #                                                             "41-50","51-60","61-70","71+"))) %>%
+  #   dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.alc.gpd, newage, agecatnew, agecatorig)
+  # source("SIMAH_code/microsim/2_run_microsimulation/1_functions/HistoryFunction.R")
+  # history <- HistoryFunction(brfss,agesbrfss, lhsSample)
+  # brfss <- left_join(brfss,history, by=c("microsim.init.id")) %>% 
+  #   mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" & 
+  #                                    grams_10years>= 100000, 1,
+  #                                  ifelse(formerdrinker==0 & microsim.init.sex=="f" & 
+  #                                           grams_10years>=100000*0.66, 1, 
+  #                                         ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
+  #          grams_10years = ifelse(formerdrinker==1, former_history,
+  #                                 grams_10years)) %>% dplyr::select(-former_history)
+  brfss$grams_10years <- sample(0:200000, nrow(brfss), replace=T)
+  brfss <- brfss %>%
+    mutate(Cirrhosis_risk = ifelse(formerdrinker==0 & microsim.init.sex=="m" &
                                      grams_10years>= 100000, 1,
-                                   ifelse(formerdrinker==0 & microsim.init.sex=="f" & 
-                                            grams_10years>=100000*0.66, 1, 
-                                          ifelse(formerdrinker==1, Cirrhosis_risk, 0))),
-           grams_10years = ifelse(formerdrinker==1, former_history,
-                                  grams_10years)) %>% dplyr::select(-former_history)
-  
+                                   ifelse(formerdrinker==0 & microsim.init.sex=="f" &
+                                            grams_10years>=100000*0.66, 1,
+                                          ifelse(formerdrinker==1, 0, 0))))
+
   # brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
   #   filter(age_var<=80) %>% filter(State==SelectedState) %>%
   #   mutate(microsim.init.race = recode(race_eth,"White"="WHI",
