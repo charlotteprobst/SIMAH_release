@@ -49,6 +49,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     # 1) Data preparation 
     data <- mutate (data, 
                     cause_of_death = .data[[i]],
+                    cause_of_death_crr = .data[[paste0(i, "_crr")]],  # outcome for Fine-Gray regression
                     SES = {{SES}},
                     lifestyle = {{lifestyle}},
                     SES_lifestyle = interaction(SES, lifestyle)) # Create an 'interaction' variable, combining the SES and lifestyle
@@ -114,6 +115,27 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     cat("    Completed", "\n")
     
     
+    
+    # Fine-Gray interaction model 
+    cat("    Crr Interaction model in progress", "\n")  # progress indicator
+    if(data_name == "all"){
+      crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
+    } else if(data_name %in% c("female", "male")){
+      crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
+    }
+    cat("    Completed", "\n")  # progress indicator
+    
+    # Fine-Gray joint effect model 
+    cat("    Crr Joint effects model in progress", "\n")  
+    if(data_name == "all"){
+      crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
+    } else if(data_name %in% c("female", "male")){
+      crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
+    }
+    cat("    Completed", "\n")    
+    
+    
+    
     # Aalen Interaction model
     cat("    Aalen Interaction model in progress", "\n")
     if(data_name == "all"){
@@ -132,13 +154,18 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     }
     cat("    Completed", "\n")
     
+  
+    
     # Save model results 
     saveRDS(cox_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
     saveRDS(cox_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint.rds"))
     saveRDS(cox_int_unwt,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int_unwt.rds"))
     saveRDS(cox_joint_unwt,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_joint_unwt.rds"))
+    saveRDS(crr_int,    paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_crr_int.rds"))
+    saveRDS(crr_joint,  paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_crr_joint.rds"))
     saveRDS(aalen_int,   paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_int.rds"))
     saveRDS(aalen_joint, paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_aalen_joint.rds"))
+    
     
     # Save assumption plot for Cox model
     pdf(paste0(output_assump,  "CoxPH_", table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, ".pdf")); plot(cox.zph(cox_int), col = "red"); dev.off()   
@@ -206,6 +233,37 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
       add_row(variable = "JOINT MODELS", .before=1)
     
     
+    crr_int_results <- crr_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR_crr = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR_crr = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI_crr = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR_crr, CI_crr, p.value_HR_crr) %>%
+      filter(str_detect(variable, "SES|lifestyle")) %>%
+      # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
+      #        variable = str_remove(variable, fixed("lifestyle"))) %>%
+      add_row(variable = "INTERACTION MODELS", .before=1)
+    cat("    Completed", "\n") 
+    
+    
+    crr_joint_results <- crr_joint %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
+      mutate(variable = term,
+             HR_crr = round(estimate, 2),
+             conf.low = round(conf.low, 2),
+             conf.high = round(conf.high, 2),
+             p.value_HR = round(p.value, 3),
+             p.value_HR_crr = ifelse(p.value_HR <.001, "<.001", p.value_HR),
+             CI_crr = paste0("(",conf.low,", ", conf.high, ")")) %>%
+      select(variable, HR_crr, CI_crr, p.value_HR_crr) %>%
+      filter(str_detect(variable, "SES")) %>%
+      mutate(variable = str_remove(variable, fixed("SES_lifestyle"))) %>% 
+      add_row(variable = "JOINT MODELS", .before=1)
+    
+    
+    
     aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
       mutate (variable = rownames(.),
               var = V2,
@@ -246,7 +304,9 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     
     cox_unwt_results <- rbind(cox_int_unwt_results, cox_joint_unwt_results)
     
+    crr_results <- rbind(crr_int_results, crr_joint_results)
     
+    aalen_results <- rbind(aalen_int_results, aalen_joint_results)
     
     
     ## compute RERI for the cox_int model
@@ -316,9 +376,51 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
              variable = str_remove(variable, fixed("lifestyle")))
     
     
-    aalen_results <- rbind(aalen_int_results, aalen_joint_results)
+    
+    ## compute RERI for the crr_int model
+    add_int_crr <- crr_int_results %>% 
+      filter(str_detect(variable, ":")) %>% select(variable) %>%
+      separate(variable, into = c("SES", "lifestyle"), sep = ":", remove = FALSE) %>%
+      data.frame()
+    
+    
+    foreach(i = 1:nrow(add_int_crr))%do%{
+      
+      rs <- additive_interactions( crr_int, add_int_crr[i, "SES"], add_int_crr[i, "lifestyle"], cmprsk = TRUE )
+      
+      add_int_crr[i, "RERI"] <- rs[1,2]
+      add_int_crr[i, "CI.lo"] <- rs[1,3]
+      add_int_crr[i, "CI.hi"] <- rs[1,4]
+      add_int_crr[i, "p.value"] <- rs[1,5]
+      
+    }
+    
+    cat("    Completed filling in add_int", "\n")
+    
+    
+    ## merge the RERI output with the crr_int_results
+    crr_results_RERI <- crr_results %>% 
+      left_join(add_int_crr %>%
+                  mutate(RERI_crr = round(RERI, 2),
+                         CI.lo = round(CI.lo, 2),
+                         CI.hi = round(CI.hi, 2),
+                         CI_RERI_crr = paste0("(", CI.lo,", ", CI.hi, ")"),
+                         p.value_RERI = round(p.value, 3),
+                         p.value_RERI_crr = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
+                  ) %>%
+                  select(variable, RERI_crr, CI_RERI_crr, p.value_RERI_crr), 
+                by = "variable") %>%
+      mutate(variable = str_remove(variable, fixed("SES")), 
+             variable = str_remove(variable, fixed("lifestyle"))) %>%
+      add_row(variable = death_name, .before=1) 
+    cat("    Completed", "\n")
+    
+    
+    
+   
     
     results <- full_join(cox_results_RERI, cox_unwt_results_RERI, by="variable") %>%
+      full_join(crr_results_RERI, by = "variable") %>%
       full_join(aalen_results, by="variable") %>%
       add_row(variable = death_name, .before=1) 
     
