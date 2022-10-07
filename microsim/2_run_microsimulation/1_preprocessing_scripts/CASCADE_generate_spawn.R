@@ -8,13 +8,11 @@ setwd(paste(WorkingDirectory))
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 10000
-
-proportion <- PopulationSize/WholePopSize$total
-
+PopulationSize <- 1000
 
 WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraintsUSA.csv") %>% 
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
+proportion <- PopulationSize/WholePopSize$total
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
@@ -70,5 +68,11 @@ spawning <- cbind(microsim.init.id, spawning)
 spawning$random = sample(1:365, nrow(spawning), replace=T)
 spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1985) * 365 ) + spawning$random
 spawning$random <- NULL
+
+spawning$microsim.init.sex <- ifelse(spawning$microsim.init.sex=="f",0,1)
+spawning$microsim.roles.employment.status <- ifelse(spawning$microsim.roles.employment.status=="employed",1,0)
+spawning$microsim.roles.parenthood.status <- ifelse(spawning$microsim.roles.parenthood.status=="employed",1,0)
+spawning$microsim.init.heavy.episodic.drinking <- rtruncnorm(nrow(spawning), a=0, b=30, mean=2, sd=2)
+spawning$microsim.init.income <- rtruncnorm(nrow(spawning), a=0, b=100000, mean=25000, sd=10000)
 
 write.csv(spawning, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "spawningCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)
