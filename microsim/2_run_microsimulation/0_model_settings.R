@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 200000
+PopulationSize <- 1000000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -31,7 +31,7 @@ mortality <- 1
 disease <- "cirrhosis"
 
 # switch between CASCADE and SIMAH models 
-model <- "CASCADE"
+model <- "SIMAH"
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "alcohol"
@@ -58,7 +58,7 @@ proportion <- ifelse(proportion>1,1,proportion)
 
 # read in base population
 if(model=="SIMAH"){
-  basepop <- read_csv(paste0(DataDirectory, SelectedState, "basepop", PopulationSize, ".csv"),
+  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
 }else if(model=="CASCADE"){
   basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))

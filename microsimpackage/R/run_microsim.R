@@ -66,9 +66,10 @@ if(updatingalcohol==1 & y>2000){
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
   basepop <- basepop %>%
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
-  # allocate a numeric gpd for individuals within category bounds
-  # basepop <- allocate_gramsperday(basepop, DataDirectory)
   }
+  # allocate a numeric gpd for individuals based on model
+  # allocate every year even when transitions are only every two years?
+  basepop <- allocate_gramsperday(basepop, y, DataDirectory)
 }
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
