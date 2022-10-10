@@ -92,3 +92,7 @@ alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
+
+# load in categorical to continuous model 
+catcontmodel <- read_rds(paste0(DataDirectory, "CatContModel1.RDS"))
+

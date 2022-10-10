@@ -5,9 +5,7 @@
 #' @export
 #' @examples
 #' allocate_gpd
-allocate_gramsperday <- function(basepop, y, DataDirectory){
-  model <- read_rds(paste0(DataDirectory, "CatContModel1.RDS"))
-  model$coefficients
+allocate_gramsperday <- function(basepop, y, model, DataDirectory){
   prepdata <- basepop %>% filter(AlcCAT!="Non-drinker") %>%
     mutate(age_var = microsim.init.age, sex_recode = ifelse(microsim.init.sex=="m","Male","Female"),
            YEAR = y, education_summary = microsim.init.education, race_eth = microsim.init.race)
