@@ -134,15 +134,15 @@ ggsave("Fig3_APC_plot_IRR_sex.png", plot, dpi=300, width=33, height=19, units="c
 race <- IRR %>% filter(race!="all") %>% 
   mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI))
 
-age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Age")
@@ -150,15 +150,15 @@ age
 
 ggsave("Fig4A_APC_plot_IRR_age.png", age, dpi=300, width=33, height=19, units="cm")
 
-period <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+period <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Period")
@@ -166,15 +166,15 @@ period
 
 ggsave("Fig4A_APC_plot_IRR_period.png", period, dpi=300, width=33, height=19, units="cm")
 
-cohort <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+cohort <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Cohort")

@@ -11,6 +11,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingeducation, education_setup,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
+                         catcontmodel,
                          policy=0, percentreduction=0.1,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -20,7 +21,8 @@ PopPerYear <- list()
 transitionyears <- seq(2002,2018, by=2)
 for(y in minyear:maxyear){
 print(y)
-
+# save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 # add and remove migrants
 if(y>=2001){
   basepop <- inward_migration(basepop,migration_rates,y, brfss)
@@ -66,19 +68,16 @@ if(updatingalcohol==1 & y>2000){
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
   basepop <- basepop %>%
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
-  # allocate a numeric gpd for individuals within category bounds
-  # basepop <- allocate_gramsperday(basepop, DataDirectory)
   }
+  # allocate a numeric gpd for individuals based on model
+  # allocate every year even when transitions are only every two years?
+  basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
 }
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
 # if(policy==1){
 # basepop <- reduce_consumption(basepop, percentreduction)
 # }
-
-
-# save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 #delete anyone over 79
 ###then age everyone by 1 year and update age category
@@ -143,7 +142,7 @@ Summary <- list(Summary,PopSummary)
                                                       microsim.init.race=as.factor(microsim.init.race),
                                                       microsim.init.education=as.factor(microsim.init.education),
                                                       agecat=as.factor(agecat)) %>%
-    group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education, agecat, .drop=FALSE) %>%
+    group_by(year, samplenum, microsim.init.sex, .drop=FALSE) %>%
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)

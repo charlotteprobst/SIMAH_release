@@ -6,7 +6,7 @@
 #' @examples
 #' load_migration_rates
 load_migration_rates <- function(SelectedState, WorkingDirectory){
-  Rates <- readRDS(paste0(WorkingDirectory,"final_rates",SelectedState,".RDS"))
+  Rates <- readRDS(paste0(WorkingDirectory,"migration_rates/final_rates",SelectedState,".RDS"))
   Rates$agecat <- as.character(Rates$agecat)
 
   datatopredict <- expand.grid(Year=c(2019:2025),microsim.init.sex=unique(Rates$microsim.init.sex),

@@ -15,6 +15,7 @@ run_microsim(
   migration_rates,
   updatingalcohol,
   alcohol_transitions,
+  catcontmodel,
   policy = 0,
   percentreduction = 0.1,
   minyear = 2000,
