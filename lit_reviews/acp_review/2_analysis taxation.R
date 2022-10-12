@@ -21,6 +21,7 @@ library(data.table)
 library(dplyr)
 library(metafor)
 library(meta)
+library(esc)
 
 # --------------------------------------------------------------------------------------
 
@@ -37,7 +38,7 @@ DATE <- 04102022
 dat.tax <- data.table(read.csv("data_acp_TAX_29092022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.strings = ""))
-alc <- data.table(read.csv("alc_country level_181009.csv", na.strings = "."))
+#alc <- data.table(read.csv("alc_country level_181009.csv", na.strings = "."))
 
 # --------------------------------------------------------------------------------------
 
@@ -94,27 +95,75 @@ data[, pre_tax := tax_base / int.dollar]
 #data[, int_year := as.numeric(int_year)]
 #data <- merge(data, alc[sex %like% "TOTAL" & age %like% "15_99", .(iso3a, year, CD)], by.x = c("Country.Code", "int_year"), by.y = c("iso3a", "year"))
 
+# downscale GDP PPP
+
+data[, gdp.1000 := gdp / 1000]
+
+# variance of the effect estimate
+
+data[, var := se^2]
+
+# reference as factor variable
+data[, ref := as.factor(ref)]
+
 # ----------------------------------------------------------------
 # META REGRESSION
 # ----------------------------------------------------------------
 
-# model
-metareg.tax <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp, method = "REML", data = data[out_period %like% "short"])
+# main model
 
-metareg.tax
+# linear model
+metareg.tax <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000 + pre_tax, method = "REML", data = data[out_period %like% "short"])
+
+# linear model with random intercept
+metareg.tax <- rma.mv(yi = perc.change, V = var, mods = ~ tax_change + gdp.1000 + pre_tax, random = ~ 1 | ref, slab = ref, method = "REML", data = data[out_period %like% "short"])
+
+summary(metareg.tax)
 confint(metareg.tax)
+convert_z2r(metareg.tax$b[2])
 
-regplot(metareg.tax, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
-regplot(metareg.tax, mod = "gdp", refline = 0, legend=T, xlab = "GDP PPP", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5)
+i2 <- var.comp(metareg.tax)
+summary(i2)
 
-# repeat but exclude Thailand / exclude Switzerland
+regplot(metareg.tax, mod = "tax_change", refline = 0, 
+        xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", 
+        label="piout", slab = c("", "", "", "", "", "\n\n\n\nHeeb 2003", "", "\nSornpaisarn 2013", "\nSornpaisarn 2013", "", "", ""), 
+        labsize = 0.8, ylim = c(-0.3, 0.3)) 
+
+regplot(metareg.tax, mod = "gdp", refline = 0,
+        xlab = "GDP PPP", ylab = "Relative change in alcohol consumption", 
+        label="piout", slab = c("", "", "", "", "", "\n\n\n\nHeeb 2003", "", "", "", "", "", ""), 
+        labsize = 0.8, ylim = c(-0.3, 0.3)) 
+
+# repeat but exclude Thailand
+
 metareg.sens <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp, method = "REML", data = data[out_period %like% "short" & ref != "Sornpaisarn et al_2013"])
 metareg.sens
 regplot(metareg.sens, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
 
+# repeat but exclude Switzerland
+
 metareg.sens2 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp, method = "REML", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
 metareg.sens2
 regplot(metareg.sens2, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
+
+# investigation of further possible moderators
+
+# compute variable for level of outcome measurement
+
+data[, table(ref, out_level)] 
+
+ggplot(data[out_period %like% "short"], aes(x = tax_change, y = perc.change, shape = out_level, fill = out_level, size = 1/se)) + 
+  geom_point() # too few studies to assess pattern 
+
+data[, out.level := factor(out_level, levels = c("week", "month", "quarter", "year"))]
+
+# level of outcome assessment
+
+data[, table(ref, design_level)]
+
+ggplot(data[out_period %like% "short"], aes(x = tax_change, y = perc.change, shape = design_level, size = 1/se)) + 
+  geom_point() # too few studies at the individual level to assess
 
 # publication bias
 regtest(metareg.tax, model="rma")
