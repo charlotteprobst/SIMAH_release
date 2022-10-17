@@ -3,6 +3,10 @@ rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(tidyverse)
 library(MASS)
+library(magrittr)
+library(caTools)
+library(party)
+
 
 # CB laptop directory
 wd <- "~/Google Drive/SIMAH Sheffield/"
@@ -36,14 +40,30 @@ dat <- dat %>% assign_alc_cat() %>%
          AlcCAT = factor(AlcCAT))
   
 # specify model - following M Strong approach with variables available in microsimulation and including race and ethnicity 
-m <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + sex_recode + YEAR + 
+#
+m <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + sex_recode + YEAR + race_eth + 
           education_summary  + AlcCAT + age_var*sex_recode + age_var*education_summary + age_var*AlcCAT +
-          sex_recode*education_summary + sex_recode*AlcCAT + education_summary*AlcCAT, data=dat)
+          sex_recode*education_summary + sex_recode*AlcCAT + education_summary*AlcCAT + race_eth*age_var*sex_recode*AlcCAT*education_summary, data=dat)
+
+library(MASS)
+# Fit the full model 
+full.model <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + sex_recode + YEAR + race_eth + education_summary  + AlcCAT + 
+                   education_summary*sex_recode + education_summary*race_eth + education_summary*age_var + 
+                   sex_recode*race_eth + sex_recode*age_var + 
+                   age_var*education_summary + age_var*race_eth + 
+                   AlcCAT*sex_recode + AlcCAT*race_eth + AlcCAT*age_var, data=dat)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+step.model$anova
+
 # QUESTIONS
 # about whether to include frequency in the model - are we assuming that this is static for people over time - 
 # seems a strong assumption 
 # also I have included year as a predictor - sensible? 
-
+m <- full.model
 summary(m)
 summary(m)$sigma^2
 sigma <- summary(m)$sigma
