@@ -102,7 +102,7 @@ data <- data %>% group_by(YEAR, State) %>%
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
          gramsperday_upshifted= gramsperday_new*(cr_quotient^2),   # apply cube root quotient to gpd
          gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
-         frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
          quantity_per_occasion_upshifted = gramsperday_upshifted/14*30/frequency_upshifted,

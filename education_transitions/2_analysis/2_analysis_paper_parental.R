@@ -90,10 +90,10 @@ datat2 <- read_rds("SIMAH_workplace/education_transitions/datat2.RDS")
 
 # specify baseline models 
 modelst1_baseline <- lapply(datat1, run_markov_model_baseline)
-saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline_race.RDS")
+saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline_parent.RDS")
 
 modelst2_baseline <- lapply(datat2, run_markov_model_baseline)
-saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline_race.RDS")
+saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline_interaction.RDS")
 
 # now add parent as covariate - interacting with race and ethnicity
 modelst1_parent <- lapply(datat1, run_markov_model_parent)

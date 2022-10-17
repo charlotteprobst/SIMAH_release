@@ -64,7 +64,7 @@ run_markov_model_parent <- function(data){
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T)) 
   model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                center=FALSE,
-               covariates=~agescaled + agesqscaled + sex + racefinal2*oneCollegeplus)
+               covariates=~agescaled + agesqscaled + sex + racefinal*oneCollegeplus)
   return(model)
   
 }
