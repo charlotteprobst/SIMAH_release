@@ -34,12 +34,11 @@ library(PerformanceAnalytics)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 18102022
+DATE <- 19102022
 
 dat.tax <- data.table(read.csv("data_acp_TAX_29092022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.strings = ""))
-#alc <- data.table(read.csv("alc_country level_181009.csv", na.strings = "."))
 
 # --------------------------------------------------------------------------------------
 
@@ -151,12 +150,14 @@ funnel(metareg.tax, atransf = exp, label = "out")
 metareg.sens <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000, method = "DL", data = data[out_period %like% "short" & ref != "Sornpaisarn et al_2013"])
 metareg.sens
 regplot(metareg.sens, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
+regtest(metareg.sens, model="rma") # p = .0147
 
 # repeat but exclude Switzerland
 
 metareg.sens2 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000, method = "DL", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
 metareg.sens2
 regplot(metareg.sens2, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
+regtest(metareg.sens2, model="rma") # p = .8789
 
 # investigation of further possible moderators
 
@@ -168,6 +169,7 @@ data[, out.di := factor(out.di, levels = c("year", "week/month"))]
 
 metareg.sens3 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000 + out.di, method = "DL", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
 metareg.sens3 # no impact
+regtest(metareg.sens3, model="rma") # p = .9876
 
 # ROB
 
