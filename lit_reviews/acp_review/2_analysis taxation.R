@@ -43,12 +43,6 @@ int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.string
 # --------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------
-# ----------------------------------------------------------------
-# 1) META REGRESSION
-# ----------------------------------------------------------------
-# ----------------------------------------------------------------
-
-# ----------------------------------------------------------------
 # DATA PREPARATION
 # ----------------------------------------------------------------
 
@@ -143,7 +137,7 @@ regplot(metareg.tax, mod = "gdp.1000", refline = 0,
 # publication bias
 
 regtest(metareg.tax, model="rma") # p = .08
-funnel(metareg.tax, atransf = exp, label = "out")
+funnel(metareg.tax)
 
 # repeat but exclude Thailand
 
@@ -190,7 +184,7 @@ forest(meta.tax)
 
 # publication bias
 regtest(meta.tax, model="rma")
-funnel(meta.tax, atransf = exp, label = "out")
+funnel(meta.tax)
 
 # leave-one-out
 leave1out(meta.tax)
@@ -203,7 +197,7 @@ forest(meta.tax.sens)
 
 # publication bias
 regtest(meta.tax.sens, model="rma")
-funnel(meta.tax.sens, atransf = exp, label = "out")
+funnel(meta.tax.sens)
 
 # leave-one-out
 leave1out(meta.tax.sens)
