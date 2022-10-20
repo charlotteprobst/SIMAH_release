@@ -22,6 +22,7 @@ library(dplyr)
 library(metafor)
 library(meta)
 library(esc)
+library(PerformanceAnalytics)
 
 # --------------------------------------------------------------------------------------
 
@@ -33,20 +34,13 @@ library(esc)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 04102022
+DATE <- 19102022
 
 dat.tax <- data.table(read.csv("data_acp_TAX_29092022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.strings = ""))
-#alc <- data.table(read.csv("alc_country level_181009.csv", na.strings = "."))
 
 # --------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------
-# ----------------------------------------------------------------
-# 1) META REGRESSION
-# ----------------------------------------------------------------
-# ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
 # DATA PREPARATION
@@ -112,62 +106,68 @@ data[, ref := as.factor(ref)]
 
 # main model
 
+# check normality of dependent variable
+
+hist(data[out_period %like% "short"]$perc.change)
+
+# check correlation of independent variables
+
+cor.test(data[out_period %like% "short"]$tax_change, data[out_period %like% "short"]$gdp.1000, method="spearman")
+
+cor.test(data[out_period %like% "short"]$tax_change, data[out_period %like% "short"]$pre_tax, method="spearman") # p = .05
+ggplot(data[out_period %like% "short"], aes(x = tax_change, pre_tax)) + geom_point()
+
+cor.test(data[out_period %like% "short"]$gdp.1000, data[out_period %like% "short"]$pre_tax, method="spearman")
+
 # linear model
-metareg.tax <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000 + pre_tax, method = "REML", data = data[out_period %like% "short"])
 
-# linear model with random intercept
-metareg.tax <- rma.mv(yi = perc.change, V = var, mods = ~ tax_change + gdp.1000 + pre_tax, random = ~ 1 | ref, slab = ref, method = "REML", data = data[out_period %like% "short"])
-
+metareg.tax <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000, method = "DL", data = data[out_period %like% "short"])
 summary(metareg.tax)
-confint(metareg.tax)
-convert_z2r(metareg.tax$b[2])
-
-i2 <- var.comp(metareg.tax)
-summary(i2)
 
 regplot(metareg.tax, mod = "tax_change", refline = 0, 
         xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", 
         label="piout", slab = c("", "", "", "", "", "\n\n\n\nHeeb 2003", "", "\nSornpaisarn 2013", "\nSornpaisarn 2013", "", "", ""), 
         labsize = 0.8, ylim = c(-0.3, 0.3)) 
 
-regplot(metareg.tax, mod = "gdp", refline = 0,
-        xlab = "GDP PPP", ylab = "Relative change in alcohol consumption", 
+regplot(metareg.tax, mod = "gdp.1000", refline = 0,
+        xlab = "per capita GDP PPP (in thousands)", ylab = "Relative change in alcohol consumption", 
         label="piout", slab = c("", "", "", "", "", "\n\n\n\nHeeb 2003", "", "", "", "", "", ""), 
         labsize = 0.8, ylim = c(-0.3, 0.3)) 
 
+# publication bias
+
+regtest(metareg.tax, model="rma") # p = .08
+funnel(metareg.tax)
+
 # repeat but exclude Thailand
 
-metareg.sens <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp, method = "REML", data = data[out_period %like% "short" & ref != "Sornpaisarn et al_2013"])
+metareg.sens <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000, method = "DL", data = data[out_period %like% "short" & ref != "Sornpaisarn et al_2013"])
 metareg.sens
 regplot(metareg.sens, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
+regtest(metareg.sens, model="rma") # p = .0147
 
 # repeat but exclude Switzerland
 
-metareg.sens2 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp, method = "REML", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
+metareg.sens2 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000, method = "DL", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
 metareg.sens2
 regplot(metareg.sens2, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
+regtest(metareg.sens2, model="rma") # p = .8789
 
 # investigation of further possible moderators
 
 # compute variable for level of outcome measurement
 
 data[, table(ref, out_level)] 
+data[, out.di := ifelse(out_level %like% "year", "year", ifelse(out_level %like% "month|week", "week/month", NA))]
+data[, out.di := factor(out.di, levels = c("year", "week/month"))]
 
-ggplot(data[out_period %like% "short"], aes(x = tax_change, y = perc.change, shape = out_level, fill = out_level, size = 1/se)) + 
-  geom_point() # too few studies to assess pattern 
+metareg.sens3 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000 + out.di, method = "DL", data = data[out_period %like% "short" & ref != "Heeb et al_2003"])
+metareg.sens3 # no impact
+regtest(metareg.sens3, model="rma") # p = .9876
 
-data[, out.level := factor(out_level, levels = c("week", "month", "quarter", "year"))]
+# ROB
 
-# level of outcome assessment
-
-data[, table(ref, design_level)]
-
-ggplot(data[out_period %like% "short"], aes(x = tax_change, y = perc.change, shape = design_level, size = 1/se)) + 
-  geom_point() # too few studies at the individual level to assess
-
-# publication bias
-regtest(metareg.tax, model="rma")
-
+#...
 
 # ----------------------------------------------------------------
 # META ANALYSIS TAX ELASTICITY
@@ -176,16 +176,29 @@ regtest(metareg.tax, model="rma")
 tax.elast.data <- dat.tax[sub == 0 & study_type %like% "correlation", ]
 tax.elast.data[, lab := paste0(ref, ": ", tax_bev)]
 
-# model
-meta.tax <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "REML", data = tax.elast.data)
-
+# main model
+meta.tax <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = tax.elast.data)
 meta.tax
-confint(meta.tax)
 
 forest(meta.tax)
 
 # publication bias
 regtest(meta.tax, model="rma")
+funnel(meta.tax)
 
 # leave-one-out
 leave1out(meta.tax)
+
+# sensitivity analysis excludin An et al 2011
+meta.tax.sens <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = tax.elast.data[ref != "An et al_2011"])
+meta.tax.sens
+
+forest(meta.tax.sens)
+
+# publication bias
+regtest(meta.tax.sens, model="rma")
+funnel(meta.tax.sens)
+
+# leave-one-out
+leave1out(meta.tax.sens)
+
