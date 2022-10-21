@@ -37,13 +37,13 @@ source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
-data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
-                                     0.01, data$quantity_per_occasion)
+# data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
+#                                      1, data$quantity_per_occasion)
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
+data$drinkingstatus <- ifelse(data$gramsperday==0, 0, data$drinkingstatus)
+data$drinkingstatus <- ifelse(data$alc_frequency==0, 0, data$drinkingstatus)
 summary(data$gramsperday)
 summary(data$alc_frequency)
-# put cap of 200gpd on grams per day 
-# data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
 # remove missing data for key variables - age, sex, race, drinking
 data <- remove_missing_data(data)
@@ -102,13 +102,14 @@ data <- data %>% group_by(YEAR, State) %>%
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
          gramsperday_upshifted= gramsperday_new*(cr_quotient^2),   # apply cube root quotient to gpd
          gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
-         frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
          quantity_per_occasion_upshifted = gramsperday_upshifted/14*30/frequency_upshifted,
          quantity_per_occasion_upshifted = ifelse(gramsperday_upshifted==0, 0, quantity_per_occasion_upshifted)
          ) # recalculate drinks per occasion based on upshifted data 
 
+test <- data %>% filter(drinkingstatus_updated==1) %>% filter(gramsperday_upshifted==0)
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
 

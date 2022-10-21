@@ -8,13 +8,12 @@ setwd(paste(WorkingDirectory))
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 10000
-
-proportion <- PopulationSize/WholePopSize$total
-
+PopulationSize <- 1000
 
 WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraintsUSA.csv") %>% 
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
+
+proportion <- PopulationSize/WholePopSize$total
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
@@ -45,7 +44,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
          microsim.roles.employment.status = employment,
          microsim.roles.marital.status = marital_status) %>% 
   mutate(microsim.roles.parenthood.status = microsim.roles.employment.status,
-         microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
+         drinksperday = microsim.init.alc.gpd/14,
+         microsim.init.drinks.per.month = drinksperday*30,
          microsim.init.drink.frequency = frequency,
          microsim.init.annual.frequency = frequency*12,
          microsim.init.heavy.episodic.drinking = NA) %>%
@@ -68,7 +68,40 @@ microsim.init.id <- (PopulationSize+1):(nrow(spawning)+PopulationSize)
 spawning <- cbind(microsim.init.id, spawning)
 
 spawning$random = sample(1:365, nrow(spawning), replace=T)
-spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1985) * 365 ) + spawning$random
+spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1984) * 365 ) + spawning$random
 spawning$random <- NULL
 
 write.csv(spawning, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "spawningCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)
+
+library(plotrix)
+# create target file 
+prevtarget <- brfss %>% group_by(microsim.init.spawn.year, microsim.init.sex) %>% 
+  rename(YEAR=microsim.init.spawn.year) %>% 
+  summarise(target_type = "prevalence",
+    Mean = mean(microsim.init.drinkingstatus),
+            SE = std.error(microsim.init.drinkingstatus))
+
+freqtarget <- brfss %>% group_by(microsim.init.spawn.year, microsim.init.sex) %>% 
+  rename(YEAR=microsim.init.spawn.year) %>%
+  filter(microsim.init.alc.gpd!=0) %>% 
+  summarise(target_type="frequency",
+    Mean = mean(microsim.init.drink.frequency),
+            SE = std.error(microsim.init.drink.frequency))
+
+quanttarget <- brfss %>% group_by(microsim.init.spawn.year, microsim.init.sex) %>% 
+  rename(YEAR=microsim.init.spawn.year) %>%
+  filter(microsim.init.alc.gpd!=0) %>% 
+  summarise(target_type="quantity",
+            Mean = mean(microsim.init.alc.gpd),
+            SE = std.error(microsim.init.alc.gpd))
+target <- rbind(prevtarget, freqtarget,quanttarget) 
+
+write.csv(target, paste("SIMAH_workplace/microsim/1_input_data/",SelectedState, "targetCASCADE", sep="", ".csv"), row.names=FALSE)
+
+microsim %>% filter(microsim.init.drinkingstatus==1) %>% 
+  group_by(microsim.init.sex) %>% 
+  summarise(meanfreq = mean(microsim.init.annual.frequency)/12)
+
+brfss %>% filter(microsim.init.drinkingstatus==1) %>% 
+  group_by(microsim.init.sex) %>% 
+  summarise(meanfreq=mean(microsim.init.annual.frequency)/12)
