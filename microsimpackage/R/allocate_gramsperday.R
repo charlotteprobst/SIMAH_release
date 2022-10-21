@@ -11,11 +11,19 @@ allocate_gramsperday <- function(basepop, y, model, DataDirectory){
            YEAR = y, education_summary = microsim.init.education, race_eth = ifelse(microsim.init.race=="BLA","Black",
                                                                                     ifelse(microsim.init.race=="WHI","White",
                                                                                            ifelse(microsim.init.race=="SPA","Hispanic",
-                                                                                                  ifelse(microsim.init.race=="OTH","Other",NA)))))
-  lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
-  back.tran <- function(x){(lambda * x + 1) ^ (1/lambda)}
-  prepdata$newgpd <- back.tran(predict(model, prepdata))
-  prepdata <- prepdata %>% dplyr::select(microsim.init.id, newgpd)
+                                                                                                  ifelse(microsim.init.race=="OTH","Other",NA)))),
+           lambda = ifelse(sex_recode=="Male",0.06, -0.22))
+  # lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
+  back.tran <- function(x, lambda){(lambda * x + 1) ^ (1/lambda)}
+
+  women <- prepdata %>% filter(sex_recode=="Female")
+  women$newgpd <- back.tran(predict(model[[1]], women), lambda=-0.22)
+  women <- women %>% dplyr::select(microsim.init.id, newgpd)
+
+  men <- prepdata %>% filter(sex_recode=="Male")
+  men$newgpd <- back.tran(predict(model[[1]], men), lambda=0.06)
+  men <- men %>% dplyr::select(microsim.init.id, newgpd)
+  prepdata <- rbind(men, women)
   basepop <- left_join(basepop, prepdata)
   basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
                                           basepop$newgpd)

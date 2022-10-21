@@ -94,5 +94,5 @@ brfss <- list[[3]]
 rm(list)
 
 # load in categorical to continuous model 
-catcontmodel <- read_rds(paste0(DataDirectory, "CatContModel1.RDS"))
+catcontmodel <- read_rds(paste0(DataDirectory, "SSCatContModel.RDS"))
 

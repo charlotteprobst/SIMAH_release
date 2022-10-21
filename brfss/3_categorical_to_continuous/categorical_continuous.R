@@ -7,12 +7,12 @@ library(magrittr)
 library(caTools)
 library(party)
 
-
 # CB laptop directory
 wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 # read data
-dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% filter(YEAR>=2000)
+dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% filter(YEAR>=2000) %>% 
+  filter(drinkingstatus==1) %>% filter(State=="USA")
 
 assign_alc_cat <- function(data){
   data <- data %>% mutate(AlcCAT = ifelse(sex_recode=="Male" & gramsperday>0 &
@@ -30,59 +30,67 @@ assign_alc_cat <- function(data){
   return(data)
 }
 
-lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
+dat <- dat %>% assign_alc_cat() 
 
-dat <- dat %>% assign_alc_cat() %>% 
+# lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
+
+# optimise lambda for transforming alcohol consumption
+# first group by sex and alcohol category - should be 6 groups
+dat <- dat %>% mutate(group = paste0(AlcCAT, "_", sex_recode))
+
+lambdas <- list()
+for(i in unique(dat$sex_recode)){
+  data <- dat %>% filter(sex_recode==i)
+  b <- boxcox(lm(data$gramsperday ~ 1))
+  lambda <- b$x[which.max(b$y)]
+  newdata <- data.frame(sex_recode=unique(data$sex_recode), lambda = lambda)
+  lambdas[[i]] <- newdata
+}
+lambdas <- do.call(rbind,lambdas)
+
+
+# now join group lambdas to the individual level data for transformation
+dat <- left_join(dat, lambdas)
+
+dat <- dat %>% 
   filter(gramsperday!=0) %>% #remove non drinkers - don't want to model them 
   mutate(transcons = (gramsperday ^ lambda - 1) / lambda) %>% #transform consumption - following M Strong approach
   mutate(sex_recode = factor(sex_recode), education_summary = factor(education_summary),
          employment = factor(employment), race_eth = factor(race_eth), 
          AlcCAT = factor(AlcCAT))
+
+# plot the transformed consumption by group 
+ggplot(data=dat, aes(x=transcons)) + facet_grid(cols=vars(sex_recode), scales="free") + 
+  geom_histogram()
   
 # specify model - following M Strong approach with variables available in microsimulation and including race and ethnicity 
-#
-m <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + sex_recode + YEAR + race_eth + 
-          education_summary  + AlcCAT + age_var*sex_recode + age_var*education_summary + age_var*AlcCAT +
-          sex_recode*education_summary + sex_recode*AlcCAT + education_summary*AlcCAT + race_eth*age_var*sex_recode*AlcCAT*education_summary, data=dat)
+models <- list()
 
-library(MASS)
-# Fit the full model 
-full.model <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + sex_recode + YEAR + race_eth + education_summary  + AlcCAT + 
-                   education_summary*sex_recode + education_summary*race_eth + education_summary*age_var + 
-                   sex_recode*race_eth + sex_recode*age_var + 
-                   age_var*education_summary + age_var*race_eth + 
-                   AlcCAT*sex_recode + AlcCAT*race_eth + AlcCAT*age_var, data=dat)
-# Stepwise regression model
-step.model <- stepAIC(full.model, direction = "both", 
-                      trace = FALSE)
-summary(step.model)
+for(i in unique(dat$sex_recode)){
+  data <- dat %>% filter(sex_recode==i)
+  models[[i]] <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3)  + YEAR + race_eth + 
+                      AlcCAT + 
+            education_summary  + age_var + age_var*education_summary + 
+            race_eth*age_var*education_summary*AlcCAT, data=data)
+}
 
-step.model$anova
-
-# QUESTIONS
-# about whether to include frequency in the model - are we assuming that this is static for people over time - 
-# seems a strong assumption 
-# also I have included year as a predictor - sensible? 
-m <- full.model
-summary(m)
-summary(m)$sigma^2
-sigma <- summary(m)$sigma
-
+# attach the coefficients back into the dataframe - for prediction
 back.tran <- function(x){(lambda * x + 1) ^ (1/lambda)}
 
 # see how the model performs on a given years data
 
-test_model <- function(dat,year){
+test_model <- function(dat,year,selectedgroup){
 year <- dat %>% filter(YEAR==year) %>% assign_alc_cat() %>% 
   filter(gramsperday!=0) %>% #remove non drinkers - don't want to model them 
   mutate(transcons = (gramsperday ^ lambda - 1) / lambda) %>% #transform consumption - following M Strong approach
   mutate(sex_recode = factor(sex_recode), education_summary = factor(education_summary),
          employment = factor(employment), race_eth = factor(race_eth), 
          AlcCAT = factor(AlcCAT)) %>% 
-  mutate(oldgpd = gramsperday, oldAlcCAT = AlcCAT)
+  mutate(oldgpd = gramsperday, oldAlcCAT = AlcCAT) %>% 
+  filter(sex_recode==selectedgroup)
 
 # predict grams per day using model
-year$gramsperday <- back.tran(predict(m, year))
+year$gramsperday <- back.tran(predict(models[[selectedgroup]], year))
 
 # assign alc category based on new grams per day 
 year <- assign_alc_cat(year)
@@ -101,9 +109,9 @@ list <- list(proportion, cor)
 return(list)
 }
 
-proportion <- test_model(dat, 2019)[[1]]
-test_model(dat, 2010)[[2]]
+proportion <- test_model(dat, 2010, "Male")[[1]]
+test_model(dat, 2010, "Male")[[2]]
 
 # model seems ok for now - save a copy for implementation in the microsimulation 
-saveRDS(m, "SIMAH_workplace/microsim/1_input_data/CatContModel1.RDS")
+saveRDS(models, "SIMAH_workplace/microsim/1_input_data/SSCatContModel.RDS")
 
