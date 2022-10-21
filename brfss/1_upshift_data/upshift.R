@@ -37,13 +37,13 @@ source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
-data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
-                                     0.01, data$quantity_per_occasion)
+# data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
+#                                      1, data$quantity_per_occasion)
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
+data$drinkingstatus <- ifelse(data$gramsperday==0, 0, data$drinkingstatus)
+data$drinkingstatus <- ifelse(data$alc_frequency==0, 0, data$drinkingstatus)
 summary(data$gramsperday)
 summary(data$alc_frequency)
-# put cap of 200gpd on grams per day 
-# data$gramsperday <- ifelse(data$gramsperday>200, 200, data$gramsperday)
 
 # remove missing data for key variables - age, sex, race, drinking
 data <- remove_missing_data(data)
@@ -109,6 +109,7 @@ data <- data %>% group_by(YEAR, State) %>%
          quantity_per_occasion_upshifted = ifelse(gramsperday_upshifted==0, 0, quantity_per_occasion_upshifted)
          ) # recalculate drinks per occasion based on upshifted data 
 
+test <- data %>% filter(drinkingstatus_updated==1) %>% filter(gramsperday_upshifted==0)
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
 

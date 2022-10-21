@@ -195,6 +195,26 @@ impute_yearly_drinking <- function(data){
   datatoimpute <- data %>% filter(drinkingstatus==0)
   datatoimpute <- datatoimpute %>% group_by(YEAR, State, group) %>% 
     do(sample(.,NASdistributions)) %>% dplyr::select(-prob)
+  
+  NASdistributions <- NASdistributions %>% 
+    mutate(drinkingstatus_detailed = ifelse(name=="YEARLYDRINKERS", "Yearly drinker",
+                                  ifelse(name=="FORMERDRINKERS", "Former drinker",
+                                         "Lifetime abstainer"))) %>% 
+    dplyr::select(group, drinkingstatus_detailed, value)
+  summary <- datatoimpute %>% group_by(YEAR, State, group, drinkingstatus_detailed) %>% 
+    tally() %>% ungroup() %>% group_by(YEAR, State, group) %>% mutate(percent=n/sum(n)) %>% filter(State=="USA") %>% 
+    dplyr::select(-n)
+  summary <- left_join(summary, NASdistributions) %>% 
+    mutate(simulated_data = round(percent*100, digits=2),
+           nas_data = round(value*100, digits=2)) %>% 
+    dplyr::select(State, YEAR, group,drinkingstatus_detailed, simulated_data, nas_data) %>% 
+    separate(group, into=c("sex","age","race"), sep="_") %>% 
+    pivot_wider(names_from=drinkingstatus_detailed, values_from=c(simulated_data, nas_data)) %>% 
+    dplyr::select(State, YEAR, sex, age, race, `simulated_data_Former drinker`, `nas_data_Former drinker`,
+                  `simulated_data_Lifetime abstainer`, `nas_data_Lifetime abstainer`,
+                  `simulated_data_Yearly drinker`, `nas_data_Yearly drinker`) %>% filter(YEAR==2010) %>% 
+    rename(Year =YEAR)
+  write.csv(summary, "SIMAH_workplace/brfss/processed_data/NAS_fit.csv", row.names=F)
   datatojoin <- data %>% filter(drinkingstatus!=0) %>% mutate(drinkingstatus_detailed="Monthly drinker")
     
   data <- rbind(datatojoin, datatoimpute) %>% 

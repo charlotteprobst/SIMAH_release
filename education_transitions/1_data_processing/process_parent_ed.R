@@ -23,8 +23,7 @@ headfather <- headfather %>% pivot_longer(cols='1968':'2019', names_to="year", v
   mutate(head_fathered = ifelse(head_fathered<=4, "LEHS",
                                 ifelse(head_fathered>4 & head_fathered<=6, "SomeC",
                                        ifelse(head_fathered> 6 & head_fathered<=8, "College", NA)))) %>% 
-  group_by(uniqueID) %>% fill(head_fathered, .direction=c("downup")) %>% dplyr::select(uniqueID, year, head_fathered) %>% 
-  mutate(maxyear = ifelse(year==max(year),1,0)) %>% filter(maxyear==1) %>% dplyr::select(-c(year,maxyear))
+  group_by(uniqueID) %>% fill(head_fathered, .direction=c("downup"))
 
 headmothered <- 	c("V3634", "V4139", "V4682", "V5602", "V6151", "V6748", "V7381",  "V8033", "V8657", "V9343", "V10990", "V11923",
                    "V13550", "V14597", "V16071", "V17468", "V18799", "V20099", "V21405", "V23261", "ER3926", "ER6796", "ER9042",
@@ -32,15 +31,13 @@ headmothered <- 	c("V3634", "V4139", "V4682", "V5602", "V6151", "V6748", "V7381"
                    "ER70855", "ER76870")
 
 headmother <- data %>% select(uniqueID, c(headmothered))
-
 years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
 names(headmother)[2:36] <- years
 headmother <- headmother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="head_mothered") %>% 
   mutate(head_mothered = ifelse(head_mothered<=4, "LEHS",
                                 ifelse(head_mothered>4 & head_mothered<=6, "SomeC",
                                        ifelse(head_mothered> 6 & head_mothered<=8, "College", NA)))) %>% 
-  group_by(uniqueID) %>% fill(head_mothered, .direction=c("downup")) %>% dplyr::select(uniqueID, year, head_mothered) %>% 
-  mutate(maxyear = ifelse(year==max(year),1,0)) %>% filter(maxyear==1) %>% dplyr::select(-c(year,maxyear))
+  group_by(uniqueID) %>% fill(head_mothered, .direction=c("downup")) %>% dplyr::select(uniqueID, year, head_mothered)
 
 spousefathered <- 	c("V3608","V4108","V4753","V5572","V6121","V6718","V7351","V8003","V8627",
                      "V9313","V10960","V12277","V13485","V14532","V16006","V17403","V18734","V20034",

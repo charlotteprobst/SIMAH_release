@@ -100,23 +100,36 @@ microsim <- data.frame(microsim.init.id=1:nrow(ints_df),
                        microsim.init.sex=ints_df$SEX, 
                        microsim.init.age=ints_df$age_var, 
                        microsim.init.race=ints_df$RACE, 
-                       microsim.roles.employment.status = ints_df$employment,
+                       microsim.roles.employment.status = ints_df$EMPLOYED,
                        microsim.roles.parenthood.status = ints_df$EMPLOYED,
-                       microsim.roles.marital.status = ints_df$marital_status,
+                       microsim.roles.marital.status = ints_df$MARRIED,
                        microsim.init.education=ints_df$EDUCATION, 
                        microsim.init.BMI=ints_df$BMI, 
                        microsim.init.income=ints_df$household_income, 
                        microsim.init.drinkingstatus=ints_df$drinkingstatus, 
                        microsim.init.alc.gpd=ints_df$gramsperday, 
                        agecat=ints_df$agecat, 
-                       alcdays=ints_df$frequency,
+                       microsim.init.drink.frequency=ints_df$frequency,
                        formerdrinker = ints_df$formerdrinker)
 
 rm(list=setdiff(ls(), c("microsim", "cons", c(tokeep))))
 
 ####sample to get desired population size 
 if(percentpop<1){
-microsim <- sample_n(microsim, PopulationSize, replace=F)
+  newmicrosim <- microsim %>% mutate(orderntile = ntile(microsim.init.alc.gpd,nrow(.)))
+  newmicrosim <- newmicrosim[order(newmicrosim$orderntile),]
+  
+  length <- round(nrow(newmicrosim)/PopulationSize)
+  probs <- c(1-(1/length),1/length)
+  samples <- sample(c(0,1), size=nrow(newmicrosim), prob=probs, replace=T)
+  sum(samples)
+
+  newmicrosim$sample <- samples
+  sample <- newmicrosim %>% filter(sample==1) %>% sample_n(PopulationSize)
+  microsim <- sample
+
+  
+# microsim <- sample_n(microsim, PopulationSize, replace=F)
 }
 
 #  script to sample age to ensure the correct age distribution when wide cats used

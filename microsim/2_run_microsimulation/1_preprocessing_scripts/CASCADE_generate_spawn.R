@@ -44,7 +44,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
          microsim.roles.employment.status = employment,
          microsim.roles.marital.status = marital_status) %>% 
   mutate(microsim.roles.parenthood.status = microsim.roles.employment.status,
-         microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
+         drinksperday = microsim.init.alc.gpd/14,
+         microsim.init.drinks.per.month = drinksperday*30,
          microsim.init.drink.frequency = frequency,
          microsim.init.annual.frequency = frequency*12,
          microsim.init.heavy.episodic.drinking = NA) %>%
@@ -67,7 +68,7 @@ microsim.init.id <- (PopulationSize+1):(nrow(spawning)+PopulationSize)
 spawning <- cbind(microsim.init.id, spawning)
 
 spawning$random = sample(1:365, nrow(spawning), replace=T)
-spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1985) * 365 ) + spawning$random
+spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1984) * 365 ) + spawning$random
 spawning$random <- NULL
 
 write.csv(spawning, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "spawningCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)

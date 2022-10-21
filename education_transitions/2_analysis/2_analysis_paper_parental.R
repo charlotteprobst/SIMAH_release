@@ -5,9 +5,11 @@ library(msm)
 library(readr)
 library(tidyr)
 library(readxl)
+library(doParallel)
+library(foreach)
+library(parallel)
 
-
-setwd("~/Google Drive/SIMAH Sheffield")
+setwd("/home/cbuckley")
 
 source("SIMAH_code/education_transitions/2_analysis/1_setup_markov_model.R")
 
@@ -66,15 +68,15 @@ source("SIMAH_code/education_transitions/2_analysis/1_setup_markov_model.R")
 # saveRDS(dataList, "SIMAH_workplace/reweighted_PSID_imp_list.RDS")
 
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
-data <- read_rds("SIMAH_workplace/reweighted_PSID_imp_list.RDS")
-
-# setup the datasets for both time periods
-
-datat1 <- lapply(data, setup_markov_model, y=2009)
-datat2 <- lapply(data, setup_markov_model, y=2011)
-
-saveRDS(datat1, "SIMAH_workplace/education_transitions/datat1.RDS")
-saveRDS(datat2, "SIMAH_workplace/education_transitions/datat2.RDS")
+# data <- read_rds("SIMAH_workplace/reweighted_PSID_imp_list.RDS")
+# 
+# # setup the datasets for both time periods
+# 
+# datat1 <- lapply(data, setup_markov_model, y=2009)
+# datat2 <- lapply(data, setup_markov_model, y=2011)
+# 
+# saveRDS(datat1, "SIMAH_workplace/education_transitions/datat1.RDS")
+# saveRDS(datat2, "SIMAH_workplace/education_transitions/datat2.RDS")
 
 # who in the data transitions backwards, i.e. education gets lower - not allowed
 # initQt1 <- list()
@@ -84,36 +86,62 @@ saveRDS(datat2, "SIMAH_workplace/education_transitions/datat2.RDS")
 #   initQt2[[paste(i)]] <- crudeinits.msm(educNUM~year, newID, data=datat2[[paste(i)]], qmatrix=Q)
 # }
 
+#### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 
 datat1 <- read_rds("SIMAH_workplace/education_transitions/datat1.RDS")
 datat2 <- read_rds("SIMAH_workplace/education_transitions/datat2.RDS")
 
+# set up parallel
+registerDoParallel(20)
+options(future.rng.onMisuse="ignore")
+options(future.globals.maxSize = 10000 * 1024^3)
+options(future.fork.multithreading.enable = FALSE)
+
+
 # specify baseline models 
-modelst1_baseline <- lapply(datat1, run_markov_model_baseline)
+modelst1_baseline <- foreach(i=1:length(datat1), .inorder=FALSE,
+                             .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                               run_markov_model_baseline(datat1[[i]])
+                             }
 saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t1_baseline_parent.RDS")
 
-modelst2_baseline <- lapply(datat2, run_markov_model_baseline)
-saveRDS(modelst2_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline_interaction.RDS")
+modelst2_baseline <- foreach(i=1:length(datat1), .inorder=FALSE,
+                             .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                               run_markov_model_baseline(datat2[[i]])
+                             }
+saveRDS(modelst1_baseline, "SIMAH_workplace/education_transitions/final_models/t2_baseline_parent.RDS")
 
-# now add parent as covariate - interacting with race and ethnicity
-modelst1_parent <- lapply(datat1, run_markov_model_parent)
-saveRDS(modelst1_parent, "SIMAH_workplace/education_transitions/final_models/t1_parent_race.RDS")
+# specify interaction models
+modelst1_interaction <- foreach(i=1:length(datat1), .inorder=FALSE,
+                             .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                               run_markov_model_parent(datat1[[i]])
+                             }
 
-modelst2_parent <- lapply(datat2, run_markov_model_parent)
-saveRDS(modelst2_parent, "SIMAH_workplace/education_transitions/final_models/t2_parent_race.RDS")
 
+data <- datat1[[1]]
 
-# calculate AIC for paper 
+model <- run_markov_model_parent(data)
+saveRDS(modelst1_interaction, "SIMAH_workplace/education_transitions/final_models/t1_interaction.RDS")
 
-AIC_baselinet1 <- lapply(modelst1_baseline, AIC) %>% bind_rows() %>% data.frame() %>%
+modelst2_interaction <- foreach(i=1:length(datat1), .inorder=FALSE,
+                             .packages=c("dplyr","tidyr","foreach")) %dopar% {
+                               run_markov_model_parent(datat2[[i]])
+                             }
+saveRDS(modelst2_interaction, "SIMAH_workplace/education_transitions/final_models/t2_interaction.RDS")
+
+# # calculate AIC for paper 
+# 
+AIC_baselinet1 <- lapply(modelst1_baseline, calculate_AIC) %>% do.call(rbind,.) %>% data.frame() %>%
   mutate(type="t1_baseline")
-AIC_baselinet2 <- lapply(modelst2_baseline, AIC) %>% bind_rows() %>% data.frame() %>%
+AIC_baselinet2 <- lapply(modelst2_baseline, calculate_AIC) %>% bind_rows() %>% data.frame() %>%
   mutate(type="t2_baseline")
-AIC_parentt1 <- lapply(modelst1_parent, AIC) %>% bind_rows() %>% data.frame() %>%
+AIC_parentt1 <- lapply(modelst1_parent, calculate_AIC) %>% bind_rows() %>% data.frame() %>%
   mutate(type="t1_parent")
-AIC_parentt2 <- lapply(modelst2_parent, AIC) %>% bind_rows() %>% data.frame() %>%
+AIC_parentt2 <- lapply(modelst2_parent, calculate_AIC) %>% bind_rows() %>% data.frame() %>%
   mutate(type="t2_parent")
-
-AIC <- rbind(AIC_baselinet1, AIC_baselinet2, AIC_parentt1, AIC_parentt2)
-
+# 
+AIC <- rbind(AIC_baselinet1, AIC_baselinet2, AIC_parentt1, AIC_parentt2) 
+# %>% group_by(type) %>% 
+#   summarise(mean = mean(AIC))
+# 
 write.csv(AIC, "SIMAH_workplace/education_transitions/final_models/AIC.csv", row.names=F)

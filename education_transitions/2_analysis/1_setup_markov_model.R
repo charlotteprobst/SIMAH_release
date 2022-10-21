@@ -4,12 +4,11 @@ setup_markov_model <- function(data,y){
   }else{
     data <- data %>% filter(year>=2011)
   }
-  data <- data %>% drop_na(highestEd)
-  data$educNUM <- ifelse(data$highestEd<=12, 1,
-                         ifelse(data$highestEd==13, 2,
-                                ifelse(data$highestEd==14,3,
-                                       ifelse(data$highestEd==15,4,
-                                              ifelse(data$highestEd>=16,5,NA)))))
+  data$educNUM <- ifelse(data$education<=12, 1,
+                         ifelse(data$education==13, 2,
+                                ifelse(data$education==14,3,
+                                       ifelse(data$education==15,4,
+                                              ifelse(data$education>=16,5,NA)))))
 
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -21,17 +20,27 @@ setup_markov_model <- function(data,y){
   # 
   # data$racefinal <- ifelse(data$racefinal=="Native","other",
   #                          ifelse(data$racefinal=="Asian/PI","other",data$racefinal))
-  data$racefinal <- as.factor(data$racefinal)
-  data$racefinal <- relevel(data$racefinal, ref="white")
+  data$individualrace <- as.factor(data$individualrace)
+  data$individualrace <- relevel(data$individualrace, ref="white")
   data$educNUM <- ifelse(data$age==18 & data$educNUM>2, 1, data$educNUM)
   data$sex <- as.factor(data$sex)
+  data$highestEd <- data$education
   source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function.R")
   backIDs <- getIDs(data)
   data <- data[!data$newID %in% backIDs,]
-
   data$agesq <- data$age^2
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
+  Q <- rbind( c(0.5, 0.5, 0, 0, 0),
+              c(0, 0.5, 0.5, 0, 0),
+              c(0, 0, 0.5, 0.5, 0),
+              c(0, 0, 0, 0.5, 0.5),
+              c(0, 0, 0, 0, 0.5))
+  data$racefinal2 <- as.character(data$individualrace)
+  data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
+  data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
+  data$racefinal2 <- as.factor(data$racefinal2)
+  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data <- data.frame(data)
   return(data)
 }
@@ -43,12 +52,17 @@ run_markov_model_baseline <- function(data){
               c(0, 0, 0.5, 0.5, 0),
               c(0, 0, 0, 0.5, 0.5),
               c(0, 0, 0, 0, 0.5))
-  data$racefinal2 <- ifelse(data$racefinal2=="Native", "other",data$racefinal2)
+  data$racefinal2 <- as.character(data$individualrace)
+  data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
+  data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
+  data$racefinal2 <- as.factor(data$racefinal2)
+  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data$agescaled <- as.numeric(scale(data$age, center=T))
+  data$agesq <- data$age^2
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T)) 
   model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                        center=FALSE,
-                       covariates=~agescaled + agesqscaled + sex + racefinal2)
+                       covariates=~agescaled + agesqscaled + sex + racefinal2 + onecollegeplus)
   return(model)
 }
 
@@ -59,12 +73,16 @@ run_markov_model_parent <- function(data){
               c(0, 0, 0.5, 0.5, 0),
               c(0, 0, 0, 0.5, 0.5),
               c(0, 0, 0, 0, 0.5))
+  data$racefinal2 <- as.character(data$racefinal2)
+  data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
+  data$racefinal2 <- as.factor(data$racefinal2)
+  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T)) 
   model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                center=FALSE,
-               covariates=~agescaled + agesqscaled + sex + racefinal*oneCollegeplus)
+               covariates=~agescaled + agesqscaled + sex + racefinal2*oneCollegeplus)
   return(model)
   
 }
@@ -169,4 +187,6 @@ compare_missing_covariance <- function(cov, meancovs){
 
 calculate_AIC <- function(model){
   AIC <- AIC(model)
+  AIC = data.frame(AIC)
+  return(AIC)
 }
