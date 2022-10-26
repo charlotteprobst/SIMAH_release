@@ -3,7 +3,7 @@
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(foreign)
-library(SASxport)
+# library(SASxport)
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -32,14 +32,21 @@ data$StateOrig <- data$State
 USA <- data %>% mutate(State="USA")
 
 data <- rbind(data,USA)
+# 
+# samplesizes <- data %>% group_by(YEAR, State) %>% tally() %>% 
+#   filter(State=="USA")
 
 source("SIMAH_code/brfss/1_upshift_data/upshift_functions.R")
 
 # some people claim to be drinkers but quantity per occasion =0 
 # solution (for now) is to allocate small amount of drinking per occasion 
-data$quantity_per_occasion <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
-                                     0.01, data$quantity_per_occasion)
+data$drinkingstatus <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
+                                    0, data$drinkingstatus)
+data$drinkingstatus <- ifelse(data$drinkingstatus==1 & data$alc_frequency==0,
+                              0, data$drinkingstatus)
+data$alc_frequency <- ifelse(data$drinkingstatus==0, 0, data$alc_frequency)
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
+data$gramsperday <- ifelse(data$drinkingstatus==0, 0, data$gramsperday)
 summary(data$gramsperday)
 summary(data$alc_frequency)
 # put cap of 200gpd on grams per day 
@@ -47,6 +54,15 @@ summary(data$alc_frequency)
 
 # remove missing data for key variables - age, sex, race, drinking
 data <- remove_missing_data(data)
+
+# samplesizes2 <- data %>% group_by(YEAR, State) %>% tally(name="nafter") %>% 
+#   filter(State=="USA")
+# 
+# samplesizes <- left_join(samplesizes, samplesizes2)
+# 
+# samplesizes$percent <- samplesizes$nafter/samplesizes$n
+# 
+# write.csv(samplesizes2, "SIMAH_workplace/brfss/processed_data/sample_ns.csv")
 
 # allocate individuals to be monthly/yearly/former drinkers or lifetime abstainers
 data <- impute_yearly_drinking(data)
@@ -102,7 +118,7 @@ data <- data %>% group_by(YEAR, State) %>%
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
          gramsperday_upshifted= gramsperday_new*(cr_quotient^2),   # apply cube root quotient to gpd
          gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
-         frequency_upshifted = alc_frequency*(cr_quotient^2),              # apply cube root quotient to frequency
+         frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
          quantity_per_occasion_upshifted = gramsperday_upshifted/14*30/frequency_upshifted,
@@ -118,9 +134,11 @@ final_version <- data %>%
                 employment, marital_status, BMI,
                 drinkingstatus_detailed, drinkingstatus_updated,
                 gramsperday_upshifted,
+                alc_frequency,
                 frequency_upshifted,
                 quantity_per_occasion_upshifted) %>% 
   rename(gramsperday = gramsperday_upshifted,
+         frequency_orig = alc_frequency,
          frequency = frequency_upshifted,
          quantity_per_occasion = quantity_per_occasion_upshifted,
          drinkingstatus = drinkingstatus_updated) %>% 

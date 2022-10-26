@@ -8,7 +8,7 @@ setwd(paste(WorkingDirectory))
 
 SelectedState <- "USA"
 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final_fr.RDS") %>% 
   filter(age_var<=80) %>% filter(State==SelectedState) %>% 
   mutate(microsim.init.race = recode(race_eth,"White"="WHI","Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
          microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"))
@@ -20,8 +20,8 @@ prevalence <- brfss %>% group_by(YEAR, microsim.init.sex) %>%
 others <- brfss %>% ungroup() %>% group_by(YEAR, microsim.init.sex) %>% 
   filter(drinkingstatus==1) %>% 
   add_tally() %>% 
-  summarise(frequencyM = mean(frequency),
-            frequencySE = std.error(frequency),
+  summarise(frequencyM = mean(frequency_orig),
+            frequencySE = std.error(frequency_orig),
             quantityM = mean(gramsperday),
             quantitySE = std.error(gramsperday))
 

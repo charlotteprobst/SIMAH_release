@@ -9,10 +9,12 @@ SelectedState <- "USA"
 
 ####Size of population 
 PopulationSize <- 1000
-
 WholePopSize <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraintsUSA.csv") %>% 
   dplyr::select(marriedF:unmarriedM) %>% mutate(total=marriedF+unmarriedF+marriedM+unmarriedM)
 proportion <- PopulationSize/WholePopSize$total
+
+
+
 
 Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/CASCADEfinal_rates",SelectedState,".RDS",sep=""))
 Rates$agecat <- as.character(Rates$agecat)
@@ -22,7 +24,7 @@ Rates <- Rates %>% mutate(microsim.init.spawn.year=Year,
                           MigrationInN = MigrationInN*proportion) %>% 
   dplyr::select(microsim.init.spawn.year, agecat, microsim.init.sex, microsim.init.race, MigrationInN)
 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final_fr.RDS") %>% 
   filter(age_var<=80) %>% filter(State==SelectedState) %>% 
   mutate(microsim.init.race = recode(race_eth,"White"="WHI","Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
          microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),
@@ -42,11 +44,13 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
          microsim.init.income = household_income,
          microsim.roles.employment.status = employment,
          microsim.roles.marital.status = marital_status) %>% 
-  mutate(microsim.roles.parenthood.status = microsim.roles.employment.status,
+  mutate(microsim.roles.parenthood.status = 0,
+         microsim.roles.employment.status = 0,
          microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
-         microsim.init.drink.frequency = frequency,
-         microsim.init.annual.frequency = frequency*12,
-         microsim.init.heavy.episodic.drinking = NA) %>%
+         microsim.init.drink.frequency = frequency_orig,
+         microsim.init.annual.frequency = frequency_orig*12,
+         microsim.init.heavy.episodic.drinking = 0,
+         microsim.init.income = 0) %>%
   rename(microsim.init.spawn.year=YEAR) %>% 
   dplyr::select(microsim.init.sex, microsim.init.age, microsim.init.race, 
                 microsim.roles.employment.status,
@@ -64,15 +68,10 @@ spawning <- brfss %>% drop_na(MigrationInN) %>% group_by(microsim.init.spawn.yea
 
 microsim.init.id <- (PopulationSize+1):(nrow(spawning)+PopulationSize)
 spawning <- cbind(microsim.init.id, spawning)
+spawning$microsim.init.sex <- ifelse(spawning$microsim.init.sex=="m",1,0)
 
 spawning$random = sample(1:365, nrow(spawning), replace=T)
-spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1985) * 365 ) + spawning$random
+spawning$microsim.spawn.tick <- ((spawning$microsim.init.spawn.year - 1984) * 365 ) + spawning$random
 spawning$random <- NULL
-
-spawning$microsim.init.sex <- ifelse(spawning$microsim.init.sex=="f",0,1)
-spawning$microsim.roles.employment.status <- ifelse(spawning$microsim.roles.employment.status=="employed",1,0)
-spawning$microsim.roles.parenthood.status <- ifelse(spawning$microsim.roles.parenthood.status=="employed",1,0)
-spawning$microsim.init.heavy.episodic.drinking <- rtruncnorm(nrow(spawning), a=0, b=30, mean=2, sd=2)
-spawning$microsim.init.income <- rtruncnorm(nrow(spawning), a=0, b=100000, mean=25000, sd=10000)
 
 write.csv(spawning, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "spawningCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)

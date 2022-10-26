@@ -21,7 +21,7 @@ allocate_gramsperday <- function(basepop, y, model, DataDirectory){
   women <- women %>% dplyr::select(microsim.init.id, newgpd)
 
   men <- prepdata %>% filter(sex_recode=="Male")
-  men$newgpd <- back.tran(predict(model[[1]], men), lambda=0.06)
+  men$newgpd <- back.tran(predict(model[[2]], men), lambda=0.06)
   men <- men %>% dplyr::select(microsim.init.id, newgpd)
   prepdata <- rbind(men, women)
   basepop <- left_join(basepop, prepdata)
