@@ -11,7 +11,7 @@ library(splitstackshape) # To replicate data based on sampling weight
 
 
 # Specify the data file locations
-data <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Processed data/"
 
 
 # NESARC WAVE 1 and 2 --------------------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
               wave==2 & drinking_stat_wave1!=3 & drinking_stat==3 ~ 2, # former drinker
               
               drinking_stat==2 ~ 2,                                    # former drinker 
-              drinking_stat==1 & alc_daily_g==0 ~ 2,               # former drinker (indicated they drink, but had 0 grams of alcohol)
+              drinking_stat==1 & alc_daily_g==0 ~ 2,                   # former drinker (indicated they drink, but had 0 grams of alcohol)
               
               # Men
               female==0 & alc_daily_g >0 & alc_daily_g <=40 ~ 3,   # low risk
@@ -164,7 +164,7 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
               female==1 & alc_daily_g >0 & alc_daily_g <=20 ~ 3,   # low risk
               female==1 & alc_daily_g >20 & alc_daily_g <=40 ~ 4,  # medium risk
               female==1 & alc_daily_g >40 & alc_daily_g <=60 ~ 5,  # high risk
-              female==1 & alc_daily_g >60 ~ 6),                        # very high risk
+              female==1 & alc_daily_g >60 ~ 6),                    # very high risk
       alc6.factor = factor(alc6, levels=c(1,2,3,4,5,6), labels=c("Lifetime abstainer", "Former drinker", "Category I", "Category II", "Category III", "Category IV")),
       
       alc5 = recode(alc6, `6`=5),       # merge high-risk and very-high-risk categories
@@ -203,8 +203,6 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
 
     
     
-
-
   # Check  
   # select(nesarc, idnum, wave, intv_date, prev_intv_date, years, age_diff) %>% view()
   # select(nesarc, idnum, wave, female, female_w1) %>% view()
@@ -288,7 +286,6 @@ nesarc_cc_expanded <- nesarc_cc %>%
 saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
 saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
 saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))
-
 
 
 # NESARC WAVE 3 --------------------------------------------------------------------------------------------------------
@@ -483,6 +480,7 @@ nesarc3_expanded <- nesarc3_clean %>%
 
 # check
 # filter(nesarc_cc, wave==1) %>% count(hed)
+
 
 
 # Save data

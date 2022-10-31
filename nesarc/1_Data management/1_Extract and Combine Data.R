@@ -9,9 +9,9 @@ library(survey)     # to accomodate survey weights
 
 
 # Specify the data and output file locations
-data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
-data_orig3  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC III/"
-data_new   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+data_orig   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC I and II/"
+data_orig3  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC III/"
+data_new    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"
 
 
 # Load data 
@@ -38,7 +38,7 @@ nesarc1 <- nesarc1_orig %>%
     S2AQ7A, S2AQ7B, s2aq7cr, S2AQ7D, S2AQ7E, S2AQ7F, S2AQ7G, liqrecf, S2AQ8E, S2AQ9,
     etotlca2, alcabdep12dx, alcabdepp12dx) %>%
   
-  # recode / create new variables
+  # recode / create new variables so that NESARC I and II can be merged
   mutate (
     wave = 1,
     age_diff = 0, # age difference from wave 1
@@ -64,7 +64,6 @@ nesarc1 <- nesarc1_orig %>%
     drank5plus_freq = S2AQ8E,
     drank4plus_freq = S2AQ9)
   
-    
   # check
   # count(nesarc1, olds1q1d5, olds1q1c, olds1q1d3, race) 
   # count(nesarc1, sex, female)
