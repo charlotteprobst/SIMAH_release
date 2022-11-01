@@ -798,6 +798,32 @@ Attaching package: 'dplyr'</code></pre>
 <span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>basepop <span class="ot">&lt;-</span> <span class="fu">subset</span>(basepop, microsim.init.age<span class="sc">&lt;=</span><span class="dv">79</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
+<section id="postprocessing-output" class="level2">
+<h2 class="anchored" data-anchor-id="postprocessing-output">Postprocessing output</h2>
+<p>3 main postprocessing functions that compare</p>
+<ol type="1">
+<li>Demographic differences (education)</li>
+<li>Alcohol consumption</li>
+<li>Mortality over time</li>
+</ol>
+<p>These return a dataset comparing the output of the simulation to the observed data (American Community Survey, BRFSS or CDC mortality rates).</p>
+</section>
+</section>
+<section id="running-the-simulation-in-full" class="level1">
+<h1>Running the simulation (in full)</h1>
+<section id="running-the-simulation-task" class="level2">
+<h2 class="anchored" data-anchor-id="running-the-simulation-task">Running the simulation: task</h2>
+<ul>
+<li>Open 1_run_microsimulation.R</li>
+<li>Run all lines of code up to and including the run_microsim() function</li>
+<li>Explore changing the output_type in model settings between “demographics”, “alcohol” and “mortality”</li>
+<li>Summarise the output for each function and look at the plots</li>
+<li>Compare with someone your summarised outputs for the same output type
+<ul>
+<li>These should differ slightly due to random number sampling</li>
+</ul></li>
+</ul>
+</section>
 </section>
 
 </main>

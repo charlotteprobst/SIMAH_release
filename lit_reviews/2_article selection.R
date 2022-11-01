@@ -4,9 +4,11 @@
 
 ## Load libraries
 library(stringi) ## To wrap the abstract in the console window
+library(dplyr)
 
 k.file <- "Complete"
-if(k.file == "ReveiwerA"){
+library(readr)
+if(k.file == "ReviewerA"){
   dSUB <- read.csv("SIMAH_workplace/lit_reviews/ReviewerA_clean.csv")  
 } else if (k.file == "Complete") {
   dSUB <- read.csv("SIMAH_workplace/lit_reviews/COMPLETE_clean.csv")
@@ -24,6 +26,19 @@ if(k.file == "ReveiwerA"){
 dSUB$TI <- as.character(dSUB$TI)
 dSUB$AB <- as.character(dSUB$AB)
 dSUB$COMMENT <- as.character(dSUB$COMMENT)
+
+###For comments
+#  R = review
+#  D = duplicate
+#  AUD = alcohol use disorder
+
+##Particularly for diabetes review
+#  IR = insulin resistance
+#  PD = prediabetes
+#  C = diabetes complication
+
+#To order the dataset by title
+dSUB <- arrange(dSUB, TI)
 
 ## IMPORTANT: k.begin needs to be updated before every screening
 k.begin <- min(which(is.na(dSUB$DECISION)))
@@ -64,9 +79,12 @@ for(i in k.begin:(k.begin+k.number.screen)) {
   dSUB$DECISION[i] <- decision.1
 }
 
+####NOTE: in case there is an error reading the abstract, substitute "stri_wrap" 
+#in line 50 for "stri_trim"
+
 write.csv(dSUB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)
 
-if(k.file == "ReveiwerA"){
+if(k.file == "ReviewerA"){
   write.csv(dSUB, "SIMAH_workplace/lit_reviews/ReviewerA_clean.csv", na = "", row.names = F)
 } else if (k.file == "Complete") {
   write.csv(dSUB, "SIMAH_workplace/lit_reviews/COMPLETE_clean.csv", na = "", row.names = F)

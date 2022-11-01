@@ -1,5 +1,5 @@
 #####BRFSS processing for micro-synthesis 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
   filter(age_var<=80) %>% filter(YEAR==1984) %>% ungroup() %>% 
   mutate(RACE = recode(race_eth,"White"="WHI", 
                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
@@ -19,10 +19,10 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshift
 selected <- brfss %>% filter(State==SelectedState) %>% 
   dplyr::select(region, SEX, RACE, age_var, agecat, EDUCATION, EMPLOYED, MARRIED,
                 household_income, BMI, drinkingstatus, drinkingstatus_detailed,
-                formerdrinker,gramsperday, frequency, quantity_per_occasion, hed)
+                formerdrinker,gramsperday, frequency, quantity_per_occasion)
 
 # check that there is at least one BRFSS individual in each category in 2000 
-nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())==144
+nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())
 
 dropping <- F
 
@@ -70,7 +70,9 @@ if(dropping==T){
   brfss <- selected
 }
 }
-
+if(SelectedState=="USA"){
+  brfss <- selected
+}
 
 
 

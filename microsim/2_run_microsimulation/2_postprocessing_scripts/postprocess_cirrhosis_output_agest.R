@@ -14,10 +14,10 @@ WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(paste(WorkingDirectory))
 
 # first plot how implausibility changes over waves
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/implausibility*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/implausibility*.csv", sep="")))
 
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
-index <- c(1,10,11,2,3,4,5,6,7,8,9)
+# index <- c(1,10,11,2,3,4,5,6,7,8,9)
 files <- files[order(index)]
 # 
 files
@@ -27,6 +27,12 @@ for(i in 1:length(list)){
 }
 
 imp <- do.call(rbind, list)
+
+
+impchange <- imp %>% group_by(wave) %>% summarise(mean=mean(maximplausibility)) %>% 
+  mutate(pct_change = (mean / lead(mean)-1)*100)
+
+
 ggplot(data=imp, aes(x=as.factor(wave), y=maximplausibility)) + geom_boxplot() + theme_bw() + 
   xlab("wave") + ylab("implausibility")
 ggsave("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/plots/implausibility.png",

@@ -1,6 +1,11 @@
 # comparing the calibrated parameters from the final wave of age standardised versus non age st
 # now plot the lhs samples 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed/lhs*.csv", sep="")))
+setwd("~/Google Drive/SIMAH Sheffield/")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhs*.csv", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 # files
 files <- files[order(index)]
@@ -8,13 +13,13 @@ list <- lapply(files, function(x) read.csv(x))
 for(i in 1:length(list)){
   list[[i]]$wave <- i
 }
-filesagest <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+filesagest <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_LENGTH) %>% 
   mutate(wave=as.factor(wave), calibration="age standardized") %>% filter(wave=="15")
 
-prior <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+prior <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_LENGTH) %>% 
   mutate(wave=as.factor(wave), calibration="prior") %>% filter(wave=="1") 
 
-files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_fixed_agesp/lhs*.csv", sep="")))
+files <- (Sys.glob(paste("SIMAH_workplace/microsim/2_output_data/calibration_output_decay_agesp/lhs*.csv", sep="")))
 index <- c(1,10,11,12,13,14,15,2,3,4,5,6,7,8,9)
 # files
 files <- files[order(index)]
@@ -22,7 +27,7 @@ list <- lapply(files, function(x) read.csv(x))
 for(i in 1:length(list)){
   list[[i]]$wave <- i
 }
-filesagesp <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
+filesagesp <- do.call(rbind, list) %>% pivot_longer(cols=BETA_MALE_MORTALITY:DECAY_LENGTH) %>% 
   mutate(wave=as.factor(wave), calibration="age specific") %>% filter(wave=="15")
 
 files <- rbind(filesagest, filesagesp,prior)
@@ -40,24 +45,28 @@ files <- files %>%
                        "THRESHOLD" = "Threshold",
                        "THRESHOLD_MODIFIER" = "Threshold_modifier",
                        "DECAY_SPEED"= "Decay speed",
+                       "DECAY_LENGTH" = "Decay length",
                        "IRR_correlation" = "History correlation"),
          name = factor(name, levels=c("BHeavyUse_women","BHeavyUse_men","BFormerdrinker_men",
                                       "BFormerdrinker_women","BMetabolic1_men","BMetabolic2_men",
                                       "BMetabolic1_women","BMetabolic2_women","BHepatitis",
-                                      "Threshold", "Threshold_modifier","Decay speed",
+                                      "Threshold", "Threshold_modifier","Decay speed","Decay length",
                                       "History correlation")),
          calibration = factor(calibration, levels=c("prior","age standardized","age specific")))
 
+
+cbp1 <- c("#999999", "#E69F00", "#56B4E9") 
+
 ggplot(data=files, aes(x=value, group=calibration, fill=calibration, colour=calibration)) + 
-  geom_density(aes(x=value, y=..scaled..,), alpha=0.4, inherit.aes = TRUE) + 
+  geom_density(aes(x=value, y=..scaled..,), alpha=0.9, inherit.aes = TRUE) + 
   facet_wrap(~name, scales="free", ncol=) + theme_bw() +
-  scale_fill_grey() + 
-  scale_colour_grey() + 
+  scale_fill_manual(values=cbp1) + 
+  scale_colour_manual(values=cbp1) + 
   theme(legend.title=element_blank(),
         legend.position="bottom",
         text = element_text(size=18)) + xlab("")
 
-ggsave(paste0("SIMAH_workplace/microsim/2_output_data/publication/lhs_density_compare.png"),
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/publication/SuppFig6.png"),
        dpi=300, width=33, height=19, units="cm")
 
 

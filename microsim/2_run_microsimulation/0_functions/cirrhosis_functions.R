@@ -160,6 +160,7 @@ MetabolicPathway <- function(data,lhsSample,sex){
   data$newgpdsqrt <- NULL
   data$newgpd2 <- NULL
   data$newgpd3 <- NULL
+  # metabolic function can produce "protective" effects - set these to 0
   data$RRMetabolic <- ifelse(data$RRMetabolic<0, 0,data$RRMetabolic)
   data$RRMetabolic <- exp(data$RRMetabolic)
   return(data)

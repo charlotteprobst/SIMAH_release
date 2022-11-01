@@ -65,29 +65,29 @@ source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/CASCAD
 # source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/education_transitions.R")
 
 # load all functions for running the microsimulation - death rates, migration, transition education
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/apply_death_rates.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/apply_death_rates.R")
 if(model=="CASCADE"){
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/CASCADE_apply_death_rates.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/CASCADE_apply_death_rates.R")
 }
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/outward_migration.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/inward_migration.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/outward_migration.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/inward_migration.R")
 if(model=="CASCADE"){
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/CASCADE_inward_migration.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/CASCADE_inward_migration.R")
 }
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/education_setup.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/transition_ed.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/education_setup.R")
+source("SIMAH_code/microsim/2_run_microsimulation/0_functions/transition_ed.R")
 
 # load the function for running the simulation
 if(model=="SIMAH"){
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/simulation.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/simulation.R")
 }else if(model=="CASCADE"){
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/CASCADE_simulation.R")  
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/HistoryFunction.R")
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/formerdrinkers_history.R")
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/cirrhosis_functions.R")
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/assign_hepatitis.R")
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/updating_alcohol.R")
-  source("SIMAH_code/microsim/2_run_microsimulation/1_functions/updating_BMI.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/CASCADE_simulation.R")  
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/HistoryFunction.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/formerdrinkers_history.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/cirrhosis_functions.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/assign_hepatitis.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/updating_alcohol.R")
+  source("SIMAH_code/microsim/2_run_microsimulation/0_functions/updating_BMI.R")
 
 }
 
@@ -104,8 +104,8 @@ Rates$agecat <- as.character(Rates$agecat)
 
 source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/projecting_migration_and_deaths.R")
 
-agest <- 0
-N_SAMPLES <- 50
+agest <- 1
+N_SAMPLES <- 1
 PE <- 1
 tomerge <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates", SelectedState, ".RDS", sep="")) %>% 
   filter(Year>=2017)
@@ -118,24 +118,24 @@ if(PE==1){
 }
 
 # run top 5% versions of the age specific and age standardized version
-top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
-  mutate(percentile=ntile(maximplausibility,500)) %>% 
-  filter(percentile<=1)
-lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
-  filter(SampleNum %in% top$samplenum)
+# top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
+#   mutate(percentile=ntile(maximplausibility,500)) %>% 
+#   filter(percentile<=1)
+# lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave15.csv") %>% 
+#   filter(SampleNum %in% top$samplenum)
 
-lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/lhsSamples_wave15.csv") %>% 
-  pivot_longer(BETA_MALE_MORTALITY:DECAY_SPEED) %>% 
-  group_by(name) %>% 
-  summarise(value=mean(value)) %>% 
-  pivot_wider(names_from=name, values_from=value)
-
-lhsSample <- list()
-for(i in 1:nrow(lhs)){
-  lhsSample[[paste(i)]] <- lhs[i,]
-}
-
-N_SAMPLES <- 1
+# lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_decay/lhsSamples_wave15.csv") %>% 
+#   pivot_longer(BETA_MALE_MORTALITY:DECAY_LENGTH) %>% 
+#   group_by(name) %>% 
+#   summarise(value=mean(value)) %>% 
+#   pivot_wider(names_from=name, values_from=value)
+# 
+# lhsSample <- list()
+# for(i in 1:nrow(lhs)){
+#   lhsSample[[paste(i)]] <- lhs[i,]
+# }
+# 
+# N_SAMPLES <- 1
 
 # run top 5% versions of the age specific and age standardized version
 # top <- read.csv("SIMAH_workplace/microsim/2_output_data/calibration_output_agest/implausibility_wave15.csv") %>% 
@@ -170,7 +170,7 @@ options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
-Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
+Cirrhosis <- foreach(i=1:1, .inorder=FALSE,
                      .packages=c("dplyr","tidyr","foreach")) %dopar% {
                        samplenum <- as.numeric(sampleseeds$SampleNum[i])
                        seed <- as.numeric(sampleseeds$seed[i])
@@ -194,8 +194,8 @@ Cirrhosis <- foreach(i=1:nrow(sampleseeds), .inorder=FALSE,
                                     outward_migration, inward_migration, mortality,
                                     AssignAcuteHep, AssignChronicHep, CirrhosisHeavyUse, CirrhosisHepatitis, 
                                     MetabolicPathway,
-                                    brfss,Rates, 1984, 2016)
+                                    brfss,Rates, 1984, 2019)
                      }
 
-saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_2019.RDS")
+saveRDS(Cirrhosis, "SIMAH_workplace/microsim/2_output_data/validation/Cirrhosis_validation_agest_MetabolicOnly.RDS")
 

@@ -260,3 +260,24 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
                                                     "65-74","75-79")))
 basepop <- subset(basepop, microsim.init.age<=79)
 ```
+
+## Postprocessing output
+
+3 main postprocessing functions that compare
+
+1.  Demographic differences (education)
+2.  Alcohol consumption
+3.  Mortality over time
+
+These return a dataset comparing the output of the simulation to the observed data (American Community Survey, BRFSS or CDC mortality rates).
+
+# Running the simulation (in full)
+
+## Running the simulation: task 
+
+-   Open 1_run_microsimulation.R
+-   Run all lines of code up to and including the run_microsim() function
+-   Explore changing the output_type in model settings between "demographics", "alcohol" and "mortality"
+-   Summarise the output for each function and look at the plots
+-   Compare with someone your summarised outputs for the same output type
+    -   These should differ slightly due to random number sampling

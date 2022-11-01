@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 1000000
+PopulationSize <- 200000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -31,7 +31,7 @@ mortality <- 1
 disease <- "cirrhosis"
 
 # switch between CASCADE and SIMAH models 
-model <- "SIMAH"
+model <- "CASCADE"
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "alcohol"
