@@ -34,11 +34,11 @@ library(viridis)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 29092022
+DATE <- 01112022
 
-dat.tax <- data.table(read.csv("data_acp_TAX_29092022.csv"))
-dat.mup <- data.table(read.csv("data_acp_MUP_29092022.csv"))
-dat.tav <- data.table(read.csv("data_acp_TAV_29092022.csv"))
+dat.tax <- data.table(read.csv("data_acp_TAX_1112022.csv"))
+dat.mup <- data.table(read.csv("data_acp_MUP_1112022.csv"))
+dat.tav <- data.table(read.csv("data_acp_TAV_1112022.csv"))
 
 # --------------------------------------------------------------------------------------
 

@@ -34,9 +34,9 @@ library(PerformanceAnalytics)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 19102022
+DATE <- 01112022
 
-dat.tax <- data.table(read.csv("data_acp_TAX_29092022.csv", na.strings = c("NA", "")))
+dat.tax <- data.table(read.csv("data_acp_TAX_1112022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.strings = ""))
 
