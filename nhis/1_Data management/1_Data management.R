@@ -9,11 +9,10 @@ library(skimr)      # descriptive statistics
 
 
 # Specify the data file location
-data_orig <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Original data/"
-data_new  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"
+data  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nhis/Processed data/"
 
 # Import data form SAS and edit/re-categorize variables 
-nhis_all <- read_sas (paste0(data_orig, "nhis_mort_clean.sas7bdat")) %>%
+nhis_all <- read_sas (paste0(data, "nhis_mort_clean.sas7bdat")) %>%
   zap_formats() %>% zap_label() %>% clean_names() %>%   # removes labels/formats form SAS and clean names
     mutate (# Recode and create variables
           bl_age = age,                  # Baseline age
@@ -117,9 +116,9 @@ nhis_cc_ages18_85 <- filter(nhis_ages18_85, lost=="Complete") # Data with comple
       
 
 # Save copy of final datasets  
-saveRDS(nhis_ages25_85,     paste0(data_new, "nhis_all25_85.rds"))      # NHIS data with all participants ages 25-85
-saveRDS(nhis_cc_ages25_85,  paste0(data_new, "nhis25_85.rds"))          # NHIS data to be analyzed (ages 25-85)
+saveRDS(nhis_ages25_85,     paste0(data, "nhis_all25_85.rds"))      # NHIS data with all participants ages 25-85
+saveRDS(nhis_cc_ages25_85,  paste0(data, "nhis25_85.rds"))          # NHIS data to be analyzed (ages 25-85)
 
-saveRDS(nhis_ages18_85,     paste0(data_new, "nhis_all18_85.rds"))      # NHIS data with all participants  ages 18-85
-saveRDS(nhis_cc_ages18_85,  paste0(data_new, "nhis18_85.rds"))          # NHIS data to be analyzed (ages 18-85)
+saveRDS(nhis_ages18_85,     paste0(data, "nhis_all18_85.rds"))      # NHIS data with all participants  ages 18-85
+saveRDS(nhis_cc_ages18_85,  paste0(data, "nhis18_85.rds"))          # NHIS data to be analyzed (ages 18-85)
 
