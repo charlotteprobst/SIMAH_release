@@ -30,11 +30,11 @@ library(dplyr)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 29092022
+DATE <- 01112022
 
-rdat.tax <- data.table(read.csv("raw data/rdata_acp_TAX_29092022.csv", na.strings = "."))
-rdat.mup <- data.table(read.csv("raw data/rdata_acp_MUP_29092022.csv", na.strings = "."))
-rdat.tav <- data.table(read.csv("raw data/rdata_acp_TAV_29092022.csv", na.strings = "."))
+rdat.tax <- data.table(read.csv("raw data/rdata_acp_TAX_01112022.csv", na.strings = "."))
+rdat.mup <- data.table(read.csv("raw data/rdata_acp_MUP_01112022.csv", na.strings = "."))
+rdat.tav <- data.table(read.csv("raw data/rdata_acp_TAV_01112022.csv", na.strings = "."))
 
 # --------------------------------------------------------------------------------------
 
@@ -96,18 +96,11 @@ dat.tax[out_calc %like% "absolute" & !is.na(se) & is.na(cons_sd), se := se / con
 
 dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se.beta := abs(perc.change) / qnorm(1-(as.numeric(p)/2))] 
 dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se.y := cons_sd / sqrt(n)]
-dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se := ((se.beta^2) + (se.y^2) + ((effect_size / cons_base)^2)) / cons_base]
+dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se := sqrt((se.beta^2) + ((se.y^2) * ((effect_size / cons_base)^2))) / cons_base]
 
 # check for missings
 
 dat.tax[is.na(se), table(out_calc, ref)]
-
-# ----------------------------------------------------------------
-# DRINKERS ONLY CORRECTION
-# ----------------------------------------------------------------
-# (Subbaraman et al 2020: alcohol use prevalence = 0.6397)
-
-dat.tax[ref %like% "Subbaraman", perc.change := perc.change * 0.6397]
 
 # ----------------------------------------------------------------
 # 1.1) ALCOHOL TAXATION BY SUBGROUP
@@ -152,7 +145,7 @@ dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & is.na(cons_sd), table(ref)
 dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_sd), table(ref)]
 
 dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_sd), se.y := cons_sd / sqrt(n)]
-dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_sd), se := ((se^2) + (se.y^2) + ((effect_size / cons_base)^2)) / cons_base]
+dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_sd), se := sqrt((se^2) + ((se.y^2) * ((effect_size / cons_base)^2))) / cons_base]
 
 # ----------------------------------------------------------------
 # DRINKERS ONLY CORRECTION
@@ -214,8 +207,10 @@ dat.mup[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_base_se), table(re
 dat.mup[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_base_se), se := ((se^2) + (cons_base_se^2) + ((effect_size / cons_base)^2)) / cons_base]
 
 dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(lb), table(n)] # all n ≥ 50
-dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(lb), se.beta := abs(ub - lb) / 1.96 * 2] 
+dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(lb) & ref != "O'Brien et al_2021", se.beta := abs(ub - lb) / (1.96 * 2)] #95% confidence interval
+dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(lb) & ref == "O'Brien et al_2021", se.beta := abs(ub - lb) / (2.59 * 2)] #99% confidence interval
 dat.mup[out_calc %like% "absolute" & is.na(se) & is.na(cons_base_se), se := se.beta / cons_base] 
+dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(cons_base_se), se := sqrt((se.beta^2) + ((cons_base_se^2) * ((effect_size / cons_base)^2))) / cons_base] 
 
 # ----------------------------------------------------------------
 # EXPORT
