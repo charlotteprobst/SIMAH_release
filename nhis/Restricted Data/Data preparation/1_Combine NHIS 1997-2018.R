@@ -3,15 +3,6 @@
 # ********************************** R SYNTAX TO EXTRACT AND COMBINE NHIS 1997-2018 DATA *****************************
 # ********************************************************************************************************************
 
-# IMPORTANT NOTE: This file translated the code originally written in SAS to combine the SAS files. 
-# Although this R script successfully reads and combines all of the SAS files, it does not 
-# successfully write/save the final data set as a SAS file. No error messages appear, but the SAS file
-# cannot be opened by SAS. The RDC analyst needs a copy of the data in SAS format, so this R script 
-# does not work. I have left it here, in case a solution is identified and so that there is a R equivalent
-# of the SAS script in case in case you are not as familiar with SAS and its commands. 
-
-
-
 # Load libraries  
 library(tidyverse)
 library(haven)
@@ -19,7 +10,7 @@ library(haven)
 # Location of data files 
 locationRAW   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Original data/NHIS Raw Data/"
 locationMORT  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Original data/Mortality Data/1997-2014/"
-locationFINAL <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Original data/";
+locationFINAL <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nhis/Processed data/Restricted Use Data/"
 
 
 
@@ -490,13 +481,14 @@ str(combined)
 summary(combined)
 
 # Save data file
-write_sas (combined, paste0(locationFINAL, "rdcp2058dataset_fromR.sas7bdat"))
+# write_sas (combined, paste0(locationFINAL, "rdcp2058dataset_fromR.sas7bdat")) # The SAS data file created does not work; therefore a csv version is saved below
+write.csv(combined, paste0(locationFINAL, "rdcp2058dataset.csv"), na="", row.names = FALSE)
 
 
 # Create a TEMPORARY VERSION to test the syntax (includes age)
-combined_temp <- bind_rows(nhis1997, nhis1998, nhis1999, nhis2000, nhis2001, nhis2002, nhis2003, nhis2004, nhis2005, nhis2006, nhis2007, 
-  nhis2008, nhis2009, nhis2010, nhis2011, nhis2012, nhis2013, nhis2014, nhis2015, nhis2016, nhis2017, nhis2018)
-
-str(combined_temp)
-summary(combined_temp)
+# combined_temp <- bind_rows(nhis1997, nhis1998, nhis1999, nhis2000, nhis2001, nhis2002, nhis2003, nhis2004, nhis2005, nhis2006, nhis2007, 
+#   nhis2008, nhis2009, nhis2010, nhis2011, nhis2012, nhis2013, nhis2014, nhis2015, nhis2016, nhis2017, nhis2018)
+# 
+# str(combined_temp)
+# summary(combined_temp)
 
