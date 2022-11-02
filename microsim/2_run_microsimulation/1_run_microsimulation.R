@@ -47,5 +47,5 @@ summary <- summarise_mortality_output(Output, SelectedState, DataDirectory)
 summary[[1]]
 summary[[2]]
 
-ggsave("SIMAH_workplace/microsim/2_output_data/continuous_alcuse_v2.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/continuous_alcuse_v4_allyears.png", dpi=300,
        width=33, height=19, units="cm")

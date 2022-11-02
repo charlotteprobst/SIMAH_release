@@ -76,7 +76,9 @@ toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(
                 microsim.init.alc.gpd, microsim.init.BMI,
                 microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
 
-microsim.init.id <- max(basepop$microsim.init.id)+1:nrow(toadd)+max(basepop$microsim.init.id)
+from <- max(basepop$microsim.init.id)+1
+to <- (nrow(toadd)) + max(basepop$microsim.init.id)
+microsim.init.id <- from:to
 toadd <- cbind(microsim.init.id, toadd)
 basepopnew <- rbind(basepop, toadd)
 # list <- list(basepop,summarymissing)

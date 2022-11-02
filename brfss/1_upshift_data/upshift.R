@@ -44,9 +44,15 @@ data$drinkingstatus <- ifelse(data$drinkingstatus==1 & data$gramsperday==0,
                                     0, data$drinkingstatus)
 data$drinkingstatus <- ifelse(data$drinkingstatus==1 & data$alc_frequency==0,
                               0, data$drinkingstatus)
+data$quantity_per_occasion <- ifelse(data$alc_frequency==0, 0,
+                                     data$quantity_per_occasion)
+data$quantity_per_occasion <- ifelse(data$drinkingstatus==0, 0, data$quantity_per_occasion)
+data$alc_frequency <- ifelse(data$quantity_per_occasion==0, 0, 
+                             data$alc_frequency)
 data$alc_frequency <- ifelse(data$drinkingstatus==0, 0, data$alc_frequency)
 data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
 data$gramsperday <- ifelse(data$drinkingstatus==0, 0, data$gramsperday)
+data$drinkingstatus <- ifelse(data$gramsperday==0, 0, 1)
 summary(data$gramsperday)
 summary(data$alc_frequency)
 # put cap of 200gpd on grams per day 
@@ -85,10 +91,12 @@ NASGPD <- read.csv("SIMAH_workplace/brfss/processed_data/NAS_GPD_non30day.csv") 
 data <- left_join(data, NASGPD) %>% 
   mutate(gramsperday_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
                               ALCGPD_non30, gramsperday),
-         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
-                                rtruncnorm(nrow(.), a=0, b=11, mean=2, sd=1), alc_frequency),
-         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency_new<1, 1,
-                                round(alc_frequency_new))) %>% 
+         # alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker",
+         #                        rtruncnorm(nrow(.), a=0, b=11, mean=2, sd=1), alc_frequency),
+         # alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker" & alc_frequency_new<1, 1,
+         #                        round(alc_frequency_new)),
+         alc_frequency_new = ifelse(drinkingstatus_detailed=="Yearly drinker", 
+                                    0.801 + (1.136*gramsperday_new), alc_frequency)) %>% 
   dplyr::select(-ALCGPD_non30)
 
 # read in APC data - source = NIAAA 
@@ -134,11 +142,11 @@ final_version <- data %>%
                 employment, marital_status, BMI,
                 drinkingstatus_detailed, drinkingstatus_updated,
                 gramsperday_upshifted,
-                alc_frequency,
+                alc_frequency_new,
                 frequency_upshifted,
                 quantity_per_occasion_upshifted) %>% 
   rename(gramsperday = gramsperday_upshifted,
-         frequency_orig = alc_frequency,
+         frequency_orig = alc_frequency_new,
          frequency = frequency_upshifted,
          quantity_per_occasion = quantity_per_occasion_upshifted,
          drinkingstatus = drinkingstatus_updated) %>% 

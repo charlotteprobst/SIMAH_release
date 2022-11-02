@@ -24,7 +24,7 @@ Rates <- Rates %>% mutate(microsim.init.spawn.year=Year,
                           MigrationInN = MigrationInN*proportion) %>% 
   dplyr::select(microsim.init.spawn.year, agecat, microsim.init.sex, microsim.init.race, MigrationInN)
 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final_fr.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
   filter(age_var<=80) %>% filter(State==SelectedState) %>% 
   mutate(microsim.init.race = recode(race_eth,"White"="WHI","Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
          microsim.init.sex = recode(sex_recode,"Male"="m","Female"="f"),
@@ -47,8 +47,8 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
   mutate(microsim.roles.parenthood.status = 0,
          microsim.roles.employment.status = 0,
          microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
-         microsim.init.drink.frequency = frequency_orig,
-         microsim.init.annual.frequency = frequency_orig*12,
+         microsim.init.drink.frequency = frequency,
+         microsim.init.annual.frequency = frequency*12,
          microsim.init.heavy.episodic.drinking = 0,
          microsim.init.income = 0) %>%
   rename(microsim.init.spawn.year=YEAR) %>% 

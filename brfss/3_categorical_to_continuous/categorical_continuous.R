@@ -39,11 +39,11 @@ dat <- dat %>% assign_alc_cat()
 dat <- dat %>% mutate(group = paste0(AlcCAT, "_", sex_recode))
 
 lambdas <- list()
-for(i in unique(dat$sex_recode)){
-  data <- dat %>% filter(sex_recode==i)
+for(i in unique(dat$group)){
+  data <- dat %>% filter(group==i)
   b <- boxcox(lm(data$gramsperday ~ 1))
   lambda <- b$x[which.max(b$y)]
-  newdata <- data.frame(sex_recode=unique(data$sex_recode), lambda = lambda)
+  newdata <- data.frame(group=unique(data$group), lambda = lambda)
   lambdas[[i]] <- newdata
 }
 lambdas <- do.call(rbind,lambdas)
@@ -52,6 +52,8 @@ lambdas <- do.call(rbind,lambdas)
 # now join group lambdas to the individual level data for transformation
 dat <- left_join(dat, lambdas)
 
+dat$lambda <- 0.129
+
 dat <- dat %>% 
   filter(gramsperday!=0) %>% #remove non drinkers - don't want to model them 
   mutate(transcons = (gramsperday ^ lambda - 1) / lambda) %>% #transform consumption - following M Strong approach
@@ -59,23 +61,43 @@ dat <- dat %>%
          employment = factor(employment), race_eth = factor(race_eth), 
          AlcCAT = factor(AlcCAT))
 
+model <- lm(transcons ~ sex_recode + education_summary + race_eth + age_var + AlcCAT, data=dat)
+summary(model)
+
+
 # plot the transformed consumption by group 
-ggplot(data=dat, aes(x=transcons)) + facet_grid(cols=vars(sex_recode), scales="free") + 
+ggplot(data=dat, aes(x=transcons)) + facet_grid(cols=vars(sex_recode), rows=vars(AlcCAT), scales="free") + 
   geom_histogram()
   
 # specify model - following M Strong approach with variables available in microsimulation and including race and ethnicity 
 models <- list()
-
-for(i in unique(dat$sex_recode)){
-  data <- dat %>% filter(sex_recode==i)
-  models[[i]] <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3)  + YEAR + race_eth + 
-                      AlcCAT + 
-            education_summary  + age_var + age_var*education_summary + 
-            race_eth*age_var*education_summary*AlcCAT, data=data)
+library(nlme)
+library(lme4)
+for(i in unique(dat$group)){
+  data <- dat %>% filter(group==i)
+  # models[[i]] <- lmer(transcons ~ age_var + I(age_var^2) + I(age_var^3)  + race_eth + 
+  #                       education_summary  + age_var + age_var*education_summary + 
+  #                       race_eth*age_var*education_summary + (1|YEAR), data=data)
+  models[[i]] <- lm(transcons ~ age_var + I(age_var^2) + I(age_var^3) + race_eth +
+            education_summary  + age_var*education_summary + race_eth*education_summary +
+              race_eth*age_var, data=data)
 }
 
+dat$predicted <- predict(model, dat)
+
 # attach the coefficients back into the dataframe - for prediction
-back.tran <- function(x){(lambda * x + 1) ^ (1/lambda)}
+back.tran <- function(x, lambda){(lambda * x + 1) ^ (1/lambda)}
+
+dat$predictedtrans <- back.tran(dat$predicted, 0.129)
+
+hist(dat$gramsperday)
+hist(dat$transcons)
+hist(dat$predicted)
+hist(dat$predictedtrans)
+
+testdata <- dat %>% filter(group=="Low risk_Female")
+testdata$newgpd <- predict(models[["Low risk_Female"]])
+testdata$newgpd_trans <- back.tran(testdata$newgpd, -0.1818182)
 
 # see how the model performs on a given years data
 

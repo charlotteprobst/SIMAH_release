@@ -1,5 +1,5 @@
 #####BRFSS processing for micro-synthesis 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final_fr.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
   filter(age_var<=80) %>% filter(YEAR==1984) %>% ungroup() %>% 
   mutate(RACE = recode(race_eth,"White"="WHI", 
                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
@@ -12,6 +12,7 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
                       labels=c("18.19","20.22","23.24","25.28","29.30","31.34",
                                "35.39","40.44","45.49","50.59","60.80")),
          formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0),
+         gramsperday = ifelse(gramsperday<1 & drinkingstatus==1, 1, gramsperday),
          gramsperoccasion = (gramsperday*30) / frequency,
          quantity_per_occasion = gramsperoccasion/14,
          frequency = ifelse(frequency==0 & gramsperday>0, 1, frequency),

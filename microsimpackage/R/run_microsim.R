@@ -142,7 +142,7 @@ Summary <- list(Summary,PopSummary)
                                                       microsim.init.race=as.factor(microsim.init.race),
                                                       microsim.init.education=as.factor(microsim.init.education),
                                                       agecat=as.factor(agecat)) %>%
-    group_by(year, samplenum, microsim.init.sex, .drop=FALSE) %>%
+    group_by(year, samplenum, microsim.init.sex, microsim.init.education, .drop=FALSE) %>%
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
