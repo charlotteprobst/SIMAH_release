@@ -49,10 +49,6 @@ gen str1 xcode = icd10
 /*specific causes of death (using icd codes)
 url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
 
-// COVID (defined according to Gundlapalli et al. 2021)
-
-gen cov = 1 if inlist(icd10, "U071")
-
 // Unintentional inurues
 
 gen uij_temp = 1 if inrange(icd10, "V01", "X40") | inrange(icd10, "X43", "X43") ///
@@ -71,12 +67,6 @@ gen mvacc = 1 if inrange(icd10, "V02", "V049") | inlist(icd10, "V090", "V092")  
 gen uij = 1 if uij_temp == 1 & mvacc == . 
 drop uij_temp
 
-// old AUD, not used any more
-// AUD F10-F10.9, G31.2, G72.1, Q86.0, R78.0, X45-X45.9, Y15-Y15.9
-*gen aud = 1 if inrange(icd10, "F10", "F109") | inlist(icd10, "G312", "G312")  ///
-*	| inrange(icd10, "G721", "G721") | inrange(icd10, "Q860", "Q860") ///
-*	| inrange(icd10, "R780", "R780") ///
-*	| inrange(icd10, "X45", "X459") | inrange(icd10, "Y15", "Y159") 
 
 // updated AUD 
 // E24.4, F10-F10.9, G62.1, G31.2, G72.1, I42.6, K29.2, K85.2, K86.0, 
@@ -112,13 +102,6 @@ generate lvdc = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K73", "K739
 generate hlvdc = 1 if inrange(icd10, "B18", "B189")
 
 
-// Pancreatitis [K85.0, K85.1, K85.2, K85.8, K85.9, K86.0-K86.99]
-generate panc = 1 if inrange(icd10, "K850", "K852") | inrange(icd10, "K858", "K859") ///
-	| inrange(icd10, "K860", "K869") 
-replace panc = 1 if icd10 == "K85.8" | icd10 == "K85.9"
-
-	////////////////////////////////////////////////////////////////
-
 // Diabetes mellitus [E10-E14]
 
 generate dm = 1 if inrange(icd10, "E100", "E149")
@@ -136,91 +119,59 @@ generate istr = 1 if inrange(icd10, "G45","G468") | inrange(icd10, "I63", "I639"
 	| inrange(icd10, "I65", "I669") | inrange(icd10, "I672", "I678") ///
 	| inrange(icd10, "I693", "I694") 
  
-/// Hemorrhagic stroke [I60–I62.9, I67.0-–I67.1, I69.0-–I69.298]
-generate hstr = 1 if  inrange(icd10, "I60", "I629")  ///
-	| inrange(icd10, "I670", "I671")  ///
-	| inrange(icd10, "I690", "I692") 
-
 	
 ////////////////////////////////////////////////////////////////////
 
 // Hypertensive Heart Disease [I11] 
 generate hyphd = 1 if inrange(icd10, "I110", "I119")
 
-//generate cancer category 
-  //breast cancer C50
-  gen breast_cancer = 1 if inrange(icd10, "C500", "C509")
-  //Pancreatic cancer C25
-  gen pancreatic_cancer = 1 if inrange(icd10, "C250", "C259")
-  //Colorectal cancer
-  //Malignant neoplsm of colon C18, malignant neoplasm of rectogsigmoid junction C19 ///
-  //and malignant neoplsm of rectum C20, and Malignant neoplasm of anus and anal canal C21
-  //C18.0 to C21.8 to include all colon and rectum cancers
-  gen colorectal_cancer = 1 if inrange(icd10, "C180", "C218") 
-  //Oesophageal cancer C15
-  gen oesophageal_cancer = 1 if inrange(icd10, "C150", "C159")
-  //Larnygeal cancer (larynx cancer?) C32
-  gen larynx_cancer = 1 if inrange(icd10, "C320", "C329")
-  //Liver cancer C22
-  gen liver_cancer = 1 if inrange(icd10, "C220", "C229")
-  // Should include C00 to C14 for Lip, Oral cavity and pharynx cancer 
-  gen oral_cancer = 1 if inrange(icd10, "C00", "C149")
-  //combine all cancer types above
-  gen cancer = 1 if inlist(1,breast_cancer,pancreatic_cancer,colorectal_cancer,oesophageal_cancer, ///
-    larynx_cancer,liver_cancer,oral_cancer)
-  drop breast_cancer-oral_cancer	
 
 // Generate rest category
 gen rest = .
-replace rest = 1 if (cov == . & lvdc == . & hlvdc == . & panc == . & dm == . & ihd == . & istr == . & hstr == . & hyphd == . ///
-	& aud == . & uij == . & mvacc == . & ij == . & cancer == .)
+replace rest = 1 if (lvdc == . & hlvdc == . & dm == . & ihd == . & istr == . & hyphd == . ///
+	& aud == . & uij == . & mvacc == . & ij == . )
 
 
 // Update excel worksheet to include the variable names and the codes assigned
 
-save "3_out data/1_allethn_mortbycause_0020_LE_decomp.dta", replace
+save "3_out data/1_allethn_mortbycause_0020_SIMAH.dta", replace
 
 ///////////////////////////////////////////////////////////////////////////////
 
 //sum by COD 
 
-use "3_out data/1_allethn_mortbycause_0020_LE_decomp.dta", clear
+use "3_out data/1_allethn_mortbycause_0020_SIMAH.dta", clear
 
 // Test that all deaths have been assigned exactly once
-egen test = rowtotal(cov lvdc hlvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer)
+egen test = rowtotal(lvdc hlvdc dm ihd istr hyphd aud uij mvacc ij)
 tab test
 drop test	
 
 /////////////////////////////////////////////////////////////////////////
 
-// Sum by COD (TOTAL + 14 Catgories + Rest)
+// Sum by COD (TOTAL + Catgories + Rest)
  
 gen one=1
 
-egen test = rowtotal(cov lvdc hlvdc panc dm ihd istr hstr hyphd aud uij mvacc ij cancer rest one)
+egen test = rowtotal(lvdc hlvdc dm ihd istr hyphd aud uij mvacc ij rest one)
 tab test
 drop test	
 
 
 bysort age_gp sex edclass race year: egen Tmort = total(one)
 
-bysort age_gp sex edclass race year: egen COVmort = total(cov)
-
 bysort age_gp sex edclass race year: egen LVDCmort = total(lvdc)
 bysort age_gp sex edclass race year: egen HLVDCmort = total(hlvdc)
-bysort age_gp sex edclass race year: egen PANCmort = total(panc)
 bysort age_gp sex edclass race year: egen DMmort = total(dm)
 bysort age_gp sex edclass race year: egen IHDmort = total(ihd)
 
 bysort age_gp sex edclass race year: egen ISTRmort = total(istr)
-bysort age_gp sex edclass race year: egen HSTRmort = total(hstr)
 
 bysort age_gp sex edclass race year: egen HYPHDmort = total( hyphd )
 bysort age_gp sex edclass race year: egen AUDmort = total(aud)
 bysort age_gp sex edclass race year: egen UIJmort = total(uij)
 bysort age_gp sex edclass race year: egen MVACCmort = total(mvacc)
 bysort age_gp sex edclass race year: egen IJmort = total(ij)
-bysort age_gp sex edclass race year: egen CANmort = total(cancer)
 
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
@@ -234,11 +185,11 @@ save "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", replace
 use "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", clear
 
 keep year sex age_gp edclass race *mort
-reshape wide Tmort COVmort LVDCmort HLVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort ///
-	AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, i(year age_gp sex race) j(edclass)
+reshape wide Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
+	AUDmort UIJmort MVACCmort IJmort RESTmort, i(year age_gp sex race) j(edclass)
 sum *mort99
 
-foreach i in T COV LVDC HLVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
+foreach i in T LVDC HLVDC DM IHD ISTR HYPHD AUD UIJ MVACC IJ REST {
 gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 	replace `i'mort1 = `i'mort1 + (`i'mort1/MORT`i') * `i'mort99 if MORT`i' != 0 
 	replace `i'mort2 = `i'mort2 + (`i'mort2/MORT`i') * `i'mort99 if MORT`i' != 0 
@@ -247,7 +198,7 @@ gen MORT`i' = `i'mort1 + `i'mort2 + `i'mort3
 
 //deal with very rare case in which the deaths only fall into "missing" education 
 //Split the deaths evenly across the three eduation categories 
-foreach i in T COV LVDC HLVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN REST {
+foreach i in T LVDC HLVDC DM IHD ISTR HYPHD AUD UIJ MVACC IJ REST {
 	replace `i'mort1 = 1/3*`i'mort99 if MORT`i' == 0 & `i'mort99 != 0
 	replace `i'mort2 = 1/3*`i'mort99 if MORT`i' == 0 & `i'mort99 != 0
 	replace `i'mort3 = 1/3* `i'mort99 if MORT`i' == 0 & `i'mort99 != 0
@@ -255,8 +206,8 @@ foreach i in T COV LVDC HLVDC PANC DM IHD ISTR HSTR HYPHD AUD UIJ MVACC IJ CAN R
 
 keep year sex race age_gp *mort1 *mort2 *mort3   
 
-reshape long Tmort COVmort LVDCmort HLVDCmort PANCmort DMmort IHDmort ISTRmort HSTRmort HYPHDmort ///
-	AUDmort UIJmort MVACCmort IJmort CANmort RESTmort, ///
+reshape long Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
+	AUDmort UIJmort MVACCmort IJmort RESTmort, ///
 	i(year age_gp sex race) j(edclass)
 	
 lab define edlab 1 "LEHS" 2 "SomeC" 3 "College", modify
