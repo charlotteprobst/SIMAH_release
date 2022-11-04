@@ -44,10 +44,9 @@ nesarc1 <- nesarc1_orig %>%
     age_diff = 0, # age difference from wave 1
     age = NA,    # placeholder variable - age as NA since it will be extracted from Wave 2
     nw1age = NA, # Placeholder variable - matches  age1 from wave 2,
-    AUD_lifetime = case_when(
-      alcabdep12dx == 0 & alcabdepp12dx==0 ~ 0,                  # No AUD
-      alcabdep12dx %in% c(2,3) | alcabdepp12dx %in% c(2,3) ~ 2,  # alcohol dependence, with or without abuse
-      alcabdep12dx == 1 | alcabdepp12dx==1 ~ 1),                 # alcohol abuse only
+    AUD_lifetime = case_when(alcabdep12dx == 0 & alcabdepp12dx==0 ~ 0,                  # No AUD
+                             alcabdep12dx %in% c(2,3) | alcabdepp12dx %in% c(2,3) ~ 2,  # alcohol dependence, with or without abuse
+                             alcabdep12dx == 1 | alcabdepp12dx==1 ~ 1),                 # alcohol abuse only
     female = recode(sex, `1` = 0, `2` = 1),
     race = case_when(olds1q1d5==1 & olds1q1d3 ==2 & olds1q1c==2  ~ 1, # white, non-hispanic
                      olds1q1d3==1 & olds1q1c==2 ~ 2, # black, non-hispanic
