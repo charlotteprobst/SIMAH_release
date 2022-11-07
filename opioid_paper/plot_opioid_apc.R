@@ -128,17 +128,23 @@ race <- IRR %>% filter(race!="all") %>%
   mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI),
          race = factor(race, levels=c("White","Black","Hispanic")))
 
+<<<<<<< Updated upstream
 summary <- race %>% filter(substance=="Alcohol only") %>% filter(apc=="Period") %>% filter(sex=="Women")
 
 alcoholonly <- ggplot(subset(race,substance=="Alcohol only"), aes(x=category, y=IRR, colour=race, fill=race)) + 
   facet_grid(cols=vars(apc),
              rows=vars(sex), scales="free") + geom_line(size=1) + 
+=======
+age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
+  facet_grid(cols=vars(race),
+             rows=vars(substance), scales="free") + geom_line(size=1) + 
+>>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Alcohol-only")
@@ -146,6 +152,7 @@ alcoholonly
 
 ggsave(paste0("Fig3_APC_alcoholonly", DATE, ".png"), alcoholonly, dpi=300, width=33, height=19, units="cm")
 
+<<<<<<< Updated upstream
 summary <- race %>% filter(substance=="Alcohol and Opioid") %>% filter(apc=="Period") %>% filter(sex=="Women") %>% 
   mutate(IRR = round(IRR, digits=2),
          lower_CI = round(lower_CI, digits=2),
@@ -154,12 +161,17 @@ summary <- race %>% filter(substance=="Alcohol and Opioid") %>% filter(apc=="Per
 opioidonly <- ggplot(subset(race,substance=="Opioid only"), aes(x=category, y=IRR, colour=race, fill=race)) + 
   facet_grid(cols=vars(apc),
              rows=vars(sex), scales="free") + geom_line(size=1) + 
+=======
+period <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
+  facet_grid(cols=vars(race),
+             rows=vars(substance), scales="free") + geom_line(size=1) + 
+>>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Opioid-only")
@@ -167,16 +179,22 @@ opioidonly
 
 ggsave(paste0("Fig4_APC_opioidonly", DATE, ".png"), opioidonly, dpi=300, width=33, height=19, units="cm")
 
+<<<<<<< Updated upstream
 
 alcandop <- ggplot(subset(race,substance=="Alcohol and Opioid"), aes(x=category, y=IRR, colour=race, fill=race)) + 
   facet_grid(cols=vars(apc),
              rows=vars(sex), scales="free") + geom_line(size=1) + 
+=======
+cohort <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
+  facet_grid(cols=vars(race),
+             rows=vars(substance), scales="free") + geom_line(size=1) + 
+>>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
   geom_hline(yintercept=1, linetype="dashed") + ggtitle("Alcohol and Opioid")
