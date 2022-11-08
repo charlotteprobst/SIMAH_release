@@ -30,36 +30,23 @@ data1 <- read_xlsx (paste0(data, "Analysis_data_AUD_mortality.xlsx")) %>%
          se = ifelse(RR==1 & lowerRR ==1 & upperRR==1, NA, (log_upperRR - log_lowerRR)/3.92),
          inverse_se = 1/se)
 
-data_all <- data %>%
-  filter(group == "All participants")
+data_all <- data1 %>%
+  filter(group == "All particpants")
 
-data_men <- data %>%
-  filter(group == "Males")
-
-data_women <- data %>%
-  filter(group == "Females")
 
 
 # Analyses *********************************************************************************************
-ggplot(data_all, aes(alc_daily_g, log_RR, size=inverse_se, color=group, fill=group)) + 
+ggplot(data_all, aes(alc_daily_g, log_RR, size=inverse_se)) + 
   geom_point (shape=1) + scale_size_area(max_size=20) + theme_bw()
 
+lin_mod <- dosresmeta(formula=log_RR ~ alc_daily_g, id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, data=data_all)
+summary(lin_mod)
+predict(lin_mod, delta=1, exp=TRUE)
 
-
-lin_mod <- dosresmeta(formula=log_RR ~ alc_daily_g, id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, data=data1)
-summary(lin_bin)
-
-
-meta <- metagen(TE = log_RR, lower = log_lowerRR, upper = log_upperRR,
-                level.ci = 0.95, studlab = id_study,  data = data1,
-                sm = "RR", fixed = FALSE, random = TRUE, method.tau = "REML")
-summary(meta)
-
-forest.meta(meta)
-
-
-
-
+dosex_bin <- data.frame(alc_daily_g=seq(0, 150, 10))
+with(predict(lin_mod, dosex_bin, order=TRUE, exp=TRUE), {plot(alc_daily_g, pred, type="l", col="blue", ylim=c(1, 50), ylab= "mortality relative risk", xlab="alcohol consumption, grams/day")
+  lines(alc_daily_g, ci.lb, lty=2)
+  lines(alc_daily_g, ci.ub, lty=2)})
 
 
 
