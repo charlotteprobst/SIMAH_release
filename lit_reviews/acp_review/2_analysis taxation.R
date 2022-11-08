@@ -34,9 +34,9 @@ library(PerformanceAnalytics)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 01112022
+DATE <- 07112022
 
-dat.tax <- data.table(read.csv("data_acp_TAX_1112022.csv", na.strings = c("NA", "")))
+dat.tax <- data.table(read.csv("data_acp_TAX_7112022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 int.dollar <- data.table(read.csv("gdp_conversionfactor_29092022.csv", na.strings = ""))
 
@@ -145,6 +145,7 @@ metareg.sens <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_cha
 metareg.sens
 regplot(metareg.sens, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
 regtest(metareg.sens, model="rma") # p = .0147
+funnel(metareg.sens)
 
 # repeat but exclude Switzerland
 
@@ -152,6 +153,7 @@ metareg.sens2 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_ch
 metareg.sens2
 regplot(metareg.sens2, mod = "tax_change", refline = 0, xlab = "Relative change in alcohol tax", ylab = "Relative change in alcohol consumption", label = "piout", labsize = 0.5) 
 regtest(metareg.sens2, model="rma") # p = .8789
+funnel(metareg.sens2)
 
 # investigation of further possible moderators
 
@@ -167,7 +169,9 @@ regtest(metareg.sens3, model="rma") # p = .9876
 
 # ROB
 
-#...
+metareg.sens4 <- rma.uni(yi = perc.change, sei = se, slab = ref, mods = ~ tax_change + gdp.1000 + rob, method = "DL", data = data[out_period %like% "short"])
+metareg.sens4 # no impact
+regtest(metareg.sens4, model="rma") # p = .072
 
 # ----------------------------------------------------------------
 # META ANALYSIS TAX ELASTICITY
@@ -175,6 +179,7 @@ regtest(metareg.sens3, model="rma") # p = .9876
 
 tax.elast.data <- dat.tax[sub == 0 & study_type %like% "correlation", ]
 tax.elast.data[, lab := paste0(ref, ": ", tax_bev)]
+tax.elast.data <- tax.elast.data[order(tax.elast.data$perc.change), ]
 
 # main model
 meta.tax <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = tax.elast.data)
@@ -189,16 +194,8 @@ funnel(meta.tax)
 # leave-one-out
 leave1out(meta.tax)
 
-# sensitivity analysis excludin An et al 2011
-meta.tax.sens <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = tax.elast.data[ref != "An et al_2011"])
-meta.tax.sens
-
-forest(meta.tax.sens)
-
-# publication bias
+#sensitivity analysis: ROB
+meta.tax.sens <- rma.uni(yi = perc.change, sei = se, slab = lab, mods = ~ rob, method = "DL", data = tax.elast.data)
+summary(meta.tax.sens)
 regtest(meta.tax.sens, model="rma")
-funnel(meta.tax.sens)
-
-# leave-one-out
-leave1out(meta.tax.sens)
 
