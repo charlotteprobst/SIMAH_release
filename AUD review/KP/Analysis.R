@@ -44,11 +44,13 @@ data_all <- data1 %>%
 ggplot(data_all, aes(alc_daily_g, log_RR, size=1/se)) + 
   geom_point (shape=1) + scale_size_area(max_size=20) + theme_bw()
 
-# One stage dose-response meta-analysis 
+
+# Linear trend - One stage dose-response meta-analysis 
 lin_mod <- dosresmeta(formula=log_RR ~ alc_daily_g, proc="1stage", 
                         id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, 
                         data=data_all)
     # Should address/further look into the warning regarding optimization
+    
     summary(lin_mod)
     predict(lin_mod, delta=10, exp=TRUE) # delta specifies dose increase of interest; e.g., delta=1 will give the RR associated with a 1-unit increase
 
@@ -58,6 +60,24 @@ predict(lin_mod, data.frame(alc_daily_g=seq(0, 200, 1)), order=TRUE, exp=TRUE) %
     geom_ribbon(aes(ymin= ci.lb, ymax=ci.ub), alpha=0.1) + 
     coord_cartesian(ylim=c(-5, 50))+
     theme_bw()
+
+
+
+
+# Quadratic trend - One stage dose-response meta-analysis 
+quad_mod <- dosresmeta(formula=log_RR ~ alc_daily_g + I(alc_daily_g^2), proc="1stage", 
+                      id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, 
+                      data=data_all, control = list(maxiter = 10000))
+# Should address/further look into the warning regarding optimization
+
+summary(quad_mod)
+
+# Plot
+predict(quad_mod, data.frame(alc_daily_g=seq(0, 200, 1)), order=TRUE, exp=TRUE) %>% 
+  ggplot(aes(x=alc_daily_g, y=pred)) + geom_line() + 
+  geom_ribbon(aes(ymin= ci.lb, ymax=ci.ub), alpha=0.1) + 
+  coord_cartesian(ylim=c(-5, 50))+
+  theme_bw()
 
 
 
