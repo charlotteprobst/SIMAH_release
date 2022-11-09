@@ -68,7 +68,6 @@ predict(lin_mod, data.frame(alc_daily_g=seq(0, 200, 1)), order=TRUE, exp=TRUE) %
 quad_mod <- dosresmeta(formula=log_RR ~ alc_daily_g + I(alc_daily_g^2), proc="1stage", 
                       id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, 
                       data=data_all, control = list(maxiter = 10000))
-# Should address/further look into the warning regarding optimization
 
 summary(quad_mod)
 
