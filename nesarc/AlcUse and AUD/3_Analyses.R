@@ -10,6 +10,7 @@ library(srvyr)       # adds dplyr like syntax to the survey package
 library(broom)       # model results
 library(janitor)     # tabyl function 
 
+citation("survey")
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
@@ -86,15 +87,34 @@ nesarc_srvyr %>%
   
 # Baseline alcohol use-stratified, survey adjusted
 nesarc_srvyr %>% 
-  group_by(incident_AUD.factor, alc5.factor_wave1) %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor) %>% 
   summarize(proportion = survey_prop(),
     total = survey_total()) %>% 
-  as.data.frame()
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
 
     # Raw sample size
     tabyl(nesarc_clean, alc5.factor_wave1, incident_AUD.factor) %>% adorn_totals(c("row", "col"))
 
 
+# Baseline alcohol use and sex-stratified, survey adjusted
+nesarc_srvyr_female %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor, ) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
+    
+nesarc_srvyr_male %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor, ) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
+
+    # Raw sample size
+    tabyl(nesarc_clean, alc5.factor_wave1, incident_AUD.factor, female.factor) %>% adorn_totals(c("row", "col"))
+    
 
 
 # Participant characteristics  ----------------------------------------------------------------------------

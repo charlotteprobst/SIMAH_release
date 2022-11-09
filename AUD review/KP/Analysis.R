@@ -7,6 +7,7 @@ library(readxl)     # import excel data
 library(janitor)    # Edit data formatting
 library(skimr)      # descriptive statistics
 library(tableone)   # create table one
+# devtools::install_github("alecri/dosresmeta")
 library(dosresmeta)
 library(mvtnorm)
 library(ellipse)
@@ -15,6 +16,9 @@ library(rms)
 library(meta)
 library(metafor)
 library(rmeta)
+
+
+
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/AUD review/Data/"   # Location of data
@@ -27,26 +31,34 @@ data1 <- read_xlsx (paste0(data, "Analysis_data_AUD_mortality.xlsx")) %>%
          log_RR = log(RR),
          log_lowerRR = log(lowerRR),
          log_upperRR = log(upperRR),
-         se = ifelse(RR==1 & lowerRR ==1 & upperRR==1, NA, (log_upperRR - log_lowerRR)/3.92),
-         inverse_se = 1/se)
+         se = (log_upperRR - log_lowerRR)/3.92)
 
 data_all <- data1 %>%
-  filter(group == "All particpants")
+  filter(group == "All participants")
 
 
 
 # Analyses *********************************************************************************************
-ggplot(data_all, aes(alc_daily_g, log_RR, size=inverse_se)) + 
+
+# Graph of logRRs by alcohol use
+ggplot(data_all, aes(alc_daily_g, log_RR, size=1/se)) + 
   geom_point (shape=1) + scale_size_area(max_size=20) + theme_bw()
 
-lin_mod <- dosresmeta(formula=log_RR ~ alc_daily_g, id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, data=data_all)
-summary(lin_mod)
-predict(lin_mod, delta=1, exp=TRUE)
+# One stage dose-response meta-analysis 
+lin_mod <- dosresmeta(formula=log_RR ~ alc_daily_g, proc="1stage", 
+                        id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, 
+                        data=data_all)
+    # Should address/further look into the warning regarding optimization
+    summary(lin_mod)
+    predict(lin_mod, delta=10, exp=TRUE) # delta specifies dose increase of interest; e.g., delta=1 will give the RR associated with a 1-unit increase
 
-dosex_bin <- data.frame(alc_daily_g=seq(0, 150, 10))
-with(predict(lin_mod, dosex_bin, order=TRUE, exp=TRUE), {plot(alc_daily_g, pred, type="l", col="blue", ylim=c(1, 50), ylab= "mortality relative risk", xlab="alcohol consumption, grams/day")
-  lines(alc_daily_g, ci.lb, lty=2)
-  lines(alc_daily_g, ci.ub, lty=2)})
+# Plot
+predict(lin_mod, data.frame(alc_daily_g=seq(0, 200, 1)), order=TRUE, exp=TRUE) %>% 
+  ggplot(aes(x=alc_daily_g, y=pred)) + geom_line() + 
+    geom_ribbon(aes(ymin= ci.lb, ymax=ci.ub), alpha=0.1) + 
+    coord_cartesian(ylim=c(-5, 50))+
+    theme_bw()
+
 
 
 
