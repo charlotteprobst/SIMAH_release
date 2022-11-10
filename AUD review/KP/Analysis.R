@@ -7,7 +7,6 @@ library(readxl)     # import excel data
 library(janitor)    # Edit data formatting
 library(skimr)      # descriptive statistics
 library(tableone)   # create table one
-# devtools::install_github("alecri/dosresmeta")
 library(dosresmeta)
 library(mvtnorm)
 library(ellipse)
