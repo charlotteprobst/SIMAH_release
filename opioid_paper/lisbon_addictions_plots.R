@@ -17,7 +17,7 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 # read in datafiles 
-gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-eduation-StandardRates-25plus-00-20.dta")
+gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-eduation-ratio-25plus-00-20.dta")
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 
 gendereducation <- gendereducation %>% remove_all_labels() %>% 
@@ -233,12 +233,32 @@ summary(as.factor(IRR$category))
 
 race <- IRR %>% filter(race!="all") %>% 
   mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI),
-         race = factor(race, levels=c("White","Black","Hispanic")))
+         race = factor(race, levels=c("White","Black","Hispanic"))) %>% 
+  group_by(sex, race, apc, substance)
+
+
+max_IRR <- race %>% group_by(sex, race, apc, substance) %>% 
+  mutate(max_IRR = max(IRR),
+         select = ifelse(max_IRR == IRR, 1,0)) %>% 
+  filter(select==1) %>% 
+  dplyr::select(category, sex, race, apc, substance, max_IRR) %>% 
+  summarise(max_x = ifelse(apc=="Period" & category==2020, 2020, 
+                           category+5), 
+            min_x = ifelse(apc=="Period" & category==2020, 2018,
+                           category-5),
+            min_y = 0.5,
+            max_y = max_IRR)
+
+
+race <- left_join(race, max_IRR)
 
 ageeffects <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
   facet_grid(cols=vars(race),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
+  geom_rect(data=subset(race,apc=="Age"), aes(xmin=min_x, xmax=max_x, ymin = min_y, ymax = max_y,
+                                              fill=sex, colour=sex),
+           alpha = .1) + 
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white"),
@@ -256,6 +276,10 @@ periodeffects <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colou
   facet_grid(cols=vars(race),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
+  geom_rect(data=subset(race,apc=="Period"), aes(xmin=min_x, xmax=max_x, ymin = min_y, 
+                                                 ymax =max_y, colour=sex),
+            fill=NA,
+            alpha = .05) + 
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white"),
@@ -264,7 +288,8 @@ periodeffects <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colou
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed")
+  geom_hline(yintercept=1, linetype="dashed") + 
+  xlim(2000,2020)
 periodeffects
 
 ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig3_LisbonAddictions_period.png"), periodeffects, dpi=300, width=33, height=19, units="cm")
@@ -278,6 +303,10 @@ cohorteffects <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colou
         legend.position="bottom",
         strip.background = element_rect(fill="white"),
         text = element_text(size=18)) + 
+  geom_rect(data=subset(race,apc=="Cohort"), aes(xmin=min_x, xmax=max_x, ymin = min_y, 
+                                                 ymax =max_y, colour=sex),
+            fill=NA,
+            alpha = .05)  + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
