@@ -29,7 +29,7 @@ library(rmeta)
 
 # Date
 
-DATE <- 20221114
+DATE <- 20221115
 
 # Specify the data and output file locations
 
@@ -38,10 +38,15 @@ output <- "/Users/carolinkilian/Desktop/SIMAH_workplace/AUD review/"        # Lo
 
 # Load data
 
-data <- read_xlsx(paste0(file_location, "Analysis_data_AUD_mortality.xlsx"), na="")
+## COMMENT FOR TESSA: I renamed the file so that we hopefully do not mess up with the different files -> this one is the one of today (indicated by the date)
+
+data <- read_xlsx(paste0(file_location, "20221115_analysis_data_AUD_mortality.xlsx"), na="")
 
 # Prepare data 
 # Add logRR, loglowerRR, logupperRR, se, inverse_se columns
+
+## COMMENT FOR TESSA: we have to remove the following line to not exclude the Russian study at this time "filter(!str_detect(group, "age"))"
+## COMMENT FOR TESSA: %>% as.data.table says that data1 is now a data.table
 
 data1 <- data %>%
   mutate(
@@ -50,64 +55,95 @@ data1 <- data %>%
     logupperRR = log(upperRR),
     se = ifelse(upperRR!=1 & lowerRR!=1, (logupperRR - loglowerRR)/3.92, NA),
     inver_se = 1/se) %>%
-  filter(!str_detect(group, "age"))
+  as.data.table
 
+  
+  
 # ========================================================================================================
   
 # Fixed-effect model to combine estimates for Zaridze 2009
 
-# select data
-
-pdat <- data1 %>%
-  filter(first_author == "Zaridze" & group != "All participants")
-
-# function to run fixed-effect model by group
+# Function to run fixed-effect model by group
 
 fixed.meta <- function(data){
-  data <- as.data.table(copy(data))
-  m <- length(unique(data$alc_daily_g)) - 1
-  out <- data.frame(matrix(ncol = 9, nrow = m))
-  colnames(out) <- c("alc_daily_g", "RR", "lowerRR", "upperRR", "logRR", "loglowerRR", "logupperRR", "se", "inver_se")
+  
+  data <- as.data.table(data)
+  m <- length(unique(data$alc_daily_g))
+  out <- data.frame(matrix(ncol = 11, nrow = m))
+  colnames(out) <- c("alc_daily_g", "total_n", "outcome_n", "RR", "lowerRR", "upperRR", "logRR", "loglowerRR", "logupperRR", "se", "inver_se") 
+  
   for (i in 1:m) {
-      out$alc_daily_g[i] <- unique(data$alc_daily_g)[i+1]
-      subgroup <- unique(data$alc_daily_g)[i+1]
+    
+    out$alc_daily_g[i] <- unique(data$alc_daily_g)[i]
+    subgroup <- unique(data$alc_daily_g)[i]
+    
+    ## COMMENT FOR TESSA: we also have to update total_n and outcome_n so this code is new, see also changes above related to defining the out dataframe
+    
+    # new total_n and outcome_n
+    out$total_n[i] <- sum(data[alc_daily_g == subgroup]$total_n)
+    out$outcome_n[i] <- sum(data[alc_daily_g == subgroup]$outcome_n)
+    
+    ## COMMENT FOR TESSA: I've now integrated the condition for being a reference category into the function 
       
-      # run fixed-effect model
-      model <- rma.uni(yi = logRR, sei = se, data = data[alc_daily_g == subgroup], method = "FE")
-      sum <- summary(model)
-      
+      if (data$lowerRR[i] != 1 & data$upperRR[i] != 1) {
+         
+        # run fixed-effect model
+        model <- rma.uni(yi = logRR, sei = se, data = data[alc_daily_g == subgroup & RR != 0], method = "FE") # COMMENT FOR TESSA: some studies have a RR = 0 leading to infinite values after logarithmizing, we have to remove these observations
+        sum <- summary(model)
+        
+        # log output
+        out$logRR[i] <- sum[[1]]
+        out$loglowerRR[i] <- sum[[6]]
+        out$logupperRR[i] <- sum[[7]]
+        out$se[i] <- sum[[3]]
+        out$inver_se[i] <- 1 / out$se[i]
+        
+        # run prediction
+        predict <- predict(model, transf = exp)
+        
+        # exp output
+        out$RR[i] <- predict[[1]]
+        out$lowerRR[i] <- predict[[3]]
+        out$upperRR[i] <- predict[[4]]
+    }
+    
+    else if (data$lowerRR[i] == 1 & data$upperRR[i] == 1) {
+
       # log output
-      out$logRR[i] <- sum[[1]]
-      out$loglowerRR[i] <- sum[[6]]
-      out$logupperRR[i] <- sum[[7]]
-      out$se[i] <- sum[[3]]
-      out$inver_se[i] <- 1 / out$se[i]
-      
-      # run prediction
-      predict <- predict(model, transf = exp)
+      out$logRR[i] <- 0
+      out$loglowerRR[i] <- 0
+      out$logupperRR[i] <- 0
+      out$se[i] <- NA
+      out$inver_se[i] <- NA
       
       # exp output
-      out$RR[i] <- predict[[1]]
-      out$lowerRR[i] <- predict[[3]]
-      out$upperRR[i] <- predict[[4]]
+      out$RR[i] <- 1
+      out$lowerRR[i] <- 1
+      out$upperRR[i] <- 1
+      
+    }
+    
+    else {
+      
+      paste0("ERROR")
+      
+    }
   }
   return(out)
 }
 
 # run meta-analysis model
 
-fmeta <- fixed.meta(pdat)
+fmeta <- fixed.meta(data1[first_author == "Zaridze"])
 
 # combine new fixed-effect data with original data
-  
-data1 <- as.data.table(copy(data1))
 
-pdat2 <- power_left_join(data1[first_author == "Zaridze" & group == "All participants" & alc_daily_g > 0], 
-                         fmeta, by = "alc_daily_g", conflict = rw ~ .y)
+dat.zaridze <- data1[first_author == "Zaridze" & group == "Men ages 15-54"]  
+dat.zaridze$group <- "All participants"
 
-dat.zaridze <- rbind(data1[first_author == "Zaridze" & group == "All participants" & alc_daily_g == 0], pdat2)
+dat.zaridze <- power_left_join(dat.zaridze, fmeta, by = "alc_daily_g", conflict = rw ~ .y)
 
-# new main data
+# NEW MAIN DATA
 
 data_all <- rbind(data1[first_author != "Zaridze"], dat.zaridze)
 
