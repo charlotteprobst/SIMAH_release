@@ -14,7 +14,7 @@ outward_migration <- function(basepop, year_rates,y){
                         labels=c("18","19-24","25-29","30-34","35-39",
                                  "40-44","45-49","50-54","55-59","60-64",
                                  "65-69","70-74","75-79"))) %>%
-    complete(agecat, microsim.init.race, microsim.init.sex, fill=list(n=0)) %>%
+    # complete(agecat, microsim.init.race, microsim.init.sex, fill=list(n=0)) %>%
     group_by(agecat, microsim.init.race, microsim.init.sex, .drop=FALSE) %>%
     summarise(n=sum(n))
   # calculate a migration out rate for each age/sex/race group

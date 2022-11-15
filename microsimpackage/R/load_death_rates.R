@@ -15,7 +15,7 @@ fun <- function(x){
 }
 
 if(SelectedState=="USA"){
-deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0019_final.csv")) %>%
+deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %>%
   mutate(Sex=recode(sex, "1"="m","2"="f"),
                       agecat = recode(age_gp, "18"="18-24","25"="25-29",
                                          "30"="30-34","35"="35-39","40"="40-44",
@@ -24,9 +24,9 @@ deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0019_final.csv"))
                       Race = recode(race, "White"="WHI","Black"="BLA","Hispanic"="SPA","Other"="OTH"),
                       edclass = recode(edclass, "4+yrs"="College")) %>%
   mutate(cat=paste(Sex,agecat,Race,edclass, sep="")) %>%   filter(agecat!="80+") %>%
-  dplyr::select(year,cat, LVDCmort, DMmort,
+  dplyr::select(year,cat, LVDCmort, HLVDCmort, DMmort,
          IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort) %>%
-  mutate_at(vars(LVDCmort, DMmort,
+  mutate_at(vars(LVDCmort, HLVDCmort, DMmort,
                  IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
 }else{deathrates <- read.csv(paste0(WorkingDirectory,"sumCOD_0018_mortcount_state.csv")) %>% filter(age_gp!=80) %>% mutate(Sex=recode(sex, "1"="m","2"="f"),
        agecat = recode(age_gp, "18"="18-24","25"="25-29",

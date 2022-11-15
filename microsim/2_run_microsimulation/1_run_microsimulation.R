@@ -6,6 +6,8 @@ library(roxygen2)
 library(dplyr)
 library(tidyverse)
 library(fitdistrplus)
+library(lhs)
+library(truncnorm)
 options(dplyr.summarise.inform = FALSE)
 
 # load in microsim R package
@@ -20,15 +22,18 @@ setwd(paste(WorkingDirectory))
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
+output_type <- "hepatitis"
+
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
                        death_rates,
                        updatingeducation, education_setup,
                        migration_rates,
                        updatingalcohol, alcohol_transitions,
-                       catcontmodel,
+                       catcontmodel, Hep, drinkingdistributions,
+                       base_rates, diseases, lhs,
                        policy, percentreduction,
-                       2000, 2010, output_type)
+                       2000, 2019, output_type)
 
 alcohol_type <- "continuous"
 
@@ -42,10 +47,12 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 }
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory)
+}else if(output_type=="hepatitis"){
+summary <- summarise_hepatitis_output(Output)  
 }
 
 summary[[1]]
 summary[[2]]
-
-ggsave("SIMAH_workplace/microsim/2_output_data/continuous_alcuse_v4_allyears.png", dpi=300,
+summary
+ggsave("SIMAH_workplace/microsim/2_output_data/hepatitis_b_c_prevalence.png", dpi=300,
        width=33, height=19, units="cm")

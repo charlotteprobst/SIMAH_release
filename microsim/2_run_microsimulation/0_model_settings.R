@@ -28,7 +28,12 @@ updatingalcohol <- 1
 mortality <- 1
 
 # switch between mortality causes
-disease <- "cirrhosis"
+# write in the same format as the death rates file 
+# "LVDC"  "HLVDC" "DM"    "IHD"   "ISTR"  "HYPHD"
+# "AUD"   "UIJ"   "MVACC" "IJ"
+
+#  insert causes to model here - this can be a vector so multiple causes can be modelled
+diseases <- c("HLVDC")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -93,6 +98,32 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 
+# allocate baseline hepatitis B and C infections
+
+# to baseline population 
+basepop <- assign_baseline_hepatitis(basepop)
+
+# and to new agents to enter ?? not sure if this makes sense to do 
+brfss <- assign_baseline_hepatitis(brfss)
+
+# load hepatitis incidence counts and drinking distributions for hepatitis B and C 
+data <- load_hepatitis_data(SelectedState, proportion)
+Hep <- data[[1]]
+drinkingdistributions <- data[[2]]
+rm(data)
+
+# load in model parameters - using latin hypercube sampling 
+# number of settings required 
+numsamples <- 10
+
+# whether to just use the point estimate
+PE <- 0
+lhs <- sample_lhs(numsamples, PE)
+
+# if modelling mortality from specific causes - set up base mortality rates for the causes modelled
+if(length(diseases)>=1){
+  base_rates <- setup_base_rates(death_rates,diseases)
+}
+
 # load in categorical to continuous model 
 # catcontmodel <- read_rds(paste0(DataDirectory, "SSCatContModel.RDS"))
-

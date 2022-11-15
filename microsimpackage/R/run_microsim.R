@@ -11,13 +11,17 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingeducation, education_setup,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
-                         catcontmodel,
+                         catcontmodel, Hep, drinkingdistributions,
+                         base_rates, diseases, lhs,
                          policy=0, percentreduction=0.1,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
 PopPerYear <- list()
+names <- names(lhs)
+lhs <- as.numeric(lhs)
+names(lhs) <- names
 transitionyears <- seq(2002,2018, by=2)
 for(y in minyear:maxyear){
 print(y)
@@ -31,7 +35,7 @@ if(y>=2001){
 
 # apply death rates and summarise deaths by cause
 if(y>=2000){
-basepop <- apply_death_rates(basepop, death_rates, y)
+basepop <- apply_death_rates(basepop, death_rates, y, diseases)
 DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
                                               dead, cause) %>% mutate(year=y, seed=seed)
 basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause))
@@ -73,6 +77,46 @@ if(updatingalcohol==1 & y>2000){
   # allocate every year even when transitions are only every two years?
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
 }
+
+# assign new acute and chronic hepatitis B and C -
+# if(y>2000){
+# basepop <- assign_acute_hep(basepop, Hep, drinkingdistributions, y)
+# basepop <- assign_chronic_hep(basepop)
+# }
+
+# simulate mortality from specific diseases
+if("HLVDC" %in% diseases==TRUE){
+basepop <- CirrhosisHepatitis(basepop,lhs)
+
+basepop <- basepop %>%
+  mutate(ageCAT = cut(microsim.init.age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79),
+                      labels=c("18-24","25-29","30-34","35-39", "40-44",
+                               "45-49","50-54","55-59","60-64","65-69",
+                               "70-74","75-79")),
+         cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
+  dplyr::select(-ageCAT)
+
+if(y==2000){
+  rates <- basepop %>%
+    group_by(cat) %>% add_tally() %>%
+    summarise(sumrisk = sum(RRHep),
+              .groups='drop') %>% ungroup() %>% distinct()
+  rates <- left_join(rates, base_rates, by=c("cat"))
+  rates <- rates %>%
+    mutate(rate = HLVDC/sumrisk) %>%
+    dplyr::select(cat, rate)
+}
+
+basepop <- left_join(basepop, rates, by=c("cat"))
+basepop$Risk <- basepop$RRHep*basepop$rate
+basepop <- basepop %>% dplyr::select(-c(popcount))
+
+basepop$probs <- runif(nrow(basepop))
+basepop$mortalityHLVDC <- ifelse(basepop$probs<=basepop$Risk, 1,0)
+
+}
+
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
 # if(policy==1){
@@ -146,6 +190,16 @@ Summary <- list(Summary,PopSummary)
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
+}else if(output=="hepatitis"){
+  chronicB <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicB) %>%
+    tally() %>% mutate(prevalenceChronicB = n /sum(n)) %>%
+    filter(chronicB==1) %>%
+    dplyr::select(year, microsim.init.sex, prevalenceChronicB)
+  chronicC <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicC) %>%
+    tally() %>% mutate(prevalenceChronicC = n/sum(n)) %>%
+    filter(chronicC==1) %>%
+    dplyr::select(year, microsim.init.sex, prevalenceChronicC)
+  Summary <- left_join(chronicB, chronicC)
 }
 return(Summary)
 }
