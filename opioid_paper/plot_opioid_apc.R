@@ -127,18 +127,14 @@ ggsave(paste0("Fig2_APC_sex", DATE, ".png"), plot, dpi=300, width=33, height=19,
 race <- IRR %>% filter(race!="all") %>% 
   mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI),
          race = factor(race, levels=c("White","Black","Hispanic")))
-
-<<<<<<< Updated upstream
 summary <- race %>% filter(substance=="Alcohol only") %>% filter(apc=="Period") %>% filter(sex=="Women")
 
 alcoholonly <- ggplot(subset(race,substance=="Alcohol only"), aes(x=category, y=IRR, colour=race, fill=race)) + 
   facet_grid(cols=vars(apc),
              rows=vars(sex), scales="free") + geom_line(size=1) + 
-=======
 age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
   facet_grid(cols=vars(race),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
->>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
