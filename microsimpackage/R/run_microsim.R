@@ -38,7 +38,7 @@ if(y>=2000){
 basepop <- apply_death_rates(basepop, death_rates, y, diseases)
 DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
                                               dead, cause) %>% mutate(year=y, seed=seed)
-basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause))
+basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 }
 
 # transition education for individuals aged 34 and under
@@ -85,37 +85,37 @@ if(updatingalcohol==1 & y>2000){
 # }
 
 # simulate mortality from specific diseases
-if("HLVDC" %in% diseases==TRUE){
-basepop <- CirrhosisHepatitis(basepop,lhs)
-
-basepop <- basepop %>%
-  mutate(ageCAT = cut(microsim.init.age,
-                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79),
-                      labels=c("18-24","25-29","30-34","35-39", "40-44",
-                               "45-49","50-54","55-59","60-64","65-69",
-                               "70-74","75-79")),
-         cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
-  dplyr::select(-ageCAT)
-
-if(y==2000){
-  rates <- basepop %>%
-    group_by(cat) %>% add_tally() %>%
-    summarise(sumrisk = sum(RRHep),
-              .groups='drop') %>% ungroup() %>% distinct()
-  rates <- left_join(rates, base_rates, by=c("cat"))
-  rates <- rates %>%
-    mutate(rate = HLVDC/sumrisk) %>%
-    dplyr::select(cat, rate)
-}
-
-basepop <- left_join(basepop, rates, by=c("cat"))
-basepop$Risk <- basepop$RRHep*basepop$rate
-basepop <- basepop %>% dplyr::select(-c(popcount))
-
-basepop$probs <- runif(nrow(basepop))
-basepop$mortalityHLVDC <- ifelse(basepop$probs<=basepop$Risk, 1,0)
-
-}
+# if("HLVDC" %in% diseases==TRUE){
+# basepop <- CirrhosisHepatitis(basepop,lhs)
+#
+# basepop <- basepop %>%
+#   mutate(ageCAT = cut(microsim.init.age,
+#                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79),
+#                       labels=c("18-24","25-29","30-34","35-39", "40-44",
+#                                "45-49","50-54","55-59","60-64","65-69",
+#                                "70-74","75-79")),
+#          cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
+#   dplyr::select(-ageCAT)
+#
+# if(y==2000){
+#   rates <- basepop %>%
+#     group_by(cat) %>% add_tally() %>%
+#     summarise(sumrisk = sum(RRHep),
+#               .groups='drop') %>% ungroup() %>% distinct()
+#   rates <- left_join(rates, base_rates, by=c("cat"))
+#   rates <- rates %>%
+#     mutate(rate = HLVDC/sumrisk) %>%
+#     dplyr::select(cat, rate)
+# }
+#
+# basepop <- left_join(basepop, rates, by=c("cat"))
+# basepop$Risk <- basepop$RRHep*basepop$rate
+# # basepop <- basepop %>% dplyr::select(-c(popcount))
+#
+# basepop$probs <- runif(nrow(basepop))
+# basepop$mortalityHLVDC <- ifelse(basepop$probs<=basepop$Risk, 1,0)
+#
+# }
 
 
 # if policy flag switched on - simulate a reduction in alcohol consumption

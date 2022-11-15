@@ -4,7 +4,7 @@
 \alias{apply_death_rates}
 \title{Apply death rates in each year of simulation}
 \usage{
-apply_death_rates(basepop, deathrates, y)
+apply_death_rates(basepop, death_rates, y, diseases)
 }
 \description{
 Apply death rates in each year of simulation
