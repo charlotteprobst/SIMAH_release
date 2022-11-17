@@ -14,14 +14,23 @@ cor.test(YearonYear$`2003`, YearonYear$`2004`)
 cor.test(YearonYear$`2004`, YearonYear$`2005`)
 
 
-sampled <- Pops %>% group_by(microsim.init.sex, microsim.init.education) %>% filter(year==2000) %>% 
+sampled <- Pops %>% group_by(microsim.init.sex,
+                             microsim.init.education) %>% filter(year==2000) %>% 
   sample_n(5)
 
-selected <- Pops %>% filter(microsim.init.id %in% sampled$microsim.init.id)
+selected <- Pops %>% filter(microsim.init.id %in% sampled$microsim.init.id) %>% 
+  mutate(microsim.init.education=factor(microsim.init.education,
+                                        levels=c("LEHS","SomeC","College")),
+         microsim.init.sex = ifelse(microsim.init.sex=="m","Men","Women"))
 
 ggplot(data=selected, aes(x=year, y=microsim.init.alc.gpd, colour=as.factor(microsim.init.id))) + geom_line(size=1) +
   facet_grid(cols=vars(microsim.init.education),
-             rows=vars(microsim.init.sex)) + theme_bw() + theme(legend.position="none")
+             rows=vars(microsim.init.sex)) + theme_bw() + 
+  theme(legend.position="none",
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=18)) + 
+  ggtitle("Individual drinking trajectories") + ylab("grams per day (annual)")
+
 ggsave("SIMAH_workplace/microsim/2_output_data/individual_trajectories_gpd.png", dpi=300,
        width=33, height=19, units="cm")
 
@@ -35,15 +44,18 @@ library(fitdistrplus)
 
 dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% filter(YEAR>=2000 & YEAR<=2018) %>% 
   filter(drinkingstatus==1) %>% filter(State=="USA") %>% ungroup() %>% 
-  dplyr::select(YEAR, sex_recode, education_summary, gramsperday) %>% 
+  dplyr::select(YEAR, sex_recode, race_eth, education_summary, gramsperday) %>% 
   mutate(sex_recode=ifelse(sex_recode=="Female","Women","Men"),
          data="brfss")
 
 distributions <- do.call(rbind, PopPerYear) %>% 
-  mutate(sex_recode = ifelse(microsim.init.sex=="f","Women","Men")) %>% 
+  mutate(sex_recode = ifelse(microsim.init.sex=="f","Women","Men"),
+         race_eth = ifelse(microsim.init.race=="WHI","White",
+                           ifelse(microsim.init.race=="BLA","Black",
+                                  ifelse(microsim.init.race=="SPA","Hispanic","Other")))) %>% 
   filter(microsim.init.alc.gpd!=0) %>% 
   ungroup() %>% 
-  dplyr::select(year, sex_recode, microsim.init.education,
+  dplyr::select(year, sex_recode, microsim.init.education, race_eth,
                 microsim.init.alc.gpd) %>% 
   rename(YEAR=year, education_summary = microsim.init.education,
          gramsperday = microsim.init.alc.gpd) %>% 
@@ -67,48 +79,29 @@ assign_alc_cat <- function(data){
 
 dat <- rbind(dat, distributions) %>% 
   mutate(education_summary = factor(education_summary, 
-                                    levels=c("LEHS","SomeC","College"))) %>% 
+                                    levels=c("LEHS","SomeC","College")),
+         race_eth = factor(race_eth,
+                           levels=c("White","Black","Hispanic","Other"))) %>% 
   assign_alc_cat() %>% 
   mutate(AlcCAT = factor(AlcCAT, levels=c("Low risk","Medium risk","High risk")))
 
 scaleFUN <- function(x) sprintf("%.2f", x)
 
-ggplot(data=subset(dat, YEAR==2002 & sex_recode=="Men"), aes(x=gramsperday,
+ggplot(data=subset(dat, YEAR==2018), aes(x=gramsperday,
                                                              colour=data, fill=data)) + 
   geom_density(aes(y=..scaled.., color=as.factor(data), fill=as.factor(data)), alpha=0.6) +
   # geom_vline(aes(xintercept=median, color=as.factor(yearMOD)), linetype="dashed") + 
   # scale_x_continuous(limits = c(0, 200)) +  
-  facet_grid(as.factor(education_summary) ~ as.factor(AlcCAT), scales="free_x") +
+  facet_grid(as.factor(race_eth) ~ as.factor(sex_recode), scales="free_x") +
   theme(legend.position="bottom") + 
   scale_y_continuous(labels=scaleFUN) + 
-  ggtitle("Year = 2002, men") + 
+  ggtitle("Year = 2018") + 
   theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position = "bottom",
         panel.background =element_rect(fill="white"),
-        strip.background =element_rect(fill="white"))
+        strip.background =element_rect(fill="white")) + xlim(100,200)
 
-ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_men_2002.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_race2018.png", dpi=300,
        width=33, height=19, units="cm")
-
-
-ggplot(data=subset(dat, YEAR==2002 & sex_recode=="Women"), aes(x=gramsperday,
-                                                               colour=data, fill=data)) + 
-  geom_density(aes(y=..scaled.., color=(as.factor(data)), fill=as.factor(data)), alpha=0.6) +
-  # geom_vline(aes(xintercept=median, color=as.factor(yearMOD)), linetype="dashed") + 
-  # scale_x_continuous(limits = c(0, 200)) +  
-  facet_grid(as.factor(education_summary) ~ as.factor(AlcCAT), scales="free_x") +
-  theme(legend.position="bottom") + 
-  scale_y_continuous(labels=scaleFUN) + 
-  ggtitle("Year = 2002, women") + 
-  theme_bw()+ 
-  theme(legend.title=element_blank(),
-        legend.position = "bottom",
-        panel.background =element_rect(fill="white"),
-        strip.background =element_rect(fill="white"))
-
-ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_women_2002.png", dpi=300,
-       width=33, height=19, units="cm")
-
-
 

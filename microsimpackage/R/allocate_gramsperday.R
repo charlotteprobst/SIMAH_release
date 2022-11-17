@@ -13,7 +13,7 @@ allocate_gramsperday <- function(basepop, y, model, DataDirectory){
                                                                                            ifelse(microsim.init.race=="SPA","Hispanic",
                                                                                                   ifelse(microsim.init.race=="OTH","Other",NA)))),
            # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
-           group = paste(AlcCAT, microsim.init.education, sex_recode, sep="_"))
+           group = paste(AlcCAT, race_eth, microsim.init.education, sex_recode, sep="_"))
 
   distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr.csv")
   prepdata <- left_join(prepdata, distribution)

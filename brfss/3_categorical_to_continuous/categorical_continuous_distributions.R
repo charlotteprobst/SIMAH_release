@@ -33,7 +33,7 @@ assign_alc_cat <- function(data){
 
 dat <- dat %>% assign_alc_cat() 
 
-dat <- dat %>% mutate(group = paste(AlcCAT, education_summary, sex_recode, sep="_"))
+dat <- dat %>% mutate(group = paste(AlcCAT, race_eth, education_summary, sex_recode, sep="_"))
 
 # highrisk <- ggplot(data=subset(dat, AlcCAT=="High risk"), aes(x=gramsperday)) +
 #   geom_density() +

@@ -5,10 +5,10 @@ rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 library(tidyverse)
 library(ggplot2)
 
-DATE <- 12102022
+DATE <- 16112022
 
 # CB laptop directory
-#wd <- "~/Google Drive/SIMAH Sheffield/"
+wd <- "~/Google Drive/SIMAH Sheffield/"
 
 # CK laptop directory
 wd <- "/Users/carolinkilian/Desktop/"
@@ -53,41 +53,61 @@ dat <- dat[dat$gramsperday > 0,] %>%
 
 ggplot(data=dat[dat$gramsperday > 0,], aes(x=gramsperday)) +
   # geom_histogram(aes(y = ..density.., color=as.factor(yearCAT)), binwidth = 0.1, fill = "white") +
-  geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
+  geom_density(aes(y=..scaled.., color=as.factor(yearCAT), fill=as.factor(yearCAT)), alpha=0.6) +
+  # geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
   geom_vline(aes(xintercept=median, color=as.factor(yearCAT)), linetype="dashed") + 
   scale_x_continuous(limits = c(0, 100)) +  
   facet_grid(as.factor(ageCAT) ~ as.factor(sex_recode), scales="free") +
-  theme(legend.position="bottom")
+  theme_bw() + 
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=18)) 
 
-#ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gdp by year_age_', DATE, '.tiff'), dpi=300, width = 15, height = 8)
+ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gpd by year_age_', DATE, '.tiff'), dpi=300, width = 33, height = 19, units="cm")
 
 # by sex and education
 dat <- dat[dat$gramsperday > 0,] %>%
   group_by(sex_recode, education_summary, yearCAT) %>%
-  mutate(median=median(gramsperday))
+  mutate(median=median(gramsperday)) %>% 
+  ungroup() %>% 
+  mutate(education_summary <- factor(education_summary,
+                                     levels=c("LEHS","SomeC","College")))
 
 ggplot(data=dat[dat$gramsperday > 0,], aes(x=gramsperday)) +
-  geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
+  # geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
+  geom_density(aes(y=..scaled.., color=as.factor(yearCAT), fill=as.factor(yearCAT)), alpha=0.6) +
   geom_vline(aes(xintercept=median, color=as.factor(yearCAT)), linetype="dashed") + 
   scale_x_continuous(limits = c(0, 100)) +  
   facet_grid(as.factor(education_summary) ~ as.factor(sex_recode), scales="free") +
-  theme(legend.position="bottom")
+  theme_bw() + 
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=18)) 
 
-#ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gdp by year_edu_', DATE, '.tiff'), dpi=300, width = 15, height = 8)
+ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gpd by year_edu_', DATE, '.tiff'), dpi=300, width = 33, height = 19, units="cm")
 
 # by sex and race/ethnicity
 dat <- dat[dat$gramsperday > 0,] %>%
   group_by(sex_recode, race_eth, yearCAT) %>%
   mutate(median=median(gramsperday))
 
+unique(dat$race_eth)
+
 ggplot(data=dat[dat$gramsperday > 0,], aes(x=gramsperday)) +
-  geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
+  # geom_density(aes(color=as.factor(yearCAT)), alpha=0.6) +
+  geom_density(aes(y=..scaled.., color=as.factor(yearCAT), fill=as.factor(yearCAT)), alpha=0.6) +
   geom_vline(aes(xintercept=median, color=as.factor(yearCAT)), linetype="dashed") + 
   scale_x_continuous(limits = c(0, 100)) +  
   facet_grid(as.factor(race_eth) ~ as.factor(sex_recode), scales="free") +
-  theme(legend.position="bottom")
+  theme_bw() + 
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=18)) 
 
-#ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gdp by year_raceth_', DATE, '.tiff'), dpi=300, width = 15, height = 8)
+ggsave(paste0('SIMAH_workplace/brfss/outputs/figures/gpd by year_raceth_', DATE, '.tiff'), dpi=300, width = 15, height = 8)
 
 
 #  distribution before/after 2011 (change in survey mode)
