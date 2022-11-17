@@ -17,190 +17,213 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 # read in datafiles 
-gendereducation <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-eduation-ratio-25plus-00-20.dta")
+poisonings <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/temp2000-20poi-age-aggregate-population.dta")
 color.vec <- c("#132268", "#447a9e", "#93AEBF")
 
-gendereducation <- gendereducation %>% remove_all_labels() %>% 
-  zap_formats() %>% 
-  dplyr::select(year, edclass, sex, alc_only_fin_StdRate,
-                opioid_only_fin_StdRate, alc_opioid_fin_StdRate) %>% 
-  pivot_longer(cols=c(alc_only_fin_StdRate:alc_opioid_fin_StdRate),
-               names_to="type", values_to="rate") %>% 
-  mutate(type=gsub("_fin_StdRate","",type),
-         edclass = recode(edclass, "1"="High school degree or less",
-                          "2"="Some college",
-                          "3"="College degree or more"),
-         edclass = factor(edclass, levels=c("High school degree or less",
-                                            "Some college",
-                                            "College degree or more")),
-         sex = ifelse(sex==1, "Men","Women"),
-         type = recode(type, "alc_only"="Alcohol",
-                       "opioid_only"="Opioid",
-                       "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid"))) 
-color.vec <- c("#132268", "#447a9e", "#93AEBF")
+agedist <- poisonings %>% filter(year==2020) %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  
+  group_by(age_gp) %>% 
+  summarise(tpop=sum(pop)) %>% ungroup() %>% 
+  mutate(prop = tpop/sum(tpop))
 
-devtools::install_github("zeehio/facetscales")
-library(facetscales)
+agesprate <- poisonings %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  group_by(year, age_gp) %>% 
+  summarise(alc_only = sum(alc_only)/sum(pop)*100000,
+            op_only = sum(opioid_only)/sum(pop)*100000,
+            alc_opioid = sum(alc_opioid)/sum(pop)*100000)
 
-type <- c("Alcohol","Opioid","Alcohol and Opioid")
-sex <- c("Men","Women")
-edclass <- c("High school degree or less", "Some college",
-             "College degree or more")
-facet_bounds <- expand.grid(type,sex,edclass)
-facet_bounds$ymin <- 0
-names(facet_bounds) <- c("type","sex","edclass","ymin")
-facet_bounds$ymax <- ifelse(facet_bounds$type=="Opioid" & facet_bounds$sex=="Men", 60,
-                            ifelse(facet_bounds$type=="Alcohol" & facet_bounds$sex=="Men", 15,
-                                   ifelse(facet_bounds$type=="Alcohol and Opioid" & facet_bounds$sex=="Men", 15,
-                                          ifelse(facet_bounds$type=="Opioid" & facet_bounds$sex=="Women", 35,
-                                                 ifelse(facet_bounds$type=="Alcohol" & facet_bounds$sex=="Women", 5, 5)))))
+agesprate <- left_join(agesprate, agedist) %>% 
+  group_by(year, age_gp) %>% 
+  summarise(alc_only = alc_only*prop,
+            op_only = op_only*prop,
+            alc_opioid = alc_opioid*prop) %>% 
+  ungroup() %>% 
+  group_by(year) %>% 
+  summarise(alc_only = sum(alc_only),
+            op_only = sum(op_only),
+            alc_opioid=sum(alc_opioid)) %>% pivot_longer(alc_only:alc_opioid) %>% 
+  mutate(name = ifelse(name=="alc_only","Alcohol only",
+                       ifelse(name=="op_only","Opioid only", "Alcohol and Opioid")),
+         name = factor(name, levels=c("Alcohol only", "Opioid only", "Alcohol and Opioid")))
 
-ff <- with(facet_bounds,
-           data.frame(rate=c(ymin,ymax),
-                      type=c(type,type),
-                      sex =c(sex,sex),
-                      edclass=c(edclass,edclass)))
-
-Fig1p1 <- ggplot(data=subset(gendereducation, sex=="Men"), aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
-  ylab("Mortality rate per 100,000 population") + 
+Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value)) + 
+  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=22, family="Times")) + 
+                     text = element_text(size=28, family="Times")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
-  geom_point(data=subset(ff, sex=="Men"),x=NA, colour=NA)
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
   # scale_colour_brewer(palette="Set1")
 Fig1p1
-
-Fig1p2 <- ggplot(data=subset(gendereducation, sex=="Women"), aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(sex), rows=vars(type), scales="free", switch="y") +
-  ylab("Mortality rate per 100,000 population") + 
-  theme_bw() + theme(legend.title=element_blank(),
-                     legend.position="bottom",
-                     strip.background = element_rect(fill="white"),
-                     text = element_text(size=22, family="Times")) + 
-  xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) +
-  geom_point(data=subset(ff, sex=="Women"),x=NA, colour=NA)
-# scale_colour_brewer(palette="Set1")
-Fig1p2
-
-
-
-combined <- ggarrange(Fig1p1, Fig1p2, ncol=2, nrow=1, common.legend = TRUE, legend="bottom")
-combined
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_LisbonAddictions_p2.png",
-       combined, width=55, height=30, units="cm", dpi=500)
-
-
-# read in rates by race data file 
-gendereducationrace <- read_dta("SIMAH_Workplace/opioid_paper/poisoningdata/poison-gender-race-education-StandardRates-25plus-00-20.dta")
-
-type <- c("Alcohol","Opioid","Alcohol and Opioid")
-sex <- c("Men","Women")
-race <- c("Black","White")
-edclass <- c("High school degree or less", "Some college",
-             "College degree or more")
-facet_bounds <- expand.grid(type,sex,race,edclass)
-facet_bounds$ymin <- 0
-names(facet_bounds) <- c("type","sex","race","edclass","ymin")
-facet_bounds$ymax <- ifelse(facet_bounds$type=="Opioid" & facet_bounds$sex=="Men", 80,
-                            ifelse(facet_bounds$type=="Alcohol" & facet_bounds$sex =="Men", 15,
-                                   ifelse(facet_bounds$type=="Alcohol and Opioid" & facet_bounds$sex == "Men", 25,
-                                          ifelse(facet_bounds$type=="Opioid" & facet_bounds$sex == "Women", 50,
-                                                 ifelse(facet_bounds$type=="Alcohol" & facet_bounds$sex == "Women", 7, 7)))))
-
-ff <- with(facet_bounds,
-           data.frame(rate=c(ymin,ymax),
-                      type=c(type,type),
-                      sex =c(sex,sex),
-                      race = c(race,race),
-                      edclass=c(edclass,edclass))) %>%
-  mutate(sex2 = ifelse(sex=="Men","men","women"),
-         sexrace = paste(race, sex2, sep=" "),
-         sexrace = factor(sexrace, levels=c("White men","Black men","White women","Black women")))
   
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_LisbonAddictions_V2.png",
+       Fig1p1, width=55, height=30, units="cm", dpi=500)  
 
+# plot by educational attainment
+agedist <- poisonings %>% filter(year==2020) %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  
+  group_by(age_gp, edclass) %>% 
+  summarise(tpop=sum(pop)) %>% ungroup() %>% group_by(edclass) %>% 
+  mutate(prop = tpop/sum(tpop))
 
-gendereducationrace <- gendereducationrace %>% remove_all_labels() %>% 
-  zap_formats() %>% 
-  dplyr::select(year, edclass, sex, race, alc_only_fin_StdRate,
-                opioid_only_fin_StdRate, alc_opioid_fin_StdRate) %>% 
-  pivot_longer(cols=c(alc_only_fin_StdRate:alc_opioid_fin_StdRate),
-               names_to="type", values_to="rate") %>% 
-  mutate(type=gsub("_fin_StdRate","",type),
-         edclass = recode(edclass, "1"="High school degree or less",
-                          "2"="Some college",
-                          "3"="College degree or more"),
-         edclass = factor(edclass, levels=c("High school degree or less",
-                                            "Some college",
-                                            "College degree or more")),
-         sex = ifelse(sex==1, "Men","Women"),
-         type = recode(type, "alc_only"="Alcohol",
-                       "opioid_only"="Opioid",
-                       "alc_opioid"="Alcohol and Opioid"),
-         type=factor(type, levels=c("Alcohol","Alcohol and Opioid","Opioid")),
-         race = recode(race, "1"="Non-Hispanic White",
-                       "2"="Non-Hispanic Black",
-                       "3"="Hispanic",
-                       "4"="Non-Hispanic Others"),
-         race = factor(race, levels=c("Non-Hispanic White",
-                                      "Non-Hispanic Black",
-                                      "Hispanic",
-                                      "Non-Hispanic Others")))
+agesprate <- poisonings %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  group_by(year, age_gp, edclass) %>% 
+  summarise(alc_only = sum(alc_only)/sum(pop)*100000,
+            op_only = sum(opioid_only)/sum(pop)*100000,
+            alc_opioid = sum(alc_opioid)/sum(pop)*100000)
 
-genderedrace <- gendereducationrace %>% filter(race != "Non-Hispanic Others" & race!="Hispanic") %>% 
-  mutate(race2 = ifelse(race=="Non-Hispanic Black", "Black","White"),
-         sex2 = ifelse(sex=="Men","men","women"),
-    sexrace = paste(race2, sex2, sep=" "),
-         sexrace = factor(sexrace, levels=c("White men","Black men","White women","Black women")))
+agesprate <- left_join(agesprate, agedist) %>% 
+  group_by(year, age_gp, edclass) %>% 
+  summarise(alc_only = alc_only*prop,
+            op_only = op_only*prop,
+            alc_opioid = alc_opioid*prop) %>% 
+  ungroup() %>% 
+  group_by(year, edclass) %>% 
+  summarise(alc_only = sum(alc_only),
+            op_only = sum(op_only),
+            alc_opioid=sum(alc_opioid)) %>% pivot_longer(alc_only:alc_opioid) %>% 
+  mutate(name = ifelse(name=="alc_only","Alcohol only",
+                       ifelse(name=="op_only","Opioid only", "Alcohol and Opioid")),
+         name = factor(name, levels=c("Alcohol only", "Opioid only", "Alcohol and Opioid")),
+         edclass = ifelse(edclass==1,"HS or less",
+                          ifelse(edclass == 3,"College degree +", "SomeC")),
+         edclass = factor(edclass, levels=c("HS or less", "College degree +", "SomeC"))) %>% 
+  filter(edclass !="SomeC")
 
-Fig2p1 <- ggplot(data=subset(genderedrace, sex=="Men"), 
-                 aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(sexrace), rows=vars(type), scales="free", switch="y") +
-  ylab("Mortality rate per 100,000 population") + 
+Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=edclass)) + 
+  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=23, family="Times"),
-                     plot.margin = margin(0.2,1.1,0.2,0.2, "cm")) + ylim(0,NA) + 
-  xlab("Year") +
-  scale_colour_manual(values=color.vec)  +
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) +
-  theme(panel.spacing=unit(1.6,"lines")) + 
-  geom_point(data=subset(ff, sex=="Men"),x=NA, colour=NA)
+                     text = element_text(size=28, family="Times")) + 
+  xlab("Year") + scale_colour_manual(values=color.vec) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+# scale_colour_brewer(palette="Set1")
+Fig1p1
 
-Fig2p1
-Fig2p2 <- ggplot(data=subset(genderedrace, sex=="Women"), 
-                 aes(x=year, y=rate, colour=edclass)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(sexrace), rows=vars(type), scales="free", switch="y") +
-  ylab("Mortality rate per 100,000 population") + 
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_LisbonAddictions_V2.png",
+       Fig1p1, width=55, height=30, units="cm", dpi=500)  
+
+agedist <- poisonings %>% filter(year==2020) %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  
+  group_by(age_gp, race) %>% 
+  summarise(tpop=sum(pop)) %>% ungroup() %>% group_by(race) %>% 
+  mutate(prop = tpop/sum(tpop))
+
+agesprate <- poisonings %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  group_by(year, age_gp, race) %>% 
+  summarise(alc_only = sum(alc_only)/sum(pop)*100000,
+            op_only = sum(opioid_only)/sum(pop)*100000,
+            alc_opioid = sum(alc_opioid)/sum(pop)*100000)
+
+agesprate <- left_join(agesprate, agedist) %>% 
+  group_by(year, age_gp, race) %>% 
+  summarise(alc_only = alc_only*prop,
+            op_only = op_only*prop,
+            alc_opioid = alc_opioid*prop) %>% 
+  ungroup() %>% 
+  group_by(year, race) %>% 
+  summarise(alc_only = sum(alc_only),
+            op_only = sum(op_only),
+            alc_opioid=sum(alc_opioid)) %>% pivot_longer(alc_only:alc_opioid) %>% 
+  mutate(name = ifelse(name=="alc_only","Alcohol only",
+                       ifelse(name=="op_only","Opioid only", "Alcohol and Opioid")),
+         name = factor(name, levels=c("Alcohol only", "Opioid only", "Alcohol and Opioid")),
+         race = ifelse(race==1,"NH-White",
+                       ifelse(race==2, "NH-Black", "Others"))) %>%  filter(race !="Others")
+
+Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=race)) + 
+  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=23, family="Times"),
-                     plot.margin = margin(0.2,1.1,0.2,0.2, "cm")) + ylim(0,NA) + 
-  xlab("Year") +
-  scale_colour_manual(values=color.vec) +
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) +
-  theme(panel.spacing=unit(1.6,"lines")) + 
-  geom_point(data=subset(ff, sex=="Women"),x=NA, colour=NA)
+                     text = element_text(size=28, family="Times")) + 
+  xlab("Year") + scale_colour_manual(values=color.vec) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+# scale_colour_brewer(palette="Set1")
+Fig1p1
 
-Fig2p2
-combined <- ggarrange(Fig2p1, Fig2p2, ncol=2, nrow=1, common.legend = TRUE, legend="bottom")
-combined
-ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_LisbonAddictions_p2.png",
-       combined, width=55, height=30, units="cm", dpi=500)
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure3_LisbonAddictions_V2.png",
+       Fig1p1, width=55, height=30, units="cm", dpi=500)  
+
+agedist <- poisonings %>% filter(year==2020) %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  
+  group_by(age_gp, race, edclass) %>% 
+  summarise(tpop=sum(pop)) %>% ungroup() %>% group_by(race, edclass) %>% 
+  mutate(prop = tpop/sum(tpop))
+
+agesprate <- poisonings %>% 
+  mutate(age_gp = cut(age,
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,100))) %>% 
+  group_by(year, age_gp, race, edclass) %>% 
+  summarise(alc_only = sum(alc_only)/sum(pop)*100000,
+            op_only = sum(opioid_only)/sum(pop)*100000,
+            alc_opioid = sum(alc_opioid)/sum(pop)*100000)
+
+agesprate <- left_join(agesprate, agedist) %>% 
+  group_by(year, age_gp, race, edclass) %>% 
+  summarise(alc_only = alc_only*prop,
+            op_only = op_only*prop,
+            alc_opioid = alc_opioid*prop) %>% 
+  ungroup() %>% 
+  group_by(year, race, edclass) %>% 
+  summarise(alc_only = sum(alc_only),
+            op_only = sum(op_only),
+            alc_opioid=sum(alc_opioid)) %>% pivot_longer(alc_only:alc_opioid) %>% 
+  mutate(name = ifelse(name=="alc_only","Alcohol only",
+                       ifelse(name=="op_only","Opioid only", "Alcohol and Opioid")),
+         name = factor(name, levels=c("Alcohol only", "Opioid only", "Alcohol and Opioid")),
+         race = ifelse(race==1,"NH-White",
+                       ifelse(race==2, "NH-Black", "Others")),
+         edclass = ifelse(edclass==1,"HS or less",
+                          ifelse(edclass == 3,"College degree +", "SomeC"))) %>% 
+  filter(race !="Others") %>% 
+  filter(edclass!="SomeC") %>% mutate(cat = paste(race, edclass))
+
+color.vec <- c("#132268", "#447a9e", "#93AEBF", "black")
+
+
+Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=cat)) + 
+  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  ylab("Age-standardised mortality per 100,000") + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=28, family="Times")) + 
+  xlab("Year") + scale_colour_manual(values=color.vec) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+# scale_colour_brewer(palette="Set1")
+Fig1p1
+
+ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure4_LisbonAddictions_V2.png",
+       Fig1p1, width=55, height=30, units="cm", dpi=500)  
 
 # age, period and cohort plots
 IRR <- read_dta("SIMAH_workplace/opioid_paper/apcdata/APC-results-by-gender-race.dta") %>% 
-  mutate(sex = ifelse(sex==1, "Men","Women"),
+  mutate(sex = ifelse(sex==1, "men","women"),
          race = as.factor(race),
-         race = recode(race, "0"="all","1"="White","2"="Black","3"="Hispanic","4"="Others"),
-         apc = recode(apc, "A"="Age","P"="Period","C"="Cohort")) %>% 
+         race = recode(race, "0"="all","1"="NH-White","2"="NH-Black","3"="Hispanic","4"="Others"),
+         apc = recode(apc, "A"="Age","P"="Period","C"="Cohort"),
+         cat = paste(race, sex)) %>% 
+  filter(race!="all") %>% filter(race!="Hispanic") %>% filter(race!="Others") %>% 
   zap_labels() %>% zap_formats() %>% 
   pivot_longer(cols=c(alc_irr:both_hi), values_to="IRR") %>% 
   mutate(substance = ifelse(grepl("opioid", name), "Opioid only",
@@ -209,7 +232,7 @@ IRR <- read_dta("SIMAH_workplace/opioid_paper/apcdata/APC-results-by-gender-race
          type = ifelse(grepl("irr",name),"IRR",
                        ifelse(grepl("hi", name), "upper_CI",
                               ifelse(grepl("lo", name), "lower_CI", "p value")))) %>%
-  dplyr::select(category, sex, race, apc, IRR, substance,type) %>% 
+  dplyr::select(category, sex, race, cat, apc, IRR, substance,type) %>% 
   pivot_wider(names_from=type, values_from=IRR) %>% 
   mutate(upper = ifelse(apc=="Age", substr(category, 4,5),
                         ifelse(apc=="Cohort", substr(category,6,9), NA)),
@@ -227,42 +250,17 @@ IRR <- read_dta("SIMAH_workplace/opioid_paper/apcdata/APC-results-by-gender-race
          # category = ifelse(category=="<=19","1930",
          #                   ifelse(category==">=19","1996",category)),
          category = as.numeric(category),
-         substance = factor(substance, levels=c("Alcohol only","Alcohol and Opioid","Opioid only")))
+         substance = factor(substance, levels=c("Alcohol only","Opioid only","Alcohol and Opioid")))
 unique(IRR$category)
 summary(as.factor(IRR$category))
 
-race <- IRR %>% filter(race!="all") %>% 
-  mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI),
-         race = factor(race, levels=c("White","Black","Hispanic"))) %>% 
-  group_by(sex, race, apc, substance)
-
-
-max_IRR <- race %>% group_by(sex, race, apc, substance) %>% 
-  mutate(max_IRR = max(IRR),
-         select = ifelse(max_IRR == IRR, 1,0)) %>% 
-  filter(select==1) %>% 
-  dplyr::select(category, sex, race, apc, substance, max_IRR) %>% 
-  summarise(max_x = ifelse(apc=="Period" & category==2020, 2020, 
-                           category+5), 
-            min_x = ifelse(apc=="Period" & category==2020, 2018,
-                           category-5),
-            min_y = 0.5,
-            max_y = max_IRR)
-
-
-race <- left_join(race, max_IRR)
-
-ageeffects <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
-             rows=vars(substance), scales="free") + geom_line(size=1) + 
-  theme_bw() + ylim(0,NA) +
-  geom_rect(data=subset(race,apc=="Age"), aes(xmin=min_x, xmax=max_x, ymin = min_y, ymax = max_y,
-                                              fill=sex, colour=sex),
-           alpha = .1) + 
-  theme(legend.title=element_blank(),
-        legend.position="bottom",
-        strip.background = element_rect(fill="white"),
-        text = element_text(size=18)) + 
+ageeffects <- ggplot(subset(IRR,apc=="Age"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+  facet_grid(cols=vars(substance),
+             scales="free") + geom_line(size=1) + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=28, family="Times")) + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
@@ -270,20 +268,14 @@ ageeffects <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex,
   geom_hline(yintercept=1, linetype="dashed")
 ageeffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig3_LisbonAddictions_age.png"), ageeffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig5_LisbonAddictions_age_V2.png"), ageeffects, dpi=300, width=33, height=19, units="cm")
 
-periodeffects <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
-             rows=vars(substance), scales="free") + geom_line(size=1) + 
-  theme_bw() + ylim(0,NA) +
-  geom_rect(data=subset(race,apc=="Period"), aes(xmin=min_x, xmax=max_x, ymin = min_y, 
-                                                 ymax =max_y, colour=sex),
-            fill=NA,
-            alpha = .05) + 
-  theme(legend.title=element_blank(),
-        legend.position="bottom",
-        strip.background = element_rect(fill="white"),
-        text = element_text(size=18)) + 
+periodeffects <- ggplot(subset(IRR,apc=="Period"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+  facet_grid(cols=vars(substance), scales="free") + geom_line(size=1) + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=28, family="Times")) + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
@@ -292,21 +284,19 @@ periodeffects <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colou
   xlim(2000,2020)
 periodeffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig3_LisbonAddictions_period.png"), periodeffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig6_LisbonAddictions_period_V2.png"), periodeffects, dpi=300, width=33, height=19, units="cm")
 
 
-cohorteffects <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
-             rows=vars(substance), scales="free") + geom_line(size=1) + 
-  theme_bw() + ylim(0,NA) +
-  theme(legend.title=element_blank(),
-        legend.position="bottom",
-        strip.background = element_rect(fill="white"),
-        text = element_text(size=18)) + 
-  geom_rect(data=subset(race,apc=="Cohort"), aes(xmin=min_x, xmax=max_x, ymin = min_y, 
-                                                 ymax =max_y, colour=sex),
-            fill=NA,
-            alpha = .05)  + 
+cohorteffects <- ggplot(subset(IRR,apc=="Cohort"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+  facet_grid(cols=vars(substance), scales="free") + geom_line(size=1) + 
+  theme_bw() + theme(legend.title=element_blank(),
+                     legend.position="bottom",
+                     strip.background = element_rect(fill="white"),
+                     text = element_text(size=28, family="Times")) + 
+  # geom_rect(data=subset(race,apc=="Cohort"), aes(xmin=min_x, xmax=max_x, ymin = min_y, 
+  #                                                ymax =max_y, colour=sex),
+  #           fill=NA,
+  #           alpha = .05)  + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
@@ -314,7 +304,7 @@ cohorteffects <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colou
   geom_hline(yintercept=1, linetype="dashed")
 cohorteffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig3_LisbonAddictions_cohort.png"), cohorteffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig7_LisbonAddictions_cohort.png"), cohorteffects, dpi=300, width=33, height=19, units="cm")
 
 
 
