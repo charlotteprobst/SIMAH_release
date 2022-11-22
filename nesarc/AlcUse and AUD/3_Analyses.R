@@ -8,7 +8,9 @@ library(knitr)       # table formatting
 library(survey)      # to work with survey data
 library(srvyr)       # adds dplyr like syntax to the survey package
 library(broom)       # model results
+library(janitor)     # tabyl function 
 
+citation("survey")
 
 # Specify the data and output file locations
 data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
@@ -52,40 +54,78 @@ options(survey.lonely.psu="adjust")
 nesarc_srvyr_female <- filter(nesarc_srvyr, female==1)
 nesarc_srvyr_male   <- filter(nesarc_srvyr, female==0)
 
+# Clean copy of original data
+nesarc_clean <- nesarc %>%
+  filter(AUD_lifetime2_wave1=="No AUD") %>%                # keep those with no AUD at wave 1
+  filter(!is.na(alc5.factor_wave1) & !is.na(incident_AUD)) # remove those with no baseline alcohol use
 
 
-# Descriptives -----------------------------------------------------------------------------------------------
 
-# Participant characteristics 
+# Prevalence of AUD ------------------------------------------------------------------------------------
+
+# Men + Women Combined, survey adjusted
+nesarc_srvyr %>% 
+  group_by(incident_AUD.factor) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame()
+
+    # Raw sample size
+    tabyl(nesarc_clean, incident_AUD.factor) %>% adorn_totals()
+
+
+# Sex stratified, survey adjusted
+nesarc_srvyr %>% 
+  group_by(incident_AUD.factor, female.factor) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total())%>%
+  as.data.frame()
+
+  # Raw sample size
+  tabyl(nesarc_clean, incident_AUD.factor, female.factor) %>% adorn_totals()
+
+  
+# Baseline alcohol use-stratified, survey adjusted
+nesarc_srvyr %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
+
+    # Raw sample size
+    tabyl(nesarc_clean, alc5.factor_wave1, incident_AUD.factor) %>% adorn_totals(c("row", "col"))
+
+
+# Baseline alcohol use and sex-stratified, survey adjusted
+nesarc_srvyr_female %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor, ) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
+    
+nesarc_srvyr_male %>% 
+  group_by(alc5.factor_wave1, incident_AUD.factor, ) %>% 
+  summarize(proportion = survey_prop(),
+    total = survey_total()) %>% 
+  as.data.frame() %>%
+  filter(incident_AUD.factor=="Incident AUD")
+
+    # Raw sample size
+    tabyl(nesarc_clean, alc5.factor_wave1, incident_AUD.factor, female.factor) %>% adorn_totals(c("row", "col"))
+    
+
+
+# Participant characteristics  ----------------------------------------------------------------------------
 svyCreateTableOne(vars = c("female.factor", "age7", "edu3", "ethnicity4", "alc5.factor_wave1", "alc5.factor"),
   strata = "incident_AUD.factor", addOverall = TRUE, data = nesarc_srvyr) %>% 
   print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%
   write.csv(paste0(output, "Table 1 Demographic characteristics.csv"))
 
 
-# Prevalence of outcome (Incident AUD)
-nesarc_srvyr %>% 
-  group_by(incident_AUD.factor) %>% 
-  summarize(proportion = survey_prop(),
-            total = survey_total())
-
-    nesarc_srvyr_female %>% 
-      group_by(incident_AUD.factor) %>% 
-      summarize(proportion = survey_prop(),
-                total = survey_total())%>%
-      as.data.frame()
-    
-    
-    nesarc_srvyr_male %>% 
-      group_by(incident_AUD.factor) %>% 
-      summarize(proportion = survey_prop(),
-                total = survey_total())%>%
-      as.data.frame()
-   
-     # Prevalence of AUD is low (<10%); OR can be interpreted as RR
-    
-    
-# Mean g/day for each Alcohol Use category at baseline
+  
+# Mean g/day for each Alcohol Use category at baseline, survey weight adjusted
 nesarc_srvyr %>% 
   group_by(alc5.factor_wave1) %>%
   summarize(mean_daily_g = survey_mean(alc_daily_g_wave1)) %>%
@@ -95,8 +135,6 @@ nesarc_srvyr %>%
   group_by(female, alc5.factor_wave1) %>%
   summarize(mean_daily_g = survey_mean(alc_daily_g_wave1))%>%
   as.data.frame()
-
-
 
 
 # Alcohol use --> AUD Incidence Analyses --------------------------------------------------------------------
