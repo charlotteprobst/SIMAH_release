@@ -51,19 +51,23 @@ agesprate <- left_join(agesprate, agedist) %>%
          name = factor(name, levels=c("Alcohol only", "Opioid only", "Alcohol and Opioid")))
 
 Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  geom_line(size=2, colour="#132268") + facet_grid(cols=vars(name), scales="free", switch="y") +
   ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=28, family="Times")) + 
-  xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+                     text = element_text(size=28, family="Times"),
+                     panel.spacing=unit(1.3,"lines")) + 
+  xlab("Year") + 
+  # scale_colour_manual(values=color.vec) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_colour_brewer(palette="Set2")
+  
   # scale_colour_brewer(palette="Set1")
 Fig1p1
   
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure1_LisbonAddictions_V2.png",
-       Fig1p1, width=55, height=30, units="cm", dpi=500)  
+       Fig1p1, width=37, height=19, units="cm", dpi=500)  
 
 # plot by educational attainment
 agedist <- poisonings %>% filter(year==2020) %>% 
@@ -101,19 +105,24 @@ agesprate <- left_join(agesprate, agedist) %>%
   filter(edclass !="SomeC")
 
 Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=edclass)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  geom_line(size=2) + facet_grid(cols=vars(name), scales="free", switch="y") +
   ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=28, family="Times")) + 
-  xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+                     text = element_text(size=28, family="Times"),
+                     panel.spacing=unit(1.3,"lines")) + 
+  xlab("Year") + scale_colour_manual(values=c("#1F78B4","#33A02C")) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) 
+  # scale_colour_brewer(palette="Paired")
+
 # scale_colour_brewer(palette="Set1")
 Fig1p1
+my_colors <- RColorBrewer::brewer.pal(4, "Paired")
+my_colors
 
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure2_LisbonAddictions_V2.png",
-       Fig1p1, width=55, height=30, units="cm", dpi=500)  
+       Fig1p1, width=37, height=19, units="cm", dpi=500)  
 
 agedist <- poisonings %>% filter(year==2020) %>% 
   mutate(age_gp = cut(age,
@@ -155,7 +164,9 @@ Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=race)) +
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=28, family="Times")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_colour_brewer(palette="Set1")
+
 # scale_colour_brewer(palette="Set1")
 Fig1p1
 
@@ -196,25 +207,33 @@ agesprate <- left_join(agesprate, agedist) %>%
          edclass = ifelse(edclass==1,"HS or less",
                           ifelse(edclass == 3,"College degree +", "SomeC"))) %>% 
   filter(race !="Others") %>% 
-  filter(edclass!="SomeC") %>% mutate(cat = paste(race, edclass))
+  filter(edclass!="SomeC") %>% mutate(cat = paste(race, edclass),
+                                      cat = factor(cat, levels=
+                                                     c("NH-Black HS or less",
+                                                       "NH-White HS or less",
+                                                       "NH-Black College degree +",
+                                                       "NH-White College degree +"))) 
 
 color.vec <- c("#132268", "#447a9e", "#93AEBF", "black")
 
 
 Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=cat)) + 
-  geom_line(size=1.5) + facet_grid(cols=vars(name), scales="free", switch="y") +
+  geom_line(size=2) + facet_grid(cols=vars(name), scales="free", switch="y") +
   ylab("Age-standardised mortality per 100,000") + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=28, family="Times")) + 
+                     text = element_text(size=26, family="Times"),
+                     panel.spacing=unit(1.3,"lines")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020))
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_colour_brewer(palette="Paired")
+
 # scale_colour_brewer(palette="Set1")
 Fig1p1
 
 ggsave("SIMAH_workplace/opioid_paper/poisoningdata/Figure4_LisbonAddictions_V2.png",
-       Fig1p1, width=55, height=30, units="cm", dpi=500)  
+       Fig1p1, width=37, height=19, units="cm", dpi=500)  
 
 # age, period and cohort plots
 IRR <- read_dta("SIMAH_workplace/opioid_paper/apcdata/APC-results-by-gender-race.dta") %>% 
@@ -250,45 +269,65 @@ IRR <- read_dta("SIMAH_workplace/opioid_paper/apcdata/APC-results-by-gender-race
          # category = ifelse(category=="<=19","1930",
          #                   ifelse(category==">=19","1996",category)),
          category = as.numeric(category),
-         substance = factor(substance, levels=c("Alcohol only","Opioid only","Alcohol and Opioid")))
+         substance = factor(substance, levels=c("Alcohol only","Opioid only","Alcohol and Opioid"))) %>% 
+  group_by(sex, race, cat, apc, substance) %>% 
+  mutate(max_x = ifelse(IRR==max(IRR), as.numeric(upper),NA),
+         min_x = ifelse(IRR==max(IRR), as.numeric(lower), NA),
+         max_x = ifelse(cat=="NH-Black men" & substance=="Alcohol only" &
+                          apc=="Cohort", 1955, max_x),
+         min_x = ifelse(cat=="NH-Black men" & substance=="Alcohol only" & 
+                          apc=="Cohort", 1950, min_x),
+         min_y = 0,
+         max_y = max(IRR)) %>% 
+  fill(max_x, .direction=c("updown")) %>% fill(min_x, .direction=c("updown"))
 unique(IRR$category)
 summary(as.factor(IRR$category))
 
-ageeffects <- ggplot(subset(IRR,apc=="Age"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+
+
+ageeffects <- ggplot(subset(IRR,apc=="Age"& sex=="men"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
   facet_grid(cols=vars(substance),
-             scales="free") + geom_line(size=1) + 
+             scales="free") + geom_line(size=2) + 
+  geom_rect(aes(xmin=min_x,xmax=max_x,fill=cat,ymin=min_y,ymax=max_y),
+            colour=NA, size=0.5, alpha=0.2) + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=28, family="Times")) + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
-  scale_colour_brewer(palette="Set1") + 
-  scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed")
+  scale_colour_brewer(palette="Paired") + 
+  scale_fill_brewer(palette="Paired") + 
+  geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("Age")
 ageeffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig5_LisbonAddictions_age_V2.png"), ageeffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig5_LisbonAddictions_age_V2_withrect.png"), 
+       ageeffects, dpi=300, width=37, height=19, units="cm")
 
-periodeffects <- ggplot(subset(IRR,apc=="Period"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
-  facet_grid(cols=vars(substance), scales="free") + geom_line(size=1) + 
+periodeffects <- ggplot(subset(IRR,apc=="Period" & sex=="men"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+  facet_grid(cols=vars(substance), scales="free") + geom_line(size=2) + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
-                     text = element_text(size=28, family="Times")) + 
+                     text = element_text(size=28, family="Times"),
+                     panel.spacing=unit(1.3,"lines")) + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
-  scale_colour_brewer(palette="Set1") + 
-  scale_fill_brewer(palette="Set1") + 
+  scale_colour_brewer(palette="Paired") + 
+  scale_fill_brewer(palette="Paired") + 
   geom_hline(yintercept=1, linetype="dashed") + 
-  xlim(2000,2020)
+  xlim(2000,2020) + xlab("Year")
 periodeffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig6_LisbonAddictions_period_V2.png"), periodeffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig6_LisbonAddictions_period_V2.png"), 
+       periodeffects, dpi=300, width=37, height=19, units="cm")
 
 
-cohorteffects <- ggplot(subset(IRR,apc=="Cohort"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
-  facet_grid(cols=vars(substance), scales="free") + geom_line(size=1) + 
+cohorteffects <- ggplot(subset(IRR,apc=="Cohort" & sex=="men"), aes(x=category, y=IRR, colour=cat, fill=cat)) + 
+  facet_grid(cols=vars(substance), scales="free") + geom_line(size=2) + 
+  geom_rect(aes(xmin=min_x,xmax=max_x,fill=cat,ymin=min_y,ymax=max_y),
+            colour=NA, size=0.5, alpha=0.2) + 
   theme_bw() + theme(legend.title=element_blank(),
                      legend.position="bottom",
                      strip.background = element_rect(fill="white"),
@@ -299,12 +338,14 @@ cohorteffects <- ggplot(subset(IRR,apc=="Cohort"), aes(x=category, y=IRR, colour
   #           alpha = .05)  + 
   ylab("IRR") + xlab("") + 
   # geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
-  scale_colour_brewer(palette="Set1") + 
-  scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed")
+  scale_colour_brewer(palette="Paired") + 
+  scale_fill_brewer(palette="Paired") + 
+  geom_hline(yintercept=1, linetype="dashed") + 
+  xlab("Birth year")
 cohorteffects
 
-ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig7_LisbonAddictions_cohort.png"), cohorteffects, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("SIMAH_workplace/opioid_paper/poisoningdata/Fig7_LisbonAddictions_cohort.png"), 
+       cohorteffects, dpi=300, width=37, height=19, units="cm")
 
 
 
