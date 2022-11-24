@@ -13,7 +13,7 @@ exdrinkers <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/2exdrinkers.xls
 exdrinkers$sex <- as.factor(exdrinkers$sex)
 
 ex.male <- exdrinkers %>%
-  filter(sex == 1 & alc == 1)
+  filter(sex == 1  & alc == 1)
 ex.female <- exdrinkers %>%
   filter(sex == 2 & alc == 1)
 both <- exdrinkers %>%
@@ -109,3 +109,14 @@ prop.both <- metaprop(event = n.group,
                         method.ci = "NAsm",
                         title = "Proportion of ex-drinkers")
 summary(prop.both)
+
+#excluding Kerr
+
+exdrinkers <- exdrinkers[-c(23,24,25,26),]
+
+ex.male <- exdrinkers %>%
+  filter(sex == 1  & alc == 1)
+ex.female <- exdrinkers %>%
+  filter(sex == 2 & alc == 1)
+both <- exdrinkers %>%
+  filter(alc==1)
