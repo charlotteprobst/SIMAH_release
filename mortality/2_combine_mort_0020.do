@@ -20,7 +20,9 @@ use "Mort`i'.dta", clear
         keep if ageunit==0
         keep if age>=18 & age<=150
 
-keep year region educ89 hisprec sex age fipsstr fipsctyr icd10 icd358
+keep year region educ89 hisprec sex age fipsstr fipsctyr icd10 icd358 ///
+      E_condition* R_condition*
+
         gen icd358R = real(icd358)
         drop icd358 
 		ren icd358R icd358
@@ -67,7 +69,8 @@ drop if resstatus>3
 keep if ageunit==1
 keep if age>=18 & age<=150
 
-keep year educ* hisprec sex age fipsstr fipsctyr icd10 icd358
+keep year educ* hisprec sex age fipsstr fipsctyr icd10 icd358 ///
+      E_condition* R_condition*
         gen sexx=1 if sex=="M"
         replace sexx=2 if sex=="F"
         drop sex
@@ -135,7 +138,8 @@ keep if ageunit==1
 keep if age>=18 & age<=150
 
 
-keep year educ* hisprec sex age fipsstr fipsctyr icd10 icd358
+keep year educ* hisprec sex age fipsstr fipsctyr icd10 icd358 ///
+      E_condition* R_condition*
 
         gen sexx=1 if sex=="M"
         replace sexx=2 if sex=="F"
@@ -173,7 +177,6 @@ save Mort_0520_edit, replace
 
 append using Mort_0004_edit.dta
 
-save Mort_0020_notfinal.dta, replace
 
 /* these are NH other races and hisp origin UNK */
 *drop if race ==.;

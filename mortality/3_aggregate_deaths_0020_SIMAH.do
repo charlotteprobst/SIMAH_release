@@ -73,11 +73,11 @@ drop uij_temp
 // R78.0, X45-X45.9, Y15-Y15.9, Y90, Y91, Y91.0 – Y91.3, Y91.9
 
 gen aud = 1 if inlist(icd10, "E244") | inrange(icd10, "F10", "F109") | inlist(icd10, "G312")  ///
-	| inlist(icd10, "G721") | inlist(icd10, "I426") | inlist(icd10, "K292") ///
+	| inlist(icd10, "G621") | inlist(icd10, "G721") | inlist(icd10, "I426") | inlist(icd10, "K292") ///
 	| inlist(icd10, "K852") | inlist(icd10, "K860") | inlist(icd10, "R780") ///
 	| inrange(icd10, "X45", "X459") | inrange(icd10, "Y15", "Y159") ///
 	| inrange(icd10, "Y90", "Y909") | inrange(icd10, "Y91", "Y919")
-
+	
 //////////////////////////////////////////////////////////////////////
 
 // Suicide (Intentional self harm) [X60-X84, Y87.0]
@@ -176,13 +176,13 @@ bysort age_gp sex edclass race year: egen IJmort = total(ij)
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
-save "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", replace
+save "3_out data/2_allethn_sumCOD_0020.dta", replace
 
 //assigning deaths without education information
 //Deaths with missing data on SES were assigned to an education category based 
 //on the proportion in each education group by year, race/ethnicity, sex, age group, and cause of death.
 
-use "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", clear
+use "3_out data/2_allethn_sumCOD_0020_SIMAH.dta", clear
 
 keep year sex age_gp edclass race *mort
 reshape wide Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
@@ -212,5 +212,5 @@ reshape long Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
 	
 lab define edlab 1 "LEHS" 2 "SomeC" 3 "College", modify
  
-save "3_out data/allethn_sumCOD_0020_LE_decomp.dta", replace
-outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv" , comma replace
+save "3_out data/allethn_sumCOD_0020_SIMAH.dta", replace
+outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_SIMAH.csv" , comma replace
