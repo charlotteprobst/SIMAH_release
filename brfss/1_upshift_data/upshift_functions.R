@@ -17,7 +17,7 @@ remove_missing_data <- function(data){
                         ifelse(BMI>=65, NA, BMI)),
            BMI = ifelse(BMI<=15, 15,
                         ifelse(BMI>=45, 45, BMI))) %>% 
-    dplyr::select(YEAR, State, StateOrig, final_sample_weight, race_eth,
+    dplyr::select(YEAR, surveymonth, surveyyear, State, StateOrig, final_sample_weight, race_eth,
                   race_eth_detailed,
                   sex_recode, age_var,
                   employment,

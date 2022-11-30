@@ -466,12 +466,31 @@ recode_sample_weights <- function(data){
   return(data)
 }
 
+extract_date <- function(data){
+  data <- data %>% 
+    mutate(date = IDATE,
+           surveymonth = ifelse(IMONTH==13, 1,
+                                ifelse(IMONTH==14, 2,
+                                       IMONTH)),
+           surveymonth = recode(surveymonth, "1"="January","2"="February","3"="March","4"="April",
+                                "5"="May","6"="June","7"="July","8"="August","9"="September","10"="October",
+                                "11"="November","12"="December"),
+           surveyyear = ifelse(IYEAR==1, YEAR,
+                               YEAR+1))
+  return(data)
+}
+
+# for(i in 1:length(dataFiles2)){
+#   print(unique(dataFiles2[[i]]$YEAR))
+#   print(summary(as.factor(dataFiles2[[i]]$surveymonth)))
+# }
+
 
 # select variables required 
 
 subset_data <- function(data){
   data <- data %>% 
-    dplyr::select(YEAR, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
+    dplyr::select(YEAR, surveymonth, surveyyear, State, final_sample_weight, race_eth, race_eth_detailed, sex_recode, age_var,
                   education_summary, employment, marital_status,
                   household_income,
                   height_cm, weight_kg, BMI_final, drinkingstatus, 

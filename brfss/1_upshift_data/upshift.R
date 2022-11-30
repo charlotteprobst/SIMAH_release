@@ -23,7 +23,7 @@ setwd(wd)
 ####read in the joined up data files 
 data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
 gc()
-data <- do.call(rbind, data)
+data <- do.call(rbind, data) %>% filter(YEAR>=2000)
 
 data <- data %>% filter(State!="Guam") %>% filter(State!="Puerto Rico") %>% filter(State!="territories")
 
@@ -125,7 +125,7 @@ data <- data %>% group_by(YEAR, State) %>%
          quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
          gramsperday_upshifted= gramsperday_new*(cr_quotient^2),   # apply cube root quotient to gpd
-         gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
+         # gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
          frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
@@ -137,23 +137,29 @@ data <- data %>% group_by(YEAR, State) %>%
 data <- add_brfss_regions(data)
 
 final_version <- data %>%
-  dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var,
+  rename(gramsperday_orig = gramsperday,
+         frequency_orig = alc_frequency,
+         gramsperday_upshifted = gramsperday_upshifted,
+         frequency_upshifted = frequency_upshifted,
+         quantity_per_occasion_orig = quantity_per_occasion,
+         quantity_per_occasion_upshifted = quantity_per_occasion_upshifted,
+         drinkingstatus_orig = drinkingstatus,
+         drinkingstatus_upshifted = drinkingstatus_updated) %>% 
+  dplyr::select(YEAR, surveymonth, surveyyear, final_sample_weight, State, region, race_eth, sex_recode, age_var,
                 education_summary, household_income,
-                employment, marital_status, BMI,
-                drinkingstatus_detailed, drinkingstatus_updated,
-                gramsperday_upshifted,
-                alc_frequency_new,
-                frequency_upshifted,
-                quantity_per_occasion_upshifted) %>% 
-  rename(gramsperday = gramsperday_upshifted,
-         frequency_orig = alc_frequency_new,
-         frequency = frequency_upshifted,
-         quantity_per_occasion = quantity_per_occasion_upshifted,
-         drinkingstatus = drinkingstatus_updated) %>% 
-  mutate(gramsperday = ifelse(gramsperday>200, 200, gramsperday),
+                employment, marital_status, BMI, 
+                drinkingstatus_orig, drinkingstatus_upshifted,
+                drinkingstatus_detailed, gramsperday_orig, gramsperday_upshifted,
+                frequency_orig, frequency_upshifted, hed) %>% 
+  mutate(
+    # gramsperday = ifelse(gramsperday>200, 200, gramsperday),
          formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0))
+
+test <- final_version %>% ungroup() %>% dplyr::filter(State=="USA") %>% group_by(YEAR) %>% 
+  summarise(gpdorig  = mean(gramsperday_orig),
+            gpdup = mean(gramsperday_upshifted))
   
-saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS")
+saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS")
 
 
 # select variables and save the upshifted data 
