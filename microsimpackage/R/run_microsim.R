@@ -18,6 +18,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
+DiseaseSummary <- list()
 PopPerYear <- list()
 names <- names(lhs)
 lhs <- as.numeric(lhs)
@@ -78,45 +79,30 @@ if(updatingalcohol==1 & y>2000){
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
 }
 
-# assign new acute and chronic hepatitis B and C -
-# if(y>2000){
-# basepop <- assign_acute_hep(basepop, Hep, drinkingdistributions, y)
-# basepop <- assign_chronic_hep(basepop)
-# }
-
 # simulate mortality from specific diseases
-# if("HLVDC" %in% diseases==TRUE){
-# basepop <- CirrhosisHepatitis(basepop,lhs)
-#
-# basepop <- basepop %>%
-#   mutate(ageCAT = cut(microsim.init.age,
-#                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79),
-#                       labels=c("18-24","25-29","30-34","35-39", "40-44",
-#                                "45-49","50-54","55-59","60-64","65-69",
-#                                "70-74","75-79")),
-#          cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
-#   dplyr::select(-ageCAT)
-#
-# if(y==2000){
-#   rates <- basepop %>%
-#     group_by(cat) %>% add_tally() %>%
-#     summarise(sumrisk = sum(RRHep),
-#               .groups='drop') %>% ungroup() %>% distinct()
-#   rates <- left_join(rates, base_rates, by=c("cat"))
-#   rates <- rates %>%
-#     mutate(rate = HLVDC/sumrisk) %>%
-#     dplyr::select(cat, rate)
-# }
-#
-# basepop <- left_join(basepop, rates, by=c("cat"))
-# basepop$Risk <- basepop$RRHep*basepop$rate
-# # basepop <- basepop %>% dplyr::select(-c(popcount))
-#
-# basepop$probs <- runif(nrow(basepop))
-# basepop$mortalityHLVDC <- ifelse(basepop$probs<=basepop$Risk, 1,0)
-#
-# }
+if("HLVDC" %in% diseases==TRUE){
+basepop <- CirrhosisHepatitis(basepop,lhs)
 
+# calculate base rates if year = 2000)
+if(y == 2000){
+rates <- calculate_base_rate(basepop,base_rates,diseases)
+}
+
+basepop <- left_join(basepop, rates, by=c("cat"))
+basepop$risk <- basepop$RRHep*basepop$rate
+basepop$prob <- runif(nrow(basepop))
+basepop$mortalityHLVDC <- ifelse(basepop$prob<basepop$risk, 1,0)
+DiseaseSummary[[paste(y)]] <- basepop %>%
+  group_by(cat) %>% add_tally() %>%
+  mutate(mortHLVDC = sum(mortalityHLVDC)) %>% ungroup() %>% mutate(year=y) %>% dplyr::select(year, cat, n, mortHLVDC) %>%
+  distinct()
+# now sample the correct proportion of those to be removed (due to inflated mortality rate)
+toremove <- basepop %>% filter(mortalityHLVDC==1) %>% add_tally() %>%
+    mutate(toremove=round(n/1000)) %>% do(dplyr::sample_n(.,size=unique(toremove), replace=F))
+ids <- toremove$microsim.init.id
+basepop <- basepop %>% filter(!microsim.init.id %in% ids)
+basepop <- basepop %>% dplyr::select(-c(cat, RRHep, rate, risk, prob, mortalityHLVDC))
+}
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
 # if(policy==1){
@@ -134,29 +120,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 }
 # save output - depending on which was selected
 if(output=="mortality"){
-  Summary <- do.call(rbind, DeathSummary) %>%
-    mutate(agecat = as.factor(agecat),
-           microsim.init.sex=as.factor(microsim.init.sex),
-           microsim.init.race=as.factor(microsim.init.race),
-           microsim.init.education = as.factor(microsim.init.education),
-           year = as.factor(year),
-           cause=as.factor(cause)) %>%
-    group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education,
-             cause, .drop=FALSE) %>% tally(name="ndeaths")
-
-  PopSummary <- do.call(rbind,PopPerYear) %>%
-    mutate(agecat = cut(microsim.init.age,
-                                 breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
-                                 labels=c("18-24","25-29","30-34","35-39",
-                                 "40-44","45-49","50-54","55-59","60-64","65-69",
-                                 "70-74","75-79")),
-           microsim.init.sex=as.factor(microsim.init.sex),
-           microsim.init.race=as.factor(microsim.init.race),
-           microsim.init.education = as.factor(microsim.init.education),
-           year = as.factor(year)) %>%
-  group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education, .drop=FALSE) %>%
-           tally(name="totalpop")
-Summary <- list(Summary,PopSummary)
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_rates)
   }else if(output=="demographics"){
   Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),

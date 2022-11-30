@@ -42,7 +42,7 @@ library(caTools)
 library(party)
 library(fitdistrplus)
 
-dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% filter(YEAR>=2000 & YEAR<=2018) %>% 
+dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% filter(YEAR>=2000 & YEAR<=2019) %>% 
   filter(drinkingstatus==1) %>% filter(State=="USA") %>% ungroup() %>% 
   dplyr::select(YEAR, sex_recode, race_eth, education_summary, gramsperday) %>% 
   mutate(sex_recode=ifelse(sex_recode=="Female","Women","Men"),
@@ -102,6 +102,6 @@ ggplot(data=subset(dat, YEAR==2018), aes(x=gramsperday,
         panel.background =element_rect(fill="white"),
         strip.background =element_rect(fill="white")) + xlim(100,200)
 
-ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_race2018.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_race2018_upcapped_beta.png", dpi=300,
        width=33, height=19, units="cm")
 

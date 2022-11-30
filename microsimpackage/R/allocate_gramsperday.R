@@ -15,16 +15,19 @@ allocate_gramsperday <- function(basepop, y, model, DataDirectory){
            # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
            group = paste(AlcCAT, race_eth, microsim.init.education, sex_recode, sep="_"))
 
-  distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr.csv")
+  distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv")
   prepdata <- left_join(prepdata, distribution)
 
 samplegpd <- function(data){
-    shape <- unique(data$shape)
-    rate <- unique(data$rate)
-    # min <- unique(data$min)
-    # max <- unique(data$max)
-    # data$newgpd <- rtrunc(nrow(data), "gamma", min, max, shape=shape, scale=rate)
-    newgpd <- rgamma(nrow(data), shape, rate)
+    # shape <- unique(data$shape)
+    # rate <- unique(data$rate)
+    shape1 <- unique(data$shape1)
+    shape2 <- unique(data$shape2)
+    min <- unique(data$min)
+    max <- unique(data$max)
+    # newgpd <- rgamma(nrow(data), shape, rate)
+    raw <- rbeta(nrow(data), shape1, shape2)
+    newgpd <- ((max - min + 10e-10)*raw) + (min - 10e-9)
     # newgpd <- order(newgpd)
     data <- data[order(data$microsim.init.alc.gpd),]
     newgpd <- sort(newgpd)

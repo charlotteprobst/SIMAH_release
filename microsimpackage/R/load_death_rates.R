@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' load_death_rates
-load_death_rates <- function(model="SIMAH", proportion, SelectedState, WorkingDirectory){
+load_death_rates <- function(model="SIMAH", proportion, SelectedState, DataDirectory){
 
 if(model=="SIMAH"){
 
@@ -15,7 +15,7 @@ fun <- function(x){
 }
 
 if(SelectedState=="USA"){
-deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %>%
+deathrates <- read.csv(paste0(DataDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %>%
   mutate(Sex=recode(sex, "1"="m","2"="f"),
                       agecat = recode(age_gp, "18"="18-24","25"="25-29",
                                          "30"="30-34","35"="35-39","40"="40-44",
