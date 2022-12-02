@@ -64,7 +64,7 @@ mrpLTA <- predict(LTA.rma.lm, cbind(ms))
 
 regplot(LTA.rma.lm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), main="Male - Linear Regression")
+        ylim = c(0, 2), pred = mpLTA, xvals = ms, main="Male - Linear Regression")
 
 #predict linear model
 predict(LTA.lin.male, 12, transf=exp)
@@ -82,15 +82,11 @@ regplot(LTAlinear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Rela
         ylim = c(0.5, 2), pred = pred_LTAlin_male, xvals = ms, main="Male - Linear Regression")
 
 #dosresmeta
-dosresmeta <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
-                      col_types = c("numeric","numeric", "numeric", "text", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric", "numeric", "numeric"))
-LTA.male.dos <- dosresmeta %>%
-  filter(sex %in% c(1), LTA == 0)
+LTA.male.dos <- dataset %>%
+  filter(analysis_id==0 & reference==0 & sex ==1 & first_author != "Kerr")
 
-linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
-                          intercept = F, cases = cases, n = n, method = "reml", data = LTA.male.dos)
+linear_male <- dosresmeta(formula = lnor ~ dose, id = results_id, type = "cc", lb = rr.low, ub = rr.hi,
+                          intercept = F, cases = n.outcome, n = n.alc, method = "reml", data = LTA.male.dos)
 summary(linear_male)
 dosex_bin <- data.frame(dose=seq(0, 100, 1))
 with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE), 
@@ -102,6 +98,9 @@ with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE),
 
 LTA.male <- LTA.male %>%
   filter(first_author != "Kerr")
+
+LTA.male <- dataset %>%
+  filter(sex %in% c(1) & dose != 0.00)
 
 ####MALE QUADRATIC REGRESSION
 
@@ -128,6 +127,64 @@ weights(LTA.rma.quadm)
 #predict quadratic model
 predict(LTA.quad.male, c(150,150^2), transf=exp)
 predict(LTA.rma.quadm, c(150,150^2), transf=exp)
+
+#rma.mv
+LTAquad_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=LTA.male,
+                         random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+summary(LTAquad_male)
+pred_LTAquad_male <- predict(LTAquad_male, newmods=cbind(ms,ms^2))
+regplot(LTAquad_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0, 2), pred = pred_LTAquad_male, xvals = ms, main="Male - Quadratic Regression")
+
+#dosresmeta
+quad_male <- dosresmeta(formula = lnor ~ dose + I(dose^2), id = results_id, type = "cc", lb = rr.low, ub = rr.hi,
+                        intercept = F, cases = n.outcome, 
+                        n = n.alc, method = "reml", data = LTA.male.dos)
+summary(quad_male)
+
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(quad_male, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+#test rma.mv with no Kerr (missing N)
+
+LTA.male <- LTA.male %>%
+  filter(first_author != "Kerr")
+
+LTA.male <- dataset %>%
+  filter(sex %in% c(1) & dose != 0.00)
+
+#male rcs
+library(rms)
+knotsm <- quantile(LTA.male$dose, c(.05, .35, .65, .95))
+
+rcs_m <- rma.mv(yi= lnor ~ rcs(dose, knotsm)+0, V=se^2, data=LTA.male, 
+                random = ~ 1 | results_id/line_id, method = "REML")
+summary(rcs_m)
+
+pred_rcs_m <- predict(rcs_m, newmods=rcspline.eval(ms, knotsm, inclx=TRUE))
+regplot(rcs_m, mod="rcs(dose, knotsm)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
+        ylim = c(0, 2), pred = pred_rcs_m, xvals = ms, main="Male RCS Regression")
+abline(v=knotsm, lty="dotted")
+
+#dosresmeta
+knotsm <- quantile(LTA.male.dos$dose, c(.05, .35, .65, .95))
+splmale <- dosresmeta(formula = lnor ~ rcs(dose, knotsm), id = results_id, type = "cc", 
+                      cases = n.outcome, n = n.alc, method = "reml",
+                      data = LTA.male.dos, se = se, proc = "1stage")
+summary(splmale)
+
+dosex_bins <- data.frame(dose=seq(0, 100, 1))
+xref <- 0
+with(predict(splmale, dosex_bins, xref, exp = TRUE),
+     {plot(get("rcs(dose, knotsm)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
+           xlab= "Alcohol consumption, grams/day - Male")
+       matlines(get("rcs(dose, knotsm)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
+
 
 #####FEMALE LINEAR REGRESSION
 
@@ -164,6 +221,34 @@ regplot(LTA.rma.lf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative
 
 weights(LTA.rma.lf)
 
+#rma.mv
+LTAlinear_female <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=LTA.female,
+                         random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+summary(LTAlinear_female)
+
+fs <- seq(0,150,length=150)
+pred_LTAlin_female <- predict(LTAlinear_female, cbind(fs))
+regplot(LTAlinear_female, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0, 2), pred = pred_LTAlin_female, xvals = fs, main="Female - Linear Regression")
+
+#dosresmeta
+LTA.female.dos <- dataset %>%
+  filter(analysis_id==0 & reference==0 & sex ==0 & first_author != "Kerr")
+
+linear_female <- dosresmeta(formula = lnor ~ dose, id = results_id, type = "cc", lb = rr.low, ub = rr.hi,
+                          intercept = F, cases = n.outcome, n = n.alc, method = "reml", data = LTA.female.dos)
+summary(linear_female)
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(linear_female, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+
+LTA.female <- LTA.female %>%
+  filter(first_author != "Kerr")
+
 #####FEMALE QUADRATIC REGRESSION
 
 LTA.quad.female <- metareg(LTA.mr.female, ~dose + I(dose^2), intercept = FALSE, method.tau = "REML")
@@ -183,61 +268,51 @@ regplot(LTA.rma.quadf, mod="dose", xlab="Alcohol intake, grams/day - Female", yl
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
         ylim = c(0, 2), pred = frquadpLTA, xvals = fs)
 
-##FOR SIMAH
+#rma.mv
+LTAquad_female <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=LTA.female,
+                       random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+summary(LTAquad_male)
+pred_LTAquad_female <- predict(LTAquad_female, newmods=cbind(fs,fs^2))
+regplot(LTAquad_female, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0, 2), pred = pred_LTAquad_female, xvals = fs, main="Female - Quadratic Regression")
 
-#both sexes
+#dosresmeta
+quad_female <- dosresmeta(formula = lnor ~ dose + I(dose^2), id = results_id, type = "cc", lb = rr.low, ub = rr.hi,
+                        intercept = F, cases = n.outcome, n = n.alc, method = "reml", data = LTA.female.dos)
+summary(quad_female)
 
-both <- dataset 
-LTA.both <- rma(yi=lnor, sei=se, mods = ~ dose+0, data=both, method = "REML")
-LTA.both
-
-s <- seq(0,150,length=150)
-m.LTA.both <- predict(LTA.both, cbind(s))
-regplot(LTA.both , mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), main="Both sexes - Incident T2DM", 
-        ylim = c(0, 2.5), xvals = s, pred = m.LTA.both)
-
-#male rcs
-library(rms)
-knotsm <- quantile(LTA.male$dose, c(.05, .35, .65, .95))
-
-rcs_m <- rma.mv(yi= lnor ~ rcs(dose, knotsm)+0, V=se^2, data=LTA.male, 
-                random = ~ 1 | results_id, method = "REML")
-summary(rcs_m)
-
-pred_rcs_m <- predict(rcs_m, newmods=rcspline.eval(s, knotsm, inclx=TRUE))
-regplot(rcs_m, mod="rcs(dose, knotsm)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
-        ylim = c(0, 2), pred = pred_rcs_m, xvals = s, main="Male RCS Regression")
-abline(v=knotsm, lty="dotted")
-
-
-LTA.rma.rcsm <- rma(yi=lnor, sei=se, mods = ~ rcs(dose, knotsm)+0, data=LTA.male, method = "REML")
-LTA.rma.rcsm
-
-pLTA.rma.rcsm <- predict(LTA.rma.rcsm, newmods=rcspline.eval(s, knotsm, inclx=TRUE))
-regplot(LTA.rma.rcsm, mod="rcs(dose, knotsm)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
-        ylim = c(0, 2), pred = pLTA.rma.rcsm, xvals = s, main="Male RCS Regression")
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(quad_female, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
 
 #female rcs
 
 knotsf <- quantile(LTA.female$dose, c(.05, .35, .65, .95))
 
 rcs_f <- rma.mv(yi= lnor ~ rcs(dose, knotsf)+0, V=se^2, data=LTA.female, 
-              random = ~ 1 | results_id, method = "REML")
+              random = ~ 1 | results_id/line_id, method = "REML")
 summary(rcs_f)
 
-pred_rcs_f <- predict(rcs_f, newmods=rcspline.eval(s, knotsf, inclx=TRUE))
+pred_rcs_f <- predict(rcs_f, newmods=rcspline.eval(fs, knotsf, inclx=TRUE))
 regplot(rcs_f, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
-        ylim = c(0, 2), pred = pred_rcs_f, xvals = s, main="Female RCS Regression")
+        ylim = c(0, 2), pred = pred_rcs_f, xvals = fs, main="Female RCS Regression")
 abline(v=knotsf, lty="dotted")
 
-LTA.rma.rcsf <- rma(yi=lnor, sei=se, mods = ~ rcs(dose, knotsf)+0, data=LTA.female, method = "REML")
-LTA.rma.rcsf
+#dosresmeta
+knotsf <- quantile(LTA.female.dos$dose, c(.05, .35, .65, .95))
+splfemale <- dosresmeta(formula = lnor ~ rcs(dose, knotsf), id = results_id, type = "cc", 
+                      cases = n.outcome, n = n.alc, method = "reml",
+                      data = LTA.female.dos, se = se, proc = "1stage")
 
-pLTA.rma.rcsf <- predict(LTA.rma.rcsf, newmods=rcspline.eval(s, knotsf, inclx=TRUE))
-regplot(LTA.rma.rcsf, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,60), 
-        ylim = c(0, 2), pred = pLTA.rma.rcsf, xvals = s, main="Female RCS Regression")
+summary(splfemale)
+
+dosex_bins <- data.frame(dose=seq(0, 150, 1))
+xref <- 0
+with(predict(splfemale, dosex_bins, xref, exp = TRUE),
+     {plot(get("rcs(dose, knotsf)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
+           xlab= "Alcohol consumption, grams/day - Female")
+       matlines(get("rcs(dose, knotsf)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
