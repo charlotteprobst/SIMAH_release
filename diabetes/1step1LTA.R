@@ -8,7 +8,7 @@ library(metafor)
 
 library(readxl)
 dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/1dataset.xlsx", 
-                        col_types = c("numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
+                        col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                       "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                       "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                       "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
@@ -17,14 +17,14 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/1dataset.xlsx",
                                       "numeric", "numeric", "numeric"))
 
 dataset <- dataset %>%
-  filter(analysis_id==0 & reference==0 & dose != 0.00)
+  filter(analysis_id==0 & reference==0)
 
 ######STEP 1: STUDIES WITH LIFETIME ABSTAINERS (LTA) AS REFERENCE
 
 LTA.male <- dataset %>%
-  filter(sex %in% c(1))
+  filter(sex %in% c(1) & dose != 0.00)
 LTA.female <- dataset %>%
-  filter(sex %in% c(0))
+  filter(sex %in% c(0) & dose != 0.00)
 
 ####MALE LINEAR REGRESSION
 
@@ -48,9 +48,13 @@ summary(LTA.lin.male)
 ms <- seq(0,150,length=150)
 mpLTA <- predict(LTA.lin.male ,cbind(ms))
 
-#basic plot with metareg
+#plot with metareg
 plot(LTA.male$dose,LTA.male$rr, ylim = c(0, 4), xlim = c(0,100))
 lines(exp(mpLTA$pred))
+
+regplot(LTA.lin.male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0, 2), pred = mpLTA, xvals = ms, main="Male - Linear Regression")
 
 #plot for regression with weights
 LTA.rma.lm <- rma(yi=lnor, sei=se, mods = ~ dose+0, data=LTA.male, method = "REML")
@@ -58,13 +62,46 @@ LTA.rma.lm
 
 mrpLTA <- predict(LTA.rma.lm, cbind(ms))
 
-regplot(LTA.rma.lm, mod="dose", xlab="Alcohol intake, grams/day - Male", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
-        ylim = c(0, 2), main="Males - Incident T2DM")
+regplot(LTA.rma.lm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0, 2), main="Male - Linear Regression")
 
 #predict linear model
 predict(LTA.lin.male, 12, transf=exp)
 predict(LTA.rma.lm, 12, transf=exp)
+
+#rma.mv
+LTAlinear_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=LTA.male,
+                 random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+summary(LTAlinear_male)
+
+ms <- seq(0,150,length=150)
+pred_LTAlin_male <- predict(LTAlinear_male, cbind(ms))
+regplot(LTAlinear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        ylim = c(0.5, 2), pred = pred_LTAlin_male, xvals = ms, main="Male - Linear Regression")
+
+#dosresmeta
+dosresmeta <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
+                      col_types = c("numeric","numeric", "numeric", "text", "numeric", "numeric", 
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
+                                    "numeric", "numeric", "numeric", "numeric", "numeric"))
+LTA.male.dos <- dosresmeta %>%
+  filter(sex %in% c(1), LTA == 0)
+
+linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
+                          intercept = F, cases = cases, n = n, method = "reml", data = LTA.male.dos)
+summary(linear_male)
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+#test rma.mv with no Kerr (missing N)
+
+LTA.male <- LTA.male %>%
+  filter(first_author != "Kerr")
 
 ####MALE QUADRATIC REGRESSION
 

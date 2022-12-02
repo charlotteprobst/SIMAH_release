@@ -4,7 +4,7 @@ library(ggplot2)
 
 library(readxl)
 dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
-                      col_types = c("numeric", "numeric", "text", "numeric", "numeric", 
+                      col_types = c("numeric","numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric"))
 
