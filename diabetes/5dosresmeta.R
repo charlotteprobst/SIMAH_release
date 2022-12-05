@@ -3,7 +3,7 @@ library(tidyverse)
 library(ggplot2)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
+dataset_dos <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
                       col_types = c("numeric","numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric"))
@@ -12,7 +12,7 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx",
 
 #LINEAR DOSE-RESPONSE
 
-male <- dataset %>%
+male <- dataset_dos %>%
   filter(sex ==1)
 
 linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
