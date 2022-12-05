@@ -12,7 +12,7 @@ library("tidyverse")
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
-setwd("~/Google Drive/SIMAH Sheffield/")
+#setwd("~/Google Drive/SIMAH Sheffield/")
 
 ## Load the functions that go with this code
 source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
