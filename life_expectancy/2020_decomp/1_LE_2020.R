@@ -29,36 +29,26 @@ dMort$race <- as.factor(dMort$race)
 class(dMort$edclass)
 dMort$edclass <- as.factor(dMort$edclass)
 
-## To aggregate some cause of death categories
-dMort$RESTmort <- dMort$RESTmort + dMort$CANmort
-dMort$RESTmort <- dMort$RESTmort + dMort$PANCmort
-dMort$RESTmort <- dMort$RESTmort + dMort$HSTRmort
-
-dMort$IHDmort <- dMort$IHDmort + dMort$ISTRmort
-
-#  Delete variables that are no longer needed 
-dMort <- dMort %>% select(-c(CANmort, PANCmort, ISTRmort, HSTRmort))
 
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
-dMort_r <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
-dMort <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
 dMort_t <- aggregate(.~ year + sex + age_gp, data =  dMort, FUN=sum)
-
-
+dMort_s <- aggregate(.~ year + edclass + sex + age_gp, data =  dMort, FUN=sum)
+dMort_d <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
 
 ## We have to calculate the rates again because we cannot simply sum them up
 ## define vectors for the total death counts and rates of interest.
 ## IMPORTANT: the order of the totals and the rates must match!! 
 ## We have to calculate the rates again 
-v.totals <- c("Tmort", "COVmort", "LVDCmort", "DMmort", "IHDmort",
-              "HYPHDmort", "AUDmort", "UIJmort", "MVACCmort", "IJmort",  "RESTmort")
+v.totals <- colnames(dMort)[grepl("mort", names(dMort))]
 
 ## Introduce the "mx_" nomenclature  
 v.rates <- c("Trate", "mx_COVrate", "mx_LVDCrate", "mx_DMrate", "mx_IHDrate", 
              "mx_HYPHDrate", "mx_AUDrate", "mx_UIJrate", "mx_MVACCrate", 
              "mx_IJrate",  "mx_RESTrate")
+v.rates <- str_replace(v.totals, "mort", "rate") 
+v.rates <- c(v.rates[1], paste0("mx_", v.rates[2:(length(v.rates))]))   
 
 ###############################################################################
 # LE by sex
@@ -110,31 +100,31 @@ for (j in (1:length(v.year1))){
 }
 
 names(dle_results) <-  c("Life_expectancy", "Year", "Sex")
-write.csv(dle_results, "SIMAH_workplace/life_expectancy/2_out_data/LifeExpectancy_sex_ACS_2020.csv")
+write.csv(dle_results, "SIMAH_workplace/life_expectancy/2_out_data/LifeExpectancy_sex_ACS_0020.csv")
 
 
 ###############################################################################
-# LE by sex and SES
+# LE by sex and SES (no race/ethnicity)
 ###############################################################################
 
 sel.vars <- c("year", "edclass", "sex", "age_gp", v.rates) 
 
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
-      dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
+   dMort_s[, v.rates[i]] <- (dMort_s[, v.totals[i]]/dMort_s$TPop)
 } 
 
 # Generate a variable to loop over
-dMort$group <- apply(dMort[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
+dMort_s$group <- apply(dMort_s[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
 
 # now you can loop over the unique values of this new variable
-v.group <- unique(dMort$group)
+v.group <- unique(dMort_s$group)
 
 v.year1 <- c(2000:2020)
 for (j in (1:length(v.year1))){
       year1 <- v.year1[j]
       for(i in 1:length(v.group)) {
-            US_y1 <- filter(dMort, year==year1 &  group == v.group[i]) ## this one would then be i
+            US_y1 <- filter(dMort_s, year==year1 &  group == v.group[i]) ## this one would then be i
 
             US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
 
@@ -181,20 +171,20 @@ sel.vars <- c("year", "edclass", "race", "sex", "age_gp", v.rates)
 
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
-   dMort_r[, v.rates[i]] <- (dMort_r[, v.totals[i]]/dMort_r$TPop)
+   dMort_d[, v.rates[i]] <- (dMort_d[, v.totals[i]]/dMort_d$TPop)
 } 
 
 # Generate a variable to loop over
-dMort_r$group <- apply(dMort_r[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
+dMort_d$group <- apply(dMort_d[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
 
 # now you can loop over the unique values of this new variable
-v.group <- unique(dMort_r$group)
+v.group <- unique(dMort_d$group)
 
 v.year1 <- c(2000:2020)
 for (j in (1:length(v.year1))){
    year1 <- v.year1[j]
    for(i in 1:length(v.group)) {
-      US_y1 <- filter(dMort_r, year==year1 &  group == v.group[i]) ## this one would then be i
+      US_y1 <- filter(dMort_d, year==year1 &  group == v.group[i]) ## this one would then be i
       
       US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
       
