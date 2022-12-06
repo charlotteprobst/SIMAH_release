@@ -104,7 +104,7 @@ library(mfp)
 library(visreg)
 
 #4 degrees of freedom
-mfp <- mfp(formula = lnor ~ fp(dose, df = 4)+0 ,alpha=0.05, 
+mfp <- mfp(formula = lnor ~ fp(dose, df = 4) ,alpha=0.05, 
            data = final)
 mfp
 summary(mfp)
@@ -119,18 +119,18 @@ mfp2 <- mfp(formula = lnor ~ fp(dose, df = 2)+0,alpha=0.05,
 mfp2
 summary(mfp2)
 
-visual2<- glm(formula = lnor ~ I((dose/10)^1), data = final)
+visual2<- glm(formula = lnor ~ I((dose/10)^1)+0, data = final)
 visreg(visual2,"dose", xlab="Alcohol intake, grams/day", trans=exp, ylab="Relative Risk")
 
 ###doesnt run: FRACPOL - mfp using rma function with the selected p from the previous analysis
-mfp_fracpol <- rma.mv(yi=lnor, V=se^2, mods = ~ fracpol(dose/10, p = c(0,1)) +0, data=final, 
+mfp_fracpol <- rma.mv(yi=lnor, V=se^2, mods = ~I((dose/10)^1)+1, data=final, 
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(mfp_fracpol)
 
-pred_fp <- predict(mfp_fracpol, newmods=unname(fracpol(s/10, p = c(0,1))))
-regplot(mfp_fracpol, mod=1, xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_fp, xvals = s, main="Cubic Polynomial Regression")
+pred_fp <- predict(mfp_fracpol, newmods=cbind((s/10)^1))
+regplot(mfp_fracpol, mod="I((dose/10)^1)",xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,140), pch=NA_integer_,
+        ylim = c(0, 2), pred = pred_fp, xvals = s, main="Fractional Polynomial Regression")
 
 ##MODEL COMPARISON 
 fitstats(linear, quad, rcs, cp)
