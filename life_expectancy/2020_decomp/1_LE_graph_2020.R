@@ -9,12 +9,9 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 # for race and SES graphs
 dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_sex_SES_race_ACS_2020.csv")
-dle_results <- filter(dle_results, Race != "Other")
 
-dle_results <- filter(dle_results, Year >2014)
-   
-dle_results$Sex <- as.factor(dle_results$Sex)
-dle_results$SES <- as.factor(dle_results$SES)
+dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
+dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
 
 levels(dle_results$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
 levels(dle_results$Sex) <- list(Men = "1", Women = "2")

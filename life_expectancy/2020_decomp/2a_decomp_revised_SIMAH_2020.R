@@ -24,42 +24,41 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 ACS_type <- 0
 
 #load aggregated mortality data:
-dMort <- read.csv("SIMAH_workplace/mortality/3_out data/US_mortality_rates_0020.csv")
-#load population data (raw vs modelled)
+dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
+#load population data (raw vs modeled)
 if(ACS_type==0){
 dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
 }else if(ACS_type==1){
   dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020_predicted2020.csv")  
   dPop_weights_raw <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 }
-dPop <- filter(dPop, state == "USA")
-dPop <- filter(dPop, year > 2017)
-dPop <- select (dPop,-c(state))
-dMort <- filter(dMort, year > 2017)
-dMort <- inner_join(dMort, dPop)
+dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
+  select(!state)
+dMort <- dMort %>% filter(year > 2017) %>% 
+  inner_join(dPop)
 
 # variable type should be factor and not character
-dMort$race <- as.factor(dMort$race)
-dMort$edclass <- as.factor(dMort$edclass)
+glimpse(dMort)
+dMort <- dMort %>% mutate_at(vars(race, edclass), as.factor)
 
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
-dMort_raw <- dMort
-dMort <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
-dMort_d <- aggregate(.~ year + edclass + sex + race + age_gp, data =  dMort_raw, FUN=sum)
+dMort_s <- aggregate(.~ year + edclass +        sex + age_gp, data =  dMort, FUN=sum)
+dMort_d <- aggregate(.~ year + edclass + race + sex + age_gp, data =  dMort, FUN=sum)
 
-## We have to calculate the rates again
+## We have to calculate the rates again --> prepare vectors of varnames
 v.totals <- names(dMort)[grepl("mort", names(dMort))]
-v.rates <- names(dMort)[grepl("rate", names(dMort))]
-v.rates <- paste0(c("", rep("mx_", length(v.rates)-1)),v.rates)
+v.rates <- str_replace(v.totals, "mort", "rate") 
+v.rates <- c(v.rates[1], paste0("mx_", v.rates[2:(length(v.rates))]))   
 
-#select variables
-sel.vars <- c("year", "edclass", "sex", "age_gp", v.rates) 
 
 ####### DECOMP BY SEX AND SES  ########
 # first set up 2020 weights 
 # first aggregate by only year sex age_gp and edclass 
+
+#select variables
+sel.vars <- c("year", "edclass", "sex", "age_gp", v.rates) 
 
 if(ACS_type==0){
 dMort2020 <- dMort %>% filter(year==2020) %>% dplyr::select(-c(race,TPop))
@@ -88,14 +87,14 @@ mortlist[[i]] <- left_join(dMort2020, dPop_weights[[i]]) %>%
 
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
-  dMort[, v.rates[i]] <- (dMort[, v.totals[i]]/dMort$TPop)
+  dMort_s[, v.rates[i]] <- (dMort_s[, v.totals[i]]/dMort_s$TPop)
 } 
 
 # Generate a variable to loop over
-dMort$group <- apply(dMort[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
+dMort_s$group <- apply(dMort_s[ , c("sex", "edclass") ] , 1 , paste , collapse = "_" )
 
 # now you can loop over the unique values of this new variable
-v.group <- unique(dMort$group)
+v.group <- unique(dMort_s$group)
 
 v.year1 <- c(2018, 2019)
 v.year2 <- c(2019, 2020)
@@ -103,8 +102,8 @@ for (j in (1:length(v.year1))){
   year1 <- v.year1[j]
   year2 <- v.year2[j]
   for(i in 1:length(v.group)) {
-    US_y1 <- filter(dMort, year==year1 &  group == v.group[i]) ## this one would then be i
-    US_y2 <- filter(dMort, year==year2 &  group == v.group[i])
+    US_y1 <- filter(dMort_s, year==year1 &  group == v.group[i]) ## this one would then be i
+    US_y2 <- filter(dMort_s, year==year2 &  group == v.group[i])
     
     US_y1 <- US_y1[, sel.vars] #to delete several columns at once. comment: This kept Trate. in our out?
     US_y2 <- US_y2[, sel.vars]
@@ -162,10 +161,10 @@ dResults_contrib$sex <- as.factor(dResults_contrib$sex)
 dResults_contrib <- dResults_contrib[order(dResults_contrib$start_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 
 if(ACS_type==0){
-write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
+write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_", v.year1[1], "_", max(v.year2), "_SES_ACS.csv") )
 write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020.csv")
 }else if(ACS_type==1){
-  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "ACS.csv") )
+  write.csv(dResults_contrib,paste0("SIMAH_workplace/life_expectancy/2_out_data/dResults_ACSmodel_contrib_", v.year1[1], "_", max(v.year2), "_SES_ACS.csv") )
   write.csv(dMort, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_ACSmodel.csv")
 }
 
@@ -254,6 +253,10 @@ write.csv(mortlist, "SIMAH_workplace/life_expectancy/2_out_data/dMort_0020_2020w
 
 ####### DECOMP BY SEX, SES AND RACE  ########
 # calculate rates by race and ethnicity for 2020 weights 
+
+#select variables
+sel.vars <- c("year", "edclass", "race", "sex", "age_gp", v.rates) 
+
 dMort2020 <- dMort_d %>% filter(year==2020) %>% dplyr::select(-c(TPop))
 mortlist <- list()
 dPop_weights <- list()
