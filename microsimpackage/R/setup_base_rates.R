@@ -6,16 +6,22 @@
 #' @export
 #' @examples
 #' setup_base_rates
-setup_base_rates <- function(death_rates, diseases){
+setup_base_rates <- function(death_rates, diseases, inflation_factor){
   # by age, sex and education initially
 base_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
+    mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
+                           ifelse(agecat=="35-39" | agecat=="40-44","35-44",
+                                  ifelse(agecat=="45-49" | agecat=="50-54", "45-54",
+                                         ifelse(agecat=="55-59" | agecat=="60-64", "55-64",
+                                                ifelse(agecat=="65-69" | agecat=="70-74", "65-74",
+                                                       agecat)))))) %>%
     group_by(year, sex, agecat, education, name) %>%
     summarise(value=sum(value)) %>%
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>% filter(year==2000) %>%
     mutate(
-      value = value*100, #inflate mortality rate by 100
+      value = value*inflation_factor, #inflate mortality rate by 100
            education = ifelse(education=="Some", "SomeC",
                               ifelse(education=="Coll","College",education)),
            cat = paste0(sex, agecat, education)) %>% ungroup() %>%

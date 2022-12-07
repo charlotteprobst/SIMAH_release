@@ -7,7 +7,7 @@
 #' summarise_mortality_output
 summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory){
 
-age2010 <- Output %>% filter(year=="2000") %>%
+age2010 <- Output %>% filter(year=="2019") %>%
   ungroup() %>%
   group_by(year, sex, education, agecat) %>%
   summarise(totalpop = sum(popcount)) %>% ungroup() %>%
@@ -25,7 +25,8 @@ simulation <- left_join(Output, age2010) %>%
   summarise(simulated=sum(simulated),
             observed=sum(observed)) %>%
   pivot_longer(cols=simulated:observed) %>%
-  mutate(sex = ifelse(sex=="f","Women","Men"))
+  mutate(sex = ifelse(sex=="f","Women","Men"),
+         education = factor(education, levels=c("LEHS","SomeC","College")))
 
 plot <- ggplot(data=simulation, aes(x=year, y=value, colour=name)) + geom_line(size=2) +
   facet_grid(cols=vars(education),

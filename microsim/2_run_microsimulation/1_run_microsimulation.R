@@ -32,8 +32,8 @@ Output <- run_microsim(1,1,basepop,brfss,
                        updatingalcohol, alcohol_transitions,
                        catcontmodel, Hep, drinkingdistributions,
                        base_rates, diseases, lhs[[1]],
-                       policy, percentreduction,
-                       2000, 2005, output_type)
+                       policy, percentreduction, year_policy, inflation_factor,
+                       2000, 2019, output_type)
 
 alcohol_type <- "continuous"
 
@@ -54,5 +54,5 @@ summary <- summarise_hepatitis_output(Output)
 summary[[1]]
 summary[[2]]
 summary
-ggsave("SIMAH_workplace/microsim/2_output_data/sumdeaths_HLVDC.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/rates_compare_HLVDC.png", dpi=300,
        width=33, height=19, units="cm")

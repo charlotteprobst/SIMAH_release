@@ -6,22 +6,21 @@
 #' @examples
 #' hepatitis pathway
 CirrhosisHepatitis <- function(data,lhs){
-  data <- basepop %>%
+  data <- data %>%
     mutate(ageCAT = cut(microsim.init.age,
-                        breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79),
-                        labels=c("18-24","25-29","30-34","35-39", "40-44",
-                                 "45-49","50-54","55-59","60-64","65-69",
-                                 "70-74","75-79")),
+                        breaks=c(0,24,34,44,54,64,74,79),
+                        labels=c("18-24","25-34","35-44", "45-54",
+                                 "55-64","65-74","75-79")),
            cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
     dplyr::select(-ageCAT)
-  BETA_HEPATITIS <- as.numeric(lhs["BETA_HEPATITIS"])
-  # data$chronicHep <- ifelse(data$chronicB==1 | data$chronicC ==1, 1,0)
-  # data$RRHep <- ifelse(data$chronicHep==1,
-  #                      (data$gpd*BETA_HEPATITIS),
-  #                      0)
-  data$RRHep <- data$microsim.init.alc.gpd*BETA_HEPATITIS
+  B_HEPATITIS1 <- as.numeric(lhs["B_HEPATITIS1"])
+  B_HEPATITIS2 <- as.numeric(lhs["B_HEPATITIS2"])
+  data$RR <- ifelse(data$microsim.init.alc.gpd<146.3, exp(0 + B_HEPATITIS1*data$microsim.init.alc.gpd +
+                                                               B_HEPATITIS2*(data$microsim.init.alc.gpd^2)),
+                       exp(0 + B_HEPATITIS1*146.3 + B_HEPATITIS2*146.3))
+
+
   # data$gpd <- NULL
   # data$chronicHep <- NULL
-  data$RRHep <- exp(data$RRHep)
   return(data)
 }

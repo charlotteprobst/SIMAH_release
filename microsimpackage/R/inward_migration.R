@@ -76,8 +76,7 @@ toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(
   mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
   dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                 microsim.init.alc.gpd, microsim.init.BMI,
-                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT,
-                chronicB, chronicC)
+                microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
 
 from <- max(basepop$microsim.init.id)+1
 to <- (nrow(toadd)) + max(basepop$microsim.init.id)

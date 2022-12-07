@@ -4,7 +4,7 @@
 \alias{setup_base_rates}
 \title{Sets up baseline mortality rates}
 \usage{
-setup_base_rates(death_rates, diseases)
+setup_base_rates(death_rates, diseases, inflation_factor)
 }
 \description{
 This function sets up baseline mortality rates for COD modelled in simulation

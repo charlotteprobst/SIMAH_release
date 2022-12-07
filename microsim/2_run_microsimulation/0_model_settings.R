@@ -44,7 +44,10 @@ output_type <- "alcohol"
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
 # default value is 0
-policy <- 0
+policy <- 1
+
+# year to introduce policy
+year_policy <- 2015
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
 percentreduction <- 0.1
@@ -100,29 +103,32 @@ rm(list)
 
 # allocate baseline hepatitis B and C infections
 
-# to baseline population 
-basepop <- assign_baseline_hepatitis(basepop)
-
-# and to new agents to enter ?? not sure if this makes sense to do 
-brfss <- assign_baseline_hepatitis(brfss)
-
-# load hepatitis incidence counts and drinking distributions for hepatitis B and C 
-data <- load_hepatitis_data(SelectedState, proportion)
-Hep <- data[[1]]
-drinkingdistributions <- data[[2]]
-rm(data)
+# # to baseline population 
+# basepop <- assign_baseline_hepatitis(basepop)
+# 
+# # and to new agents to enter ?? not sure if this makes sense to do 
+# brfss <- assign_baseline_hepatitis(brfss)
+# 
+# # load hepatitis incidence counts and drinking distributions for hepatitis B and C 
+# data <- load_hepatitis_data(SelectedState, proportion)
+# Hep <- data[[1]]
+# drinkingdistributions <- data[[2]]
+# rm(data)
 
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
-numsamples <- 10
+numsamples <- 1
 
 # whether to just use the point estimate
-PE <- 0
+PE <- 1
 lhs <- sample_lhs(numsamples, PE)
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
+# set inflation factor 
+inflation_factor <- 100
+
 if(length(diseases)>=1){
-  base_rates <- setup_base_rates(death_rates,diseases)
+  base_rates <- setup_base_rates(death_rates,diseases, inflation_factor)
 }
 
 # load in categorical to continuous model 

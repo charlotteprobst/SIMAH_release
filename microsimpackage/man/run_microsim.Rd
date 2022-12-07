@@ -23,6 +23,8 @@ run_microsim(
   lhs,
   policy = 0,
   percentreduction = 0.1,
+  year_policy,
+  inflation_factor,
   minyear = 2000,
   maxyear = 2019,
   output = "demographics"

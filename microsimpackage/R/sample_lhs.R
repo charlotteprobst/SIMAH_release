@@ -8,21 +8,15 @@
 #' sample_lhs
 sample_lhs <- function(N_SAMPLES, PE){
   if(PE==0){
-  prior <- list(
-                # c("qtruncnorm", 0.0227, 0.0111), #BETA_MALE_MORTALITY
-                # c("qtruncnorm", 0.0397, 0.05370378), #BETA_FEMALE_MORTALITY
-                # c("qtruncnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_MEN
-                # c("qtruncnorm", 2.56, 2.15), #BETA_FORMER_DRINKERS_WOMEN
-                c("qtruncnorm", 0.0099, 0.0009) #BETA_HEPATITIS
-                # c("qunif", 1,3) #decay speed
-                # c("qunif", 18, 25) #decay length
+  prior <- list(c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1
+                c("qnorm", -0.00008898, 0.00000872), #BHEPATITIS2
+                c("qnorm", 0.03655479, 0.01144372), #MBLIVER1
+                c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
+                c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
+                c("qnorm", -0.00031181, 0.00005372) #FBLIVER2
   )
-  names(prior) <- c(
-                    # "BETA_MALE_MORTALITY", "BETA_FEMALE_MORTALITY",
-                    # "BETA_FORMER_DRINKERS_MEN", "BETA_FORMER_DRINKERS_WOMEN",
-                    "BETA_HEPATITIS"
-                    # "DECAY_SPEED"
-                    # "DECAY_LENGTH"
+  names(prior) <- c("B_HEPATITIS1","B_HEPATITIS2","B_LIVER1_MEN","B_LIVER2_MEN",
+                    "B_LIVER1_WOMEN","B_LIVER2_WOMEN"
                     )
   N_PRIORS <- length(prior)
   set.seed(as.numeric(Sys.time()))
@@ -66,23 +60,11 @@ sample_lhs <- function(N_SAMPLES, PE){
   lhsSample <- list
   }else if(PE==1){
     lhsSample <- list()
-    lhsSample[[1]] <- data.frame(
-                                # "BETA_MALE_MORTALITY"=0.0227414,
-                                #  "BETA_FEMALE_MORTALITY"=0.0396643,
-                                #  "BETA_FEMALE_MORBIDITY"=0.0439704,
-                                #  "BETA_FORMER_DRINKERS_MEN"=2.56,
-                                #  "BETA_FORMER_DRINKERS_WOMEN"=2.56,
-                                #  "METABOLIC_BETA1_MALE"=-1.02011,
-                                #  "METABOLIC_BETA2_MALE"=-0.1274623,
-                                #  "METABOLIC_BETA1_FEMALE"=3.03,
-                                #  "METABOLIC_BETA2_FEMALE"=-4.31,
-                                 "BETA_HEPATITIS"=0.009854
-                                 # "THRESHOLD"=100000,
-                                 # "THRESHOLD_MODIFIER"=0.66,
-                                 # "IRR_correlation"=0.72,
-                                 # "DECAY_SPEED"=1,
-                                 # "DECAY_LENGTH"=20
+    lhsSample[[1]] <- data.frame(B_HEPATITIS1 = 0.02603471, B_HEPATITIS2 = -0.00008898,
+                                 B_LIVER1_MEN = 0.03655479, B_LIVER2_MEN = -0.00011081,
+                                 B_LIVER1_WOMEN = 0.06064636, B_LIVER2_WOMEN = -0.00031181
     )
+
   }
 
   return(lhsSample)

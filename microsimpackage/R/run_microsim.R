@@ -13,7 +13,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_rates, diseases, lhs,
-                         policy=0, percentreduction=0.1,
+                         policy=0, percentreduction=0.1, year_policy, inflation_factor,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
 Summary <- list()
@@ -77,32 +77,41 @@ if(updatingalcohol==1 & y>2000){
   # allocate a numeric gpd for individuals based on model
   # allocate every year even when transitions are only every two years?
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
+
+  if(policy==1 & y ==year_policy){
+  basepop$microsim.init.alc.gpd <- basepop$microsim.init.alc.gpd - (basepop$microsim.init.alc.gpd*percentreduction)
+  }
 }
 
 # simulate mortality from specific diseases
+disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
+}else if("LVDC" %in% diseases==TRUE){
+basepop <- CirrhosisAll(basepop,lhs)
+}
 
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_rates,diseases)
 }
 
-basepop <- left_join(basepop, rates, by=c("cat"))
-basepop$risk <- basepop$RRHep*basepop$rate
-basepop$prob <- runif(nrow(basepop))
-basepop$mortalityHLVDC <- ifelse(basepop$prob<basepop$risk, 1,0)
+basepop <- left_join(basepop, rates, by=c("cat")) %>%
+  mutate(risk = RR*rate,
+         prob = runif(nrow(.)),
+         !!paste0("mort", quo_name(disease)) := ifelse(prob<risk, 1,0))
+
 DiseaseSummary[[paste(y)]] <- basepop %>%
   group_by(cat) %>% add_tally() %>%
-  mutate(mortHLVDC = sum(mortalityHLVDC)) %>% ungroup() %>% mutate(year=y) %>% dplyr::select(year, cat, n, mortHLVDC) %>%
+  mutate(!!paste0("mort", quo_name(disease)) := sum(!!as.name(paste0('mort',quo_name(disease))))) %>% ungroup() %>%
+  mutate(year=y) %>% dplyr::select(year, cat, n, !!as.name(paste0('mort',quo_name(disease)))) %>%
   distinct()
 # now sample the correct proportion of those to be removed (due to inflated mortality rate)
-toremove <- basepop %>% filter(mortalityHLVDC==1) %>% add_tally() %>%
-    mutate(toremove=round(n/1000)) %>% do(dplyr::sample_n(.,size=unique(toremove), replace=F))
+toremove <- basepop %>% filter(!!as.name(paste0('mort',quo_name(disease)))==1) %>% add_tally() %>%
+    mutate(toremove=round(n/inflation_factor)) %>% do(dplyr::sample_n(.,size=unique(toremove), replace=F))
 ids <- toremove$microsim.init.id
 basepop <- basepop %>% filter(!microsim.init.id %in% ids)
-basepop <- basepop %>% dplyr::select(-c(cat, RRHep, rate, risk, prob, mortalityHLVDC))
-}
+basepop <- basepop %>% dplyr::select(-c(cat, RR, rate, risk, prob, !!as.name(paste0('mort',quo_name(disease)))))
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
 # if(policy==1){
@@ -120,7 +129,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 }
 # save output - depending on which was selected
 if(output=="mortality"){
-  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_rates)
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_rates, inflation_factor)
   }else if(output=="demographics"){
   Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
@@ -155,15 +164,15 @@ if(output=="mortality"){
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
 }else if(output=="hepatitis"){
-  chronicB <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicB) %>%
-    tally() %>% mutate(prevalenceChronicB = n /sum(n)) %>%
-    filter(chronicB==1) %>%
-    dplyr::select(year, microsim.init.sex, prevalenceChronicB)
-  chronicC <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicC) %>%
-    tally() %>% mutate(prevalenceChronicC = n/sum(n)) %>%
-    filter(chronicC==1) %>%
-    dplyr::select(year, microsim.init.sex, prevalenceChronicC)
-  Summary <- left_join(chronicB, chronicC)
+  # chronicB <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicB) %>%
+  #   tally() %>% mutate(prevalenceChronicB = n /sum(n)) %>%
+  #   filter(chronicB==1) %>%
+  #   dplyr::select(year, microsim.init.sex, prevalenceChronicB)
+  # chronicC <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicC) %>%
+  #   tally() %>% mutate(prevalenceChronicC = n/sum(n)) %>%
+  #   filter(chronicC==1) %>%
+  #   dplyr::select(year, microsim.init.sex, prevalenceChronicC)
+  # Summary <- left_join(chronicB, chronicC)
 }
 return(Summary)
 }

@@ -5,16 +5,23 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_rates){
+postprocess_mortality <- function(DiseaseSummary,diseases, death_rates, inflation_factor){
+  disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
   death_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
+    mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
+                           ifelse(agecat=="35-39" | agecat=="40-44","35-44",
+                                  ifelse(agecat=="45-49" | agecat=="50-54", "45-54",
+                                         ifelse(agecat=="55-59" | agecat=="60-64", "55-64",
+                                                ifelse(agecat=="65-69" | agecat=="70-74", "65-74",
+                                                       agecat)))))) %>%
     group_by(year, sex, agecat, education, name) %>%
     summarise(value=sum(value)) %>%
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>%
     mutate(
-      value = value*100, #inflate mortality rate by 100 for HLVDC
+      value = value*inflation_factor, #inflate mortality rate by 100 for HLVDC
       education = ifelse(education=="Some", "SomeC",
                          ifelse(education=="Coll","College",education)),
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
@@ -25,7 +32,7 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_rates){
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",
                               ifelse(education=="Som","SomeC","College"))) %>%
-    rename(popcount = n, simulated = mortHLVDC, observed = HLVDC)
+    rename(popcount = n, simulated = !!as.name(paste0('mort',quo_name(disease))), observed = !!as.name(paste0(quo_name(disease))))
   return(Diseases)
 
 

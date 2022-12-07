@@ -4,7 +4,7 @@
 \alias{load_death_rates}
 \title{Loads death rate data for SIMAH or CASCADE versions}
 \usage{
-load_death_rates(model = "SIMAH", proportion, SelectedState, WorkingDirectory)
+load_death_rates(model = "SIMAH", proportion, SelectedState, DataDirectory)
 }
 \description{
 Loads death rate data for SIMAH or CASCADE versions
