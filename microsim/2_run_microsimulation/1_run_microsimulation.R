@@ -54,5 +54,5 @@ summary <- summarise_hepatitis_output(Output)
 summary[[1]]
 summary[[2]]
 summary
-ggsave("SIMAH_workplace/microsim/2_output_data/rates_compare_HLVDC.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/rates_compare_LVDC.png", dpi=300,
        width=33, height=19, units="cm")

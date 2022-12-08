@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("HLVDC")
+diseases <- c("LVDC")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -44,7 +44,7 @@ output_type <- "alcohol"
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
 # default value is 0
-policy <- 1
+policy <- 0
 
 # year to introduce policy
 year_policy <- 2015
