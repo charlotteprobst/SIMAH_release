@@ -46,7 +46,7 @@ ggplot(data_all, aes(alc_daily_g, RR, size=inver_se)) +
 
 #Create linear model
 lin_mod <- dosresmeta(formula=logRR ~ alc_daily_g, proc="1stage",
-                      id=id_study, type="cc", se=se, cases=outcome_n, n=total_n, data=data_all)
+                      id=id_study, type="ir", se=se, cases=outcome_n, n=total_n, data=data_all)
 
 summary(lin_mod)
 predict(lin_mod, delta=10, exp=TRUE)
@@ -62,10 +62,10 @@ predict(lin_mod, data.frame(alc_daily_g=seq(0, 100, 1)), order=TRUE, exp=TRUE) %
 
 #Create quadratic model(model being used)
 quad_mod <- dosresmeta(formula=logRR ~ alc_daily_g + I(alc_daily_g^2), proc= "1stage", 
-                       id=id_study, type="ci", se=se, cases=outcome_n, n=total_n, data=data_all)
+                       id=id_study, type="ir", se=se, cases=outcome_n, n=total_n, data=data_all)
 
 summary(quad_mod)
-#predict(quad_mod, exp=TRUE)
+predict(quad_mod, data.frame(alc_daily_g=seq(0, 100, 10)), exp=TRUE)
 
 #Plot
 predict(quad_mod, data.frame(alc_daily_g=seq(0, 100, 1)), order=TRUE, exp=TRUE) %>% 
@@ -75,7 +75,10 @@ predict(quad_mod, data.frame(alc_daily_g=seq(0, 100, 1)), order=TRUE, exp=TRUE) 
   geom_line(colour = "black", linetype=1) + 
   geom_ribbon(aes(ymin= ci.lb, ymax=ci.ub), alpha=0.1, colour = "black", linetype = "dotted") + #add , fill = "" to change the colour of the CI
   coord_cartesian(ylim=c(-5, 100))+
-  theme_classic()
+  theme_classic() +
+  geom_point(data_all, mapping=aes(alc_daily_g, RR, size=inver_se), shape=1, 
+           colour="black", alpha = 0.5) +  #alpha changes the opacity of the circle
+           scale_size(range = c (5, 10), name = "Studies (inverse SE)")
 
 ggsave("/Users/tessacarr/Downloads/AUD Analysis/Figure1_dose_response_nolog_AUDincidence.jpeg", device = "jpeg", dpi = 600,
        width = 15, height = 10, units = "cm")

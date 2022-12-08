@@ -10,7 +10,7 @@ library(tableone)   # create table one
 library(data.table) # enable data table
 library(powerjoin)  # extension of dplyr package for powerjoin
 
-library(dyplyr)
+library(dplyr)
 library(scales)
 library(dosresmeta)
 library(mvtnorm)
@@ -174,10 +174,10 @@ ggplot(data_all, aes(alc_daily_g, RR, size=inver_se)) +
 
 #Create linear model(model being used)
 lin_mod <- dosresmeta(formula=logRR ~ alc_daily_g, proc="1stage",
-                      id=id_study, type="ci", se=se, cases=outcome_n, n=total_n, data=data_all)
+                      id=id_study, type="ir", se=se, cases=outcome_n, n=total_n, data=data_all)
 
 summary(lin_mod)
-predict(lin_mod, delta=10, exp=TRUE)
+predict(lin_mod, data.frame(alc_daily_g=seq(0, 100, 10)), exp=TRUE) #10 is the interval of the dose
 
 #Plot
 predict(lin_mod, data.frame(alc_daily_g=seq(0, 100, 1)), order=TRUE, exp=TRUE) %>% 
@@ -188,9 +188,10 @@ predict(lin_mod, data.frame(alc_daily_g=seq(0, 100, 1)), order=TRUE, exp=TRUE) %
   geom_ribbon(aes(ymin= ci.lb, ymax=ci.ub), alpha=0.1, colour = "black", linetype = "dotted") + #add , fill = "" to change the colour of the CI
   coord_cartesian(ylim=c(-5, 100))+
   theme_classic() + 
-  theme(plot.title=element_text(family="Calibri",face="bold", size=11))
-
-#grid.arrange(p,p2, ncol=2)
+  theme(plot.title=element_text(family="Calibri", face="bold", size=11)) + #doesn't work
+  geom_point(data_all, mapping=aes(alc_daily_g, RR, size=inver_se), shape=1, 
+            colour="black", alpha = 0.5) +  #alpha changes the opacity of the circle
+            scale_size(range = c (5, 10), name = "Studies (inverse SE)")
 
 ggsave("/Users/tessacarr/Downloads/AUD Analysis/Figure1(v2)_dose_response_nolog_AUDmortality.jpeg", device = "jpeg", dpi = 600,
       width = 15, height = 10, units = "cm")
