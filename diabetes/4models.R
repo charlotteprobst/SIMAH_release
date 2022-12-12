@@ -2,6 +2,7 @@ library(tidyverse)
 library(ggplot2)
 library(mvmeta)
 
+library(dosresmeta)
 library(meta)
 library(metafor)
 #for restrictive cubic spline
@@ -100,7 +101,7 @@ regplot(cp_male, mod=1, xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         ylim = c(0, 2), pred = pred_cp_male, xvals = ms, main="Male - Cubic Polynomial Regression")
 
 ##MODEL COMPARISON 
-fitstats(linear_male, quad_male, rcs_male, cp_male)
+fitstats(linear_male, quad_male, rcs_male)
 
 
 ####FEMALE MODELS
@@ -121,7 +122,7 @@ summary(linear_female)
 fs <- seq(0,150,length=150)
 pred_lin_female <- predict(linear_female, cbind(fs))
 regplot(linear_female, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_lin_female, xvals = fs, main="Female - Linear Regression")
 
 waldtest(b = coef(linear_female), Sigma = vcov(linear_female), Terms = 1:nrow(vcov(linear_female)))
@@ -134,7 +135,7 @@ summary(quad_female)
 
 pred_quad_female <- predict(quad_female, newmods=cbind(fs,fs^2))
 regplot(quad_female, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_, 
         ylim = c(0, 2), pred = pred_quad_female, xvals = fs, main="Female - Quadratic Regression")
 
 ##RESTRICTED CUBIC SPLINE
@@ -174,7 +175,7 @@ regplot(cp_female, mod=1, xlab="Alcohol intake, grams/day", ylab="Relative Risk"
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
         ylim = c(0, 2), pred = pred_cp_female, xvals = fs, main="Polynomial Regression")
 
-fitstats(linear_female, quad_female, rcs_female, cp_female)
+fitstats(linear_female, quad_female, rcs_female)
 
 ###BOTH SEXES COMBINED - not for publication
 
