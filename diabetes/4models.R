@@ -186,12 +186,12 @@ final <- final[-c(35,36,37,38,39,162,163,164,165,166),]
 ##LINEAR REGRESSION
 
 linear <- rma.mv(yi=lnor, V=se^2, mods = ~ dose-1, data=final,
-                 random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+                 random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear)
 
 #comparing model
 linear_two <- rma.mv(yi=lnor, V=se^2, mods = ~ dose-1, data=final,
-                     random = ~ 1 | cohort_id/line_id, test = "t", method = "REML", sigma2 =  c(0, NA))
+                     random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
 summary(linear_two)
 
 anova(linear, linear_two)
@@ -203,15 +203,13 @@ regplot(linear, mod="dose",  xlab="Alcohol intake, grams/day", ylab="Relative Ri
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_, 
         ylim = c(0, 2), pred = pred_lin, xvals = s, main="Linear Regression - both sexes")
 
-weights(linear)
-
 #test linearity
 waldtest(b = coef(linear), Sigma = vcov(linear), Terms = 1:nrow(vcov(linear)))
 
 ##QUADRATIC REGRESSION
 
-quad <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)-1, data=final, 
-               random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+quad <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=final, 
+               random = ~ 1 | cohort_id/line_id,  method = "REML")
 summary(quad)
 
 pred_quad <- predict(quad, newmods=cbind(s,s^2))
@@ -221,10 +219,12 @@ regplot(quad, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk"
 
 #comparing model
 quad_two <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)-1, data=final, 
-                   random = ~ 1 | cohort_id/line_id, test = "t", method = "REML", sigma2 =  c(0, NA))
+                   random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
 summary(quad_two)
 
 anova(quad, quad_two)
+
+waldtest(b = coef(quad), Sigma = vcov(quad), Terms = 1:nrow(vcov(quad)))
 
 ##RESTRICTED CUBIC SPLINE
 
@@ -233,7 +233,7 @@ s <- seq(0,150,length=150)
 knots <- quantile(final$dose, c(.05, .35, .65, .95))
 
 rcs <- rma.mv(yi= lnor ~ rcs(dose, knots)+0, V=se^2, data=final, 
-              random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
+              random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs)
 
 pred_rcs <- predict(rcs, newmods=rcspline.eval(s, knots, inclx=TRUE))
@@ -250,17 +250,6 @@ weights(rcs)
 
 #prediction rcs model
 predict(rcs, newmods= rcspline.eval(50, knots, inclx=TRUE), transf=exp)
-
-##POLYNOMIAL MODEL
-
-cp <- rma.mv(yi= lnor, V=se^2, mods = ~ poly(dose, degree=3, raw=TRUE)+0, data=final, 
-             random = ~ 1 | cohort_id/line_id, test = "t", method = "REML")
-summary(cp)
-
-pred_cp <- predict(cp, newmods=unname(poly(s, degree=3, raw=TRUE)))
-regplot(cp, mod=1, xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_cp, xvals = s, main="Cubic Polynomial Regression - both sexes")
 
 #TO CHECK AND CORRECT: MULTIVARIATE FRACTIONAL POLYNOMIAL
 library(mfp)
@@ -296,7 +285,7 @@ regplot(mfp_fracpol, mod="I((dose/10)^1)",xlab="Alcohol intake, grams/day", ylab
         ylim = c(0, 2), pred = pred_fp, xvals = s, main="Fractional Polynomial Regression")
 
 ##MODEL COMPARISON 
-fitstats(linear, quad, rcs, cp)
+fitstats(linear, quad, rcs)
 
 ####TEST TO COMPARE WITH DOSRESMETA
 
@@ -356,6 +345,8 @@ weights(rcs)
 #prediction rcs model
 predict(rcs_male, newmods= rcspline.eval(50, knotsm, inclx=TRUE), transf=exp)
 
+anova(linear_male, rcs_male)
+
 ##POLYNOMIAL MODEL
 
 cp_male <- rma.mv(yi= lnor, V=se^2, mods = ~ poly(dose, degree=3, raw=TRUE)+0, data=male, 
@@ -382,7 +373,7 @@ summary(linear_female2)
 
 pred_lin_female2 <- predict(linear_female2, cbind(fs))
 regplot(linear_female2, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_lin_female2, xvals = fs, main="Female - Linear Regression")
 
 waldtest(b = coef(linear_female2), Sigma = vcov(linear_female2), Terms = 1:nrow(vcov(linear_female2)))
@@ -395,7 +386,7 @@ summary(quad_female2)
 
 pred_quad_female2 <- predict(quad_female2, newmods=cbind(fs,fs^2))
 regplot(quad_female2, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_quad_female2, xvals = fs, main="Female - Quadratic Regression")
 
 ##RESTRICTED CUBIC SPLINE

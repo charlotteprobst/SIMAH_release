@@ -84,7 +84,7 @@ lin_femaled <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se,
 summary(lin_femaled)
 predict(lin_femaled, delta = 12, exp = TRUE)
 
-dosex_bin <- data.frame(dose=seq(0, 150, 1))
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
 with(predict(lin_femaled, dosex_bin, order=TRUE, exp=TRUE), 
      {plot(dose, pred, type="l", col="blue", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Female")
        lines(dose, ci.lb, lty=2)
@@ -96,9 +96,9 @@ quad_femaled <- dosresmeta(formula = logrr ~ dose + I(dose^2), id = id, type = "
                         intercept = F, cases = cases, n = n, method = "reml", data = femaled, proc = "1stage")
 summary(quad_femaled)
 
-dosex_bin <- data.frame(dose=seq(0, 150, 1))
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
 with(predict(quad_femaled, dosex_bin, order=TRUE, exp=TRUE), 
-     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Female")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
 
