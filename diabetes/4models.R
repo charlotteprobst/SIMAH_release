@@ -41,14 +41,14 @@ summary(linear_male_2)
 
 anova(linear_male, linear_male_2)
 
+predict(linear_male, 100, transf=exp)
+
 #graph
 ms <- seq(0,150,length=150)
 pred_lin_male <- predict(linear_male, cbind(ms))
 regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_lin_male, xvals = ms, main="Male - Linear Regression")
-
-weights(linear_male)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -65,6 +65,8 @@ regplot(quad_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative 
         ylim = c(0, 2), pred = pred_quad_male, xvals = ms, main="Male - Quadratic Regression")
 
 waldtest(b = coef(quad_male), Sigma = vcov(quad_male), Terms = 1:nrow(vcov(quad_male)))
+
+predict(quad_male, c(0.57,0.57^2))
 
 ##RESTRICTED CUBIC SPLINE
 
@@ -84,10 +86,8 @@ waldtest(b = coef(rcs_male), Sigma = vcov(rcs_male), Terms = 1:nrow(vcov(rcs_mal
 
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
-weights(rcs)
-
 #prediction rcs model
-predict(rcs_male, newmods= rcspline.eval(50, knotsm, inclx=TRUE), transf=exp)
+predict(rcs_male, newmods= rcspline.eval(0.57, knotsm, inclx=TRUE), transf=exp)
 
 ##POLYNOMIAL MODEL
 
@@ -103,6 +103,7 @@ regplot(cp_male, mod=1, xlab="Alcohol intake, grams/day", ylab="Relative Risk",
 ##MODEL COMPARISON 
 fitstats(linear_male, quad_male, rcs_male)
 
+anova(quad_male, rcs_male,refit=TRUE)
 
 ####FEMALE MODELS
 
@@ -130,7 +131,7 @@ waldtest(b = coef(linear_female), Sigma = vcov(linear_female), Terms = 1:nrow(vc
 ##QUADRATIC REGRESSION
 
 quad_female <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female, 
-                    random = ~ 1 | cohort_id/line_id, method = "ML")
+                    random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(quad_female)
 
 pred_quad_female <- predict(quad_female, newmods=cbind(fs,fs^2))
@@ -148,7 +149,7 @@ summary(rcs_female)
 
 pred_rcs_female <- predict(rcs_female, newmods=rcspline.eval(fs, knotsf, inclx=TRUE))
 regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
         ylim = c(0, 2), pred = pred_rcs_female, xvals = fs, main="Female - RCS Regression")
 abline(v=knotsf, lty="dotted")
 
@@ -162,7 +163,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female, newmods= rcspline.eval(50, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(100, knotsf, inclx=TRUE), transf=exp)
 
 ##POLYNOMIAL MODEL
 
