@@ -34,6 +34,14 @@ linear_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                  random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear_male)
 
+#use var.comp function
+i2 <- var.comp(linear_male)
+summary(i2)
+i2$results
+i2$totalI2
+i2$plot
+
+
 #comparing model
 linear_male_2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                         random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
