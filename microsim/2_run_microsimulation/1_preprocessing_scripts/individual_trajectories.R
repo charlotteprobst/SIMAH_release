@@ -87,21 +87,44 @@ dat <- rbind(dat, distributions) %>%
 
 scaleFUN <- function(x) sprintf("%.2f", x)
 
-ggplot(data=subset(dat, YEAR==2018), aes(x=gramsperday,
+ggplot(data=subset(dat, YEAR==2018 & AlcCAT=="High risk" & sex_recode=="Men"), aes(x=gramsperday,
                                                              colour=data, fill=data)) + 
-  geom_density(aes(y=..scaled.., color=as.factor(data), fill=as.factor(data)), alpha=0.6) +
+  geom_density(aes(color=as.factor(data), fill=as.factor(data)), alpha=0.6) +
   # geom_vline(aes(xintercept=median, color=as.factor(yearMOD)), linetype="dashed") + 
   # scale_x_continuous(limits = c(0, 200)) +  
-  facet_grid(as.factor(race_eth) ~ as.factor(sex_recode), scales="free_x") +
+  facet_grid(as.factor(education_summary) ~ as.factor(race_eth), scales="free_x") +
   theme(legend.position="bottom") + 
   scale_y_continuous(labels=scaleFUN) + 
-  ggtitle("Year = 2018") + 
+  ggtitle("Men, year = 2018") + 
   theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position = "bottom",
         panel.background =element_rect(fill="white"),
-        strip.background =element_rect(fill="white")) + xlim(100,200)
+        strip.background =element_rect(fill="white"),
+        text = element_text(size=24))
 
-ggsave("SIMAH_workplace/microsim/2_output_data/distributions_microsim_fit_race2018_upcapped_beta.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/distributions_alc_race_ed_men.png", dpi=300,
+       width=33, height=19, units="cm")
+
+overallmeandrinking <- dat %>% 
+  group_by(YEAR,sex_recode, education_summary, data) %>% 
+  summarise(gramsperday = mean(gramsperday))
+
+ggplot(data=subset(overallmeandrinking), aes(x=YEAR,y=gramsperday, colour=data, fill=data)) + 
+  geom_line(size=2) + 
+  # geom_vline(aes(xintercept=median, color=as.factor(yearMOD)), linetype="dashed") + 
+  # scale_x_continuous(limits = c(0, 200)) +  
+  facet_grid(as.factor(education_summary) ~ as.factor(sex_recode), scales="free_x") +
+  theme(legend.position="bottom") + 
+  scale_y_continuous(labels=scaleFUN) + 
+  ggtitle("Mean drinking over time") + 
+  theme_bw() + 
+  theme(legend.title=element_blank(),
+        legend.position = "bottom",
+        panel.background =element_rect(fill="white"),
+        strip.background =element_rect(fill="white"),
+        text = element_text(size=24)) + ylim(0,NA)
+
+ggsave("SIMAH_workplace/microsim/2_output_data/meandrinkingovertime.png", dpi=300,
        width=33, height=19, units="cm")
 
