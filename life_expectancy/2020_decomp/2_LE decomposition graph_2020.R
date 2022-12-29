@@ -3,132 +3,104 @@
 # Project: SIMAH
 
 # libraries required:
-library("tidyverse")
 library("dplyr")
 library("RColorBrewer")
+library("tidyverse")
 
 ## Set the working directory
 setwd("C:/Users/marie/Dropbox/NIH2020/")
 
-dResults_contrib <- read.csv(
-  "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_2018_2020ACS.csv")
-dResults_contrib_race <- read.csv(
-  "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dResults_contrib_2018_2020race_ACS.csv")
-# Graph results by sex and SES
-dResults_contrib <- as.data.frame(dResults_contrib[, -1])
-group1gathered <- gather(data = dResults_contrib, key = "mort", value = "value", 
-                         -sex , -edclass, -start_year, -end_year, -LE1, -LE2)
+dResults_contrib_SES <- read.csv(
+  "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_ses_ACS.csv")
+dResults_contrib_detail <- read.csv(
+  "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_detail_ACS.csv")
+
+# Graph results by sex and SES or by sex, ses, and race
+k.run <- "ses" # "ses" or "detail"
+
+if (k.run == "detail"){
+  dgathered <- gather(data = dResults_contrib_detail, key = "mort", value = "value", 
+                      -sex , -edclass, -race, -start_year, -end_year, -LE1, -LE2)
+  
+} else if (k.run == "ses") {
+  dgathered <- gather(data = dResults_contrib_SES, key = "mort", value = "value", 
+                      -sex , -edclass, -start_year, -end_year, -LE1, -LE2)
+  
+}
 
 # have to be factor variables
-group1gathered$sex <- as.factor(group1gathered$sex)
-group1gathered$SES <- as.factor(group1gathered$edclass)
-class(group1gathered$SES)
-group1gathered$SES <- as.factor(group1gathered$SES)
-group1gathered$mort = gsub(pattern = "mort", replacement = "", x = group1gathered$mort)
-group1gathered$mort <- as.factor(group1gathered$mort)
+glimpse(dgathered)
+dgathered <- dgathered %>% 
+  mutate(mort = gsub(pattern = "mort", replacement = "", x = dgathered$mort)) %>% 
+  mutate_at(vars(sex, edclass, mort), as.factor)
+if (k.run == "ses") {
+  names(dgathered) <- c("Sex", "SES", "start_year", "end_year", "LE1", "LE2", "Cause_of_death", "Contribution")     
+} else if (k.run == "detail") {
+  dgathered <- mutate_at(dgathered, vars(race), as.factor)
+  names(dgathered) <- c("Sex", "SES", "Race", "start_year", "end_year", "LE1", "LE2", "Cause_of_death", "Contribution")     
+  dgathered <- filter(dgathered, Race != "Other") 
+}
 
-names(group1gathered) <- c("Sex", "SES", "start_year", "end_year", "LE1", "LE2", "Cause_of_death", "Contribution")     
-
-levels(group1gathered$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
-levels(group1gathered$Sex) <- list(Men = "1", Women = "2")
-levels(group1gathered$Cause_of_death) <- list("Suicide" = "SIJ",
-                                              "Motor vehicle accident" = "MVACC", 
-                                              "Opioid poisoning" = "OPDPOI", 
-                                              "Alcohol poisoning" = "ALCPOI", 
-                                              "Unintentional injury*" = "UIJ",   
-                                              "Other injury" = "OTHJ",   
+levels(dgathered$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
+levels(dgathered$Sex) <- list(Men = "1", Women = "2")
+levels(dgathered$Cause_of_death) <- list("Covid 19" = "cov",
+                                              "Influenza and pneumonia" = "flu", 
+                                              "Other infectious diseases" = "othinf", 
                                               
-                                              "Alcohol use disorder" = "AUD",
-                                              "Liver disease & cirrhosis" = "LIVER", 
-                                              "Kidney disease" = "KIDNEY",
-                                              "Diabetes Mellitus" = "DM",
-                                              "Dementia" = "ALZH",
-                                              "Cerebrovascular diseases" = "HEART", 
-                                              "Diseases of the heart" = "STROKE", 
-                                              "Cancer" = "CANCER", 
-                                              "Chronic lower respiratory diseases" = "RESP", 
-                                              "Other NCDs" = "OTHNCD", 
+                                              "Alcohol poisoning" = "alcpoi",
+                                              "Opioid poisoning" = "opioid",
+                                              "Suicide" = "sij",
+                                              "Motor vehicle accident" = "mvacc", 
+                                              "Unintentional injury*" = "uij",   
+                                              "Other injury" = "othj",   
                                               
-                                              "Covid 19" = "COVID",
-                                              "Influenza and pneumonia" = "FLU", 
-                                              "Other infectious diseases" = "OTHINF", 
-                                              "Rest" = "REST")
+                                              "Alcohol use disorder" = "aud",
+                                              "Liver disease & cirrhosis" = "liver", 
+                                              "Kidney disease" = "kidney",
+                                              "Diabetes Mellitus" = "dm",
+                                              "Dementia" = "dementia",
+                                              "Cerebrovascular diseases" = "heart", 
+                                              "Diseases of the heart" = "stroke", 
+                                              "Cancer" = "cancer", 
+                                              "Chronic lower respiratory diseases" = "resp", 
+                                              "Other NCDs" = "othncd",
+                                              
+                                              "Rest" = "rest"
+                                              )
 	
 
-ncd1 <- 5
-ncd2 <- 5
-injury <- 6
-infectious <- 3
+infectious <- 5
+injury1 <- 3
+injury2 <- 3
+ncd1 <- 3
+ncd2 <- 7
+
 other <- 1
-color.vec <- c(rev(brewer.pal(ncd1,"YlOrRd")),
-               rev(brewer.pal(ncd2,"Greens")),
-               rev(brewer.pal(injury,"RdPu")),
-               rev(brewer.pal(infectious,"Blues")),
+color.vec <- c(rev(brewer.pal(infectious,"Blues"))[1:3],
+               rev(brewer.pal(injury1,"Reds")),
+               rev(brewer.pal(injury2,"Greens")), #Oranges
+               rev(brewer.pal(ncd1,"RdPu")), #YlOrRd
+               rev(brewer.pal(ncd2,"YlOrRd")),
+               
                c("grey"))
 
-write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/decomp_results_2020.csv")
-group1gathered <- group1gathered[group1gathered$start_year == 2019,] 
+write.csv(dgathered, paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/decomp_results_2020_", k.run, ".csv"))
+dgathered <- filter(dgathered, start_year == 2019) 
 ## Plot showing changes in every year (will not be included in publication)
-ggplot(data = group1gathered, aes(y = Contribution, x = SES, fill = Cause_of_death)) +
-  geom_bar(position = position_stack(reverse = T), stat = "identity") +
-  scale_fill_manual("Cause of death", values = color.vec)+ 
-  facet_grid( rows = vars(Sex),  scales = "free")  + 
-  coord_flip()
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_2020.jpeg", dpi=600, width=30, height=15, units="cm")
+dcomp_plot <- ggplot(data = dgathered, 
+                       aes(x = SES, y = Contribution, fill = Cause_of_death)) +
+    geom_bar(position = position_stack(reverse = T), stat = "identity") +
+    scale_fill_manual("Cause of death", values = color.vec)+ 
+    facet_grid( rows = vars(Sex),  scales = "free")  + 
+    coord_flip() +
+    xlab("Contribution in years of life expectancy")
+  
+if (k.run == "detail") {
+  dcomp_plot <- dcomp_plot + facet_grid(rows = vars(Sex, Race))
+}
 
-#### Graph results by sex, SES and race
-# Graph results by sex and SES
-dResults_contrib <- as.data.frame(dResults_contrib_race[, -1])
-dResults_contrib <- filter(dResults_contrib, start_year == 2019)
-group1gathered <- gather(data = dResults_contrib, key = "mort", value = "value", 
-                         -sex , -edclass, -race, -start_year, -end_year, -LE1, -LE2)
-
-# have to be factor variables
-group1gathered$sex <- as.factor(group1gathered$sex)
-levels(group1gathered$sex) <- list(Men = "1", Women = "2")
-
-group1gathered$race <- factor(group1gathered$race, levels = c("White", "Black", "Hispanic"))
-
-group1gathered$edclass <- as.factor(group1gathered$edclass)
-levels(group1gathered$edclass) <- list("Low" = "LEHS", "Middle" = "SomeC", "High" = "College")
-#group1gathered$SES <- factor(group1gathered$SES, levels = c("High", "Middle", "Low"))
-
-group1gathered$mort = gsub(pattern = "mort", replacement = "", x = group1gathered$mort)
-group1gathered$mort <- as.factor(group1gathered$mort)
-
-levels(group1gathered$mort) <- list("Alcohol use disorder" = "AUD",
-                                              "Liver disease & cirrhosis" = "LIVER", 
-                                              "Kidney disease" = "KIDNEY",
-                                              "Diabetes Mellitus" = "DM",
-                                              "Dementia" = "ALZH",
-                                              "Cerebrovascular diseases" = "HEART", 
-                                              "Diseases of the heart" = "STROKE", 
-                                              "Cancer" = "CANCER", 
-                                              "Chronic lower respiratory diseases" = "RESP", 
-                                              "Other NCDs" = "OTHNCD", 
-                                              "Suicide" = "SIJ",
-                                              "Motor vehicle accident" = "MVACC", 
-                                              "Opioid poisoning" = "OPDPOI", 
-                                              "Alcohol poisoning" = "ALCPOI", 
-                                              "Unintentional injury*" = "UIJ",   
-                                              "Other injury" = "OTHJ",           
-                                              "Covid 19" = "COVID",
-                                              "Influenza and pneumonia" = "FLU", 
-                                              "Other infectious diseases" = "OTHINF", 
-                                              "Rest" = "REST")
-group1gathered <- rename(group1gathered, "Sex" = "sex", 
-       "Race" = "race", 
-       "Cause_of_death" = "mort", 
-       "Contribution"= "value", 
-       "Education" = "edclass")
-
-write.csv(group1gathered, "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/decomp_results_2020_race.csv")
-group1gathered <- group1gathered[group1gathered$start_year == 2019,] 
-ggplot(data = group1gathered, aes(x = Education, y = Contribution, fill = Cause_of_death)) +
-  geom_bar(position = position_stack(reverse = T), stat = "identity") +
-  scale_fill_manual("Cause of death", values = color.vec)+ 
-  facet_grid(rows = vars(Sex, Race)) + 
-  coord_flip() +
-  theme_bw() +
-  ylab("Contribution to changes in life expectancy in years")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/2_LE decomp_race_2020.jpeg", dpi=600, width=30, height=15, units="cm")
+ggsave(plot = dcomp_plot, 
+       filename =  
+         paste0("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/decomp_plot_2020_",
+                k.run, ".jpeg"), 
+       dpi=600, width=30, height=15, units="cm", device = "jpeg")
