@@ -35,7 +35,7 @@ library(ggthemes)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 29112022
+DATE <- 28122022
 
 dat.tax <- data.table(read.csv("data_acp_TAX_29112022.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
@@ -170,18 +170,16 @@ summary(i2) #98.8
 
 # shape
 
-shape <- c(23, 21)
+shape <- c(24, 23)
 
 # labels
 
-pdat[, design.ordered := factor(pdat$design_level, levels = c("individual", "aggregate"))]
-pdat[, bev.ordered := factor(pdat$beverage, levels = c("specific", "holistic"))]
-#pdat[, bev.ordered := factor(pdat$tax_bev, levels = c("beer", "wine", "spirits", "RTD", "total"))]
-pdat[, bias := factor(ifelse(rob < 4, 1, ifelse(rob > 3, 0, NA)))]
-pdat[, bias.design := factor(ifelse(bias == 1 & design.ordered == "individual", "high risk / individual",
-                                 ifelse(bias == 1 & design.ordered == "aggregate", "high risk / aggregate", 
-                                        ifelse(bias == 0 & design.ordered == "individual", "low-mid risk / individual",
-                                               ifelse(bias == 0 & design.ordered == "aggregate", "low-mid risk / aggregate", NA)))))]
+pdat[, bev.ordered := factor(ifelse(study_type %like% "intervention" & beverage %like% "holistic", "holistic", 
+                                    ifelse(study_type %like% "intervention" & beverage %like% "specific", "specific",
+                                           ifelse(study_type %like% "correlation", "correlation", NA))), 
+                             levels = c("specific", "holistic", "correlation"))]
+pdat[, tax.policy := as.factor(beverage)]
+pdat[, study_type := as.factor(study_type)]
 pdat[, inv.var := 1 / (se^2)]
 
 # meta reg prediction
@@ -193,21 +191,21 @@ pred <- cbind(pred.val, as.data.frame(predict(metareg, newmods=cbind(pred.val, c
 
 ggplot() +
   geom_point(data = pdat, 
-             aes(x=tax_change, y=perc.change, size=inv.var, shape=bev.ordered, colour = bias, fill=bias.design)) +
+             aes(x=tax_change, y=perc.change, size=inv.var, shape=tax.policy, fill=bev.ordered)) +
   geom_vline(xintercept = 0, size = .2) +
   geom_hline(yintercept = 0, size = .2) +
   geom_line(data = pred, aes(x=pred.val, y = pred), colour = "#765874") +
   geom_line(data = pred, aes(x=pred.val, y = ci.lb), linetype = "dashed", colour = "#B397AB") +
   geom_line(data = pred, aes(x=pred.val, y = ci.ub), linetype = "dashed", colour = "#B397AB") +
   scale_size(range = c(3,9)) +
-  scale_color_manual(values = c("black", "grey"), name = "Independent variable") +
-  scale_fill_manual(values = c("grey", NA, "black"), name = "", na.value = "white") +
+ # scale_color_manual(values = c("black", "grey"), name = "Independent variable") +
+  scale_fill_manual(values = c("black", "black", NA), name = "", na.value = "white") +
   scale_shape_manual(values = shape, name = "") +
   scale_x_continuous(breaks = c(-.5, -.25, 0, .25, .5, .75, 1, 1.25), 
                      limits = c(-.5, 1.25), 
                      labels = scales::percent_format(),
-                     name = "\nChange in alcohol excise tax") + 
-  scale_y_continuous(name = "Change in alcohol consumption\n", 
+                     name = "\nChanges in alcohol excise tax") + 
+  scale_y_continuous(name = "Changes in alcohol consumption\n", 
                      breaks = c(-.2, -.1, 0, .1, .2, .3),
                      limits = c(-.25, .3), 
                      labels = scales::percent_format()) + 
