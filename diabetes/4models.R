@@ -34,7 +34,7 @@ linear_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                  random = ~ 1 | cohort_id/line_id, digits = 8, method = "REML")
 summary(linear_male)
 
-#use var.comp function
+#use var.comp function to check i2 - heterogeneity
 i2 <- var.comp(linear_male)
 summary(i2)
 i2$results
@@ -42,7 +42,7 @@ i2$totalI2
 i2$plot
 
 
-#comparing model
+#comparing model to check if it is necessary to run a multilevel analysis
 linear_male_2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                         random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
 summary(linear_male_2)
@@ -159,7 +159,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female, newmods= rcspline.eval(100, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(15, knotsf, inclx=TRUE), transf=exp)
 
 fitstats(linear_female, quad_female, rcs_female)
 
@@ -169,6 +169,8 @@ final <- dataset %>%
   filter(analysis_id==0 & dose != 0.00)
 #erase male and female from two papers that provides estimates for both/male/female to avoid duplicate population
 final <- final[-c(35,36,37,38,39,162,163,164,165,166),]
+
+dim(table(final$cohort_id))
 
 ##LINEAR REGRESSION
 
@@ -224,9 +226,9 @@ rcs <- rma.mv(yi= lnor ~ rcs(dose, knots)+0, V=se^2, data=final, digits = 8,
 summary(rcs)
 
 pred_rcs <- predict(rcs, newmods=rcspline.eval(s, knots, inclx=TRUE))
-regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150),pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_rcs, xvals = s, main="RCS Regression - both sexes")
+regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_,
+        ylim = c(0, 2), pred = pred_rcs, xvals = s)
 abline(v=knots, lty="dotted")
 
 waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
@@ -236,8 +238,7 @@ waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
 weights(rcs)
 
 #prediction rcs model
-predict(rcs, newmods= rcspline.eval(50, knots, inclx=TRUE), transf=exp)
-
+predict(rcs, newmods= rcspline.eval(45, knots, inclx=TRUE), transf=exp)
 
 
 #######TO CHECK AND CORRECT: MULTIVARIATE FRACTIONAL POLYNOMIAL

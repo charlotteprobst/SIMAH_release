@@ -134,3 +134,5 @@ regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day
 abline(v=knotsf, lty="dotted")
 
 fitstats(linear_female, quad_female, rcs_female)
+
+predict(rcs_female, newmods= rcspline.eval(14, knotsf, inclx=TRUE), transf=exp)
