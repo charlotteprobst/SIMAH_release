@@ -14,12 +14,13 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 dataset$sex <- as.factor(dataset$sex)
 dataset$usa <- as.factor(dataset$usa)
 dataset$over_45 <- as.factor(dataset$over_45)
 dataset$outcome.ascertaiment <- as.factor(dataset$outcome.ascertaiment)
+dataset$NOS_cat <- as.factor(dataset$NOS_cat)
 
 #ALL STUDIES
 final <- dataset %>%
@@ -86,8 +87,22 @@ model6
 
 anova(model5a, model6,refit=TRUE)
 
-##missing risk of bias
+#age as continuous
+model7 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex + I(dose^2):sex
+                 + dose:age_all + I(dose^2):age_all + dose:usa, data=final, random = ~ 1 | cohort_id/line_id, method = "REML")
+model7
 
+##risk of bias - pending final numbers
+model8 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex + I(dose^2):sex
+                 + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat, data=final, digits = 6, 
+                 random = ~ 1 | cohort_id/line_id, method = "REML")
+model8
+
+model9 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex + I(dose^2):sex
+                 + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat + I(dose^2):NOS_cat, data=final, random = ~ 1 | cohort_id/line_id, method = "REML")
+model9
+
+anova(model8, model9,refit=TRUE)
 
 #MALE MODEL
 male <- dataset %>%
@@ -124,7 +139,16 @@ model5am
 
 anova(model5am, model5m,refit=TRUE)
 
+#age 
+model6am <- rma.mv(yi=lnor, V=se^2, mods = ~ dose 
+                   + dose:age_all + dose:usa, data=male, random = ~ 1 | cohort_id/line_id, method = "REML")
+model6am
+
 ##missing risk of bias
+model7am <- rma.mv(yi=lnor, V=se^2, mods = ~ dose 
+                   + dose:age_all + dose:usa + dose:NOS_cat
+                   , data=male, random = ~ 1 | cohort_id/line_id, method = "REML")
+model7am
 
 #FEMALE MODEL
 female <- dataset %>%
@@ -174,4 +198,25 @@ model6f
 
 anova(model5af, model6f,refit=TRUE)
 
-##missing risk of bias
+model7f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
+                   + dose:age_all + dose:usa, data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
+model7f
+
+model8f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
+                  + dose:age_all + I(dose^2):age_all + dose:usa, data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
+model8f
+
+anova(model7f, model8f,refit=TRUE)
+
+##risk of bias
+model9f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
+                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat
+                  , data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
+model9f
+
+model10f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
+                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat + I(dose^2):NOS_cat
+                  , data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
+model10f
+
+anova(model8f, model9f,refit=TRUE)

@@ -21,9 +21,9 @@ linear_maled <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se=se,
 summary(linear_maled)
 predict(linear_maled, delta = 12, exp = TRUE)
 
-dosex_bin <- data.frame(dose=seq(0, 150, 1))
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
 with(predict(linear_maled, dosex_bin, order=TRUE, exp=TRUE), 
-     {plot(dose, pred, type="l", col="blue", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+     {plot(dose, pred, type="l", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
 
@@ -115,10 +115,18 @@ dosex_bins <- data.frame(dose=seq(0, 100, 1))
 xref <- 0
 with(predict(splfemaled, dosex_bins, xref, exp = TRUE),
      {plot(get("rcs(dose, knotsfd)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
-           xlab= "Alcohol consumption, grams/day - Female")
+           xlab= "Alcohol consumption, grams/day")
        matlines(get("rcs(dose, knotsfd)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
 
 waldtest(b=coef(splfemaled), Sigma=vcov(splfemaled), Terms=2:3)
+
+predict(splfemaled, newmods= rcspline.eval(45, knotsfd, inclx=TRUE), exp=TRUE)
+
+dataTab <- data.frame(dose = seq(0, 20, 1))
+predSpl <- predict(splfemaled, dataTab, exp = TRUE)
+predSpl
+
+predict(splfemaled, 20, exp = TRUE)
 
 #####BOTH - not for publication
 

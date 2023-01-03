@@ -238,7 +238,7 @@ waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
 weights(rcs)
 
 #prediction rcs model
-predict(rcs, newmods= rcspline.eval(45, knots, inclx=TRUE), transf=exp)
+predict(rcs, newmods= rcspline.eval(15, knots, inclx=TRUE), transf=exp)
 
 
 #######TO CHECK AND CORRECT: MULTIVARIATE FRACTIONAL POLYNOMIAL
@@ -291,6 +291,7 @@ linear_male2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male2,
 summary(linear_male2)
 
 #graph
+ms <- seq(0,150,length=150)
 pred_lin_male2 <- predict(linear_male2, cbind(ms))
 regplot(linear_male2, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
@@ -387,8 +388,11 @@ rcs_female2 <- rma.mv(yi= lnor ~ rcs(dose, knotsf2)+0, V=se^2, data=female2,
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female2)
 
+fs <- seq(0,150,length=150)
 pred_rcs_female2 <- predict(rcs_female2, newmods=rcspline.eval(fs, knotsf2, inclx=TRUE))
 regplot(rcs_female2, mod="rcs(dose, knotsf2)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_rcs_female2, xvals = fs, main="Female - RCS Regression")
 abline(v=knotsf2, lty="dotted")
+
+predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp)
