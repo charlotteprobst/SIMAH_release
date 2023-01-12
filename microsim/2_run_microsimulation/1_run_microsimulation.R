@@ -23,6 +23,7 @@ setwd(paste(WorkingDirectory))
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
 output_type <- "mortality"
+liverinteraction <- 1
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
@@ -31,7 +32,7 @@ Output <- run_microsim(1,1,basepop,brfss,
                        migration_rates,
                        updatingalcohol, alcohol_transitions,
                        catcontmodel, Hep, drinkingdistributions,
-                       base_rates, diseases, lhs[[1]],
+                       base_rates, diseases, lhs[[1]], liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
                        2000, 2019, output_type)
 
@@ -46,13 +47,15 @@ summary <- summarise_alcohol_output(Output[[1]], SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output(Output, SelectedState, DataDirectory)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
 }else if(output_type=="hepatitis"){
 summary <- summarise_hepatitis_output(Output)  
 }
 
-summary[[1]]
+nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
+  filter(name=="simulated")
+write.csv(with_policy, "SIMAH_workplace/microsim/2_output_data/2015_with_policy.csv", row.names=F)
 summary[[2]]
 summary
-ggsave("SIMAH_workplace/microsim/2_output_data/rates_compare_LVDC.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/LVDC_interaction.png", dpi=300,
        width=33, height=19, units="cm")

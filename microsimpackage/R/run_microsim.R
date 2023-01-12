@@ -12,7 +12,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
-                         base_rates, diseases, lhs,
+                         base_rates, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -88,7 +88,11 @@ disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
 }else if("LVDC" %in% diseases==TRUE){
-basepop <- CirrhosisAll(basepop,lhs)
+  if(liverinteraction==1){
+    basepop <- CirrhosisAllInteraction(basepop,lhs)
+  }else if(liverinteraction==0){
+  basepop <- CirrhosisAll(basepop,lhs)
+  }
 }
 
 # calculate base rates if year = 2000)

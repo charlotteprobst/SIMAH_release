@@ -47,10 +47,10 @@ output_type <- "alcohol"
 policy <- 0
 
 # year to introduce policy
-year_policy <- 2015
+year_policy <- 2010
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
-percentreduction <- 0.1
+percentreduction <- 0
 
 ####################EDIT ONLY ABOVE HERE ##################################################
 

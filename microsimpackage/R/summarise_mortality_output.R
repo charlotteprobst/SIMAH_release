@@ -5,19 +5,20 @@
 #' @export
 #' @examples
 #' summarise_mortality_output
-summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory){
+summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, inflation_factor){
 
-age2010 <- Output %>% filter(year=="2019") %>%
+age2010 <- Output %>% filter(year=="2000") %>%
   ungroup() %>%
-  group_by(year, sex, education, agecat) %>%
+  group_by(year, sex, agecat, education) %>%
   summarise(totalpop = sum(popcount)) %>% ungroup() %>%
-  group_by(year, sex, education) %>%
-  mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(sex, education,
-                                                                             agecat, percent)
+  group_by(year, sex) %>%
+  mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(sex,
+                                                                             agecat, education,
+                                                                             percent)
 simulation <- left_join(Output, age2010) %>%
-  group_by(year, sex, education, agecat) %>%
-  mutate(simulated = simulated / 100,
-         observed = observed / 100,
+  group_by(year, sex, agecat, education) %>%
+  mutate(simulated = simulated / inflation_factor,
+         observed = observed / inflation_factor,
          weightedrate_simulation = (simulated / popcount*100000)*percent,
          weightedrate_observed = (observed / popcount*100000)*percent) %>%
   ungroup() %>%
@@ -26,7 +27,8 @@ simulation <- left_join(Output, age2010) %>%
             observed=sum(observed)) %>%
   pivot_longer(cols=simulated:observed) %>%
   mutate(sex = ifelse(sex=="f","Women","Men"),
-         education = factor(education, levels=c("LEHS","SomeC","College")))
+         education = factor(education, levels=c("LEHS","SomeC","College"))
+         )
 
 plot <- ggplot(data=simulation, aes(x=year, y=value, colour=name)) + geom_line(size=2) +
   facet_grid(cols=vars(education),
