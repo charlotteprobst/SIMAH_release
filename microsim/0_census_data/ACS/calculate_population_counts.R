@@ -63,12 +63,22 @@ ACS_20002020 <- rbind(ACS_20002020, summaryUSA) %>% drop_na()
 write.csv(ACS_20002020, "SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv", row.names=F)
 
 
+totals <- ACS_20002020 %>% 
+  group_by(state, year, sex, race, edclass) %>% 
+  summarise(TPop = sum(TPop)) %>% 
+  mutate(edclass = recode(edclass, "LEHS"="High school or less","SomeC"="Some college",
+                          "College"="College +"),
+         edclass = factor(edclass, levels=c("High school or less","Some college","College +")),
+         sex = recode(sex, "1"="Men","2"="Women"))
+
+options(scipen=999)
 # 
-ggplot(data=subset(ACS_20002020,sex==2), aes(x=year, y=TPop, colour=age_gp)) +
-  geom_line() + facet_grid(cols=vars(race),rows=vars(edclass)) + theme_bw() + 
-  ggtitle("Women") + xlim(2010, 2021)
+ggplot(totals, aes(x=year, y=TPop, colour=as.factor(sex))) +
+  geom_line() + facet_grid(rows=vars(race),cols=vars(edclass), scales="free") + theme_bw() + 
+  xlim(2010, 2021) + ylim(0,NA) + ylab("total population") + 
+  theme(legend.title=element_blank(), legend.position="bottom")
 
-
+ggsave("SIMAH_workplace/ACS/populationcounts_2010_2021.png", dpi=300, width=33, height=19, units="cm")
 
 
 # 

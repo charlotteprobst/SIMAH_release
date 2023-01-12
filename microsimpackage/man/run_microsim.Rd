@@ -21,6 +21,7 @@ run_microsim(
   base_rates,
   diseases,
   lhs,
+  liverinteraction,
   policy = 0,
   percentreduction = 0.1,
   year_policy,
