@@ -352,6 +352,10 @@ regplot(quad_normal, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relativ
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
         ylim = c(0, 2), pred = pred_quad_normal, xvals = s, main="Healthy weight range - Quadratic Regression")
 
+predict(quad_normal, c(18,18^2),transf=exp)
+
+-(-0.0180/(2*0.0005))
+
 ##RESTRICTED CUBIC SPLINE
 knotsn <- quantile(normal$dose, c(.05, .35, .65, .95))
 
@@ -363,7 +367,6 @@ pred_rcs_normal <- predict(rcs_normal, newmods=rcspline.eval(s, knotsn, inclx=TR
 regplot(rcs_normal, mod="rcs(dose, knotsn)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
         ylim = c(0, 2), pred = pred_rcs_normal, xvals = s, main="RCS Regression")
-abline(v=knots, lty="dotted")
 
 waldtest(b = coef(rcs_normal), Sigma = vcov(rcs_normal), Terms = 1:nrow(vcov(rcs_normal)))
 
@@ -397,6 +400,10 @@ pred_quad_ov <- predict(quad_ov, newmods=cbind(s,s^2))
 regplot(quad_ov, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80), 
         ylim = c(0, 2), pred = pred_quad_ov, xvals = s, main="Overweight range - Quadratic Regression")
+
+predict(quad_ov, c(34,34^2),transf=exp)
+
+-(-0.0202/(2*0.0003))
 
 ##RESTRICTED CUBIC SPLINE
 knotsov <- quantile(ov$dose, c(.05, .35, .65, .95))
@@ -448,6 +455,10 @@ regplot(quad_ob, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Ri
         ylim = c(0, 2), pred = pred_quad_ob, xvals = s, main="Obesity range - Quadratic Regression")
 
 weights(quad_ob)
+
+predict(quad_ob, c(36,36^2),transf=exp)
+
+-(-0.0214/(2*0.0003))
 
 ##RESTRICTED CUBIC SPLINE
 knotsob <- quantile(ob$dose, c(.05, .35, .65, .95))
