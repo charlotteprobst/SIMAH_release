@@ -52,10 +52,10 @@ summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, infl
 summary <- summarise_hepatitis_output(Output)  
 }
 
-nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
-  filter(name=="simulated")
-write.csv(with_policy, "SIMAH_workplace/microsim/2_output_data/2015_with_policy.csv", row.names=F)
+# nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
+#   filter(name=="simulated")
+# write.csv(with_policy, "SIMAH_workplace/microsim/2_output_data/2015_with_policy.csv", row.names=F)
 summary[[2]]
 summary
-ggsave("SIMAH_workplace/microsim/2_output_data/LVDC_interaction.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/LVDC_interaction_formerdrinkers.png", dpi=300,
        width=33, height=19, units="cm")

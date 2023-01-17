@@ -17,6 +17,8 @@ CirrhosisAll <- function(data,lhs){
   B_LIVER2_MEN <- as.numeric(lhs["B_LIVER2_MEN"])
   B_LIVER1_WOMEN <- as.numeric(lhs["B_LIVER1_WOMEN"])
   B_LIVER2_WOMEN <- as.numeric(lhs["B_LIVER2_WOMEN"])
+  FORMERDRINKER <- as.numeric(lhs["FORMERDRINKER"])
+
 
   data <- data %>%
     mutate(RR = ifelse(microsim.init.alc.gpd<164.9 & microsim.init.sex=="m",
@@ -26,6 +28,7 @@ CirrhosisAll <- function(data,lhs){
                               ifelse(microsim.init.alc.gpd<97.2 & microsim.init.sex=="f",
                                      exp(0 + B_LIVER1_WOMEN*microsim.init.alc.gpd + B_LIVER2_WOMEN*(microsim.init.alc.gpd^2)),
                                      ifelse(microsim.init.alc.gpd>=97.2 & microsim.init.sex=="f",
-                                            exp(0 + B_LIVER1_WOMEN*97.2 + B_LIVER2_WOMEN*(97.2^2)), NA)))))
+                                            exp(0 + B_LIVER1_WOMEN*97.2 + B_LIVER2_WOMEN*(97.2^2)), NA)))),
+           RR = ifelse(formerdrinker==1, FORMERDRINKER, RR))
   return(data)
 }
