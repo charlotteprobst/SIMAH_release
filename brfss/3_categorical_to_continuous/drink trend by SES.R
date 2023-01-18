@@ -11,6 +11,7 @@ library(tidyverse)
 library(data.table)
 library(dplyr)
 library(Hmisc)
+library(writexl)
 
 # --------------------------------------------------------------------------------------
 
@@ -28,7 +29,7 @@ wtd.lb <- function(x, w) {
   mean <- wtd.mean(x, w)
   var  <- wtd.var(x, w)
   se   <- sqrt(var)/sqrt(length(x))
-  lb   <- mean + qt(0.025,n-1)*se
+  lb   <- mean - 1.96*se
   return(lb)
 }
 
@@ -38,7 +39,7 @@ wtd.ub <- function(x, w) {
   mean <- wtd.mean(x, w)
   var  <- wtd.var(x, w)
   se   <- sqrt(var)/sqrt(length(x))
-  ub   <- mean + qt(0.975,n-1)*se 
+  ub   <- mean + 1.96*se 
 return(ub)
 }
 
@@ -46,23 +47,21 @@ return(ub)
 
 # alcohol categories (simah definition)
 dat <- dat %>% 
-  mutate(AlcCAT.simah = factor(ifelse(sex_recode=="Male" & gramsperday_upshifted>0 &
-                                        gramsperday_upshifted<=40, "Low risk",
-                                      ifelse(sex_recode=="Female" & gramsperday_upshifted>0 &
-                                               gramsperday_upshifted<=20, "Low risk",
-                                             ifelse(sex_recode=="Male" & gramsperday_upshifted>40 &
-                                                      gramsperday_upshifted<=60, "Medium risk",
-                                                    ifelse(sex_recode=="Female" & gramsperday_upshifted>20 &
-                                                             gramsperday_upshifted<=40, "Medium risk",
-                                                           ifelse(sex_recode=="Male" & gramsperday_upshifted>60 &
-                                                                    gramsperday_upshifted<=100, "High risk",
-                                                                  ifelse(sex_recode=="Female" & gramsperday_upshifted>40 &
-                                                                           gramsperday_upshifted<=60, "High risk", NA)))))), 
-                               levels = c("Low risk", "Medium risk", "High risk")))
+  mutate(AlcCAT.simah = factor(ifelse(drinkingstatus_detailed == "Lifetime abstainer", "LA", 
+                                      ifelse(drinkingstatus_detailed == "Former drinker", "FD", 
+                                             ifelse(sex_recode=="Male" & gramsperday_upshifted>0 & gramsperday_upshifted<=40, "Low risk",
+                                                    ifelse(sex_recode=="Female" & gramsperday_upshifted>0 & gramsperday_upshifted<=20, "Low risk",
+                                                           ifelse(sex_recode=="Male" & gramsperday_upshifted>40 & gramsperday_upshifted<=60, "Medium risk",
+                                                                  ifelse(sex_recode=="Female" & gramsperday_upshifted>20 & gramsperday_upshifted<=40, "Medium risk",
+                                                                         ifelse(sex_recode=="Male" & gramsperday_upshifted>60, "High risk",
+                                                                                ifelse(sex_recode=="Female" & gramsperday_upshifted>40, "High risk", NA)))))))), 
+                               levels = c("LA", "FD", "Low risk", "Medium risk", "High risk")))
 
-dat[, AlcCAT.low := ifelse(AlcCAT.simah == "Low risk", 1, ifelse(AlcCAT.simah %like% "Medium|High", 0, NA))]
-dat[, AlcCAT.medium := ifelse(AlcCAT.simah == "Medium risk", 1, ifelse(AlcCAT.simah %like% "Low|High", 0, NA))]
-dat[, AlcCAT.high := ifelse(AlcCAT.simah == "High risk", 1, ifelse(AlcCAT.simah %like% "Low|Medium", 0, NA))]
+dat[, LA := ifelse(AlcCAT.simah == "LA", 1, 0)]
+dat[, FD := ifelse(AlcCAT.simah == "FD", 1, 0)]
+dat[, AlcCAT.low := ifelse(AlcCAT.simah == "Low risk", 1, 0)]
+dat[, AlcCAT.medium := ifelse(AlcCAT.simah == "Medium risk", 1, 0)]
+dat[, AlcCAT.high := ifelse(AlcCAT.simah == "High risk", 1, 0)]
 
 # exclude USA (?)
 dat <- copy(dat[State != "USA"])
@@ -71,12 +70,18 @@ dat <- copy(dat[State != "USA"])
 
 # time trend drinking categories by sex and SES
 
-ANY <- dat %>% group_by(YEAR, sex_recode, education_summary) %>% 
-                summarise(ANY = wtd.mean(drinkingstatus_upshifted, final_sample_weight),
-                          ANY.lb = wtd.lb(drinkingstatus_upshifted, final_sample_weight),
-                          ANY.ub = wtd.ub(drinkingstatus_upshifted, final_sample_weight)) %>% as.data.table
+LA <- dat %>% group_by(YEAR, sex_recode, education_summary) %>% 
+                summarise(LA = wtd.mean(LA, final_sample_weight),
+                          LA.lb = wtd.lb(LA, final_sample_weight),
+                          LA.ub = wtd.ub(LA, final_sample_weight)) %>% as.data.table
 
-LOW <- dat %>% filter(gramsperday_upshifted > 0) %>% group_by(YEAR, sex_recode, education_summary) %>% 
+
+FD <- dat %>% group_by(YEAR, sex_recode, education_summary) %>% 
+  summarise(FD = wtd.mean(FD, final_sample_weight),
+            FD.lb = wtd.lb(FD, final_sample_weight),
+            FD.ub = wtd.ub(FD, final_sample_weight)) %>% as.data.table
+
+LOW <- dat %>% group_by(YEAR, sex_recode, education_summary) %>% 
                summarise(LOW = wtd.mean(AlcCAT.low, final_sample_weight),
                          LOW.lb = wtd.lb(AlcCAT.low, final_sample_weight),
                          LOW.ub = wtd.ub(AlcCAT.low, final_sample_weight)) %>% as.data.table
@@ -91,12 +96,13 @@ HIGH <- dat %>% group_by(YEAR, sex_recode, education_summary) %>%
                           HIGH.lb = wtd.lb(AlcCAT.high, final_sample_weight),
                           HIGH.ub = wtd.ub(AlcCAT.high, final_sample_weight)) %>% as.data.table
 
-drinkCAT <- merge(ANY, LOW, by = c("YEAR", "sex_recode", "education_summary"), all = T)
+drinkCAT <- merge(LA, FD, by = c("YEAR", "sex_recode", "education_summary"), all = T)
+drinkCAT <- merge(drinkCAT, LOW, by = c("YEAR", "sex_recode", "education_summary"), all = T)
 drinkCAT <- merge(drinkCAT, MEDIUM, by = c("YEAR", "sex_recode", "education_summary"), all = T)
 drinkCAT <- merge(drinkCAT, HIGH, by = c("YEAR", "sex_recode", "education_summary"), all = T)
 
-ggplot(data = drinkCAT, aes(x = YEAR, y = ANY, color = as.factor(sex_recode))) +
-  geom_point() + geom_line() + geom_pointrange(aes(ymin = ANY.lb, ymax = ANY.ub)) +
+ggplot(data = drinkCAT, aes(x = YEAR, y = LA, color = as.factor(sex_recode))) +
+  geom_point() + geom_line() + geom_pointrange(aes(ymin = LA.lb, ymax = LA.ub)) +
   facet_grid(rows = vars(factor(education_summary, levels = c("LEHS", "SomeC", "College"))), scale = "free") +
   scale_y_continuous(labels = scales::percent, name = "Prevalence past-year alcohol use (weighted)") +
   theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
@@ -123,6 +129,9 @@ ggplot(data = drinkCAT, aes(x = YEAR, y = HIGH, color = as.factor(sex_recode))) 
   theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
 ggsave(paste0('brfss/outputs/figures_trend/', DATE, '_HIGH RISK.png'), dpi=300, width = 12, height = 7)
 
+# TABLE
+write_xlsx(drinkCAT[,.(YEAR, sex_recode, education_summary,LA,FD,LOW,LOW.lb,LOW.ub,MEDIUM,MEDIUM.lb,MEDIUM.ub,HIGH,HIGH.lb,HIGH.ub)], "brfss/outputs/BRFSS_trend_AlcCAT.xlsx")
+
 # --------------------------------------------------------------------------------------
 
 # time trend GPD (alc-user only) by sex and SES
@@ -138,3 +147,6 @@ ggplot(data = GPD, aes(x = YEAR, y = GPD.mean, color = as.factor(sex_recode))) +
   labs(y = "Average grams per day, drinkers only (weighted)") +
   theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
 ggsave(paste0('brfss/outputs/figures_trend/', DATE, '_GPD drinkers.png'), dpi=300, width = 12, height = 7)
+
+# TABLE
+write_xlsx(GPD, "brfss/outputs/BRFSS_trend_GPD_current drinkers.xlsx")
