@@ -8,11 +8,21 @@ library("data.table")
 setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 # for race and SES graphs
-dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS.csv")
-dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS_pred.csv")
-dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_CPS.csv")
-dle_results_weight <- read.csv(("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_detail_ACSweights.csv"))
+r_ACS <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS.csv")
+r_ACS_pred <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS_pred.csv")
+r_CPS <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_CPS.csv")
+r_ACS_weights <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_detail_ACSweights.csv")
 
+k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+
+#load population data (raw vs modeled)
+if(k.pop_type=="ACS"){
+   dle_results <- r_ACS
+}else if(k.pop_type=="ACS_pred"){
+   dle_results <- r_ACS_pred 
+}else if (k.pop_type == "CPS") {
+   dle_results <- r_CPS
+}
 #dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
 dle_results <- dle_results %>% filter(Year >2014)
 dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
@@ -25,7 +35,7 @@ color.vec <- c("#69AA9E", "#447a9e",  "#d72c40") # high  middle low
 
 # Plot on life expectancy by SES over time
 le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour = SES)) + 
-   facet_grid(rows = vars(Sex), cols = vars(Race), scales = "free") +
+   facet_grid(rows = vars(Sex), cols = vars(Race)) +
    theme(legend.position = "none") +
    ylab("Life expectancy") +
    theme_light()+
@@ -34,10 +44,10 @@ le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour
    theme(legend.position = "right") +
    scale_color_manual(name = "SES", breaks = c("High", "Middle", "Low"), values = color.vec, 
                       labels = c("High", "Middle", "Low")) +   
-   geom_line(aes(color = SES), size = .9, alpha = .7) 
-   #geom_point(size = 1, aes(color = SES)) 
-#ggsave("1_LE_by_sex_and_SES_v1.jpg", dpi=600, width = 15, height = 10, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_ACS_pred.jpg", dpi=600, width=20, height=13, units="cm")
+   geom_line(aes(color = SES), linewidth = .9, alpha = .7) +
+   scale_y_continuous(breaks=seq(65,100, 5))
+le_graph
+ggsave(paste0("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_", k.pop_type, ".jpg"), dpi=600, width=20, height=13, units="cm")
 
 ## Display results for weights
 dle_results_weight <- dle_results_weight %>% 
@@ -48,7 +58,8 @@ names(dle_results_weight) <- c("Sex", "SES", "Race", "Year",
 ggplot(data = dle_results_weight, 
        aes(x = SES, y = Life_expectancy, colour = SES, group = SES)) + 
    geom_boxplot(aes(fill=SES)) +
-   facet_grid(rows = vars(Sex), cols = vars(Race), scales = "free")
+   facet_grid(rows = vars(Sex), cols = vars(Race)) +
+   scale_y_continuous(breaks=seq(65,100, 5))
 
 dle_ranges <- dle_results_weight %>% group_by(Sex, SES, Race, Year) %>%
    summarise(low = min(Life_expectancy),
