@@ -23,7 +23,7 @@ PopPerYear <- list()
 names <- names(lhs)
 lhs <- as.numeric(lhs)
 names(lhs) <- names
-transitionyears <- seq(2002,2018, by=2)
+# transitionyears <- seq(2002,2018, by=2)
 for(y in minyear:maxyear){
 print(y)
 # save a population summary
@@ -61,7 +61,7 @@ if(updatingeducation==1 & y>2000){
 
 # update alcohol use categories
 if(updatingalcohol==1 & y>2000){
-  if(y %in% transitionyears==TRUE){
+  # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
                  breaks=c(0,20,25,29,39,49,64,100),
@@ -73,7 +73,7 @@ if(updatingalcohol==1 & y>2000){
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
   basepop <- basepop %>%
     mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
-  }
+  # }
   # allocate a numeric gpd for individuals based on model
   # allocate every year even when transitions are only every two years?
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
@@ -155,7 +155,7 @@ if(output=="mortality"){
                                                   microsim.init.education=as.factor(microsim.init.education),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education, agecat,
+    group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education,
              AlcCAT, .drop=FALSE) %>% tally()
   MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                       samplenum=as.factor(samplenum),
@@ -167,6 +167,7 @@ if(output=="mortality"){
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
+  Summary <- CatSummary
 }else if(output=="hepatitis"){
   # chronicB <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicB) %>%
   #   tally() %>% mutate(prevalenceChronicB = n /sum(n)) %>%

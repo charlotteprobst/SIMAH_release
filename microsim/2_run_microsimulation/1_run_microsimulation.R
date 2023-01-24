@@ -12,7 +12,7 @@ options(dplyr.summarise.inform = FALSE)
 
 # load in microsim R package
 setwd("~/Google Drive/SIMAH Sheffield/SIMAH_code")
-install("microsimpackage", dep=T)
+install("microsimpackage")
 
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
@@ -22,8 +22,8 @@ setwd(paste(WorkingDirectory))
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
-output_type <- "mortality"
-liverinteraction <- 1
+output_type <- "alcohol"
+liverinteraction <- 0
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
@@ -36,7 +36,7 @@ Output <- run_microsim(1,1,basepop,brfss,
                        policy, percentreduction, year_policy, inflation_factor,
                        2000, 2019, output_type)
 
-alcohol_type <- "continuous"
+alcohol_type <- "categorical"
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)
@@ -51,6 +51,8 @@ summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, infl
 }else if(output_type=="hepatitis"){
 summary <- summarise_hepatitis_output(Output)  
 }
+
+write.csv(output, "SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats.csv", row.names=F)
 
 # nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
 #   filter(name=="simulated")

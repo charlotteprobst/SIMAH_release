@@ -101,10 +101,7 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 
-
-alcohol_transitions <- readRDS("SIMAH_workplace/microsim/1_input_data/transitionslist.RDS")[[297]]
-
-
+alcohol_transitions_calibration <- readRDS("SIMAH_workplace/microsim/1_input_data/transitionslist.RDS")
 # allocate baseline hepatitis B and C infections
 
 # # to baseline population 

@@ -6,8 +6,11 @@ library(readr)
 library(tidyr)
 library(MASS)
 
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+setwd(WorkingDirectory)
+
 # how many samples to take from the prior? 
-nsamples <- 10
+nsamples <- 5000
 
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msmparsecovariates.R")
@@ -56,3 +59,4 @@ for(i in 1:length(unique(estimates$SampleNum))){
 }
 
 rm(data, model, Samples, probs)
+saveRDS(transitionsList, "SIMAH_workplace/microsim/1_input_data/transitionslist.RDS")

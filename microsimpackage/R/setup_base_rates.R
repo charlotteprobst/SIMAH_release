@@ -21,7 +21,7 @@ base_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>% filter(year==2000) %>%
     mutate(
-      value = value*inflation_factor, #inflate mortality rate by 100
+      value = value*inflation_factor, #inflate mortality rate
            education = ifelse(education=="Some", "SomeC",
                               ifelse(education=="Coll","College",education)),
            cat = paste0(sex, agecat, education)) %>% ungroup() %>%

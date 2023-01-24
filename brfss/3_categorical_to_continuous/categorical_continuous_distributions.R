@@ -12,8 +12,10 @@ library(fitdistrplus)
 wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 # read data
-dat <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% filter(YEAR>=2000) %>% 
-  filter(drinkingstatus_upshifted==1) %>% filter(State=="USA")
+dat <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% filter(YEAR>=2000) %>% 
+  filter(State=="USA")
+
+saveRDS(dat, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_USA.RDS")
 
 assign_alc_cat <- function(data){
   data <- data %>% mutate(AlcCAT = ifelse(sex_recode=="Male" & gramsperday_upshifted>0 &

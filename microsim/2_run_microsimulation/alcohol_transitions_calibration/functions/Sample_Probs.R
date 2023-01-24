@@ -1,7 +1,7 @@
 Sample_Probs <- function(data, model, nsamples){
   estimates <- model$estimates.t
   covmat <- data.frame(model$covmat)
-  covmat <- covmat*100
+  covmat <- covmat*2000
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   sex <- unique(data$female_wave1.factor)
