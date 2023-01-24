@@ -6,7 +6,7 @@ process_education <- function(data){
                      "ER30584", "ER30620", "ER30657", "ER30703", "ER30748", "ER30820",  "ER33115", "ER33215", "ER33315", "ER33415",
                      "ER33516","ER33616","ER33716","ER33817","ER33917","ER34020","ER34119","ER34230","ER34349","ER34548", "ER34752")
   
-  newdata <- data %>% select(uniqueID, familyID, IDmother, IDfather, c(varnames))
+  newdata <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, c(varnames))
   years <- c(1968, 1970:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
   names(newdata)[5:44] <- years
   newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="education") %>% 
@@ -48,7 +48,7 @@ varnames <-   c("ER30004", "ER30023", "ER30046", "ER30070", "ER30094", "ER30120"
                 "ER30573", "ER30609", "ER30645", "ER30692", "ER30736", "ER30809", "ER33104", "ER33204", "ER33304", "ER33404",
                 "ER33504", "ER33604", "ER33704", "ER33804", "ER33904", "ER34004", "ER34104", "ER34204", "ER34305", "ER34504",
                 "ER34704")
-newdata <- data %>% select(uniqueID, c(varnames))
+newdata <- data %>% dplyr::select(uniqueID, c(varnames))
 years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
 names(newdata)[2:42] <- years
 newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="age") %>% 
@@ -65,7 +65,7 @@ varnames <- c("ER30003", "ER30022", "ER30045", "ER30069", "ER30093", "ER30119", 
               "ER30500", "ER30537", "ER30572", "ER30608", "ER30644", "ER30691", "ER30735", "ER30808", "ER33103",
               "ER33203", "ER33303", "ER33403","ER33503","ER33603","ER33703","ER33803","ER33903","ER34003","ER34103",
                        "ER34203","ER34303","ER34503", "ER34703")
-newdata <- data %>% select(uniqueID, c(varnames))
+newdata <- data %>% dplyr::select(uniqueID, c(varnames))
 years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
 names(newdata)[2:42] <- years
 newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="relationship") %>% 
@@ -108,10 +108,9 @@ data$familyID <- data$ER30001
 data$ID <- data$ER30002
 data$uniqueID <- (data$familyID*1000) + data$ID
 
-weights <- data %>% select(uniqueID, c(familyweights))
+weights <- data %>% dplyr::select(uniqueID, c(familyweights))
 
 years <- c(1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-
 
 names(weights)[2:12] <- years
 weights <- weights %>% pivot_longer(cols='1999':'2019', names_to="year", values_to="weight") %>% 
@@ -127,7 +126,7 @@ race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096",
             "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
             "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897")
 
-racevars <- data %>% select(uniqueID, familyID, IDmother, IDfather, sex, c(race))
+racevars <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, c(race))
 years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
 names(racevars)[6:46] <- years
 racevars <- racevars %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="racehead") %>% 
@@ -155,7 +154,7 @@ racevars <- racevars %>% pivot_longer(cols='1968':'2019', names_to="year", value
 wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
           "ER3883","ER6753","ER8999","ER11760","ER15836","ER19897","ER23334","ER27297",
           "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752")
-wiferace <- data %>% select(uniqueID, familyID,  IDmother, IDfather, sex, c(wife))
+wiferace <- data %>% dplyr::select(uniqueID, familyID,  IDmother, IDfather, sex, c(wife))
 years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
 names(wiferace)[6:29] <- years
 wiferace <- wiferace %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="racewife") %>% 
@@ -174,7 +173,7 @@ hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
                "V21419","V23275","ER3941","ER6811","ER9057","ER27392","ER40564",
                "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896")
 years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-hispanic <- data %>% select(uniqueID, familyID, IDmother, IDfather, sex, c(hispanic1))
+hispanic <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, c(hispanic1))
 names(hispanic)[6:25] <- years
 hispanic <- hispanic %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="hispanichead") %>% 
   mutate(hispanichead = ifelse(hispanichead==9, NA,
@@ -187,7 +186,7 @@ hispanic2 <- c("V12292","V13499","V14546","V16020",
                "V23211","ER3880","ER6750","ER8996",
                "ER27296","ER40471","ER46448","ER51809",
                "ER57548","ER64670","ER70743","ER76751")
-hispanicwife <- data %>% select(uniqueID, familyID, IDmother, IDfather, sex, c(hispanic2))
+hispanicwife <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, c(hispanic2))
 names(hispanicwife)[6:25] <- years
 hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="hispanicwife") %>% 
   mutate(hispanicwife = ifelse(hispanicwife==9, NA,
@@ -262,7 +261,7 @@ recode_race <- function(data, type){
                                                                                                         ifelse(combos$wife=="white",combos$head, NA
                                                                                                         )))))))))))))
   combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% select(combo, racefamily)
+  combos <- combos %>% dplyr::select(combo, racefamily)
   if(type==T){
     data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
     data <- left_join(data, combos)
@@ -329,7 +328,7 @@ process_parent_ed <- function(data){
                      "V8032", "V8656", "V9342", "V10989", "V11922", "V13549", "V14596", "V16070", "V17467", "V18798", "V20098",
                      "V21404", "V23260", "ER3924", "ER6794", "ER9040", "ER11816", "ER15894", "ER19955", "ER23392",  "ER27356",
                      "ER40531", "ER46508", "ER51869", "ER57622", "ER64773", "ER70845",  "ER76860")
-  headfather <- data %>% select(uniqueID, c(headfathered))
+  headfather <- data %>% dplyr::select(uniqueID, c(headfathered))
   years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
   names(headfather)[2:42] <- years
   headfather <- headfather %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="head_fathered") %>% 
@@ -343,7 +342,7 @@ process_parent_ed <- function(data){
                      "ER11824", "ER15903", "ER19964", "ER23401", "ER27366", "ER40541", "ER46518", "ER51879", "ER57632", "ER64783",
                      "ER70855", "ER76870")
   
-  headmother <- data %>% select(uniqueID, c(headmothered))
+  headmother <- data %>% dplyr::select(uniqueID, c(headmothered))
   years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
   names(headmother)[2:36] <- years
   headmother <- headmother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="head_mothered") %>% 
@@ -357,7 +356,7 @@ process_parent_ed <- function(data){
                        "V21340","V23197","ER3864","ER6734","ER8980","ER11735","ER15809","ER19870","ER23307",
                        "ER27267", "ER40442", "ER46414", "ER51775", "ER57512", "ER64634", "ER70707","ER76715")
   
-  spousefather <- data %>% select(uniqueID, c(spousefathered))
+  spousefather <- data %>% dplyr::select(uniqueID, c(spousefathered))
   
   years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
   names(spousefather)[2:36] <- years
@@ -371,7 +370,7 @@ process_parent_ed <- function(data){
                        "V21341","V23198","ER3866","ER6736","ER8982","ER11743","ER15818","ER19879","ER23316",
                        "ER27277", "ER40452", "ER46424", "ER51785", "ER57522", "ER64644", "ER70717","ER76725")
   
-  spousemother <- data %>% select(uniqueID, c(spousemothered))
+  spousemother <- data %>% dplyr::select(uniqueID, c(spousemothered))
   
   years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
   names(spousemother)[2:36] <- years
@@ -422,4 +421,145 @@ code_education_parent <- function(data){
                                           0)))
 
   return(data)
+}
+
+process_kessler <- function(data){
+  ###Using Kesslers scale (K6) total score variable (0-24)
+  ###Kessler scale aggregates scores across 6 variables- Sadness, Nervousness, Restlessness, Hopelessness,Effortlessness and Worthlessness)
+  varlist<-c("ER19833A", "ER23268", "ER40402", "ER46375", "ER51736", "ER57482", "ER64604", "ER70680", "ER76688")
+  years <- c(2001, 2003, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  kessler <- data %>% dplyr::select(uniqueID, c(varlist))
+  names(kessler)[2:10] <- years
+  kessler <- kessler %>% pivot_longer(cols='2001':'2019', names_to="year", values_to="kessler_score") %>% 
+    group_by(uniqueID) %>% fill(kessler_score, .direction=c("downup"))
+  kessler$kessler_score <- ifelse(kessler$kessler_score==99|kessler$kessler_score==98, NA, kessler$kessler_score)
+  kessler$year <- as.numeric(kessler$year)
+  return(kessler)
+}
+
+recode_PSID_vars <- function(data, varlist, variable, years){
+  newdata <- data %>%
+    mutate(origINTNO = ER30001,
+           ID = ER30002,
+           uniqueID = (origINTNO*1000) + ID,
+           sex = recode(as.factor(ER32000), "1"="male", "2"="female")) %>%
+    dplyr::select(uniqueID, sex, c(varlist))
+  names(newdata)[3:length(newdata)] <- years
+  newdata <- newdata %>% pivot_longer(cols=as.character(min(years)):'2019', names_to="year", values_to=variable) %>%
+    mutate(year=as.numeric(as.character(year)))
+  return(newdata)
+}
+
+
+process_employment <- function(data){
+  varlist <- c("ER30293", "ER30323", "ER30353", "ER30382", "ER30411",
+          "ER30441", "ER30474", "ER30509", "ER30545", "ER30580","ER30616", "ER30653",
+          "ER30699", "ER30744", "ER30816", "ER33111", "ER33211", "ER33311", "ER33411",
+          "ER33512", "ER33612", "ER33712", "ER33813", "ER33913", "ER34016", "ER34116",
+          "ER34216", "ER34317", "ER34516", "ER34716")
+  years<-c(1979:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  employment <- recode_PSID_vars(data=data, varlist, "employment_stat", years)
+  employment$employment_stat <- ifelse(employment$employment_stat==1, 1,
+                                       ifelse(employment$employment_stat>1, 0, NA))
+  return(employment)
+}
+
+process_alcohol <- function(data){
+  
+  years<-c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  # variables for "ever drink" for household head
+  varlist <- c("ER27105", "ER38316", "ER44289", "ER49627", "ER55375", "ER62497", "ER68562", "ER74570")
+  everdrinkalcoholhd <- recode_PSID_vars(data=data, varlist, "everdrinkhd", years)
+  everdrinkalcoholhd$everdrinkhd <- ifelse(everdrinkalcoholhd$everdrinkhd==9|everdrinkalcoholhd$everdrinkhd==8, NA, everdrinkalcoholhd$everdrinkhd)
+
+  # variables for "ever drink" for spouse
+  varlist<-c("ER27228", "ER39413", "ER45386", "ER50745", "ER56491", "ER63613", "ER69689", "ER75697")
+  everdrinkalcoholspouse <- recode_PSID_vars(data=data, varlist, "everdrinkspouse", years)
+  everdrinkalcoholspouse$everdrinkspouse <- ifelse(everdrinkalcoholspouse$everdrinkspouse==9|everdrinkalcoholspouse$everdrinkspouse==8, NA, everdrinkalcoholspouse$everdrinkspouse)
+
+  # variables for "drinking frequency" for household head
+  varlist<-c("ER27106", "ER38317", "ER44290", "ER49628", "ER55376", "ER62498", "ER68563", "ER74571")
+  frequencydrinkhd <- recode_PSID_vars(data=data, varlist, "frequencydrinkhd", years)
+  frequencydrinkhd$frequencydrinkhd <- ifelse(frequencydrinkhd$frequencydrinkhd==9|frequencydrinkhd$frequencydrinkhd==8, NA, frequencydrinkhd$frequencydrinkhd)
+
+  # variables for "drinking frequency" for spouse
+  varlist<-c("ER27229", "ER39414", "ER45387", "ER50746", "ER56492", "ER63614", "ER69690", "ER75698")
+  frequencydrinkspouse <- recode_PSID_vars(data=data, varlist, "frequencydrinkspouse", years)
+  frequencydrinkspouse$frequencydrinkspouse <- ifelse(frequencydrinkspouse$frequencydrinkspouse==9|frequencydrinkspouse$frequencydrinkspouse==8, NA, frequencydrinkspouse$frequencydrinkspouse)
+
+  # variables for "drinking quantity" for household head
+  varlist<-c("ER27107", "ER38318", "ER44291", "ER49629", "ER55377", "ER62499", "ER68564", "ER74572")
+  drinksperdayhd <- recode_PSID_vars(data=data, varlist, "drinksperdayhd", years)
+  drinksperdayhd$drinksperdayhd <- ifelse(drinksperdayhd$drinksperdayhd==99|drinksperdayhd$drinksperdayhd==98, NA, drinksperdayhd$drinksperdayhd)
+
+  # variables for "drinking quantity" for spouse
+  varlist<-c("ER27230", "ER39415", "ER45388", "ER50747", "ER56493", "ER63615", "ER69691", "ER75699")
+  drinksperdayspouse <- recode_PSID_vars(data=data, varlist, "drinksperdayspouse", years)
+  drinksperdayspouse$drinksperdayspouse <- ifelse(drinksperdayspouse$drinksperdayspouse==99|drinksperdayspouse$drinksperdayspouse==98, NA, drinksperdayspouse$drinksperdayspouse)
+
+  # variables for "binge drinking" for household head (no. of days had five drinks in year)
+  varlist<-c("ER27108", "ER38319", "ER44292", "ER49630", "ER55378", "ER62500", "ER68565", "ER74573")
+  bingedrinkhd <- recode_PSID_vars(data=data, varlist, "bingedrinkhd", years)
+  bingedrinkhd$bingedrinkhd <- ifelse(bingedrinkhd$bingedrinkhd==999|bingedrinkhd$bingedrinkhd==998, NA, bingedrinkhd$bingedrinkhd)
+
+  # variables for "binge drinking" for spouse (no. of days had four drinks in year)
+  varlist<-c("ER27231", "ER39416", "ER45389", "ER50748", "ER56494", "ER63616", "ER69692", "ER75700")
+  bingedrinkspouse <- recode_PSID_vars(data=data, varlist, "bingedrinkspouse", years)
+  bingedrinkspouse$bingedrinkspouse <- ifelse(bingedrinkspouse$bingedrinkspouse==999|bingedrinkspouse$bingedrinkspouse==998, NA, bingedrinkspouse$bingedrinkspouse)
+
+  drinking <- left_join(everdrinkalcoholhd, everdrinkalcoholspouse) %>% 
+    left_join(., frequencydrinkhd) %>% left_join(., frequencydrinkspouse) %>% 
+    left_join(., drinksperdayhd) %>% left_join(., drinksperdayspouse) %>% 
+    left_join(., bingedrinkhd) %>% left_join(., bingedrinkspouse)
+  return(drinking)
+}
+
+recode_alcohol <- function(data){
+  data <- data %>%
+    mutate(drinkingstatus = ifelse(relationship=="head", everdrinkhd,
+                                   ifelse(relationship=="wife/partner" | relationship=="husbandofhead", everdrinkspouse,
+                                          ifelse(relationship=="cohabitor", everdrinkspouse, NA))),
+           drinkingstatus = ifelse(drinkingstatus==1,1,
+                                   ifelse(drinkingstatus==5,0,NA))) %>%
+    dplyr::select(-c(everdrinkhd, everdrinkspouse))
+  #drinking quantity
+  data <- data %>%
+    mutate(quantity = ifelse(relationship=="head", drinksperdayhd,
+                             ifelse(relationship=="wife/partner" | relationship=="husbandofhead", drinksperdayspouse,
+                                    ifelse(relationship=="cohabitor", drinksperdayspouse,NA)))) %>%
+    dplyr::select(-c(drinksperdayhd, drinksperdayspouse))
+  
+  # drinking frequency (frequencydrinkfinal)
+  data <- data %>%
+    mutate(frequency = ifelse(relationship=="head", frequencydrinkhd,
+                              ifelse(relationship=="wife/partner" | relationship=="husbandofhead", frequencydrinkspouse,
+                                     ifelse(relationship=="cohabitor", frequencydrinkspouse, NA))),
+           frequency = ifelse(frequency==1, 1, 
+                              ifelse(frequency==2, 1.5, 
+                                     ifelse(frequency==3, 3.5,
+                                            ifelse(frequency==4, 5,
+                                                   ifelse(frequency==5, 12,
+                                                          ifelse(frequency==6, 30, frequency))))))) %>% 
+    dplyr::select(-c(frequencydrinkhd,frequencydrinkspouse)) %>% 
+    mutate(gpd = (quantity*frequency*14)/30)
+  
+  # binge drinking
+  data$bingedrinkdays<-ifelse(data$relationship=="head", data$bingedrinkhd,
+                                ifelse(data$relationship=="wife/partner" | data$relationship=="husbandofhead", data$bingedrinkspouse,
+                                       ifelse(data$relationship=="cohabitor", data$bingedrinkspouse,
+                                              NA)))
+  
+  #Recoding to WHO alcohol categories
+  data <- data %>%
+    mutate(AlcCAT = ifelse(gpd==0,"Non-drinker",
+                           ifelse(sex=="male" & gpd>0 & gpd<=40,"Low risk",
+                                  ifelse(sex=="female" & gpd>0 & gpd<=20,"Low risk",
+                                         ifelse(sex=="male" & gpd>40 & gpd<=60,"Medium risk",
+                                                ifelse(sex=="female" & gpd>20 & gpd<=40,"Medium risk",
+                                                       ifelse(sex=="male" & gpd>60 & gpd<=100,"High risk",
+                                                              ifelse(sex=="female" & gpd>40 & gpd<=60,"High risk",
+                                                                     ifelse(sex=="male" & gpd>100,"Very high risk",
+                                                                            ifelse(sex=="female" & gpd>60,"Very high risk",NA))))))))))
+  return(data)
+  
 }

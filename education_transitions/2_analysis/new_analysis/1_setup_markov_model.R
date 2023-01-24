@@ -2,7 +2,7 @@ setup_markov_model <- function(data,y){
   if(y==2009){
   data <- data %>% filter(year<=2009)
   }else{
-    data <- data %>% filter(year>=2011)
+    data <- data %>% filter(year>=2009)
   }
   data$educNUM <- ifelse(data$education<=12, 1,
                          ifelse(data$education==13, 2,
@@ -31,11 +31,6 @@ setup_markov_model <- function(data,y){
   data$agesq <- data$age^2
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
-  Q <- rbind( c(0.5, 0.5, 0, 0, 0),
-              c(0, 0.5, 0.5, 0, 0),
-              c(0, 0, 0.5, 0.5, 0),
-              c(0, 0, 0, 0.5, 0.5),
-              c(0, 0, 0, 0, 0.5))
   data$racefinal2 <- as.character(data$individualrace)
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)

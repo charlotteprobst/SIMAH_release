@@ -3,11 +3,12 @@
 library(foreign)
 library(dplyr)
 library(tidyr)
+library(readxl)
 setwd("~/Google Drive/SIMAH Sheffield")
 
 # read in the data 
-data <- read.dbf("SIMAH_workplace/PSID/J315519/J315519.dbf")
-source("SIMAH_code/psid/1_process_data/PSID_processing_functions.R")
+data <- read_excel("SIMAH_workplace/PSID/J315522/J315522.xlsx")
+source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
 
 data$familyID <- data$ER30001
 data$ID <- data$ER30002
@@ -66,38 +67,46 @@ parented <- left_join(parented, education)
 
 parented <- code_education_parent(parented)
 
+# kessler score 
+kessler <- process_kessler(data)
+
+# alcohol data
+alcohol <- process_alcohol(data)
+
+# employment status
+employment <- process_employment(data)
+
 # now combine all the data together and look at missingness
-alldata <- expand.grid(uniqueID = unique(data$uniqueID), year=unique(race$year))
+alldata <- left_join(age, race) %>% left_join(., education) %>% 
+  left_join(., relationship) %>% left_join(.,alcohol) %>% 
+  left_join(., kessler) %>% left_join(., sampleweights) %>% 
+  left_join(., employment)
 
-education <- education %>% dplyr::select(uniqueID, year, education, education_cat, education_cat_detailed)
+# recode alcohol and kessler values 
+alldata <- recode_alcohol(alldata)
 
-race <- race %>% dplyr::select(uniqueID, year, sex, relationship, individualrace)
+##Creating categorized variables based on the Kessler Scale##
+##Classification based on paper by Prochaska et al. 2012-Validity study of the K6 scale as ameasure of moderate mental distressbased on mental health treatment needand utilization
+alldata$distress_severe <- ifelse(alldata$kessler_score>=13, "Yes",
+                                 ifelse(alldata$kessler_score<13, "No", NA))
+alldata$distress_class <- ifelse(alldata$kessler_score<5, "Low or none",
+                                ifelse(alldata$kessler_score>=5 & alldata$kessler_score<13, "Moderate",
+                                       ifelse(alldata$kessler_score>=13, "Severe", NA)))  
+summary(as.factor(alldata$distress_severe))
+summary(as.factor(alldata$distress_class))
 
-alldata <- left_join(alldata, education)
 
-alldata <- left_join(alldata, race)
+alldata <- alldata %>% 
+  select(uniqueID, year, relationship, sex, age, education_cat, weight,
+         employment_stat,
+         individualrace, kessler_score, distress_severe, distress_class,
+         frequency, drinkingstatus, quantity, AlcCAT, gpd, bingedrinkdays) %>% 
+  filter(year>=1999) %>% 
+  fill(weight, .direction=c("downup")) %>% 
+  fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
 
-alldata <- left_join(alldata, parented)
+write.csv(alldata, "SIMAH_workplace/PSID/alldata_new_1999_2019.csv", row.names=F)
 
-alldata <- left_join(alldata, sampleweights)
-
-alldata <- left_join(alldata, age)
-
-# now subset by the population that we need for the transition probabilities
-# aged 34 and under and containing sample weights and after year 1999
-
-alldata <- alldata %>% filter(age <= 34 & age>=18) %>% filter(year>=1999) %>% drop_na(sampleweight)
-
-# remove nonresponders 
-nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>% 
-  mutate(familyID = ER30001,
-         ID = ER30002,
-         uniqueID = familyID*1000 + ID,
-         year_nonresponse = ER32007)
-  
-# alldata <- left_join(alldata, nonresponse) %>% 
-#   mutate(toremove = ifelse(year_nonresponse>=year, 1,0)) %>% filter(toremove==0) %>% 
-#   filter(sampleweight!=0)
 
 library(naniar)
 
