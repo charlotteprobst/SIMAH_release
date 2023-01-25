@@ -9,7 +9,7 @@ library(metafor)
 library(rms)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/4dataset.xlsx", 
+dataset <- read_excel("DIABETES/analysis/SIMAH_workplace/4dataset.xlsx", 
                       col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
@@ -57,6 +57,13 @@ pred_lin_male <- predict(linear_male, cbind(ms))
 regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_lin_male, xvals = ms, main="Male - Linear Regression")
+
+#for figure 2
+regplot(linear_male, mod="dose", ylab="Relative risk", 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_, shade =FALSE,
+        ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
+        pred = pred_lin_male, xvals = ms)
+abline(h=1)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -148,6 +155,13 @@ regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_rcs_female, xvals = fs, main="Female - RCS Regression")
 abline(v=knotsf, lty="dotted")
+
+#figure 2
+regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade =FALSE,
+        ylim = c(0.4, 2), lcol= "firebrick2", pred = pred_rcs_female, lwd = c(3.5,1.5),
+        xvals = fs)
+abline(h=1)
 
 #use var.comp function
 i2 <- var.comp(rcs_female)
