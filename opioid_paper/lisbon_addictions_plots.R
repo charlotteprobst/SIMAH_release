@@ -60,7 +60,7 @@ Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value)) +
                      panel.spacing=unit(1.3,"lines")) + 
   xlab("Year") + 
   # scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2021)) + 
   scale_colour_brewer(palette="Set2")
   
   # scale_colour_brewer(palette="Set1")
@@ -164,7 +164,7 @@ Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=race)) +
                      strip.background = element_rect(fill="white"),
                      text = element_text(size=28, family="Times")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2021)) + 
   scale_colour_brewer(palette="Set1")
 
 # scale_colour_brewer(palette="Set1")
@@ -226,7 +226,7 @@ Fig1p1 <- ggplot(data=subset(agesprate), aes(x=year, y=value, colour=cat)) +
                      text = element_text(size=26, family="Times"),
                      panel.spacing=unit(1.3,"lines")) + 
   xlab("Year") + scale_colour_manual(values=color.vec) + 
-  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2020)) + 
+  scale_x_continuous(breaks=c(2000,2005,2010,2015,2020), limits=c(2000,2021)) + 
   scale_colour_brewer(palette="Paired")
 
 # scale_colour_brewer(palette="Set1")

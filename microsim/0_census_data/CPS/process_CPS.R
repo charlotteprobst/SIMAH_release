@@ -15,7 +15,7 @@ if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr pack
 
 ddi <- read_ipums_ddi("SIMAH_workplace/CPS/cps_00005.xml")
 data <- read_ipums_micro(ddi)
-data <- remove_labels(data)
+data <- zap_ipums_attributes(data)
 
 data <- data %>% 
   mutate(edclass = ifelse(EDUC<=73, "LEHS",
@@ -70,7 +70,6 @@ compare <- rbind(summary, CPS) %>% pivot_wider(names_from=type, values_from=TPop
 
 # for YU 
 write.csv(summary, "SIMAH_workplace/CPS/CPS_2015_2020_agegp.csv", row.names=F)
-
 
 summary <- data %>% filter(AGE>=18) %>% 
   group_by(YEAR, AGE, SEX, race, edclass) %>% 
