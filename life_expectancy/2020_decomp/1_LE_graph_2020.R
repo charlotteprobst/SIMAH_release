@@ -8,10 +8,13 @@ library("data.table")
 setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 # for race and SES graphs
-dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS_0020.csv")
+dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS.csv")
+dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS_pred.csv")
+dle_results <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_CPS.csv")
 dle_results_weight <- read.csv(("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_detail_ACSweights.csv"))
 
-dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
+#dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
+dle_results <- dle_results %>% filter(Year >2014)
 dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
 
 levels(dle_results$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
@@ -34,7 +37,7 @@ le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour
    geom_line(aes(color = SES), size = .9, alpha = .7) 
    #geom_point(size = 1, aes(color = SES)) 
 #ggsave("1_LE_by_sex_and_SES_v1.jpg", dpi=600, width = 15, height = 10, units = "cm")
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020.jpg", dpi=600, width=20, height=13, units="cm")
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_ACS_pred.jpg", dpi=600, width=20, height=13, units="cm")
 
 ## Display results for weights
 dle_results_weight <- dle_results_weight %>% 
@@ -56,6 +59,8 @@ levels(dle_ranges$Sex) <- list(Men = "1", Women = "2")
 
 dle_results <- left_join(dle_results, dle_ranges)
 le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), color="red") 
+
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
 
 write.csv(dle_results, 
           "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/LifeExpectancy_detail_ACS_0020.csv")

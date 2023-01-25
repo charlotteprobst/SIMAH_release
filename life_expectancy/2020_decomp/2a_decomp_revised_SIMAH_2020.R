@@ -22,13 +22,13 @@ dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_d
 #read in population data
 ACS <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
 ACS_pred <-  read.csv("SIMAH_workplace/demography/ACS_popcounts_predicted2020.csv")  
-#CPS <-
+CPS <- read.csv("SIMAH_workplace/demography/3_out CPS data/CPS_2000_2020_agegp.csv")
 ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 
 #############################################################################################################
 # Specify which population counts and which level of detail should be computed
-k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
-k.run <- "detail" # "ses" or "detail"
+k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.run <- "detail" # "ses" or "detail" (i.e., race/ethnicity and SES)
 k.weights <- FALSE 
 
 #load population data (raw vs modeled)
@@ -40,8 +40,12 @@ if(k.pop_type=="ACS"){
   dPop <- CPS
 }
 
+if (k.pop_type != "CPS") {
 dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
   select(!state)
+} else {
+  dPop <- dPop %>% filter(year > 2017)
+}
 dMort <- dMort %>% filter(year > 2017) %>% 
   inner_join(dPop)
 

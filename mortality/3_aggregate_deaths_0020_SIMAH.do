@@ -99,8 +99,9 @@ generate lvdc = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K73", "K739
 
 // add liver disease and cirrhosis due to chronic hepatitis Oct 2022 
 // B18 
+// Dec 2022: add B92.4
 generate hlvdc = 1 if inrange(icd10, "B18", "B189")
-replace hlvdc = 1 if icd10 == "B171"
+replace hlvdc = 1 if icd10 == "B171" | icd10 == "B924" 
 
 // Diabetes mellitus [E10-E14]
 

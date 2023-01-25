@@ -16,7 +16,7 @@ dResults_contrib_detail <- read.csv(
   "SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2018_2020_detail_ACS.csv")
 
 # Graph results by sex and SES or by sex, ses, and race
-k.run <- "ses" # "ses" or "detail"
+k.run <- "detail" # "ses" or "detail"
 
 if (k.run == "detail"){
   dgathered <- gather(data = dResults_contrib_detail, key = "mort", value = "value", 
@@ -38,7 +38,7 @@ if (k.run == "ses") {
 } else if (k.run == "detail") {
   dgathered <- mutate_at(dgathered, vars(race), as.factor)
   names(dgathered) <- c("Sex", "SES", "Race", "start_year", "end_year", "LE1", "LE2", "Cause_of_death", "Contribution")     
-  dgathered <- filter(dgathered, Race != "Other") 
+  #dgathered <- filter(dgathered, Race != "Other") 
 }
 
 levels(dgathered$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")

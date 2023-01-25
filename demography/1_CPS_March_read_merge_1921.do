@@ -2,9 +2,9 @@
 * where the data file is located.
 set more off
 
-global dir `"C:/Users/marie/Dropbox/NIH2020/"'
+global dir `"C:/Users/marie/Dropbox/NIH2020/SIMAH_workplace/"'
 
-cd "${dir}/SIMAH_workplace/demography/1_raw CPS data/"
+cd "${dir}/demography/1_raw CPS data/"
 
 
 set more off
@@ -489,3 +489,12 @@ label define poverty_lbl 22 `"125-149 percent of the low-income level"', add
 label define poverty_lbl 23 `"150 percent and above the low-income level"', add
 label values poverty poverty_lbl
 
+rename cpsid hhid
+
+keep month state mis hhid hhseq perno year age id famno famhh famtyp p*fam research st*yr female *wgt r*all female educ ///
+		married marstat empl unem nilf csr centcity ///
+		suburb rural occly* rhr* dis* relhdh* wbho state 
+
+cd "${dir}/Demography/3_out CPS data"
+
+save cepr_march_1921, replace
