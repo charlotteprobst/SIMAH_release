@@ -76,11 +76,18 @@ alcohol <- process_alcohol(data)
 # employment status
 employment <- process_employment(data)
 
+# process income 
+income <- process_income(data)
+
+# process home ownership 
+homeowner <- process_homeowner(data)
+
 # now combine all the data together and look at missingness
 alldata <- left_join(age, race) %>% left_join(., education) %>% 
   left_join(., relationship) %>% left_join(.,alcohol) %>% 
   left_join(., kessler) %>% left_join(., sampleweights) %>% 
-  left_join(., employment)
+  left_join(., employment) %>% left_join(., income) %>% 
+  left_join(.,homeowner)
 
 # recode alcohol and kessler values 
 alldata <- recode_alcohol(alldata)
@@ -95,17 +102,29 @@ alldata$distress_class <- ifelse(alldata$kessler_score<5, "Low or none",
 summary(as.factor(alldata$distress_severe))
 summary(as.factor(alldata$distress_class))
 
-
 alldata <- alldata %>% 
   select(uniqueID, year, relationship, sex, age, education_cat, weight,
-         employment_stat,
+         employment_stat,total_fam_income, homeowner,
          individualrace, kessler_score, distress_severe, distress_class,
          frequency, drinkingstatus, quantity, AlcCAT, gpd, bingedrinkdays) %>% 
   filter(year>=1999) %>% 
+  group_by(uniqueID) %>% 
   fill(weight, .direction=c("downup")) %>% 
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
 
+# remove nonresponders 
+nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>% 
+  mutate(familyID = ER30001,
+         ID = ER30002,
+         uniqueID = familyID*1000 + ID,
+         year_nonresponse = ER32007) %>% 
+  dplyr::select(uniqueID, familyID, year_nonresponse)
+
+alldata <- left_join(alldata, nonresponse) %>%
+  mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
+
 write.csv(alldata, "SIMAH_workplace/PSID/alldata_new_1999_2019.csv", row.names=F)
+
 
 
 library(naniar)

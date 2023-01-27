@@ -10,7 +10,8 @@ library(tidyverse)
 
 setwd("~/Google Drive/SIMAH Sheffield")
 
-data <- read_csv("SIMAH_workplace/PSID/alldata_new_1999_2019.csv")
+data <- read_csv("SIMAH_workplace/PSID/alldata_new_1999_2019.csv") %>% 
+  filter(relationship!="latino/immigrantsampleunknown")
 
 # Generating three states in numeric format for MSM 
 data$distclass <- ifelse(data$kessler_score<5, 1,
@@ -26,8 +27,8 @@ data$agegroup<-as.factor(data$agegroup)
 summary(data$agegroup)
 data$sex<-as.factor(data$sex)
 summary(data$sex)
-table(data$sex)
-
+# filter above year 1999 (year kessler started)
+# data <- data %>% filter(year>1999)
 data <- data %>% ungroup() %>% group_by(uniqueID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) %>% mutate(sex=factor(sex),
                                          sex=ifelse(sex=="female",1,0))
@@ -64,15 +65,54 @@ data$drinkbin <- as.factor(ifelse(data$AlcCAT=="Medium risk" | data$AlcCAT=="Hig
 data$drinkbin <- relevel(data$drinkbin, ref="Non-drinker")
 data$employment_stat <- factor(data$employment_stat)
 
+# create income quintiles 
+data <- data %>% group_by(year) %>% 
+  mutate(income_quintile = ntile(total_fam_income, 5),
+         bottom_quintile = as.factor(ifelse(income_quintile==1, 1,0)))
 
-  
 dist.msm0 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
                  center=FALSE,
                  control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
-dist.msm0 
+dist.msm0
+AIC(dist.msm0)
+pmatrix.msm(dist.msm0)
 
 dist.msm1 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
                  center=FALSE,
-                 covariates=~education_cat +sex+racefinal + agegroup + drinkbin + employment_stat,
+                 covariates=~education_cat +sex+racefinal + age + drinkbin,
                  control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
 dist.msm1
+pmatrix.msm(dist.msm1, covariates=list(education_cat="LEHS", sex=0))
+
+dist.msm2 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
+                 center=FALSE,
+                 covariates=~employment_stat +sex+racefinal + age + drinkbin,
+                 control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
+dist.msm2
+
+dist.msm3 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
+                 center=FALSE,
+                 covariates=~bottom_quintile +sex+racefinal + age + drinkbin,
+                 control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
+dist.msm3
+
+data$homeowner <- ifelse(data$homeowner=="neither", "doesntown",
+                         ifelse(data$homeowner=="rents","doesntown",
+                                ifelse(data$homeowner=="owns","owns",NA)))
+
+dist.msm4 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
+                 center=FALSE,
+                 covariates=~homeowner +sex+racefinal + age + drinkbin,
+                 control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
+dist.msm4
+
+
+dist.msm5 <- msm(distclass~year, uniqueID, data=data, qmatrix=Q2,
+                 center=FALSE,
+                 covariates=~homeowner + employment_stat + education_cat + bottom_quintile +
+                   sex+racefinal + age + drinkbin,
+                 control=list(trace=1, fnscale=761147, maxit=500))###It could work to omit the fnscale
+dist.msm5
+
+AIC(dist.msm0, dist.msm1, dist.msm2, dist.msm3, dist.msm4, dist.msm5)
+

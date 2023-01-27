@@ -464,6 +464,35 @@ process_employment <- function(data){
   return(employment)
 }
 
+process_income <- function(data){
+  varlist <- c("V81", "V529", "V1514", "V2226", "V2852", "V3256",
+               "V3676", "V4154", "V5029", "V5626", "V6173", "V6766", "V7412",
+               "V8065", "V8689", "V9375", "V11022", "V12371", "V13623", "V14670",
+               "V16144", "V17533", "V18875", "V20175", "V21481", "V23322", "ER4153",
+               "ER6993", "ER9244", "ER12079", "ER16462", "ER20456", "ER24099", "ER28037",
+               "ER41027", "ER46935", "ER52343", "ER58152", "ER65349", "ER71426", "ER77448")
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  income <- recode_PSID_vars(data=data, varlist, "total_fam_income", years)
+  return(income)
+}
+
+process_homeowner <- function(data){
+  varlist <- c("V103", "V593", "V1264", "V1967","V2566", "V3108", "V3522", "V3939",
+               "V4450", "V5364", "V5864", "V6479", "V7084", "V7675", "V8364", "V8974",
+               "V10437", "V11618", "V13023", "V14126", "V15140", "V16641", "V18072",
+               "V19372", "V20672", "V22427", "ER2032", "ER5031", "ER7031", "ER10035",
+               "ER13040", "ER17043", "ER21042", "ER25028", "ER36028", "ER42029", "ER47329",
+               "ER53029", "ER60030", "ER66030", "ER72030")
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  homeowner <- recode_PSID_vars(data=data, varlist, "homeowner", years)
+  homeowner$homeowner <- ifelse(homeowner$homeowner==1, "owns",
+                                ifelse(homeowner$homeowner==5, "rents",
+                                       ifelse(homeowner$homeowner==8, "neither", homeowner$homeowner)))
+  return(homeowner)
+}
+
+
+
 process_alcohol <- function(data){
   
   years<-c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
