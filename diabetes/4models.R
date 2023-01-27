@@ -9,7 +9,7 @@ library(metafor)
 library(rms)
 
 library(readxl)
-dataset <- read_excel("DIABETES/analysis/SIMAH_workplace/4dataset.xlsx", 
+dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/4dataset.xlsx", 
                       col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
@@ -410,3 +410,18 @@ regplot(rcs_female2, mod="rcs(dose, knotsf2)dose", xlab="Alcohol intake, grams/d
 abline(v=knotsf2, lty="dotted")
 
 predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp)
+
+#functions
+knots_T<- c(1.000, 9.065, 20.815, 47.840)
+kd <- (knots_T[4] - knots_T[1])^(2/3)
+knotnk1
+
+DIST_1<- function(alc_1){alc_1}
+
+DIST_2<- function(alc_1){pmax((alc_1 - knots[1])/kd, 0)^3 + 
+    ((knots_T[3] - knots_T[1]) * pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[1]) * 
+    (pmax((alc_1 - knots_T[3])/kd, 0)^3))/(knots_T[4] - knots_T[3]) }
+
+DIST_3<- function(alc_1){pmax((alc_1 - knots[2])/kd, 0)^3 + ((knots_T[3] - knots_T[2]) * 
+    pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[2]) * 
+      (pmax((alc_1 - knots_T[3])/kd, 0)^3))/(knots_T[4] - knots_T[3]) }
