@@ -20,15 +20,16 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
 #read in population data
-ACS <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
-ACS_pred <-  read.csv("SIMAH_workplace/demography/ACS_popcounts_predicted2020.csv")  
-CPS <- read.csv("SIMAH_workplace/demography/3_out CPS data/CPS_2000_2020_agegp.csv")
+
+ACS <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv")
+ACS_pred <-  read.csv("SIMAH_workplace/ACS/ACS_popcounts_predicted2020.csv")  
+CPS <- read.csv("SIMAH_workplace/CPS/3_out CPS data/CPS_2000_2020_agegp.csv")
 ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 
 #############################################################################################################
 # Specify which population counts and which level of detail should be computed
 k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
-k.run <- "detail" # "ses" or "detail" (i.e., race/ethnicity and SES)
+k.run <- "detail" # "ses" or "detail"
 k.weights <- FALSE 
 
 #load population data (raw vs modeled)
@@ -40,14 +41,14 @@ if(k.pop_type=="ACS"){
   dPop <- CPS
 }
 
+
 if (k.pop_type != "CPS") {
 dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
   select(!state)
 } else {
   dPop <- dPop %>% filter(year > 2017)
 }
-dMort <- dMort %>% filter(year > 2017) %>% 
-  inner_join(dPop)
+dMort <- dMort %>%  inner_join(dPop)
 
 # variable type should be factor and not character
 glimpse(dMort)
@@ -83,8 +84,8 @@ for (i in 1:length(v.totals)){
 
 # now you can loop over the unique values of the group variable for selected years
 v.group <- unique(dMort_run$group)
-v.year1 <- c(2018, 2019)
-v.year2 <- c(2019, 2020)
+v.year1 <- c(2019)
+v.year2 <- c(2020)
 
 for (j in (1:length(v.year1))){
   year1 <- v.year1[j]
