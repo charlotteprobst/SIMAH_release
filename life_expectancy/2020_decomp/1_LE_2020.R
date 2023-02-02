@@ -16,10 +16,32 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
-dPop <- read.csv("SIMAH_workplace/demography/ACS_popcounts_2000_2020.csv")
+#read in population data
+ACS <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv")
+ACS_pred <-  read.csv("SIMAH_workplace/ACS/ACS_popcounts_predicted2020.csv")  
+CPS <- read.csv("SIMAH_workplace/CPS/3_out CPS data/CPS_2000_2020_agegp.csv")
+ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 
-dPop <- dPop %>% filter(state == "USA") %>% 
-   select(-c(state)) 
+#############################################################################################################
+# Specify which population counts and which level of detail should be computed
+k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.run <- "detail" # "ses" or "detail" or "total"
+k.weights <- FALSE 
+
+#load population data (raw vs modeled)
+if(k.pop_type=="ACS"){
+   dPop <- ACS
+   dPop <- dPop %>% filter(state == "USA") %>% 
+      select(-c(state)) 
+}else if(k.pop_type=="ACS_pred"){
+   dPop <- ACS_pred 
+   dPop <- dPop %>% filter(state == "USA") %>% 
+      select(-c(state)) 
+   
+}else if (k.pop_type == "CPS") {
+   dPop <- CPS
+}
+
 dMort <- inner_join(dMort, dPop)
 
 # variable type should be factor and not character
@@ -43,8 +65,6 @@ v.rates <- c(v.rates[1], paste0("mx_", v.rates[2:(length(v.rates))]))
 dMort_t <- aggregate(.~ year + sex +                  age_gp, data =  dMort, FUN=sum)
 dMort_s <- aggregate(.~ year + sex + edclass +        age_gp, data =  dMort, FUN=sum)
 dMort_d <- aggregate(.~ year + sex + edclass + race + age_gp, data =  dMort, FUN=sum)
-
-k.run <- "total" # "total" or "ses" or "detail"
 
 if (k.run == "total") {
    dMort_run <- dMort_t 
@@ -112,5 +132,5 @@ if (k.run == "total") {
 
 write.csv(dle_results, 
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
-                 "LifeExpectancy_", k.run, "_ACS_0020.csv"), 
+                 "LifeExpectancy_0020_", k.run, "_", k.pop_type, ".csv"), 
           row.names = F)
