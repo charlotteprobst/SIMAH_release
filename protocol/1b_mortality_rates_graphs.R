@@ -37,7 +37,7 @@ df$sex <- recode(df$sex, "m" = "Men", "f" = "Women")
 df$cause <- recode(df$cause, 
                            "REST" = "Rest",        
                            "AUD" = "AUD",
-                           "LVDC" = "Liver C.",
+                           "LVDC" = "Liver cirrhosis",
                            "IJ" = "Suicide",
                            "MVACC" = "MVA", 
                            "UIJ" = "Other UI",
@@ -45,7 +45,7 @@ df$cause <- recode(df$cause,
                            "HYPHD" = "HHD",
                            "ISTR" = "Stroke",  
                            "DM" = "Diabetes")
-df$cause <- factor(df$cause, levels = c("AUD", "Liver C.", 
+df$cause <- factor(df$cause, levels = c("AUD", "Liver cirrhosis", 
                                                         "Suicide", "MVA", 
                                                         "Other UI", "IHD", "HHD", 
                                                         "Stroke", "Diabetes", "Rest"))
@@ -75,7 +75,7 @@ data_graph <- subset(sum, cause!="Rest")
 # recode the causes of death to change order on plot 
 data_graph <- data_graph %>% 
   mutate(cause = factor(cause, levels=c("AUD","HHD","Stroke",
-                                        "Liver C.","Suicide","Other UI", "MVA",
+                                        "Liver cirrhosis","Suicide","Other UI", "MVA",
                                         "Diabetes",
                                         "IHD")))
 
@@ -112,9 +112,9 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=sex)) +
         panel.border = element_blank(), 
         axis.ticks = element_line(colour="black", size = 0.352), 
         axis.line = element_line(colour="black", size = 0.352),
-        strip.text = element_text(size = 8, colour = 'black'), 
-        axis.text = element_text(size = 8, colour="black"), 
-        text = element_text(size = 8, colour="black", family="sans"), 
+        strip.text = element_text(size = 9, colour = 'black'), 
+        axis.text = element_text(size = 9, colour="black"), 
+        text = element_text(size = 9, colour="black", family="sans"), 
         strip.placement = "outside",
         legend.position="none") +
   ylim(0, NA) +
@@ -128,7 +128,7 @@ ggplot(data=data_graph, aes(x=year, y=(rate), colour=sex)) +
   labs(y = "Mortality Rate per 100,000", 
        x = "Year") 
 
-ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4.pdf", width=7, height=9, units="in")
+ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4.pdf", width=8, height=11, units="in")
 
 k <- 0
 
@@ -136,17 +136,19 @@ for (i in levels(data_graph$cause)) {
   for (j in levels(data_graph$edclass)) {
     k <- k+1
     ggplot(data=data_graph[which(data_graph$cause == i & data_graph$edclass == j),], aes(x=year, y=(rate), colour=sex)) + 
+      ggtitle(paste0(j,", ",sep="\n", i)) +
       theme_light() +
       theme(strip.background = element_rect(fill = "white"), 
             panel.grid = element_blank(),
             panel.border = element_blank(), 
-            axis.ticks = element_line(colour="black", size = 0.352), 
+            axis.ticks = element_line(colour="black", size = 0.352),
             axis.line = element_line(colour="black", size = 0.352),
-            strip.text = element_text(size = 8, colour = 'black'), 
-            axis.text = element_text(size = 8, colour="black"), 
-            text = element_text(size = 8, colour="black"), 
+            strip.text = element_text(size = 9, colour = 'black'), 
+            axis.text = element_text(size = 9, colour="black"), 
+            text = element_text(size = 9, colour="black"), 
             strip.placement = "outside",
-            legend.position="none") +
+            legend.position="none",
+            plot.title = element_text(size=9)) +
       ylim(0, v.ylim[k]) +
       xlim(2000, 2020) +
       scale_color_manual(values = col.vec) +
@@ -159,13 +161,13 @@ for (i in levels(data_graph$cause)) {
            x = "Year")
     
     ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 4", LETTERS[k], ".eps"), 
-           width=2, height=1.8, units="in", device = "eps")
+           width=2.7, height=2.5, units="in", device = "eps")
     
   }
 }
 
 
-LiverC <- data_graph %>% filter(datatype=="Observed") %>% filter(cause=="Liver C.")
+LiverC <- data_graph %>% filter(datatype=="Observed") %>% filter(cause=="Liver Cirrhosis")
 
 ggplot(data=LiverC, aes(x=year, y=rate, colour=edclass)) + geom_line(size=1.5) + 
   facet_grid(cols=vars(sex)) + theme_bw() + 

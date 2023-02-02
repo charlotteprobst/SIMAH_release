@@ -14,8 +14,11 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #############################################################################################################
 #before calculating the life expectancy, we have to get the mortality data into the right format
 
+#Select ACS vs CPS
+
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
+
 #read in population data
 ACS <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv")
 ACS_pred <-  read.csv("SIMAH_workplace/ACS/ACS_popcounts_predicted2020.csv")  
@@ -42,23 +45,18 @@ if(k.pop_type=="ACS"){
    dPop <- CPS
 }
 
+
 dMort <- inner_join(dMort, dPop)
 
 # variable type should be factor and not character
 glimpse(dMort)
 dMort <- dMort %>% mutate_at(vars(race, edclass), as.factor)
 
-## We have to calculate the rates again because we cannot simply sum them up
-## define vectors for the total death counts and rates of interest.
-## IMPORTANT: the order of the totals and the rates must match!! 
-## We have to calculate the rates again 
+## Prepare vectors of variable names containing all causes of death
 v.totals <- names(dMort)[grepl("mort", names(dMort))]
-
-## Introduce the "mx_" nomenclature  
 v.rates <- str_replace(v.totals, "mort", "rate") 
 v.rates <- c(v.rates[1], paste0("mx_", v.rates[2:(length(v.rates))]))   
 
-###############################################################################
 ## Aggregate: summarize the data to collapse one demographic dimension 
 ## Specify all factor variables you want to keep (and omit the one 
 ## you want to collapse)
@@ -83,9 +81,10 @@ if (k.run == "total") {
    dMort_run$group <- apply(dMort_run[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
 }
 
+
 # Calculate the rates for all relevant causes of death
 for (i in 1:length(v.totals)){
-      dMort_run[, v.rates[i]] <- (dMort_run[, v.totals[i]]/dMort_run$TPop)
+   dMort_run[, v.rates[i]] <- (dMort_run[, v.totals[i]]/dMort_run$TPop)
 } 
 
 # now you can loop over the unique values of this new variable

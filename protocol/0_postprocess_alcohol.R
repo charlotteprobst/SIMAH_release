@@ -117,14 +117,14 @@ summarycompare <- subset(summarycompare, !is.na(microsim.init.education))
 
 windowsFonts() # To identify available fonts, and their 'name' in R; Arial font is called "sans"
 # plot graph
-summarycompare %>%
+graph_dat <- summarycompare %>%
   mutate(drinkercat = recode(drinkercat, "Category I"= "I", "Category II"= "II","Category III"= "III","Category IV"= "IV")) %>%
   mutate(microsim.init.education = recode(microsim.init.education, 
                                           "High school degree or less" = "High School Degree or Less",
                                           "Some college" = "Some College",
-                                          "College degree or more" = "College Degree or More")) %>%
-  ggplot(aes(x=data, y=percent, fill=drinkercat)) + 
-  geom_col(position=position_stack(reverse=T), width = 0.7 ) +
+                                          "College degree or more" = "College Degree or More"))
+figure2 <-  ggplot(data = graph_dat, aes(x=data, y=percent, fill=drinkercat)) + 
+  geom_col(position=position_stack(reverse=T), width = 0.7) +
   #facet_grid(rows=vars(microsim.init.sex), cols=vars(microsim.init.education)) +
   facet_wrap(c("microsim.init.sex", "microsim.init.education"), scales = "free") + 
   theme_light() + 
@@ -133,7 +133,7 @@ summarycompare %>%
     axis.text = element_text(size = 9, colour="black"), 
     axis.ticks = element_line(colour="black", size = 0.352), 
     axis.line = element_line(colour="black", size = 0.352),
-    text = element_text(size = 9, colour="black", family="sans"),
+    text = element_text(size = 9, colour="black"),
     legend.background = element_rect(size=0.352, linetype = "solid", color = "black", fill=NA),
     legend.position= "right",
     legend.justification = "top",
@@ -143,11 +143,34 @@ summarycompare %>%
     strip.placement = "outside") +
   labs(fill=expression(underline("Category")), colour = "black", 
        y = "Prevalence, %", 
-       x= "") + 
-  #scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,95)) +
-  scale_fill_grey() 
-  
+       x= "Data Source") +
+  scale_fill_manual(values=col.vec) + 
+  scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,90)) 
+  #scale_fill_grey() 
+figure2  
 ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2.pdf", width = 7, height = 5, units = "in")
+
+# Using the cowplot package
+library("grid") #For Load grid package
+library("gridExtra") #For Install gridExtra package
+library("cowplot")
+
+legend <- cowplot::get_legend(figure2)
+
+postscript(file = "SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2_legend.eps", 
+    width = 1, height = 1.5, horizontal = FALSE)
+
+grid.newpage()
+grid.draw(legend)
+dev.off()
+
+pdf(file = "SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2_legend.pdf", 
+    width = 1, height = 1.5)
+
+grid.newpage()
+grid.draw(legend)
+dev.off()
+
 write.csv(summary, "SIMAH_workplace/protocol/output_data/0_alcohol_use_by_SES_and_sex.csv", row.names=F)
 k <- 0
 
@@ -159,22 +182,24 @@ for (i in unique(summarycompare$microsim.init.sex)) {
            aes(x=data, y=percent, fill=drinkercat)) + 
       geom_col(position=position_stack(reverse=T), width = 0.7 ) +
       theme_light() + 
+      ggtitle(paste0(i,", ",sep="\n", j)) +
+      labs(fill=expression(underline("Category")), colour = "black") +  
       theme(strip.background = element_rect(fill = "white"), 
-            strip.text = element_text(size = 10, colour = 'black'), 
-            axis.text = element_text(size = 10, colour="black"), 
+            strip.text = element_text(size = 9, colour = 'black'), 
+            axis.text = element_text(size = 9, colour="black"), 
             axis.ticks = element_line(colour="black"), 
             axis.line = element_line(colour="black"),
-            text = element_text(size = 10, colour="black"),
+            text = element_text(size = 9, colour="black"),
             panel.grid = element_blank(),
             panel.border = element_blank(), 
             strip.placement = "outside", 
             legend.position="none") +
-      labs(fill=expression(underline("Category")), colour = "black") +  
-      ylab("Prevalence, %")+ xlab("") + 
-      scale_fill_grey() 
-    
+      ylab("Prevalence, %")+ xlab("Data Source") + 
+      scale_fill_manual(values=col.vec) +  #scale_fill_grey() 
+      scale_y_continuous(breaks = seq(0, 90, 10), expand=c(0,0.05), limits=c(0,90)) 
+  
     ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 2",v.letter,".eps"), 
-           width = 5, height = 3.5, units = "in")
+           width = 2.5, height = 2.2, units = "in")
     
   }
 }

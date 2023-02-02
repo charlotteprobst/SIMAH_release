@@ -20,6 +20,7 @@ source("SIMAH_code/life_expectancy/2b_decomp_functions.R")
 #load aggregated mortality data:
 dMort <- read.csv("SIMAH_workplace/mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv")
 #read in population data
+
 ACS <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv")
 ACS_pred <-  read.csv("SIMAH_workplace/ACS/ACS_popcounts_predicted2020.csv")  
 CPS <- read.csv("SIMAH_workplace/CPS/3_out CPS data/CPS_2000_2020_agegp.csv")
@@ -40,10 +41,14 @@ if(k.pop_type=="ACS"){
   dPop <- CPS
 }
 
-dPop <- dPop %>% filter(state == "USA", year > 2018) %>%
+
+if (k.pop_type != "CPS") {
+dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
   select(!state)
-dMort <- dMort %>% filter(year > 2018) %>% 
-  inner_join(dPop)
+} else {
+  dPop <- dPop %>% filter(year > 2017)
+}
+dMort <- dMort %>%  inner_join(dPop)
 
 # variable type should be factor and not character
 glimpse(dMort)

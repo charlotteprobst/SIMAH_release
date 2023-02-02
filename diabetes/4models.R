@@ -34,7 +34,7 @@ linear_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                  random = ~ 1 | cohort_id/line_id, digits = 8, method = "REML")
 summary(linear_male)
 
-#use var.comp function
+#use var.comp function to check i2 - heterogeneity
 i2 <- var.comp(linear_male)
 summary(i2)
 i2$results
@@ -42,7 +42,7 @@ i2$totalI2
 i2$plot
 
 
-#comparing model
+#comparing model to check if it is necessary to run a multilevel analysis
 linear_male_2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                         random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
 summary(linear_male_2)
@@ -57,6 +57,13 @@ pred_lin_male <- predict(linear_male, cbind(ms))
 regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_lin_male, xvals = ms, main="Male - Linear Regression")
+
+#for figure 2
+regplot(linear_male, mod="dose", ylab="Relative risk", 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_, shade =FALSE,
+        ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
+        pred = pred_lin_male, xvals = ms)
+abline(h=1)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -149,6 +156,13 @@ regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day
         ylim = c(0, 2), pred = pred_rcs_female, xvals = fs, main="Female - RCS Regression")
 abline(v=knotsf, lty="dotted")
 
+#figure 2
+regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade =FALSE,
+        ylim = c(0.4, 2), lcol= "firebrick2", pred = pred_rcs_female, lwd = c(3.5,1.5),
+        xvals = fs)
+abline(h=1)
+
 #use var.comp function
 i2 <- var.comp(rcs_female)
 summary(i2)
@@ -159,7 +173,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female, newmods= rcspline.eval(100, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(15, knotsf, inclx=TRUE), transf=exp)
 
 fitstats(linear_female, quad_female, rcs_female)
 
@@ -169,6 +183,8 @@ final <- dataset %>%
   filter(analysis_id==0 & dose != 0.00)
 #erase male and female from two papers that provides estimates for both/male/female to avoid duplicate population
 final <- final[-c(35,36,37,38,39,162,163,164,165,166),]
+
+dim(table(final$cohort_id))
 
 ##LINEAR REGRESSION
 
@@ -224,9 +240,9 @@ rcs <- rma.mv(yi= lnor ~ rcs(dose, knots)+0, V=se^2, data=final, digits = 8,
 summary(rcs)
 
 pred_rcs <- predict(rcs, newmods=rcspline.eval(s, knots, inclx=TRUE))
-regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150),pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_rcs, xvals = s, main="RCS Regression - both sexes")
+regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_,
+        ylim = c(0, 2), pred = pred_rcs, xvals = s)
 abline(v=knots, lty="dotted")
 
 waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
@@ -236,8 +252,7 @@ waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
 weights(rcs)
 
 #prediction rcs model
-predict(rcs, newmods= rcspline.eval(50, knots, inclx=TRUE), transf=exp)
-
+predict(rcs, newmods= rcspline.eval(15, knots, inclx=TRUE), transf=exp)
 
 
 #######TO CHECK AND CORRECT: MULTIVARIATE FRACTIONAL POLYNOMIAL
@@ -290,6 +305,7 @@ linear_male2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male2,
 summary(linear_male2)
 
 #graph
+ms <- seq(0,150,length=150)
 pred_lin_male2 <- predict(linear_male2, cbind(ms))
 regplot(linear_male2, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), pch=NA_integer_,
@@ -386,8 +402,26 @@ rcs_female2 <- rma.mv(yi= lnor ~ rcs(dose, knotsf2)+0, V=se^2, data=female2,
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female2)
 
+fs <- seq(0,150,length=150)
 pred_rcs_female2 <- predict(rcs_female2, newmods=rcspline.eval(fs, knotsf2, inclx=TRUE))
 regplot(rcs_female2, mod="rcs(dose, knotsf2)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
         ylim = c(0, 2), pred = pred_rcs_female2, xvals = fs, main="Female - RCS Regression")
 abline(v=knotsf2, lty="dotted")
+
+predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp)
+
+#functions
+knots_T<- c(1.000, 9.065, 20.815, 47.840)
+kd <- (knots_T[4] - knots_T[1])^(2/3)
+knotnk1
+
+DIST_1<- function(alc_1){alc_1}
+
+DIST_2<- function(alc_1){pmax((alc_1 - knots[1])/kd, 0)^3 + 
+    ((knots_T[3] - knots_T[1]) * pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[1]) * 
+    (pmax((alc_1 - knots_T[3])/kd, 0)^3))/(knots_T[4] - knots_T[3]) }
+
+DIST_3<- function(alc_1){pmax((alc_1 - knots[2])/kd, 0)^3 + ((knots_T[3] - knots_T[2]) * 
+    pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[2]) * 
+      (pmax((alc_1 - knots_T[3])/kd, 0)^3))/(knots_T[4] - knots_T[3]) }

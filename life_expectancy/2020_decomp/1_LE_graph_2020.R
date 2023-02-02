@@ -41,7 +41,8 @@ if(k.run == "detail") {
 }
 
 
-dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
+#dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
+dle_results <- dle_results %>% filter(Year >2014)
 dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
 
 levels(dle_results$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
@@ -73,10 +74,10 @@ le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour
                       labels = c("High", "Middle", "Low")) +   
    geom_line(aes(color = SES), linewidth = .9, alpha = .6) +
    geom_point(size = 2, aes(color = SES)) 
-#ggsave("1_LE_by_sex_and_SES_v1.jpg", dpi=600, width = 15, height = 10, units = "cm")
 le_graph
 ggsave(paste0("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/LE_", k.run, k.pop_type, ".jpg"), 
        dpi=600, width=20, height=15, units="cm")
+
 
 ## Display results for weights
 dle_results_weight <- dle_results_weight %>% 
@@ -99,6 +100,8 @@ levels(dle_ranges$Sex) <- list(Men = "1", Women = "2")
 dle_results <- left_join(dle_results, dle_ranges)
 le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 
                           color="red", size = 2) 
+
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
 
 write.csv(dle_results, 
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 

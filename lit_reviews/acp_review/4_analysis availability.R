@@ -105,7 +105,7 @@ i2 <- var.comp(meta.tav.sens2)
 summary(i2) #81.4
 
 # ----------------------------------------------------------------
-# VISUALISATION - LONG
+# VISUALISATION 
 # ----------------------------------------------------------------
 
 # confidence intervals for original estimates

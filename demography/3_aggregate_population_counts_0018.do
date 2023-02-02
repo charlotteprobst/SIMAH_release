@@ -9,15 +9,14 @@
 */
 
 // set global directory
-global dir `"C:/Users/marie/Dropbox/NIH2020/Demography"'
-
+global dir `"C:/Users/marie/Dropbox/NIH2020/"'
 
 // population counts by cell
 
 // make state identifiers compatible between deaths records and CPS
-use "${dir}/1_raw CPS data/STCROSS.dta", clear
+use "${dir}SIMAH_workplace/demography/1_raw CPS data/STCROSS.dta", clear
 ren State state
-merge 1:m  state using "${dir}/3_out CPS data/cepr_march_0018_final.dta"
+merge 1:m  state using "${dir}SIMAH_workplace/demography/3_out CPS data/cepr_march_0018_final.dta"
 drop _m
 
 gen sex = female + 1
@@ -37,6 +36,6 @@ bysort year sex age_gp edclass wbho: keep if _n==1
 rename wbho race
 keep year sex age_gp edclass race TPop 
 
-save "${dir}/3_out CPS data/STCROSSCEPRMarchcomb.dta", replace
-
+save "${dir}SIMAH_workplace/demography/3_out CPS data/STCROSSCEPRMarchcomb.dta", replace
+outsheet using "${dir}SIMAH_workplace/demography/3_out CPS data/March_CPS_popcounts_2000_2018.csv" , comma replace
 
