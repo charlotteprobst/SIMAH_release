@@ -5,10 +5,10 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_rates, inflation_factor){
+postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflation_factor){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
-  death_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
+  death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
     mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
                            ifelse(agecat=="35-39" | agecat=="40-44","35-44",
@@ -27,7 +27,7 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_rates, inflatio
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
     dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
-  Diseases <- left_join(Diseases, death_rates)
+  Diseases <- left_join(Diseases, death_counts)
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",

@@ -39,10 +39,15 @@ diseases <- c("LVDC")
 model <- "SIMAH"
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
-output_type <- "alcohol"
+output_type <- "mortality"
+
+# whether we want SES interaction effects for liver cirrhosis 
+# note this is a temporary variable and may change to a more general SES interaction flag 
+liverinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
+# this is also a temporary variable for model testing
 # default value is 0
 policy <- 0
 
@@ -82,11 +87,11 @@ basepop <- cbind(microsim.init.id, basepop)
 # read in BRFSS data for migrants and 18-year-olds entering the model
 brfss <- load_brfss(model,SelectedState, DataDirectory)
 
-# read in death rates data
-death_rates <- load_death_rates(model, proportion, SelectedState, DataDirectory)
+# read in death counts data
+death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
 
-# read in migration in and out rates and project rates forwards to 2025 (in case needed)
-migration_rates <- load_migration_rates(SelectedState, DataDirectory)
+# read in migration in and out counts and project rates forwards to 2025 (in case needed)
+migration_counts <- load_migration_counts(SelectedState, DataDirectory)
 
 # load in the education transition rates
 list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
@@ -101,29 +106,11 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 
-
-alcohol_transitions <- readRDS("SIMAH_workplace/microsim/1_input_data/transitionslist.RDS")[[297]]
-
-
-# allocate baseline hepatitis B and C infections
-
-# # to baseline population 
-# basepop <- assign_baseline_hepatitis(basepop)
-# 
-# # and to new agents to enter ?? not sure if this makes sense to do 
-# brfss <- assign_baseline_hepatitis(brfss)
-# 
-# # load hepatitis incidence counts and drinking distributions for hepatitis B and C 
-# data <- load_hepatitis_data(SelectedState, proportion)
-# Hep <- data[[1]]
-# drinkingdistributions <- data[[2]]
-# rm(data)
-
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
 numsamples <- 1
 
-# whether to just use the point estimate
+# whether to just use the point estimate - for now this is set to 1
 PE <- 1
 lhs <- sample_lhs(numsamples, PE)
 
@@ -132,8 +119,5 @@ lhs <- sample_lhs(numsamples, PE)
 inflation_factor <- 100
 
 if(length(diseases)>=1){
-  base_rates <- setup_base_rates(death_rates,diseases, inflation_factor)
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factor)
 }
-
-# load in categorical to continuous model 
-# catcontmodel <- read_rds(paste0(DataDirectory, "SSCatContModel.RDS"))

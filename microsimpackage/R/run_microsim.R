@@ -7,12 +7,11 @@
 #' @examples
 #' run_microsim
 run_microsim <- function(seed,samplenum,basepop,brfss,
-                         death_rates,
+                         death_counts,
                          updatingeducation, education_setup,
-                         migration_rates,
+                         migration_counts,
                          updatingalcohol, alcohol_transitions,
-                         catcontmodel, Hep, drinkingdistributions,
-                         base_rates, diseases, lhs, liverinteraction,
+                         base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -23,22 +22,22 @@ PopPerYear <- list()
 names <- names(lhs)
 lhs <- as.numeric(lhs)
 names(lhs) <- names
-# transitionyears <- seq(2002,2018, by=2)
 for(y in minyear:maxyear){
 print(y)
 # save a population summary
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 # add and remove migrants
 if(y>=2001){
-  basepop <- inward_migration(basepop,migration_rates,y, brfss)
-  basepop <- outward_migration(basepop,migration_rates,y)
+  basepop <- inward_migration(basepop,migration_counts,y, brfss)
+  basepop <- outward_migration(basepop,migration_counts,y)
 }
 
 # apply death rates and summarise deaths by cause
 if(y>=2000){
-basepop <- apply_death_rates(basepop, death_rates, y, diseases)
+basepop <- apply_death_counts(basepop, death_counts, y, diseases)
 DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
                                               dead, cause) %>% mutate(year=y, seed=seed)
+# remove individuals due to death and remove columns no longer needed
 basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 }
 
@@ -97,7 +96,7 @@ basepop <- CirrhosisHepatitis(basepop,lhs)
 
 # calculate base rates if year = 2000)
 if(y == 2000){
-rates <- calculate_base_rate(basepop,base_rates,diseases)
+rates <- calculate_base_rate(basepop,base_counts,diseases)
 }
 
 basepop <- left_join(basepop, rates, by=c("cat")) %>%
@@ -171,16 +170,6 @@ if(output=="mortality"){
     summarise(meangpd = mean(microsim.init.alc.gpd))
   Summary <- list(CatSummary, MeanSummary)
   Summary <- CatSummary
-}else if(output=="hepatitis"){
-  # chronicB <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicB) %>%
-  #   tally() %>% mutate(prevalenceChronicB = n /sum(n)) %>%
-  #   filter(chronicB==1) %>%
-  #   dplyr::select(year, microsim.init.sex, prevalenceChronicB)
-  # chronicC <- do.call(rbind, PopPerYear) %>% group_by(year, microsim.init.sex, chronicC) %>%
-  #   tally() %>% mutate(prevalenceChronicC = n/sum(n)) %>%
-  #   filter(chronicC==1) %>%
-  #   dplyr::select(year, microsim.init.sex, prevalenceChronicC)
-  # Summary <- left_join(chronicB, chronicC)
 }
 return(Summary)
 }

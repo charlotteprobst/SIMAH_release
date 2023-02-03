@@ -1,11 +1,11 @@
-#' Apply death rates in each year of simulation
+#' Apply death counts - converted to rates in each year of simulation
 #' @param
 #' @keywords microsimulation
 #' @export
 #' @examples
-#' apply_death_rates
+#' apply_death_counts
 
-apply_death_rates <- function(basepop, death_rates, y, diseases){
+apply_death_counts <- function(basepop, death_counts, y, diseases){
   basepop <- basepop %>% mutate(agecat = cut(microsim.init.age,
                                              breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
                                              labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
@@ -20,8 +20,8 @@ apply_death_rates <- function(basepop, death_rates, y, diseases){
     complete(cat, fill=list(n=0)) %>%
     group_by(cat, .drop=FALSE) %>%
     summarise(n=sum(n))
-  death_rates <- death_rates %>% dplyr::filter(year==y)
-  summary <- left_join(summary, death_rates, by=c("cat"))
+  death_counts <- death_counts %>% dplyr::filter(year==y)
+  summary <- left_join(summary, death_counts, by=c("cat"))
   summary <- summary %>% pivot_longer(cols=LVDCmort: RESTmort, names_to="cause", values_to="count") %>%
     mutate(cause = gsub("mort","",cause)) %>%
     filter(!cause %in% diseases) #remove causes of death being modelled

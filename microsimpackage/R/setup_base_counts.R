@@ -1,14 +1,14 @@
-#' Sets up baseline mortality rates
+#' Sets up baseline mortality counts
 #'
-#' This function sets up baseline mortality rates for COD modelled in simulation
+#' This function sets up baseline mortality counts for COD modelled in simulation and inflates by a factor
 #' @param
 #' @keywords baseline mortality
 #' @export
 #' @examples
-#' setup_base_rates
-setup_base_rates <- function(death_rates, diseases, inflation_factor){
+#' setup_base_counts
+setup_base_counts <- function(death_counts, diseases, inflation_factor){
   # by age, sex and education initially
-base_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
+base_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
     mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
                            ifelse(agecat=="35-39" | agecat=="40-44","35-44",
@@ -27,5 +27,5 @@ base_rates <- death_rates %>% pivot_longer(LVDCmort:RESTmort) %>%
            cat = paste0(sex, agecat, education)) %>% ungroup() %>%
   dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
-return(base_rates)
+return(base_counts)
 }

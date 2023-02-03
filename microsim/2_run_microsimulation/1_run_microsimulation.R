@@ -22,19 +22,13 @@ setwd(paste(WorkingDirectory))
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
-output_type <- "alcohol"
-liverinteraction <- 0
-# alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
-alcohol_transitions <- read_rds("SIMAH_workplace/microsim/1_input_data/calibrated_newTP.RDS")
-
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
-                       death_rates,
+                       death_counts,
                        updatingeducation, education_setup,
-                       migration_rates,
+                       migration_counts,
                        updatingalcohol, alcohol_transitions,
-                       catcontmodel, Hep, drinkingdistributions,
-                       base_rates, diseases, lhs[[1]], liverinteraction,
+                       base_counts, diseases, lhs[[1]], liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
                        2000, 2019, output_type)
 
@@ -50,15 +44,9 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 }
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
-}else if(output_type=="hepatitis"){
-summary <- summarise_hepatitis_output(Output)  
 }
 
-write.csv(Output, "SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats_newTP.csv", row.names=F)
-
-# nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
-#   filter(name=="simulated")
-# write.csv(with_policy, "SIMAH_workplace/microsim/2_output_data/2015_with_policy.csv", row.names=F)
+summary[[1]]
 summary[[2]]
 summary
 ggsave("SIMAH_workplace/microsim/2_output_data/Men_newTP.png", dpi=300,
