@@ -51,15 +51,20 @@ summaryUSA <- data %>%
                       edclass = ifelse(EDUC<=6, "LEHS",
                                     ifelse(EDUC>6 & EDUC<=9, "SomeC","College")),
                       sex = SEX) %>% 
-  group_by(YEAR, sex, race, age_gp, edclass) %>%
+  group_by(YEAR, sex, edclass) %>%
   summarise(TPop=sum(PERWT)) %>% rename(year=YEAR)
 
 # save ACS population counts 2000 to 2021 
-write.csv(summaryUSA, "SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated.csv", row.names=F)
+write.csv(summaryUSA, "SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated_educsex.csv", row.names=F)
 
 # draw a plot of all of all age groups
-allages <- summaryUSA %>% group_by(year, sex, race, edclass) %>% summarise(TPop=sum(TPop)) %>% 
+allages <- summaryUSA %>% group_by(year, sex, edclass) %>% summarise(TPop=sum(TPop)) %>% 
   mutate(sex = ifelse(sex==1, "Men","Women"), edclass = factor(edclass, levels=c("LEHS","SomeC","College")))
-ggplot(data=allages, aes(x=year, y=TPop, colour=sex)) + geom_line() + facet_grid(cols=vars(edclass), rows=vars(race), scales="free") +
-  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(2010, 2021)
 
+ggplot(data=allages, aes(x=year, y=TPop, colour=sex)) + geom_line(size=1) + facet_grid(cols=vars(edclass), scales="free") +
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(2010, 2021)
+ggsave("SIMAH_workplace/ACS/popcounts_sex_edclass_with2020.png",dpi=300, width=33, height=19, units="cm")
+
+ggplot(data=subset(allages,year!=2020), aes(x=year, y=TPop, colour=sex)) + geom_line(size=1) + facet_grid(cols=vars(edclass), scales="free") +
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(2010, 2021)
+ggsave("SIMAH_workplace/ACS/popcounts_sex_edclass_without2020.png",dpi=300, width=33, height=19, units="cm")

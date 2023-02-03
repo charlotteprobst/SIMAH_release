@@ -24,6 +24,8 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
 output_type <- "alcohol"
 liverinteraction <- 0
+# alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
+alcohol_transitions <- read_rds("SIMAH_workplace/microsim/1_input_data/calibrated_newTP.RDS")
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
@@ -42,7 +44,7 @@ if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="alcohol"){
   if(alcohol_type=="categorical"){
-summary <- summarise_alcohol_output(Output[[1]], SelectedState, DataDirectory)
+summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 }else if(alcohol_type=="continuous"){
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
@@ -52,12 +54,12 @@ summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, infl
 summary <- summarise_hepatitis_output(Output)  
 }
 
-write.csv(output, "SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats.csv", row.names=F)
+write.csv(Output, "SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats_newTP.csv", row.names=F)
 
 # nointeraction <- summary[[1]] %>% filter(year==2010) %>% 
 #   filter(name=="simulated")
 # write.csv(with_policy, "SIMAH_workplace/microsim/2_output_data/2015_with_policy.csv", row.names=F)
 summary[[2]]
 summary
-ggsave("SIMAH_workplace/microsim/2_output_data/LVDC_interaction_formerdrinkers.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/Men_newTP.png", dpi=300,
        width=33, height=19, units="cm")

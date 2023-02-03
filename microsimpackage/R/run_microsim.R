@@ -43,7 +43,7 @@ basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overall
 }
 
 # transition education for individuals aged 34 and under
-if(updatingeducation==1 & y>2000){
+if(updatingeducation==1 & y>=2000){
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
   totransition <- education_setup(totransition,y)
@@ -60,7 +60,7 @@ if(updatingeducation==1 & y>2000){
 }
 
 # update alcohol use categories
-if(updatingalcohol==1 & y>2000){
+if(updatingalcohol==1 & y>=2000){
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
@@ -153,6 +153,9 @@ if(output=="mortality"){
                                                   microsim.init.sex=as.factor(microsim.init.sex),
                                                   microsim.init.race=as.factor(microsim.init.race),
                                                   microsim.init.education=as.factor(microsim.init.education),
+                                                  agecat = cut(microsim.init.age,
+                                                                    breaks=c(0,20,25,29,39,49,64,100),
+                                                                    labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
     group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education,

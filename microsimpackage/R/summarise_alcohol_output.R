@@ -95,8 +95,6 @@ plotwomen <- ggplot(data=subset(summary, sex=="Women"), aes(x=year, y=value, col
 plotwomen
 
 
-
-
 list <- list(summary, plotmen, plotwomen)
 return(list)
 }

@@ -4,7 +4,7 @@
 \alias{summarise_alcohol_output}
 \title{Compares alcohol consumption by subgroup to brfss data}
 \usage{
-summarise_alcohol_output(Output, SelectedState, WorkingDirectory)
+summarise_alcohol_output(Output, SelectedState, DataDirectory)
 }
 \description{
 Compares alcohol consumption by subgroup to brfss data

@@ -9,7 +9,7 @@ extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fi
     #                    edu3.factor = as.character(combinations$educ),
     #                    race_wave1.factor=as.character(combination$race))
     x <- model
-    covlist <- list(female_wave1.factorWomen = ifelse(combination$sex=="Women",1,0),
+    covlist <- list(female_w1 = ifelse(combination$sex=="Women",1,0),
                     'age718-20'=ifelse(combination$age=="18-20",1,0),
                     'age721-25'=ifelse(combination$age=="21-25",1,0),
                     'age726-29'=ifelse(combination$age=="26-29",1,0),
@@ -17,11 +17,11 @@ extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fi
                     'age740-49'=ifelse(combination$age=="40-49",1,0),
                     'age750-64'=ifelse(combination$age=="50-64",1,0),
                     # 'age765+'=ifelse(combination$age=="65+",1,0),
-                    'edu3.factorLow'=ifelse(combination$educ=="Low",1,0),
-                    'edu3.factorMed'=ifelse(combination$educ=="Med",1,0),
-                    'race_wave1.factor Black, non-Hispanic'=ifelse(combination$race=="Black, non-Hispanic",1,0),
-                    'race_wave1.factorHispanic'=ifelse(combination$race=="Hispanic",1,0),
-                    'race_wave1.factorOther, non-Hispanic'=ifelse(combination$race=="Other, non-Hispanic",1,0))
+                    'edu3Low'=ifelse(combination$educ=="Low",1,0),
+                    'edu3Med'=ifelse(combination$educ=="Med",1,0),
+                    'race_w1Black, non-Hispanic'=ifelse(combination$race=="Black, non-Hispanic",1,0),
+                    'race_w1Hispanic'=ifelse(combination$race=="Hispanic",1,0),
+                    'race_w1Other, non-Hispanic'=ifelse(combination$race=="Other, non-Hispanic",1,0))
 
     # covlist <- msm.parse.covariates(x, covariates, x$qcmodel)
     ni <- x$qmodel$npars

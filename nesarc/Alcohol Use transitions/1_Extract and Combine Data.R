@@ -9,9 +9,12 @@ library(survey)     # to accomodate survey weights
 
 
 # Specify the data and output file locations
-data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
-data_orig3  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC III/"
-data_new   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+# data_orig  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
+data_orig  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
+# data_orig3  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Original data/NESARC III/"
+data_orig3  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Original data/NESARCIII/"
+# data_new   <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+data_new  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"
 
 
 # Load data 

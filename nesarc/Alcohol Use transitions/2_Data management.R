@@ -11,7 +11,8 @@ library(splitstackshape) # To replicate data based on sampling weight
 
 
 # Specify the data file locations
-data <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+# data <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"
+data <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"
 
 
 # NESARC WAVE 1 and 2 --------------------------------------------------------------------------------------------------------
@@ -129,11 +130,18 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     
     
     # Convert daily ounces to grams
-    alc_daily_g = alc_daily_oz * 28.3495,  
-    coolers_daily_g = coolers_daily_oz * 28.3495,
-    beers_daily_g = beers_daily_oz * 28.3495,
-    wine_daily_g = wine_daily_oz * 28.3495,
-    liquor_daily_g = liquor_daily_oz * 28.3495,
+    # alc_daily_g = alc_daily_oz * 28.3495,  
+    # coolers_daily_g = coolers_daily_oz * 28.3495,
+    # beers_daily_g = beers_daily_oz * 28.3495,
+    # wine_daily_g = wine_daily_oz * 28.3495,
+    # liquor_daily_g = liquor_daily_oz * 28.3495,
+    
+    #changing to 23.2 
+    alc_daily_g = alc_daily_oz * 23.2,  
+    coolers_daily_g = coolers_daily_oz * 23.2,
+    beers_daily_g = beers_daily_oz * 23.2,
+    wine_daily_g = wine_daily_oz * 23.2,
+    liquor_daily_g = liquor_daily_oz * 23.2,
     
     # Proportion of beverage
     coolers_prop = coolers_daily_g / alc_daily_g * 100,
@@ -387,11 +395,17 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
       
       
       # Convert daily ounces to grams
-      alc_daily_g = alc_daily_oz * 28.3495,     
-      coolers_daily_g = coolers_daily_oz * 28.3495,
-      beers_daily_g = beers_daily_oz * 28.3495,
-      wine_daily_g = wine_daily_oz * 28.3495,
-      liquor_daily_g = liquor_daily_oz * 28.3495,
+      # alc_daily_g = alc_daily_oz * 28.3495,     
+      # coolers_daily_g = coolers_daily_oz * 28.3495,
+      # beers_daily_g = beers_daily_oz * 28.3495,
+      # wine_daily_g = wine_daily_oz * 28.3495,
+      # liquor_daily_g = liquor_daily_oz * 28.3495,
+      
+      alc_daily_g = alc_daily_oz * 23.2,  
+      coolers_daily_g = coolers_daily_oz * 23.2,
+      beers_daily_g = beers_daily_oz * 23.2,
+      wine_daily_g = wine_daily_oz * 23.2,
+      liquor_daily_g = liquor_daily_oz * 23.2,
       
       
       # Proportion of beverage
