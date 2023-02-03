@@ -46,8 +46,11 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
 }
 
+# summary 1 - table containing summary stats - observed to simulated 
 summary[[1]]
+
+# summary 2 - plot comparing mortality rates (age standardised)
 summary[[2]]
-summary
-ggsave("SIMAH_workplace/microsim/2_output_data/Men_newTP.png", dpi=300,
+# save a copy of the plot
+ggsave("SIMAH_workplace/microsim/2_output_data/mortality_plot_png", dpi=300,
        width=33, height=19, units="cm")

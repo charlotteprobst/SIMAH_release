@@ -132,7 +132,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 }
 # save output - depending on which was selected
 if(output=="mortality"){
-  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_rates, inflation_factor)
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor)
   }else if(output=="demographics"){
   Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
