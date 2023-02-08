@@ -40,7 +40,16 @@ if(k.run == "detail") {
    }
 }
 
+k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
+#load population data (raw vs modeled)
+if(k.pop_type=="ACS"){
+   dle_results <- r_ACS
+}else if(k.pop_type=="ACS_pred"){
+   dle_results <- r_ACS_pred 
+}else if (k.pop_type == "CPS") {
+   dle_results <- r_CPS
+}
 #dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
 dle_results <- dle_results %>% filter(Year >2014)
 dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
@@ -78,7 +87,6 @@ le_graph
 ggsave(paste0("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/LE_", k.run, k.pop_type, ".jpg"), 
        dpi=600, width=20, height=15, units="cm")
 
-
 ## Display results for weights
 dle_results_weight <- dle_results_weight %>% 
    select(sex, edclass,	race, end_year, LE2, weight) %>% 
@@ -88,7 +96,8 @@ names(dle_results_weight) <- c("Sex", "SES", "Race", "Year",
 ggplot(data = dle_results_weight, 
        aes(x = SES, y = Life_expectancy, colour = SES, group = SES)) + 
    geom_boxplot(aes(fill=SES)) +
-   facet_grid(rows = vars(Sex), cols = vars(Race), scales = "free")
+   facet_grid(rows = vars(Sex), cols = vars(Race)) +
+   scale_y_continuous(breaks=seq(65,100, 5))
 
 dle_ranges <- dle_results_weight %>% group_by(Sex, SES, Race, Year) %>%
    summarise(low = min(Life_expectancy),
@@ -122,7 +131,6 @@ write.csv(LE_detail_combined,
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
                  "LifeExpectancy_combined_", k.run, "_1920.csv"), 
           row.names = F)   
-
 
 
 le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 

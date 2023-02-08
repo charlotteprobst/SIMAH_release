@@ -24,6 +24,7 @@ ACS <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021.csv")
 ACS_pred <-  read.csv("SIMAH_workplace/ACS/ACS_popcounts_predicted2020.csv")  
 CPS <- read.csv("SIMAH_workplace/CPS/3_out CPS data/CPS_2000_2020_agegp.csv")
 ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
+MSIM <- read.csv("SIMAH_workplace/microsim/pop_counts_simulation_2000_2020.csv")
 
 #############################################################################################################
 # Specify which population counts and which level of detail should be computed
@@ -44,7 +45,6 @@ if(k.pop_type=="ACS"){
 }else if (k.pop_type == "CPS") {
    dPop <- CPS
 }
-
 
 dMort <- inner_join(dMort, dPop)
 
