@@ -92,40 +92,42 @@ ggplot(data = dle_results_weight,
 
 dle_ranges <- dle_results_weight %>% group_by(Sex, SES, Race, Year) %>%
    summarise(low = min(Life_expectancy),
-   high = max(Life_expectancy)) %>% mutate(difference = high-low) %>%
-   mutate_at(vars(Sex, SES, Race), as.factor)
-levels(dle_ranges$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
-levels(dle_ranges$Sex) <- list(Men = "1", Women = "2")
+   high = max(Life_expectancy)) %>% mutate(difference = high-low)
 
-dle_results <- left_join(dle_results, dle_ranges)
-le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 
-                          color="red", size = 2) 
-
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
-
-write.csv(dle_results, 
-          paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
-                 "LifeExpectancy_weights", k.run, k.pop_type, "_1520.csv"), 
-          row.names = F)
-
-LE_detail_combined <- inner_join(x = LE_ACS_detail, y = LE_ACS_pred_detail,
-                                 by = c("Year", "Sex", "SES", "Race"))
-LE_detail_combined <- inner_join(x = LE_detail_combined, y = LE_CPS_detail,
-                                 by = c("Year", "Sex", "SES", "Race"))
-head(LE_detail_combined)
+df_list <- list(LE_ACS_detail, dle_ranges, LE_ACS_pred_detail, LE_CPS_detail)
+LE_detail_combined <- df_list %>% reduce(inner_join, 
+                                         by = c("Year", "Sex", "SES", "Race"))
 names(LE_detail_combined) <- c("Life_expectancy_ACS", 
                                "Year", "Sex", "SES", "Race", 
+                               "ACS_weight_min", 
+                               "ACS_weight_max", 
+                               "ACS_range",
                                "Life_expectancy_ACS_pred", 
                                "Life_expectancy_CPS")
 col.order <- c("Year", "Sex", "SES", "Race", 
-               "Life_expectancy_ACS", "Life_expectancy_ACS_pred", "Life_expectancy_CPS")
+               "Life_expectancy_ACS", "ACS_weight_min", "ACS_weight_max", "ACS_range",
+               "Life_expectancy_ACS_pred", "Life_expectancy_CPS")
 LE_detail_combined <- LE_detail_combined[,col.order]
 LE_detail_combined <- LE_detail_combined %>% 
    mutate(LE_dif_ACS_pred = Life_expectancy_ACS - Life_expectancy_ACS_pred,
           LE_dif_CPS = Life_expectancy_ACS - Life_expectancy_CPS) %>%
    mutate(across(where(is.numeric), round, 1)) %>%
-   filter(Year>2018)
+   filter(Year>2018)   %>%
+   mutate_at(vars(Sex, SES, Race), as.factor)
+levels(dle_ranges$SES) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
+levels(dle_ranges$Sex) <- list(Men = "1", Women = "2")
+
+
 write.csv(LE_detail_combined, 
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
                  "LifeExpectancy_combined_", k.run, "_1920.csv"), 
           row.names = F)   
+
+
+
+le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 
+                          color="red", size = 2) 
+
+ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
+
+
