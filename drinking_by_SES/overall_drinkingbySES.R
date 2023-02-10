@@ -91,37 +91,32 @@ NESARC <- read.csv("SIMAH_workplace/drinking_by_SES/NESARC_mean_alc_cats.csv") %
   rename(year=Year, alc_cat=Category.) %>% mutate(data="NESARC",
                                                  value = value/100)
 
-Microsimold <- read.csv("SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats_oldTP.csv") %>% 
-  group_by(year, microsim.init.sex, microsim.init.education, AlcCAT) %>% 
-  summarise(n=sum(n)) %>% ungroup() %>% 
-  group_by(year, microsim.init.sex, microsim.init.education) %>% 
-  mutate(value=n/sum(n)) %>% 
-  rename(alc_cat = AlcCAT, sex=microsim.init.sex, education=microsim.init.education) %>% 
-  dplyr::select(year, alc_cat, sex, education, value) %>% 
-  mutate(alc_cat = ifelse(alc_cat=="Low risk", "Category I",
-                          ifelse(alc_cat=="Medium risk","Category II",
-                                 ifelse(alc_cat=="High risk","Category III", alc_cat))),
-         sex = ifelse(sex=="f","women","men"),
-         data="Microsim old")
+Microsimold <- read.csv("SIMAH_workplace/microsim/2_output_data/AlcCats_originalTP.csv") %>% 
+  filter(name=="Microsimulation") %>% 
+  dplyr::select(year, sex, education, AlcCAT, value) %>% 
+  rename(alc_cat=AlcCAT) %>% 
+  mutate(sex=ifelse(sex=="Women","women","men"),
+         alc_cat = ifelse(alc_cat=="<20 / <40 gpd", "Category I",
+                          ifelse(alc_cat=="21-40 / 41-60 gpd","Category II",
+                                 ifelse(alc_cat=="41+ / 61+ gpd", "Category III", NA))),
+         data = "Microsim - previous TP")
 
-Microsimnew <- read.csv("SIMAH_workplace/drinking_by_SES/Microsim_mean_alc_cats_newTP.csv") %>% 
-  group_by(year, microsim.init.sex, microsim.init.education, AlcCAT) %>% 
-  summarise(n=sum(n)) %>% ungroup() %>% 
-  group_by(year, microsim.init.sex, microsim.init.education) %>% 
-  mutate(value=n/sum(n)) %>% 
-  rename(alc_cat = AlcCAT, sex=microsim.init.sex, education=microsim.init.education) %>% 
-  dplyr::select(year, alc_cat, sex, education, value) %>% 
-  mutate(alc_cat = ifelse(alc_cat=="Low risk", "Category I",
-                          ifelse(alc_cat=="Medium risk","Category II",
-                                 ifelse(alc_cat=="High risk","Category III", alc_cat))),
-         sex = ifelse(sex=="f","women","men"),
-         data="Microsim new")
+Microsimnew <- read.csv("SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-calibratedmean.csv") %>% 
+  filter(name=="Microsimulation") %>% 
+  dplyr::select(year, sex, education, AlcCAT, value) %>% 
+  rename(alc_cat=AlcCAT) %>% 
+  mutate(sex=ifelse(sex=="Women","women","men"),
+         alc_cat = ifelse(alc_cat=="<20 / <40 gpd", "Category I",
+                          ifelse(alc_cat=="21-40 / 41-60 gpd","Category II",
+                                 ifelse(alc_cat=="41+ / 61+ gpd", "Category III", NA))),
+         data = "Microsim - new calibrated TP")
+
 
 # combine the data together for GPD 
 combined <- rbind(BRFSS,NAS,NHIS,NSDUH, NESARC, Microsimold, Microsimnew) %>% 
   mutate(education = factor(education,
                             levels=c("LEHS","SomeC","College")),
-         data = factor(data, levels=c("BRFSS","NSDUH","NHIS","NAS","NESARC","Microsim old","Microsim new"))) %>% drop_na()
+         data = factor(data, levels=c("BRFSS","NSDUH","NHIS","NAS","NESARC","Microsim - previous TP","Microsim - new calibrated TP"))) %>% drop_na()
 
 # draw a plot - prevalence of category I drinking
 ggplot(data=subset(combined, alc_cat=="Category I"), aes(x=year, y=value, colour=education)) + geom_line(size=1) + 

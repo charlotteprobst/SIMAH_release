@@ -18,7 +18,7 @@
   WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
   setwd(WorkingDirectory)
   
-  outputs <- read_rds("SIMAH_workplace/microsim/2_output_data/Alc_calibration_output-newTP.RDS")
+  outputs <- read_rds("SIMAH_workplace/microsim/2_output_data/Alc_calibration_output_newTP.RDS")
   
   names(outputs) <- 1:5000
   outputs <- outputs[-which(sapply(outputs, is.null))]
@@ -82,14 +82,14 @@
     
     implausibility <- left_join(data, target, by=c("year_cat","sex","education","race","AlcCAT")) %>% 
       mutate(v_m =0.1,
-             v_t = sqrt(sepercent^2),
+             v_t = sepercent^2,
              absdiff = abs(simulatedpercent - targetpercent),
              implausibility = ifelse(simulatedpercent>=lower_ci & simulatedpercent<=upper_ci, 0,
-                                     abs(simulatedpercent - targetpercent)/(v_m + v_t))) %>% 
+                                     abs(simulatedpercent - targetpercent)/sqrt(v_m + v_t))) %>% 
       # group_by(samplenum, sex, race, education, AlcCAT)  %>% 
       # summarise(implausibility = mean(implausibility, na.rm=T)) %>% 
       group_by(samplenum, sex, race, education) %>% 
-      summarise(implausibility = max(implausibility, na.rm=T))
+      summarise(implausibility = mean(implausibility, na.rm=T))
     return(implausibility)
   }
   
@@ -97,6 +97,44 @@
   implausibility <- do.call(rbind, implausibility) %>% 
     group_by(sex, education, race) %>% 
     mutate(rank = ntile(implausibility, 4000))
+  
+  # calculate_ks <- function(data){
+  #   data <- data %>% 
+  #     mutate(year = as.numeric(as.character(year)),
+  #            year_cat = cut(year,
+  #                           breaks=c(0,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020))) %>% 
+  #     group_by(year_cat, samplenum, microsim.init.sex, microsim.init.education, microsim.init.race, AlcCAT) %>% 
+  #     summarise(n=sum(n)) %>% 
+  #     mutate(microsim.init.race = ifelse(microsim.init.race=="BLA","Black",ifelse(microsim.init.race=="WHI","White",ifelse(microsim.init.race=="SPA","Hispanic","Other")))) %>%
+  #     rename(sex = microsim.init.sex, education=microsim.init.education, race=microsim.init.race) %>% 
+  #     group_by(year_cat, samplenum, sex, education, race) %>% 
+  #     mutate(simulatedpercent=n/sum(n)) %>% 
+  #     dplyr::select(-n)
+  #   
+  #   
+  #   kstest <- function(subset){
+  #     test <- ks.test(subset$simulatedpercent, subset$targetpercent)
+  #     subset$statistic <- as.numeric(test$statistic)
+  #     subset$p <- test$p.value
+  #     subset <- data.frame(subset)
+  #     return(subset)
+  #   }
+  #   
+  #   ks <- left_join(data, target, by=c("year_cat","sex","education","race","AlcCAT")) %>% 
+  #     group_by(samplenum, sex, education, race, AlcCAT) %>% 
+  #     do(kstest(.)) %>% ungroup() %>% 
+  #     dplyr::select(samplenum, sex, education, race, statistic, p) %>% 
+  #     group_by(samplenum, sex, race, education) %>% distinct()
+  #   return(ks)
+  # }
+  # 
+  # kolmogorov <- lapply(outputs, calculate_ks)
+  #   
+  # kolmogorov <- do.call(rbind, kolmogorov)
+  # 
+  # ks <- kolmogorov %>% ungroup() %>% 
+  #   group_by(sex, education, race) %>% 
+  #   mutate(rank = ntile(p, 5000))
   
   # now match with the original TPs to get a "hybrid best TP"
   TPs <- read_rds("SIMAH_workplace/microsim/1_input_data/transitionslist_newTP.RDS")
@@ -108,12 +146,17 @@
   names(TPs)==names
   
   best_output <- implausibility %>% filter(rank==1)
-
+  
+  # best_ks_output <- ks %>% filter(rank==5000)
   
   # now subset the best TPs
   best <- as.numeric(unique(best_output$samplenum))
+  # best_ks <- as.numeric(unique(best_ks_output$samplenum))
+  
   
   bestTP <- TPs[best]
+  # bestTP <- TPs[best_ks]
+  
   
   for(i in names(bestTP)){
     bestTP[[i]]$samplenum <- i
@@ -130,7 +173,12 @@
   
   best_output <- implausibility %>% filter(rank==1) %>% 
     rename(topsample=samplenum) %>% 
-    dplyr::select(sex, education, topsample)
+    dplyr::select(sex, education, race, topsample)
+  
+  # best_output <- ks %>% filter(rank==5000) %>% 
+  #   rename(topsample=samplenum) %>% 
+  #   dplyr::select(sex, education, topsample)
+  
   
   bestTP <- left_join(bestTP, best_output)
   
@@ -142,5 +190,5 @@
   bestTP_output <- bestTP %>% ungroup() %>% 
     dplyr::select(cat, StateTo, cumsum)
   
-  saveRDS(bestTP_output,"SIMAH_workplace/microsim/1_input_data/calibrated_newTP.RDS")
+  saveRDS(bestTP_output,"SIMAH_workplace/microsim/1_input_data/calibrated_newTP_mean.RDS")
   

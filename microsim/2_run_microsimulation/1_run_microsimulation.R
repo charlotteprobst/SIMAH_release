@@ -12,7 +12,7 @@ options(dplyr.summarise.inform = FALSE)
 
 # load in microsim R package
 setwd("~/Google Drive/SIMAH Sheffield/SIMAH_code")
-install("microsimpackage")
+install("microsimpackage", dep=T)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
@@ -22,6 +22,10 @@ setwd(paste(WorkingDirectory))
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
+# alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
+alcohol_transitions <- readRDS("SIMAH_workplace/microsim/1_input_data/calibrated_newTP_mean.RDS")
+
+output_type <- "mortality"
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
                        death_counts,
@@ -45,12 +49,15 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
 }
+summary[[2]]
+write.csv(summary[[1]], "SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-calibratedmean.csv")
 
 # summary 1 - table containing summary stats - observed to simulated 
-summary[[1]]
+summary[[2]]
+summary[[3]]
 
 # summary 2 - plot comparing mortality rates (age standardised)
 summary[[2]]
 # save a copy of the plot
-ggsave("SIMAH_workplace/microsim/2_output_data/mortality_plot_png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/Women_newTP_calibrated_mean.png", dpi=300,
        width=33, height=19, units="cm")

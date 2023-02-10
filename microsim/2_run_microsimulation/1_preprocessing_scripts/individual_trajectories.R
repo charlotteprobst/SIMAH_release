@@ -87,12 +87,12 @@ dat <- rbind(dat, distributions) %>%
 
 scaleFUN <- function(x) sprintf("%.2f", x)
 
-ggplot(data=subset(dat, YEAR==2018 & AlcCAT=="High risk" & sex_recode=="Men"), aes(x=gramsperday,
+ggplot(data=subset(dat, YEAR==2019 & sex_recode=="Women"), aes(x=gramsperday,
                                                              colour=data, fill=data)) + 
   geom_density(aes(color=as.factor(data), fill=as.factor(data)), alpha=0.6) +
   # geom_vline(aes(xintercept=median, color=as.factor(yearMOD)), linetype="dashed") + 
   # scale_x_continuous(limits = c(0, 200)) +  
-  facet_grid(as.factor(education_summary) ~ as.factor(race_eth), scales="free_x") +
+  facet_wrap(as.factor(education_summary) ~ AlcCAT, scales="free") +
   theme(legend.position="bottom") + 
   scale_y_continuous(labels=scaleFUN) + 
   ggtitle("Men, year = 2018") + 

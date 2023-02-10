@@ -168,8 +168,7 @@ if(output=="mortality"){
     group_by(year, samplenum, microsim.init.sex, microsim.init.education, .drop=FALSE) %>%
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
-  Summary <- list(CatSummary, MeanSummary)
-  Summary <- CatSummary
+  Summary <- list(CatSummary)
 }
 return(Summary)
 }
