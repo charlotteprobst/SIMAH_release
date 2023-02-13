@@ -28,8 +28,7 @@ library(Hmisc)
 wtd.lb <- function(x, w) {
   n    <- length(x)
   mean <- wtd.mean(x, w)
-  var  <- wtd.var(x, w)
-  se   <- sqrt(var)/sqrt(length(x))
+  se   <- sqrt(wtd.var(x, w))/sqrt(length(x))
   lb   <- mean + qt(0.025,n-1)*se
   return(lb)
 }
@@ -38,8 +37,7 @@ wtd.lb <- function(x, w) {
 wtd.ub <- function(x, w) {
   n    <- length(x)
   mean <- wtd.mean(x, w)
-  var  <- wtd.var(x, w)
-  se   <- sqrt(var)/sqrt(length(x))
+  se   <- sqrt(wtd.var(x, w))/sqrt(length(x))
   ub   <- mean + qt(0.975,n-1)*se 
   return(ub)
 }
@@ -52,16 +50,38 @@ wtd.ub <- function(x, w) {
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230103
+DATE <- 20230207
 
 datBRFSS <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
-data <- datBRFSS[State %like% "California|Indiana|Pennsylvania|Tennessee|Texas"]
+data <- datBRFSS[State %like% "Florida|California|Indiana|Pennsylvania|Texas"]
+datBAN <- datBRFSS[State %like% "Colorado"]
 
 # --------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------
-# PREPARE / CHECK DATA
+# CHECK DATA
 # ----------------------------------------------------------------
+
+# quarterly data
+datBAN[, Q := ifelse(surveymonth %like% "Feb|Mar|Apr", 1, ifelse(surveymonth %like% "May|Jun|Jul", 2,
+                                                               ifelse(surveymonth %like% "Aug|Sep|Oct", 3, ifelse(surveymonth %like% "Nov|Dec|Jan", 4, NA))))]
+datBAN[, QYEAR := ifelse(surveymonth %like% "Jan", paste0(surveyyear-1, "/", Q), paste0(surveyyear, "/", Q))]
+
+datBAN <- copy(datBAN[QYEAR != "1999/4" & QYEAR != "2021/1"]) # drop those interviewed in Jan 2000 (150) and 2021 (17)
+datBAN[, QYEAR := as.factor(QYEAR)]
+
+datBAN[, qyear := as.numeric(QYEAR)]
+
+datBAN[, education := factor(education_summary, levels = c("LEHS", "SomeC", "College"))]
+
+# histogram 
+ggplot(data = datBAN, aes(x = qyear, fill = as.factor(sex_recode))) +
+  geom_histogram(position = "dodge2", binwidth = 1) + 
+  geom_hline(yintercept = 100) + 
+  facet_grid(rows = vars(as.factor(State)), cols = vars(as.factor(education)), scales = "free_y") +
+  theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/', DATE, '_TS_HISTO_obsSEX.png'), dpi=300, width = 12, height = 7)
+
 
 # cap estimates >200 GPD
 summary(data$gramsperday_orig)
@@ -103,26 +123,44 @@ pdat <- copy(data[QYEAR != "1999/4" & QYEAR != "2021/1"]) # drop those interview
 pdat[, QYEAR := as.factor(QYEAR)]
 
 # intervention year
-pdat[, INT_YEAR := ifelse(State %like% "California|Texas", NA, ifelse(State %like% "Pennsylvania", 2003, 
+pdat[, INT_YEAR := ifelse(State %like% "California|Florida|Texas", NA, ifelse(State %like% "Pennsylvania", 2003, 
                           ifelse(State %like% "Tennessee", 2018, ifelse(State %like% "Indiana", 2018, NA))))]
-pdat[, INT_QYEAR := ifelse(State %like% "California|Texas", NA, ifelse(State %like% "Pennsylvania", "2003/3", 
+pdat[, INT_QYEAR := ifelse(State %like% "California|Florida|Texas", NA, ifelse(State %like% "Pennsylvania", "2003/3", 
                           ifelse(State %like% "Tennessee", "2018/2", ifelse(State %like% "Indiana", "2018/2", NA))))]
 
-# weighted mean consumption
-pdatSES <- pdat %>% group_by(State, YEAR, sex, education) %>% 
+# GPD distribution over time (quarterly, unweighted data) by state
+pdat[, qyear := as.numeric(QYEAR)]
+pdat[, int_qyear := ifelse(INT_QYEAR == QYEAR, qyear, NA)]
+
+# GPD distribution (smooth) by SES - drinkers only
+ggplot(data = pdat[pdat$GPD_upshifted_capped > 0 & State %like% "California|Florida|Indiana"]) +
+  geom_smooth(aes(x = qyear, y = GPD_upshifted_capped, color = as.factor(State))) + 
+  geom_vline(aes(xintercept = int_qyear)) +
+  facet_grid(rows = vars(as.factor(education)), cols = vars(sex_recode), scales = "free") +
+  theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/', DATE, '_TS_COMPsmooth_StateSES_GR1.png'), dpi=300, width = 12, height = 7)
+
+ggplot(data = pdat[pdat$GPD_upshifted_capped > 0 & State %like% "Pennsylvania|Texas"]) +
+  geom_smooth(aes(x = qyear, y = GPD_upshifted_capped, color = as.factor(State))) + 
+  geom_vline(aes(xintercept = int_qyear)) +
+  facet_grid(rows = vars(as.factor(education)), cols = vars(sex_recode), scales = "free") +
+  theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/', DATE, '_TS_COMPsmooth_StateSES_GR2.png'), dpi=300, width = 12, height = 7)
+
+# weighted mean consumption - drinkers only
+pdatSES <- pdat[pdat$GPD_upshifted_capped > 0] %>% group_by(State, YEAR, sex_recode, education, INT_YEAR) %>% 
   summarise(GPD.mean = wtd.mean(GPD_upshifted_capped, final_sample_weight),
             GPD.lb = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.ub = wtd.ub(GPD_upshifted_capped, final_sample_weight),
-            INT_YEAR = mean(INT_YEAR)) %>% as.data.table
+            GPD.ub = wtd.ub(GPD_upshifted_capped, final_sample_weight)) %>% as.data.table
 
 # GPD distribution over time by state
-ggplot(data = pdatSES, aes(x = YEAR, y = GPD.mean, color = as.factor(education))) +
+ggplot(data = pdatSES[State %like% "California|Florida|Indiana"], aes(x = YEAR, y = GPD.mean, color = as.factor(State))) +
   geom_point() + geom_line() + 
   geom_pointrange(aes(ymin = GPD.lb, ymax = GPD.ub)) + 
   geom_vline(aes(xintercept = INT_YEAR)) +
-  facet_grid(rows = vars(as.factor(State)), scales = "free") +
+  facet_grid(rows = vars(as.factor(education)), cols = vars(as.factor(sex_recode)), scales = "free") +
   theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
-ggsave(paste0('acp_brfss/outputs/figures/', DATE, '_annual TS_state.png'), dpi=300, width = 12, height = 7)
+#ggsave(paste0('acp_brfss/outputs/figures/', DATE, '_annual TS_COMP state by SES.png'), dpi=300, width = 12, height = 7)
 
 # GPD distribution over time by group
 ggplot(data = pdatSES, aes(x = YEAR, y = GPD.mean, color = as.factor(State))) +
