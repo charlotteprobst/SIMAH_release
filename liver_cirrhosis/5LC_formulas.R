@@ -11,18 +11,21 @@ data   <- "C:/Users/laura/Documents/CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/"
 dataset <- readRDS (paste0(data, "4LC_regression_all.xlsx"))
 
 library(readxl)
-dataset <- read_excel("CAMH/SIMAH/SIMAH_workplace/liver_cirrhosis/4LC_regression_all.xlsx", 
+dataset <- read_excel("CAMH/CIRROSIS/SIMAH/SIMAH_dataset/13regression_all.xlsx", 
                       col_types = c("numeric", "numeric", "text", 
                                     "numeric", "text", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric","numeric", "numeric", "text", "numeric","numeric"))
+                                    "numeric", "numeric","numeric", "numeric", 
+                                    "text", "numeric","numeric",
+                                    "numeric","numeric","text", "numeric", "numeric", "numeric"))
 
 dataset$sex <- as.factor(dataset$sex)
 dataset$type <- as.factor(dataset$type)
 dataset$mortality <- as.factor(dataset$mortality)
+dataset$type_updated <- as.factor(dataset$type_updated)
 dataset$usa <- as.factor(dataset$usa)
 
 dataset <- dataset %>%
@@ -34,7 +37,7 @@ female <- dataset %>%
 dim(table(female$study))
 
 q_female <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female, digits = 6, 
-                           random = ~ 1 | study, method = "REML")
+                   random = ~ 1 | study, method = "REML")
 summary(q_female)
 
 a <- seq(0,150,length=150)
@@ -70,7 +73,7 @@ male <- dataset %>%
 dim(table(male$study))
 
 q_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=male, digits = 6, 
-                   random = ~ 1 | study, method = "REML")
+                 random = ~ 1 | study, method = "REML")
 summary(q_male)
 
 a <- seq(0,150,length=150)
@@ -90,7 +93,7 @@ morbidity <- dataset %>%
 dim(table(morbidity$study))
 
 q_morbidity <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=morbidity, digits = 6, 
-                 random = ~ 1 | study, method = "REML")
+                      random = ~ 1 | study, method = "REML")
 summary(q_morbidity)
 
 a <- seq(0,150,length=150)
@@ -143,7 +146,7 @@ alltype <- dataset %>%
 dim(table(alltype$study))
 
 q_alltype <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=alltype, digits = 6, 
-                      random = ~ 1 | study, method = "REML")
+                    random = ~ 1 | study, method = "REML")
 summary(q_alltype)
 
 a <- seq(0,150,length=150)
@@ -162,7 +165,7 @@ alc <- dataset %>%
 dim(table(alc$study))
 
 q_alc <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=alc, digits = 8, 
-                    random = ~ 1 | study, method = "REML")
+                random = ~ 1 | study, method = "REML")
 summary(q_alc)
 
 a <- seq(0,150,length=150)
@@ -220,7 +223,7 @@ dim(table(fem_morb$study))
 fem_morb <- fem_morb[-(14),]
 
 q_fem_morb <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=fem_morb, digits = 6, 
-                   random = ~ 1 | study, method = "REML")
+                     random = ~ 1 | study, method = "REML")
 summary(q_fem_morb)
 
 a <- seq(0,150,length=150)
@@ -289,7 +292,7 @@ male_morb <- dataset %>%
 dim(table(male_morb$study))
 
 q_male_morb <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=male_morb, digits = 6, 
-                     random = ~ 1 | study, method = "REML")
+                      random = ~ 1 | study, method = "REML")
 summary(q_male_morb)
 
 a <- seq(0,150,length=150)
@@ -329,7 +332,7 @@ dim(table(fem_all$study))
 fem_all <- fem_all[-c(30),]
 
 q_fem_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=fem_all, digits = 6, 
-                         random = ~ 1 | study, method = "REML")
+                    random = ~ 1 | study, method = "REML")
 summary(q_fem_all)
 
 a <- seq(0,150,length=150)
@@ -412,7 +415,7 @@ male_all <- dataset %>%
 dim(table(male_all$study))
 
 q_male_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=male_all, digits = 6, 
-                    random = ~ 1 | study, method = "REML")
+                     random = ~ 1 | study, method = "REML")
 summary(q_male_all)
 
 a <- seq(0,150,length=150)
@@ -597,7 +600,7 @@ fem_mort_all <- dataset %>%
 dim(table(fem_mort_all$study))
 
 q_fem_mort_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=fem_mort_all, digits = 6, 
-                     random = ~ 1 | study, method = "REML")
+                         random = ~ 1 | study, method = "REML")
 summary(q_fem_mort_all)
 
 a <- seq(0,150,length=150)
@@ -639,7 +642,7 @@ male_morb_all <- dataset %>%
 dim(table(male_morb_all$study))
 
 q_male_morb_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=male_morb_all, digits = 6, 
-                         random = ~ 1 | study, method = "REML")
+                          random = ~ 1 | study, method = "REML")
 summary(q_male_morb_all)
 
 a <- seq(0,150,length=150)
@@ -702,68 +705,335 @@ male_mort_hcv <- dataset %>%
   filter(sex == 1 & mortality == 1 & type == 3)
 dim(table(male_mort_hcv$study))
 
-#USA female
-us_fem <- dataset %>%
-  filter(sex == 0 & usa == 1)
-dim(table(us_fem$study))
 
-q_us_fem <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=us_fem, digits = 6, 
-                         random = ~ 1 | study, method = "REML")
-summary(q_us_fem)
+##############NEW TYPE CLASSIFICATION#################
 
+###US SPECIFIC MALE ALL TYPE MORTALITY
+
+usa_mmall <- dataset %>%
+  filter(usa == 1 & mortality == 1 & type_updated == 0 & sex == 1)
+dim(table(usa_mmall$study))
+
+q_usa_mmall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_mmall, digits = 8, 
+                      random = ~ 1 | study, method = "REML")
+summary(q_usa_mmall)
+
+weights(q_usa_mmall)
 a <- seq(0,150,length=150)
-pred_us_fem <- predict(q_us_fem, newmods=cbind(a,a^2))
-regplot(q_us_fem, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+pred_usa_mmall <- predict(q_usa_mmall, newmods=cbind(a,a^2))
+regplot(q_usa_mmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
-        ylim = c(0, 40), pred = pred_us_fem, xvals = a, main="US Female")
+        ylim = c(0, 50), pred = pred_usa_mmall, xvals = a, main="US Male Mortality All Type")
 
--(0.060646/(2*-0.000312))
-(0.060646*97.19)+((-0.000312)*(97.19*97.19))
-predict(q_us_fem, c(97.19,97.19^2), transf=exp)
+-(0.05222881/(2*-0.00020206))
+(0.05222881*129.2)+((-0.00020206)*(129.2*129.2))
+predict(q_usa_mmall, c(129.2,129.2^2),transf=exp)
 
-bm <- seq(0,97.19,length=97.19)
-bn <- seq(97.19,150, length=53)
-bo <- rep(19.085129, times=53)
-bp <- rep(12.787579, times=53)
-bq <- rep(28.484057, times=53)
+bm <- seq(0,129.2,length=129.2)
+bn <- seq(129.2,150, length=21)
+bo <- rep(29.22789161, times=21)
+bp <- rep(14.26856305, times=21)
+bq <- rep(59.87075538, times=21)
 
-pred_us_fem2 <- predict(q_us_fem, newmods=cbind(bm,bm^2))
-regplot(q_us_fem, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+pred_usa_mmall2 <- predict(q_usa_mmall, newmods=cbind(bm,bm^2))
+regplot(q_usa_mmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
-        ylim = c(0, 30), pred = pred_us_fem2, xvals = bm, main="US Female")
+        ylim = c(0, 70), pred = pred_usa_mmall2, xvals = bm, main="US Male Mortality All Type")
 lines(bn,bo, lwd = "3", col = "black")
 lines(bn,bp, lwd = "1", lty = "dashed", col = "black")
 lines(bn,bq, lwd = "1", lty = "dashed", col = "black")
 
-#US MALE
-us_male <- dataset %>%
-  filter(sex == 1 & usa == 1)
-dim(table(us_male$study))
+#without Boffeta
+usa_mmall <- usa_mmall[-c(4,5,6,7,8,9),]
 
-q_us_male <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=us_male, digits = 6, 
-                   random = ~ 1 | study, method = "REML")
-summary(q_us_male)
+q_usa_mmall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_mmall, digits = 8, 
+                      random = ~ 1 | study, method = "REML")
+summary(q_usa_mmall)
 
 a <- seq(0,150,length=150)
-pred_us_male <- predict(q_us_male, newmods=cbind(a,a^2))
-regplot(q_us_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+pred_usa_mmall <- predict(q_usa_mmall, newmods=cbind(a,a^2))
+regplot(q_usa_mmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
-        ylim = c(0, 30), pred = pred_us_male, xvals = a, main="US Male")
+        col = "#1A5464",bg = "#1A5464", lcol = "#1A5464", ylim = c(0, 50), pred = pred_usa_mmall, xvals = a, main="US Male Mortality All Type")
 
--(0.052229/(2*-0.000202))
-(0.052229*129.28)+((-0.000202)*(129.28*129.28))
-predict(q_us_male, c(129.28,129.28^2))
+-(0.03655479/(2*-0.00011081))
+(0.05222881*129.2)+((-0.00020206)*(129.2*129.2))
+predict(q_usa_mmall, c(129.2,129.2^2),transf=exp)
 
-br <- seq(0,129.28,length=129.28)
-bs <- seq(129.28,150, length=21)
-bt <- rep(29.227895, times=21)
-bu <- rep(14.246508, times=21)
-bv <- rep(59.963456, times=21)
+bm <- seq(0,129.2,length=129.2)
+bn <- seq(129.2,150, length=21)
+bo <- rep(29.22789161, times=21)
+bp <- rep(14.26856305, times=21)
+bq <- rep(59.87075538, times=21)
 
-pred_us_male2 <- predict(q_us_male, newmods=cbind(br,br^2))
-regplot(q_us_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,110), shade =FALSE,
-        ylim = c(0, 30), pred = pred_us_male2, xvals = br, main="US Male")
-lines(bs,bt, lwd = "3", col = "black")
-lines(bs,bu, lwd = "1", lty = "dashed", col = "black")
-lines(bs,bv, lwd = "1", lty = "dashed", col = "black")
+pred_usa_mmall2 <- predict(q_usa_mmall, newmods=cbind(bm,bm^2))
+regplot(q_usa_mmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
+        ylim = c(0, 70), pred = pred_usa_mmall2, xvals = bm, main="US Male Mortality All Type")
+lines(bn,bo, lwd = "3", col = "black")
+lines(bn,bp, lwd = "1", lty = "dashed", col = "black")
+lines(bn,bq, lwd = "1", lty = "dashed", col = "black")
+
+#NOT US SPECIFIC MALE MORTALITY ALL
+
+male_mort_all <- dataset %>%
+  filter(sex == 1 & mortality == 1 & type_updated == 0)
+dim(table(male_mort_all$study))
+
+q_male_mort_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=male_mort_all, digits = 8, 
+                          random = ~ 1 | study, method = "REML")
+summary(q_male_mort_all)
+
+a <- seq(0,150,length=150)
+pred_male_mort_all <- predict(q_male_mort_all, newmods=cbind(a,a^2))
+regplot(q_male_mort_all, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, pch=NA_integer_, 
+        ylim = c(0, 70), pred = pred_male_mort_all, xvals = a, main="Male Mortality All Type")
+lines(exp(pred_usa_mmall2$pred), lwd = "4", col = "blue")
+lines(exp(pred_usa_mmall2$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_usa_mmall2$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+lines(bn,bo, lwd = "4", col = "blue")
+lines(bn,bp, lwd = "3", lty = "dotted", col = "blue")
+lines(bn,bq, lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Other countries", "US"), lty=1:2, lwd=3:3, cex=1, col=c("black", "blue"))
+
+
+-(0.03896295/(2*-0.00011445))
+(0.05222881*129.2)+((-0.00020206)*(129.2*129.2))
+
+###US SPECIFIC FEMALE ALL TYPE MORTALITY
+
+usa_fmall <- dataset %>%
+  filter(usa == 1 & mortality == 1 & type_updated == 0 & sex == 0)
+dim(table(usa_fmall$study))
+
+q_usa_fmall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_fmall, digits = 8, 
+                      random = ~ 1 | study, method = "REML")
+summary(q_usa_fmall)
+pred_usa_fmall <- predict(q_usa_fmall, newmods=cbind(a,a^2))
+regplot(q_usa_fmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 60), pred = pred_usa_fmall, xvals = a, main="US Female Mortality All Type")
+
+-(0.06064636/(2*-0.00031181))
+(0.06064636*97.2)+((-0.00031181)*(97.2*97.2))
+predict(q_usa_fmall, c(97.2,97.2^2),transf=exp)
+
+br <- seq(0,97.2,length=97.2)
+bs <- seq(97.2,150, length=53)
+bt <- rep(19.08513527, times=53)
+bu <- rep(12.78768225, times=53)
+bv <- rep(28.48384728, times=53)
+
+pred_usa_fmall2 <- predict(q_usa_fmall, newmods=cbind(br,br^2))
+regplot(q_usa_fmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,pch=NA_integer_,
+        col = "black",bg = "#E94409", lcol = "#E94409", cex.axis=1.2,cex.lab=1.4, cex.main=1.5,
+        ylim = c(0, 40), pred = pred_usa_fmall2, xvals = br, main="US Specific All Type LC Mortality")
+lines(bs,bt, lwd = "3", col = "#E94409")
+lines(bs,bu, lwd = "1", lty = "dashed", col = "#E94409")
+lines(bs,bv, lwd = "1", lty = "dashed", col = "#E94409")
+lines(exp(pred_usa_mmall$pred), lwd = "4", col = "#1A5464")
+lines(exp(pred_usa_mmall$ci.lb), lwd = "3", lty = "dotted", col = "#1A5464")
+lines(exp(pred_usa_mmall$ci.ub), lwd = "3", lty = "dotted", col = "#1A5464")
+lines(bn,bo, lwd = "4", col = "blue")
+lines(bn,bp, lwd = "3", lty = "dotted", col = "blue")
+lines(bn,bq, lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Women", "Men"), lty=1:1, lwd=5:5, cex=1.2, col=c("#E94409", "#1A5464"))
+
+
+#NOT US SPECIFIC FEMALE ALL TYPE MORTALITY
+
+fem_mort_all <- dataset %>%
+  filter(sex == 0 & mortality == 1 & type_updated == 0)
+dim(table(fem_mort_all$study))
+
+q_fem_mort_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=fem_mort_all, digits = 8, 
+                         random = ~ 1 | study, method = "REML")
+summary(q_fem_mort_all)
+
+a <- seq(0,150,length=150)
+pred_fem_mort_all <- predict(q_fem_mort_all, newmods=cbind(a,a^2))
+regplot(q_fem_mort_all, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 40), pred = pred_fem_mort_all, xvals = a, main="Female Mortality All Type")
+
+-(0.06970227/(2*-0.00037015))
+(0.06970227*94.2)+((-0.00037015)*(94.2*94.2))
+predict(q_fem_mort_all, c(94.2,94.2^2),transf=exp)
+
+bw <- seq(0,94.2,length=94.2)
+bx <- seq(94.2,150, length=56)
+by <- rep(26.61203133, times=56)
+bz <- rep(19.43328520, times=56)
+ca <- rep(36.44263973, times=56)
+
+pred_fem_mort_all2 <- predict(q_fem_mort_all, newmods=cbind(bw,bw^2))
+regplot(q_fem_mort_all, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, pch=NA_integer_,
+        ylim = c(0, 70), pred = pred_fem_mort_all2, xvals = bw, main="Female Mortality All Type")
+lines(bx,by, lwd = "3", col = "black")
+lines(bx,bz, lwd = "1", lty = "dashed", col = "black")
+lines(bx,ca, lwd = "1", lty = "dashed", col = "black")
+lines(exp(pred_male_mort_all$pred), lwd = "4", col = "blue")
+lines(exp(pred_male_mort_all$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_male_mort_all$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Women", "Men"), lty=1:2, lwd=3:3, cex=1, col=c("black", "blue"))
+
+lines(exp(pred_usa_fmall2$pred), lwd = "4", col = "blue")
+lines(exp(pred_usa_fmall2$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_usa_fmall2$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+lines(bs,bt, lwd = "4", col = "blue")
+lines(bs,bu, lwd = "3", lty = "dotted", col = "blue")
+lines(bs,bv, lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Other countries", "US"), lty=1:2, lwd=3:3, cex=1, col=c("black", "blue"))
+
+
+#HCV all countries - both sex - morbidity and mortality
+hcv <- dataset %>%
+  filter(type_updated == 1)
+hcv <- hcv[-c(14),]
+dim(table(hcv$study))
+
+q_hcv <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=hcv, digits = 8, 
+                random = ~ 1 | study, method = "REML")
+summary(q_hcv)
+
+a <- seq(0,150,length=150)
+pred_hcv <- predict(q_hcv, newmods=cbind(a,a^2))
+regplot(q_hcv, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 50), pred = pred_hcv, xvals = a, main="HCV")
+
+weights(q_hcv)
+
+-(0.02603471/(2*-0.00008898))
+
+#US SPECIFIC – BOTH SEXES – ALL TYPE LC – MORTALITY 
+
+usa_mall <- dataset %>%
+  filter(usa == 1 & mortality == 1 & type_updated == 0)
+dim(table(usa_mall$study))
+
+q_usa_mall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_mall, digits = 8, 
+                     random = ~ 1 | study, method = "REML")
+summary(q_usa_mall)
+pred_usa_mall <- predict(q_usa_mall, newmods=cbind(a,a^2))
+regplot(q_usa_mall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 60), pred = pred_usa_mall, xvals = a, main="US Mortality All Type")
+
+-(0.05114280/(2*-0.00022311))
+(0.05114280*114.6)+((-0.00022311)*(114.6*114.6))
+predict(q_usa_mall, c(114.6,114.6^2),transf=exp)
+
+cb <- seq(0,114.6,length=114.6)
+cc <- seq(114.6,150, length=36)
+cd <- rep(18.74295236, times=36)
+ce <- rep(14.29844171, times=36)
+cf <- rep(24.56898942, times=36)
+
+pred_usa_mall2 <- predict(q_usa_mall, newmods=cbind(cb,cb^2))
+regplot(q_usa_mall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
+        col = "black",bg = "#1A5464", lcol = "#1A5464", cex.axis=1.2,cex.lab=1.4, cex.main=1.5,
+        ylim = c(0, 40), pred = pred_usa_mall2, xvals = cb, main="US Specific All Type LC Mortality")
+lines(cc,cd, lwd = "3", col = "#1A5464")
+lines(cc,ce, lwd = "1", lty = "dashed", col = "#1A5464")
+lines(cc,cf, lwd = "1", lty = "dashed", col = "#1A5464")
+
+#NOT US SPECIFIC - BOTH SEXES - MORTALITY ALL
+mort_all <- dataset %>%
+  filter(mortality == 1 & type_updated == 0)
+dim(table(mort_all$study))
+
+q_mort_all <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=mort_all, digits = 8, 
+                     random = ~ 1 | study, method = "REML")
+summary(q_mort_all)
+
+a <- seq(0,150,length=150)
+pred_mort_all <- predict(q_mort_all, newmods=cbind(a,a^2))
+regplot(q_mort_all, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 70), pred = pred_mort_all, xvals = a, main="Mortality All Type")
+
+-(0.04663543/(2*-0.00017518))
+(0.04663543*133.1)+((-0.00017518)*(133.1*133.1))
+predict(q_mort_all, c(133.1,133.1^2), transf=exp)
+
+cg <- seq(0,133.1,length=133.1)
+ch <- seq(133.1,150, length=17)
+ci <- rep(22.28205681, times=17)
+cj <- rep(17.79059553, times=17)
+ck <- rep(27.90744442, times=17)
+
+pred_mort_all2 <- predict(q_mort_all, newmods=cbind(cg,cg^2))
+regplot(q_mort_all, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
+        ylim = c(0, 70), pred = pred_mort_all2, xvals = cg, main="Mortality All Type")
+lines(ch,ci, lwd = "3", col = "black")
+lines(ch,cj, lwd = "1", lty = "dashed", col = "black")
+lines(ch,ck, lwd = "1", lty = "dashed", col = "black")
+
+#US SPECIFIC MALE + BOTH ALL TYPE MORTALITY
+
+usa_mbmall <- dataset %>%
+  filter(usa == 1, type_updated == 0 & sex == 1|sex == 2, mortality == 1)
+dim(table(usa_mbmall$study))
+
+q_usa_mbmall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_mbmall, digits = 8, 
+                       random = ~ 1 | study, method = "REML")
+summary(q_usa_mbmall)
+pred_usa_mbmall <- predict(q_usa_mbmall, newmods=cbind(a,a^2))
+regplot(q_usa_mbmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 60), pred = pred_usa_mbmall, xvals = a, main="US Men Mortality All Type")
+
+-(0.04495996/(2*-0.00014999))
+
+#US SPECIFIC FEMALE + BOTH ALL TYPE MORTALITY
+
+usa_fbmall <- dataset %>%
+  filter(usa == 1, type_updated == 0 & sex == 0|sex == 2, mortality == 1)
+dim(table(usa_fbmall$study))
+
+q_usa_fbmall <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=usa_fbmall, digits = 8, 
+                       random = ~ 1 | study, method = "REML")
+summary(q_usa_fbmall)
+pred_usa_fbmall <- predict(q_usa_fbmall, newmods=cbind(a,a^2))
+regplot(q_usa_fbmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE, 
+        ylim = c(0, 70), pred = pred_usa_fbmall, xvals = a, main="US Female Mortality All Type")
+
+-(0.05008818/(2*-0.00022812))
+(0.05008818*109.8)+((-0.00022812)*(109.8*109.8))
+predict(q_usa_fbmall, c(109.8,109.8^2), transf=exp)
+
+cl <- seq(0,109.8,length=109.8)
+cm <- seq(109.8,150, length=41)
+cn <- rep(15.63368750, times=41)
+co <- rep(11.52892795, times=41)
+cp <- rep(21.19990565, times=41)
+
+pred_usa_fbmall2 <- predict(q_usa_fbmall, newmods=cbind(cl,cl^2))
+regplot(q_usa_fbmall, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), shade =FALSE,
+        ylim = c(0, 70), pred = pred_usa_fbmall2, xvals = cl, main="US Female Mortality All Type")
+lines(cm,cn, lwd = "3", col = "black")
+lines(cm,co, lwd = "1", lty = "dashed", col = "black")
+lines(cm,cp, lwd = "1", lty = "dashed", col = "black")
+
+#BUBBLE PLOT
+
+usa_all <- dataset %>%
+  filter(usa == 1, type_updated == 0, mortality == 1)
+
+usa_all$inver_se <- 1/usa_all$se
+
+library(ggplot2)
+ggplot(usa_all, aes(dose, or, size=inver_se)) + geom_point (shape=1, colour="black") + scale_size_area(max_size=20) + xlab("Dose") + ylab("Relative Risk") + theme(
+  axis.title.x = element_text(size=14),
+  axis.title.y = element_text(size=14)
+) 
+
+usa_all <- usa_all[-c(24),]

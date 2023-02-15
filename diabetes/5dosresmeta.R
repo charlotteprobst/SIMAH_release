@@ -3,63 +3,62 @@ library(tidyverse)
 library(ggplot2)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
-                      col_types = c("numeric", "numeric", "text", "numeric", "numeric", 
+dataset_dos <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xlsx", 
+                      col_types = c("numeric","numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 ####MALE
 
+maled <- dataset_dos %>%
+  filter(sex ==1 & first_author != "Okamura" & first_author != "Park")
+maled <- maled[-c(19),]
+
 #LINEAR DOSE-RESPONSE
 
-male <- dataset %>%
-  filter(sex ==1)
-
-linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
-                          intercept = F, cases = cases, n = n, method = "reml", data = male)
-summary(linear_male)
-predict(linear_male, delta = 12, exp = TRUE)
+linear_maled <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se=se,
+                          intercept = F, cases = cases, n = n, method = "reml", data = maled)
+summary(linear_maled)
+predict(linear_maled, delta = 12, exp = TRUE)
 
 dosex_bin <- data.frame(dose=seq(0, 100, 1))
-with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE), 
-     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+with(predict(linear_maled, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
 
 #QUADRATIC DOSE-RESPONSE
 
-quad_male <- dosresmeta(formula = logrr ~ dose + I(dose^2), id = id, type = "ci", lb = rr.low, ub = rr.hi,
-                          intercept = F, cases = cases, n = n, method = "reml", data = male)
-summary(quad_male)
+quad_maled <- dosresmeta(formula = logrr ~ dose + I(dose^2), id = id, type = "ci", se=se,
+                          intercept = F, cases = cases, n = n, method = "reml", data = maled, proc = "1stage")
+summary(quad_maled)
 
-predict(quad_male, expo = TRUE)
-
-dosex_bin <- data.frame(dose=seq(0, 100, 1))
-with(predict(quad_male, dosex_bin, order=TRUE, exp=TRUE), 
-     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
+dosex_bin <- data.frame(dose=seq(0, 150, 1))
+with(predict(quad_maled, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Male")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
 
 #RESTRICTIVE CUBIC SPLINES
 library("rms")
-knotsm <- quantile(male$dose, c(.05, .35, .65, .95))
-splmale <- dosresmeta(formula = logrr ~ rcs(dose, knotsm), id = id, type = "ci", 
+knotsmd <- quantile(maled$dose, c(.05, .35, .65, .95))
+splmaled <- dosresmeta(formula = logrr ~ rcs(dose, knotsmd), id = id, type = "ci", 
                       cases = cases, n = n,
-                      data = male, se = se, proc = "1stage")
-summary(splmale)
+                      data = maled, se = se, proc = "1stage")
+summary(splmaled)
 
-dosex_bins <- data.frame(dose=seq(0, 100, 1))
+dosex_bins <- data.frame(dose=seq(0, 150, 1))
 xref <- 0
-with(predict(splmale, dosex_bins, xref, exp = TRUE),
-     {plot(get("rcs(dose, knotsm)dose"), pred, type= "l", ylim= c(0,3), ylab= "Relative risk", 
+with(predict(splmaled, dosex_bins, xref, exp = TRUE),
+     {plot(get("rcs(dose, knotsmd)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
            xlab= "Alcohol consumption, grams/day - Male")
-       matlines(get("rcs(dose, knotsm)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
+       matlines(get("rcs(dose, knotsmd)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
 
 #test non-linearity
-waldtest(b=coef(splmale), Sigma=vcov(splmale), Terms=c(2,3))
+waldtest(b=coef(splmaled), Sigma=vcov(splmaled), Terms=c(2,3))
 
 #goodness of fit
-models <- list(linear_male, quad_male, splmale)
+models <- list(linear_maled, quad_maled, splmaled)
 data.frame(do.call("rbind", lapply(models, function(m) 
   unlist(gof(m)[c("deviance","R2", "R2adj")]))))
 
@@ -73,49 +72,121 @@ lapply(models, function(m)
 )
 
 
-#CUBIC SPLINE MODEL - graph not working
-
-polymale <- dosresmeta(formula = logrr ~ poly(dose, degree=2, raw=TRUE), id = id, type = "ci", 
-                      cases = cases, n = n,
-                      data = male, se = se, proc = "1stage")
-summary(polymale)
-
-dosex_binp <- data.frame(dose=seq(0, 100, 1))
-xref <- 0
-with(predict(polymale, dosex_binp, xref, exp = TRUE),
-     {plot(dose, pred, type= "l", ylim= c(0,3), ylab= "Relative risk", 
-           xlab= "Alcohol consumption, grams/day - Male")
-       matlines(dose, cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
-
 #FEMALE
 
-female <- dataset %>%
+femaled <- dataset_dos %>%
   filter(sex ==0)
 
-lin_female <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se, intercept = F,
-                  cases = cases, n = n, data = female)
-summary(lin_female)
-predict(lin_female, delta = 12, exp = TRUE)
+femaled <- femaled[-c(16),]
 
-dosex_bin <- data.frame(dose=seq(0, 150, 1))
-with(predict(lin_female, dosex_bin, order=TRUE, exp=TRUE), 
+lin_femaled <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se, intercept = F,
+                  cases = cases, n = n, data = femaled)
+summary(lin_femaled)
+predict(lin_femaled, delta = 12, exp = TRUE)
+
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(lin_femaled, dosex_bin, order=TRUE, exp=TRUE), 
      {plot(dose, pred, type="l", col="blue", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Female")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
 
+#QUADRATIC DOSE-RESPONSE
+
+quad_femaled <- dosresmeta(formula = logrr ~ dose + I(dose^2), id = id, type = "ci", se=se,
+                        intercept = F, cases = cases, n = n, method = "reml", data = femaled, proc = "1stage")
+summary(quad_femaled)
+
+dosex_bin <- data.frame(dose=seq(0, 100, 1))
+with(predict(quad_femaled, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day - Female")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+
 #RESTRICTIVE CUBIC SPLINES
 
-knotsf <- quantile(female$dose, c(.05, .35, .65, .95))
-splfemale <- dosresmeta(formula = logrr ~ rcs(dose, knotsf), id = id, type = "ci", 
+knotsfd <- quantile(femaled$dose, c(.05, .35, .65, .95))
+splfemaled <- dosresmeta(formula = logrr ~ rcs(dose, knotsfd), id = id, type = "ci", 
                       cases = cases, n = n,
-                      data = female, se = se, proc = "1stage")
-summary(splfemale)
+                      data = femaled, se = se, proc = "1stage")
+summary(splfemaled)
+
+dosex_bins <- data.frame(dose=seq(0, 100, 1))
+xref <- 0
+with(predict(splfemaled, dosex_bins, xref, exp = TRUE),
+     {plot(get("rcs(dose, knotsfd)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
+           xlab= "Alcohol consumption, grams/day")
+       matlines(get("rcs(dose, knotsfd)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
+
+waldtest(b=coef(splfemaled), Sigma=vcov(splfemaled), Terms=2:3)
+
+predict(splfemaled, newmods= rcspline.eval(45, knotsfd, inclx=TRUE), exp=TRUE)
+
+dataTab <- data.frame(dose = seq(0, 20, 1))
+predSpl <- predict(splfemaled, dataTab, exp = TRUE)
+predSpl
+
+predict(splfemaled, 20, exp = TRUE)
+
+#####BOTH - not for publication
+
+both_dos <- dataset_dos[-c(45,46,47,48,49,50,51,199,200,201,202,203,204,205),]
+
+#LINEAR DOSE-RESPONSE
+
+linear_dos <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se,
+                         intercept = F, cases = cases, n = n, method = "reml", data = both_dos)
+summary(linear_dos)
+predict(linear_dos, delta = 60, exp = T)
+
+dosex_bin <- data.frame(dose=seq(0, 150, 1))
+with(predict(linear_dos, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+#graph with ggplot
+pred <- data.frame(dose = c(xref, seq(0, 100, 1))) %>%
+  predict(linear_dos, newdata = ., expo = T)
+
+ggplot(pred, aes(dose, pred, ymin = ci.lb, ymax = ci.ub)) +
+  geom_line() + geom_ribbon(alpha = .1) +
+  scale_y_continuous(trans = "log", breaks = scales::pretty_breaks()) +
+  labs(x = "Alcohol intake, grams/day", y = "Relative Risk")
+
+#QUADRATIC DOSE-RESPONSE
+
+quad_dos <- dosresmeta(formula = logrr ~ dose + I(dose^2), id = id, type = "ci", se = se,
+                       intercept = F, cases = cases, n = n, method = "reml", data = both_dos, proc = "1stage")
+summary(quad_dos)
+
+dosex_bin <- data.frame(dose=seq(0, 150, 1))
+with(predict(quad_dos, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="blue", ylim=c(0.5, 8), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
+       lines(dose, ci.lb, lty=2)
+       lines(dose, ci.ub, lty=2)})
+
+#graph with ggplot
+pred <- data.frame(dose = c(xref, seq(0, 100, 1))) %>%
+  predict(quad_dos, newdata = ., expo = T)
+
+ggplot(pred, aes(dose, pred, ymin = ci.lb, ymax = ci.ub)) +
+  geom_line() + geom_ribbon(alpha = .1) +
+  scale_y_continuous(trans = "log", breaks = scales::pretty_breaks()) +
+  labs(x = "Alcohol intake, grams/day", y = "Relative Risk")
+
+#RESTRICTIVE CUBIC SPLINES
+library("rms")
+knotsd <- quantile(both_dos$dose, c(.05, .35, .65, .95))
+spl_dos <- dosresmeta(formula = logrr ~ rcs(dose, knotsd), id = id, type = "ci", 
+                      cases = cases, n = n,
+                      data = both_dos, se = se, proc = "1stage")
+summary(spl_dos)
 
 dosex_bins <- data.frame(dose=seq(0, 150, 1))
 xref <- 0
-with(predict(splfemale, dosex_bins, xref, exp = TRUE),
-     {plot(get("rcs(dose, knotsf)dose"), pred, type= "l", ylim= c(0,3), ylab= "Relative risk", 
-           xlab= "Alcohol consumption, grams/day - Female")
-       matlines(get("rcs(dose, knotsf)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
+with(predict(spl_dos, dosex_bins, xref, exp = TRUE),
+     {plot(get("rcs(dose, knotsd)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
+           xlab= "Alcohol consumption, grams/day")
+       matlines(get("rcs(dose, knotsd)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
 
-waldtest(b=coef(splfemale), Sigma=vcov(splfemale), Terms=2:3)

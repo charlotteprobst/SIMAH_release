@@ -228,6 +228,8 @@ url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
 	generate liver = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K73", "K739") ///
 		| inrange(icd10, "K74", "K749")  | inlist(icd10, "K760", "K766") ///
 		| inrange(icd10, "B18", "B189")
+	replace liver = 1 if icd10 == "B171"  | icd10 == "B924" 
+
 	
 
 	// updated AUD 

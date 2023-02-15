@@ -114,7 +114,7 @@ save Mort_0004_edit.dta, replace
 // dofile 2005 - 2019
 // state fips codes not attached (state information missing in public death records since 2005)
 
-forval i = 2005(1)2020 {
+forval i = 2005(1)2021 {
 display `i'
 use "Mort`i'.dta", clear
 
