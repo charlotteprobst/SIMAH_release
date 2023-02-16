@@ -28,7 +28,7 @@ ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 
 #############################################################################################################
 # Specify which population counts and which level of detail should be computed
-k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 k.run <- "detail" # "ses" or "detail"
 k.weights <- FALSE 
 
