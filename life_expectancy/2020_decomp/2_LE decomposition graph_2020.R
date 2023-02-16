@@ -12,7 +12,7 @@ setwd("C:/Users/marie/Dropbox/NIH2020/")
 
 # Graph results by sex and SES or by sex, ses, and race
 k.run <- "detail" # "ses" or "detail"
-k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
 if(k.run == "detail") {
   if(k.pop_type=="ACS"){
@@ -177,7 +177,9 @@ dcomp_plot <- ggplot(data = dgathered,
         axis.title = element_text(size = 12), 
         axis.text = element_text(size = 12),
         legend.position = "right") +
-  xlab("Contribution in years of life expectancy")
+  xlab("Contribution in years of life expectancy") +
+  #scale_y_continuous(limits = c(-6.5, 5), breaks = seq(-6, 5, by = 1)) 
+  scale_y_continuous(limits = c(-6.5, 2.5), breaks = seq(-6, 2.5, by = 1))
 
 if (k.run == "detail") {
   dcomp_plot <- dcomp_plot + facet_grid(rows = vars(Sex, Race))
