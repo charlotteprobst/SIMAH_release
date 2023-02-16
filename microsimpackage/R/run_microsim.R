@@ -58,6 +58,7 @@ if(updatingeducation==1 & y>=2000){
   basepop <- rbind(totransition, tostay)
 }
 
+# TODO add more printing updates e.g. "alcohol transitions running"
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
   # if(y %in% transitionyears==TRUE){
@@ -131,10 +132,14 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
 basepop <- subset(basepop, microsim.init.age<=79)
 }
 # save output - depending on which was selected
+#### use a vector to contain the outputs we are interested in TODO
+# indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
+  # add samplenum and seed as an output for this function TODO
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor)
   }else if(output=="demographics"){
-  Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+    # add seed to the output file here TODO
+  SummaryPop <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
                                                   microsim.init.race=as.factor(microsim.init.race),
@@ -168,7 +173,8 @@ if(output=="mortality"){
     group_by(year, samplenum, microsim.init.sex, microsim.init.education, .drop=FALSE) %>%
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
-  Summary <- list(CatSummary)
+  # add former drinkers and lifetime abstainers to this summary TODO
+  SummaryAlc <- list(CatSummary)
 }
 return(Summary)
 }

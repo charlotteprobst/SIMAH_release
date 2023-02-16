@@ -14,7 +14,7 @@ sample_lhs <- function(N_SAMPLES, PE){
                 c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
                 c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
                 c("qnorm", -0.00031181, 0.00005372), #FBLIVER2
-                c("qunif", 1.2336, 4.9818) #FORMER DRINKERS
+                c("qunif", 1.2336, 4.9818) # LIVER FORMER DRINKERS
   )
   names(prior) <- c("B_HEPATITIS1","B_HEPATITIS2","B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "FORMERDRINKER"

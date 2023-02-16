@@ -100,6 +100,7 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 # load in alcohol transition rates
+#### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
 list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)
 alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
