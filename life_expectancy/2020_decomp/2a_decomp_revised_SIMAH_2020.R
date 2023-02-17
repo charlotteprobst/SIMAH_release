@@ -28,7 +28,7 @@ ACS_weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS")
 
 #############################################################################################################
 # Specify which population counts and which level of detail should be computed
-k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 k.run <- "detail" # "ses" or "detail"
 k.weights <- FALSE 
 
@@ -43,8 +43,8 @@ if(k.pop_type=="ACS"){
 
 
 if (k.pop_type != "CPS") {
-dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
-  select(!state)
+  dPop <- dPop %>% filter(state == "USA", year > 2017) %>%
+    select(!state)
 } else {
   dPop <- dPop %>% filter(year > 2017)
 }
@@ -74,7 +74,7 @@ if (k.run == "ses") {
   dMort_run <- dMort_d
   sel.vars <- c("year", "age_gp", "sex", "edclass", "race", v.rates) 
   # Generate a variable to loop over
-  dMort_run$group <- apply(dMort_run[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" )
+  dMort_run$group <- as.factor(apply(dMort_run[ , c("sex", "edclass", "race") ] , 1 , paste , collapse = "_" ))
 }
 
 # Calculate the rates for all relevant causes of death
@@ -119,13 +119,13 @@ for (j in (1:length(v.year1))){
     temp_contrib$start_year <- v.year1[j]
     temp_contrib$end_year <- v.year2[j]
     temp_contrib$LE1 <-  life_table_causes(nmx_by_cause_vector = US_y1_vector, age_vector = pull(US_y1,age_gp),
-                                     ax_vector = pull(US_y1, ax)) + min(pull(US_y1, age_gp))
+                                           ax_vector = pull(US_y1, ax)) + min(pull(US_y1, age_gp))
     temp_contrib$LE2 <-  life_table_causes(nmx_by_cause_vector = US_y2_vector, age_vector = pull(US_y2,age_gp),
-                                     ax_vector = pull(US_y2, ax)) + min(pull(US_y2, age_gp))
+                                           ax_vector = pull(US_y2, ax)) + min(pull(US_y2, age_gp))
     
     if (i == 1 & j == 1) {
       dResults_contrib <- temp_contrib
-          } else {
+    } else {
       dResults_contrib <- rbind(temp_contrib, dResults_contrib)
     }
   } 
@@ -134,12 +134,12 @@ for (j in (1:length(v.year1))){
 if (k.run == "ses") {
   dResults_contrib <- separate(dResults_contrib, col = group, into = c("sex","edclass"), sep = "_")
   dResults_contrib$edclass <- factor(dResults_contrib$edclass, 
-                                levels = c( "LEHS", "SomeC", "College"))
+                                     levels = c( "LEHS", "SomeC", "College"))
   dResults_contrib <- dResults_contrib[order(dResults_contrib$end_year, dResults_contrib$sex, dResults_contrib$edclass), ]
 } else if (k.run == "detail") {
   dResults_contrib <- separate(dResults_contrib, col = group, into = c("sex","edclass", "race"), sep = "_")
   dResults_contrib$edclass <- factor(dResults_contrib$edclass, 
-                                levels = c( "LEHS", "SomeC", "College"))
+                                     levels = c( "LEHS", "SomeC", "College"))
   dResults_contrib <- dResults_contrib[order(dResults_contrib$end_year, dResults_contrib$sex, dResults_contrib$edclass, dResults_contrib$race), ]
 }
 
@@ -155,6 +155,53 @@ write.csv(dMort_run,
                  k.run, "_", k.pop_type, ".csv"), 
           row.names = F)
 
+## Get aggregated motality data 
+if (k.run == "detail" & k.pop_type == "ACS") {
+  dMort_out <- aggregate(.~ year + sex + edclass + race , data =  dMort_run, FUN=sum)
+  dMort_out <- dMort_out %>% 
+    mutate_at(vars(race, sex, edclass), as.factor)
+  names(dMort_out) <- gsub(pattern = "mort", replacement = "", x = names(dMort_out)) 
+  levels(dMort_out$edclass) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
+  levels(dMort_out$sex) <- list(Men = "1", Women = "2")
+  dMort_out <- dMort_out %>% select(!c(group, age_gp)) %>% subset(year > 2018, race !="Other") %>%
+    rename("Total" = "t",
+           "Covid 19" = "cov",
+           "Influenza and pneumonia" = "flu", 
+           "Other infectious diseases" = "othinf", 
+           "Alcohol poisoning" = "alcpoi",
+           "Opioid poisoning" = "opioid",
+           "Suicide" = "sij",
+           "Motor vehicle accident" = "mvacc", 
+           "Unintentional injury*" = "uij",   
+           "Other injury" = "othj",   
+           "Alcohol use disorder" = "aud",
+           "Liver disease & cirrhosis" = "liver", 
+           "Kidney disease" = "kidney",
+           "Diabetes mellitus" = "dm",
+           "Dementia" = "dementia",
+           "Cerebrovascular diseases" = "stroke", 
+           "Diseases of the heart" = "heart", 
+           "Cancer" = "cancer", 
+           "Chronic lower respiratory diseases" = "resp", 
+           "Other NCDs" = "othncd",
+           "Rest" = "rest",
+           "Total population (ACS)" = "TPop",
+           "Year" = "year",
+           "Education" = "edclass", 
+           "Race/ethnicity" = "race",
+           "Sex" = "sex") %>%
+    mutate_if(is.numeric, round, 0) 
+  #dMort_out <- t(dMort_out)
+  write.csv(dMort_out, 
+            paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/dMort_summary",
+                   v.year1[1], "_", max(v.year2), "_", 
+                   k.run, "_", k.pop_type, ".csv"), 
+            row.names = F)
+  gather(data = dMort_out, 
+         key = Cause, - Year, -Sex, -"Race/ethnicity", -Education,
+          value = deaths)
+}
+
 ####################################################
 ####### calculate Results for 2020 weights  ########
 if (k.weights != TRUE) {
@@ -168,12 +215,12 @@ for(i in 1:length(ACS_weights)){
   if (k.run == "ses") {
     dPop_weights[[i]] <- ACS_weights[[i]] %>%
       group_by(year, sex, age_gp, edclass) %>% summarise(TPop=sum(TPop)) %>% 
-        mutate(age_gp=as.integer(age_gp))
-    } else if (k.run == "detail"){
-      dPop_weights[[i]] <- ACS_weights[[i]] %>%
-        group_by(year, sex, race, age_gp, edclass) %>% summarise(TPop=sum(TPop)) %>% 
-        mutate(age_gp=as.integer(age_gp))
-    }
+      mutate(age_gp=as.integer(age_gp))
+  } else if (k.run == "detail"){
+    dPop_weights[[i]] <- ACS_weights[[i]] %>%
+      group_by(year, sex, race, age_gp, edclass) %>% summarise(TPop=sum(TPop)) %>% 
+      mutate(age_gp=as.integer(age_gp))
+  }
 }
 
 dMort2020 <- dMort_run %>% filter(year==2020) %>% dplyr::select(-c(TPop, trate)) %>% 
@@ -183,7 +230,7 @@ mortlist <- list()
 for(i in 1:length(dPop_weights)){
   mortlist[[i]] <- left_join(dMort2020, dPop_weights[[i]]) %>% 
     pivot_longer(cols=c(tmort:restmort)) %>% 
-      mutate(rate = value/TPop,
+    mutate(rate = value/TPop,
            name = gsub("mort","rate",name),
            name = ifelse(name=="trate","trate",
                          paste0("mx_",name))) %>% 
@@ -210,8 +257,8 @@ year2 <- 2020
 dResults_contrib_list <- list()
 
 for(k in 1:length(mortlist)){
-
-    for(i in 1:length(v.group)) {
+  
+  for(i in 1:length(v.group)) {
     US_y1 <- filter(dMort_run, year==year1 &  group == v.group[i]) ## this one would then be i
     US_y2 <- filter(mortlist[[k]], year==year2 &  group == v.group[i])
     
@@ -267,28 +314,28 @@ if (k.run == "ses") {
         dResults_contrib_list[[i]]$edclass), ]
     dResults_contrib_list[[i]]$weight <- i
     dResults_contrib_list[[i]]$group <- NULL
-  #  names(dResults_contrib) <-  c("Life_expectancy", "Year", "Sex", "SES" )
-    }
-  } else if (k.run == "detail") {
-    for(i in 1:length(dResults_contrib_list)){
-      dResults_contrib_list[[i]] <- 
-        separate(dResults_contrib_list[[i]],
-                 col = group, 
-                 into = c("sex","edclass", "race"), sep = "_")
-      dResults_contrib_list[[i]]$edclass <- 
-        factor(dResults_contrib_list[[i]]$edclass,
-               levels = c( "LEHS", "SomeC", "College"))
-      dResults_contrib_list[[i]]$sex <- as.factor(dResults_contrib_list[[i]]$sex)
-      dResults_contrib_list[[i]] <- 
-        dResults_contrib_list[[i]][order(
-          dResults_contrib_list[[i]]$start_year, 
-          dResults_contrib_list[[i]]$sex, 
-          dResults_contrib_list[[i]]$edclass, 
-          dResults_contrib_list[[i]]$race),]
-      dResults_contrib_list[[i]]$weight <- i
-      dResults_contrib_list[[i]]$group <- NULL
-      #  names(dResults_contrib) <-  c("Life_expectancy", "Year", "Sex", "SES", "race )
-    }  
+    #  names(dResults_contrib) <-  c("Life_expectancy", "Year", "Sex", "SES" )
+  }
+} else if (k.run == "detail") {
+  for(i in 1:length(dResults_contrib_list)){
+    dResults_contrib_list[[i]] <- 
+      separate(dResults_contrib_list[[i]],
+               col = group, 
+               into = c("sex","edclass", "race"), sep = "_")
+    dResults_contrib_list[[i]]$edclass <- 
+      factor(dResults_contrib_list[[i]]$edclass,
+             levels = c( "LEHS", "SomeC", "College"))
+    dResults_contrib_list[[i]]$sex <- as.factor(dResults_contrib_list[[i]]$sex)
+    dResults_contrib_list[[i]] <- 
+      dResults_contrib_list[[i]][order(
+        dResults_contrib_list[[i]]$start_year, 
+        dResults_contrib_list[[i]]$sex, 
+        dResults_contrib_list[[i]]$edclass, 
+        dResults_contrib_list[[i]]$race),]
+    dResults_contrib_list[[i]]$weight <- i
+    dResults_contrib_list[[i]]$group <- NULL
+    #  names(dResults_contrib) <-  c("Life_expectancy", "Year", "Sex", "SES", "race )
+  }  
 }
 
 dResults_weights <- do.call(rbind, dResults_contrib_list)
@@ -304,5 +351,4 @@ write.csv(mortlist,
                  v.year1[1], "_", max(v.year2), "_", 
                  k.run, "_", "ACSweights.csv"), 
           row.names = F)
-
 
