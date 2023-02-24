@@ -19,7 +19,7 @@ LE_CPS_detail <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decom
 
 # Graph results by sex and SES or by sex, ses, and race
 k.run <- "detail" # "ses" or "detail"
-k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
 # for race and SES graphs
 if(k.run == "detail") {
@@ -40,16 +40,7 @@ if(k.run == "detail") {
    }
 }
 
-k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
-#load population data (raw vs modeled)
-if(k.pop_type=="ACS"){
-   dle_results <- r_ACS
-}else if(k.pop_type=="ACS_pred"){
-   dle_results <- r_ACS_pred 
-}else if (k.pop_type == "CPS") {
-   dle_results <- r_CPS
-}
 #dle_results <- dle_results %>% filter(Race != "Other", Year >2014)
 dle_results <- dle_results %>% filter(Year >2014)
 dle_results <- dle_results %>% mutate_at(vars(Sex, SES), as.factor)
@@ -64,7 +55,7 @@ color.vec <- c("#90be6d", "#f9c74f", "#f94144")
 
 
 # Plot on life expectancy by SES over time
-le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour = SES)) + 
+le_graph <- ggplot(data = dle_results[dle_results$Race != "Other",], aes(x = Year, y = Life_expectancy, colour = SES)) + 
    facet_grid(rows = vars(Sex), cols = vars(Race)) +
    ylab("Life expectancy at age 18") +
    theme_light()+
@@ -131,11 +122,3 @@ write.csv(LE_detail_combined,
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
                  "LifeExpectancy_combined_", k.run, "_1920.csv"), 
           row.names = F)   
-
-
-le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 
-                          color="red", size = 2) 
-
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
-
-

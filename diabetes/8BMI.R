@@ -11,7 +11,7 @@ library(rms)
 setwd("C:/Users/laura/Documents/CAMH/")
 
 library(readxl)
-dataset <- read_excel("DIABETES/analysis/SIMAH_workplace/8BMI.xlsx",
+dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/8BMI.xlsx",
                       col_types = c("numeric", "numeric", "numeric", "numeric", "text", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
@@ -65,7 +65,7 @@ regplot(quad_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relati
 predict(quad_normalm, c(15.5,15.5^2), transf=exp)
 
 #for figure3
-regplot(quad_normalm, mod="dose", ylab="Relative risk", lwd = c(3.5,1.5), lcol= "blue4",
+regplot(quad_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk", lwd = c(3.5,1.5), lcol= "blue4",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE, 
         ylim = c(0.4, 2), pred = pred_quad_normalm, xvals = ms, main="Men")
 abline(h=1)
@@ -107,7 +107,7 @@ regplot(linear_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative
 predict(linear_ovm, 0.57, transf=exp)
 
 #for figure 3
-regplot(linear_ovm, mod="dose", ylab="Relative Risk", 
+regplot(linear_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
         pred = pred_lin_ovm, xvals = ms, main="Overweight range")

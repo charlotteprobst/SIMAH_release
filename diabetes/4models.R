@@ -254,6 +254,14 @@ weights(rcs)
 #prediction rcs model
 predict(rcs, newmods= rcspline.eval(15, knots, inclx=TRUE), transf=exp)
 
+#TEST I2
+
+W <- diag(1/rcs$vi)
+X <- model.matrix(rcs)
+P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+100 * sum(rcs$sigma2) / (sum(rcs$sigma2) + (rcs$k-rcs$p)/sum(diag(P)))
+
+100 * rcs$sigma2 / (sum(rcs$sigma2) + (rcs$k-rcs$p)/sum(diag(P)))
 
 #######TO CHECK AND CORRECT: MULTIVARIATE FRACTIONAL POLYNOMIAL
 library(mfp)
