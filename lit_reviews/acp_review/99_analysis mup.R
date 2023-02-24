@@ -35,9 +35,9 @@ library(dmetar)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 07112022
+DATE <- 20230222
 
-dat.mup <- data.table(read.csv("data_acp_MUP_7112022.csv", na.strings = c("NA", "")))
+dat.mup <- data.table(read.csv("data_acp_MUP_20230222.csv", na.strings = c("NA", "")))
 
 # --------------------------------------------------------------------------------------
 
@@ -103,6 +103,7 @@ data.short <- data %>%
 
 meta.mup.short <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = data.short)
 meta.mup.short
+predict.short <- predict(meta.mup.short)
 
 pdf(paste0("figures/", DATE, "_Forest_MUPShort.pdf"), width=12, height=6)
 forest(meta.mup.short)
@@ -119,11 +120,11 @@ leave1out(meta.mup.short)
 
 # sensitivity analysis (without intercept): include alcoholic beverage as covariate
 
-meta.mup.short.sens <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ as.factor(beverage) -1, random = ~ 1 | ref/id, method = "REML", data = data.short)
+meta.mup.short.sens <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ as.factor(beverage) - 1, random = ~ 1 | ref/id, method = "REML", data = data.short)
 summary(meta.mup.short.sens)
 
 i2 <- var.comp(meta.mup.short.sens)
-summary(i2) #98.8
+summary(i2) #99.9
 
 # sensitivity analysis (without intercept): include alcoholic use assessment as covariate
 
@@ -135,7 +136,7 @@ summary(i2) #99.9
 
 # sensitivity analysis: ROB
 
-meta.mup.short.sens3 <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ rob, random = ~ 1 | ref/id, method = "REML", data = data.short)
+meta.mup.short.sens3 <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ as.factor(rob) - 1, random = ~ 1 | ref/id, method = "REML", data = data.short)
 summary(meta.mup.short.sens3)
 
 i2 <- var.comp(meta.mup.short.sens3)
@@ -147,6 +148,7 @@ summary(i2) #99.9
 
 meta.mup.long <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = data[out_period %like% "long"])
 meta.mup.long
+predict.long <- predict(meta.mup.long)
 
 pdf(paste0("figures/", DATE, "_Forest_MUPLong.pdf"), width=12, height=6)
 forest(meta.mup.long)
@@ -162,12 +164,7 @@ dev.off()
 leave1out(meta.mup.long)
 
 # sensitivity analysis: rob
-meta.mup.long.sens <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ rob, random = ~ 1 | ref/id, method = "REML", data = data[out_period %like% "long"])
-summary(meta.mup.long.sens)
-
-i2 <- var.comp(meta.mup.long.sens)
-summary(i2) #99.3
-
+data[out_period %like% "long"]$rob # all but one study have a critical risk of bias
 
 # ----------------------------------------------------------------
 # VISUALISATION - SHORT
@@ -192,8 +189,8 @@ data.short <- data.short %>%
 
 # new data with pooled estimate
 
-pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 13))
-colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "mp_bev", "int_year", "perc.change", "se", "var", "lci", "uci", "p")
+pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 14))
+colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "mp_bev", "int_year", "rob","perc.change", "se", "var", "lci", "uci", "p")
 pdat.est <- pdat.est %>%
   mutate(id = max(data.short$id) + 1,
          lab = "Weighted average",
@@ -203,14 +200,20 @@ pdat.est <- pdat.est %>%
          se = meta.mup.short$se,
          lci = meta.mup.short$ci.lb,
          uci = meta.mup.short$ci.ub,
+         pi.lci = meta.mup.short$pi.lb,
+         pi.uci = meta.mup.short$pi.ub,
          p = meta.mup.short$pval)
 
 # combine files
-pdat <- rbind(data.short[,.(id, lab, country, region, design_level, mp_bev, int_year, perc.change, se, var, lci, uci, p)], pdat.est)
+pdat <- rbind(data.short[,.(id, lab, country, region, design_level, mp_bev, int_year, rob, perc.change, se, var, lci, uci, p)], pdat.est)
 
 # labels
 
-pdat[, design.ordered := factor(design_level, levels = c("individual", "aggregate"))]
+pdat[, design.ordered := factor(ifelse(design_level == "individual" & rob == 0, "individual/low", 
+                                       ifelse(design_level == "individual" & rob == 1, "individual/high", 
+                                              ifelse(design_level == "aggregate" & rob == 0, "aggregate/low", 
+                                                     ifelse(design_level == "aggregate" & rob == 1, "aggregate/high", NA)))),
+                                       levels = c("individual/low", "individual/high", "aggregate/low", "aggregate/high"))]
 pdat[, bev.ordered := factor(mp_bev, levels = c("RTD", "cider", "spirits", "wine", "beer", "alcohol", ""))]
 pdat[, bev.ordered := factor(paste0(lab, "_", mp_bev),
                              levels = c("Weighted average_",
@@ -242,9 +245,9 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
                      labels = scales::percent_format(),
                      name = "\nChange in alcohol consumption") +
   scale_fill_manual(values = c("black", "white"), name = "", na.value = "#765874") +
-  scale_colour_manual(values = c("black", "black"), name = "", na.value = "#765874") +
+  scale_colour_manual(values = c("black", "grey"), name = "", na.value = "#765874") +
   scale_size_manual(values = c(3,3), na.value = 4) +
-  guides(size = "none", fill = "none", shape = "none", colour = "none",
+  guides(size = "none", shape = "none", fill = "none", colour = "none",
          y.sec = guide_axis_manual(breaks = pdat$bev.ordered, labels = pdat$est.lab)) +
   facet_grid(rows = vars(lab.ordered), scales = "free_y", space = "free", switch = "y") +
   xlab("") + 
@@ -257,7 +260,7 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
         panel.border = element_blank()) + 
   coord_flip(clip = "off")
 
-#ggsave(paste0("figures/", DATE, "_Fig 2_MUPShort.png"), dpi=300, width = 10, height = 8)
+#ggsave(paste0("figures/", DATE, "_Fig 2_MUPShort.png"), dpi=500, width = 10, height = 8)
 
 
 # ----------------------------------------------------------------
@@ -280,8 +283,8 @@ data.long <- data[out_period %like% "long"] %>%
 
 # new data with pooled estimate
 
-pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 13))
-colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "mp_bev", "int_year", "perc.change", "se", "var", "lci", "uci", "p")
+pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 14))
+colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "mp_bev", "int_year", "rob", "perc.change", "se", "var", "lci", "uci", "p")
 pdat.est <- pdat.est %>%
   mutate(id = max(data.long$id) + 1,
          lab = "Weighted average",
@@ -294,11 +297,15 @@ pdat.est <- pdat.est %>%
          p = meta.mup.long$pval)
 
 # combine files
-pdat <- rbind(data.long[,.(id, lab, country, region, design_level, mp_bev, int_year, perc.change, se, var, lci, uci, p)], pdat.est)
+pdat <- rbind(data.long[,.(id, lab, country, region, design_level, mp_bev, int_year, rob, perc.change, se, var, lci, uci, p)], pdat.est)
 
 # labels
 
-pdat[, design.ordered := factor(design_level, levels = c("individual", "aggregate"))]
+pdat[, design.ordered := factor(ifelse(design_level == "individual" & rob == 0, "individual/low", 
+                                       ifelse(design_level == "individual" & rob == 1, "individual/high", 
+                                              ifelse(design_level == "aggregate" & rob == 0, "aggregate/low", 
+                                                     ifelse(design_level == "aggregate" & rob == 1, "aggregate/high", NA)))),
+                                levels = c("individual/low", "individual/high", "aggregate/low", "aggregate/high"))]
 pdat[, bev.ordered := factor(mp_bev, levels = c("RTD", "cider", "spirits", "wine", "beer", "alcohol", ""))]
 pdat[, bev.ordered := factor(paste0(lab, "_", mp_bev),
                              levels = c("Weighted average_",
@@ -324,7 +331,7 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
                      labels = scales::percent_format(),
                      name = "\nChange in alcohol consumption") +
   scale_fill_manual(values = c("black", "white"), name = "", na.value = "#765874") +
-  scale_colour_manual(values = c("black", "black"), name = "", na.value = "#765874") +
+  scale_colour_manual(values = c("black", "grey"), name = "", na.value = "#765874") +
   scale_size_manual(values = c(3,3), na.value = 4) +
   guides(size = "none", fill = "none", shape = "none", colour = "none",
          y.sec = guide_axis_manual(breaks = pdat$bev.ordered, labels = pdat$est.lab)) +
@@ -339,5 +346,5 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
         panel.border = element_blank()) + 
   coord_flip(clip = "off")
 
-#ggsave(paste0("figures/", DATE, "_Fig 3_MUPLong.png"), dpi=300, width = 10, height = 4)
+#ggsave(paste0("figures/", DATE, "_Fig 3_MUPLong (Suppl).png"), dpi=500, width = 10, height = 4)
 

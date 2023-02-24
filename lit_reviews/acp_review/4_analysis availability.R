@@ -23,6 +23,7 @@ library(meta)
 library(metafor)
 library(dmetar)
 library(ggh4x)
+library(ggthemes)
 
 # --------------------------------------------------------------------------------------
 
@@ -34,9 +35,9 @@ library(ggh4x)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 07112022
+DATE <- 20230222
 
-dat.tav <- data.table(read.csv("data_acp_TAV_7112022.csv", na.strings = c("NA", "")))
+dat.tav <- data.table(read.csv("data_acp_TAV_20230222.csv", na.strings = c("NA", "")))
 
 # --------------------------------------------------------------------------------------
 
@@ -73,6 +74,7 @@ data.short <- data.short %>%
 
 meta.tav <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = data.short)
 meta.tav
+predict(meta.tav)
 
 pdf(paste0("figures/", DATE, "_Forest_TAV.pdf"), width=8, height=6)
 forest(meta.tav)
@@ -96,13 +98,22 @@ summary(meta.tav.sens)
 i2 <- var.comp(meta.tav.sens)
 summary(i2) #76.2
 
-
 # sensitivity analysis: rob
-meta.tav.sens2 <- rma.mv(yi = perc.change, V = var, slab = lab, mods = ~ rob, random = ~ 1 | ref/id, method = "REML", data = data.short)
-summary(meta.tav.sens2)
+data.short[, table(rob)]
+meta.tav.sens2 <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = data.short[rob == 0])
+meta.tav.sens2
 
-i2 <- var.comp(meta.tav.sens2)
-summary(i2) #81.4
+# sensitivity analysis: study design
+data.short[, table(study_design)]
+meta.tav.sens3 <- rma.uni(yi = perc.change, sei = se, slab = lab, method = "DL", data = data.short[!study_design %like% "cross-sectional"])
+meta.tav.sens3
+
+# sensitivity analysis: permitting Sunday sales only
+data.short[, table(int_direction)]
+data.short[, lib.perc.change := perc.change * -1]
+meta.tav.sens4 <- rma.uni(yi = lib.perc.change, sei = se, slab = lab, method = "DL", data = data.short[int_direction %like% "liberalization"])
+meta.tav.sens4
+
 
 # ----------------------------------------------------------------
 # VISUALISATION 
@@ -126,8 +137,8 @@ data.short <- data.short %>%
 
 # new data with pooled estimate
 
-pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 13))
-colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "out_bev", "int_year", "perc.change", "se", "var", "lci", "uci", "p")
+pdat.est <- as.data.frame(matrix(nrow = 1, ncol = 14))
+colnames(pdat.est) <- c("id", "lab", "country", "region", "design_level", "out_bev", "int_year", "rob", "perc.change", "se", "var", "lci", "uci", "p")
 pdat.est <- pdat.est %>%
   mutate(id = max(data.short$id) + 1,
          lab = "Weighted average",
@@ -140,11 +151,15 @@ pdat.est <- pdat.est %>%
          p = meta.tav$pval)
 
 # combine files
-pdat <- rbind(data.short[,.(id, lab, country, region, design_level, out_bev, int_year, perc.change, se, var, lci, uci, p)], pdat.est)
+pdat <- rbind(data.short[,.(id, lab, country, region, design_level, out_bev, int_year, rob, perc.change, se, var, lci, uci, p)], pdat.est)
 
 # labels
 
-pdat[, design.ordered := factor(design_level, levels = c("individual", "aggregate"))]
+pdat[, design.ordered := factor(ifelse(design_level == "individual" & rob == 0, "individual/low", 
+                                       ifelse(design_level == "individual" & rob == 1, "individual/high", 
+                                              ifelse(design_level == "aggregate" & rob == 0, "aggregate/low", 
+                                                     ifelse(design_level == "aggregate" & rob == 1, "aggregate/high", NA)))),
+                                levels = c("individual/low", "individual/high", "aggregate/low", "aggregate/high"))]
 pdat[, bev.ordered := factor(out_bev, levels = c("RTD", "cider", "spirits", "wine", "beer", "alcohol", ""))]
 pdat[, bev.ordered := factor(paste0(lab, "_", out_bev),
                              levels = c("Weighted average_",
@@ -154,11 +169,12 @@ pdat[, bev.ordered := factor(paste0(lab, "_", out_bev),
                                         "Stehr et al 2007:\nUSA_spirits", "Stehr et al 2007:\nUSA_beer",
                                         "Carpenter et al 2009:\nCanada_alcohol"))]
 pdat <- separate(pdat, col=bev.ordered, into=c("lab.rest", "bev.lab"), sep="_", remove = F)
-pdat[, lab.ordered := factor(lab, levels = c("Carpenter et al 2009:\nCanada",
+pdat[, lab.ordered := factor(ifelse(!lab %like% "Stehr|average", paste0(lab, "*"), ifelse(lab %like% "Stehr|average", lab, NA)), 
+                             levels = c("Carpenter et al 2009:\nCanada*",
                                              "Stehr et al 2007:\nUSA",
-                                             "Yörük et al 2013:\nUSA",
-                                             "Grönqvist et al 2014:\nSweden",
-                                             "Norström et al 2005:\nSweden",
+                                             "Yörük et al 2013:\nUSA*",
+                                             "Grönqvist et al 2014:\nSweden*",
+                                             "Norström et al 2005:\nSweden*",
                                              "Weighted average"))]
 pdat[, est.lab := paste0(format(round(pdat$perc.change*100, 1), digits = 1), "% (",
                          format(round(pdat$lci*100, 1), digits = 2), "%, ", 
@@ -175,10 +191,10 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
   scale_y_continuous(breaks = c(-.2, -.15, -.1, -.05, 0, 0.05, 0.1), limits = c(-.2, 0.1), 
                      labels = scales::percent_format(),
                      name = "\nChange in alcohol consumption") +
-  scale_fill_manual(values = c("black", "white"), name = "", na.value = "#765874") +
-  scale_colour_manual(values = c("black", "black"), name = "", na.value = "#765874") +
-  scale_size_manual(values = c(3,3), na.value = 4) +
-  guides(size = "none", fill = "none", shape = "none", colour = "none",
+  scale_fill_manual(values = c("black", "white", "white"), name = "", na.value = "#765874") +
+  scale_colour_manual(values = c("black", "black", "grey"), name = "", na.value = "#765874") +
+  scale_size_manual(values = c(3,3,3), na.value = 4) +
+  guides(size = "none", shape = "none", fill = "none", colour = "none",
          y.sec = guide_axis_manual(breaks = pdat$bev.ordered, labels = pdat$est.lab)) +
   facet_grid(rows = vars(lab.ordered), scales = "free_y", space = "free", switch = "y") +
   xlab("") + 
@@ -191,5 +207,5 @@ ggplot(data = pdat, aes(x = bev.ordered, y = perc.change)) +
         panel.border = element_blank()) + 
   coord_flip(clip = "off")
 
-#ggsave(paste0("figures/", DATE, "_Fig 4_TAV.png"), dpi=300, width = 10, height = 6)
+#ggsave(paste0("figures/", DATE, "_Fig 4_TAV.png"), dpi=500, width = 10, height = 6)
 

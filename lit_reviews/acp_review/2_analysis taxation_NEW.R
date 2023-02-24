@@ -35,9 +35,9 @@ library(ggthemes)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 28122022
+DATE <- 20230222
 
-dat.tax <- data.table(read.csv("data_acp_TAX_29112022.csv", na.strings = c("NA", "")))
+dat.tax <- data.table(read.csv("data_acp_TAX_20230222.csv", na.strings = c("NA", "")))
 gdp <- data.table(read.csv("gdp_ppp_29092022.csv", na.strings = ""))
 
 # --------------------------------------------------------------------------------------
@@ -103,66 +103,78 @@ pdat <- data %>%
   mutate(id = 1:length(perc.change))
 
 # ----------------------------------------------------------------
-# META REGRESSION -> needs to be decided whether single- or multi-level model
+# META REGRESSION 
 # ----------------------------------------------------------------
 
 hist(pdat$perc.change)
 
-# main model
+# main model (random intercept)
 
 metareg <- rma.mv(yi = perc.change,  V = var, slab = ref, mods = ~ tax_change + z.gdp, random = ~ 1 | ref/id, method = "REML", data = pdat)
 summary(metareg)
+predict(metareg, newmods = c(1, 0))
 
-metareg.sens <- rma.uni(yi = perc.change,  sei = se, slab = ref, mods = ~ tax_change + z.gdp + ref, test = "knha", method = "DL", data = pdat)
-summary(metareg.sens)
+# I2
+i2 <- var.comp(metareg)
+summary(i2) #98.4
 
 # publication bias
-
 pdf(paste0("figures/", DATE, "_Funnel_TAX.pdf"), width=8, height=6)
 funnel(metareg)
 dev.off()
 
-# I2
+# SA1 (covariate model)
 
-i2 <- var.comp(metareg)
-summary(i2) #98.3
+metareg.sens <- rma.uni(yi = perc.change,  sei = se, slab = ref, mods = ~ tax_change + z.gdp + ref, test = "knha", method = "DL", data = pdat)
+summary(metareg.sens) # I2 = 31.7%
 
-# repeat but exclude Heeb et al_2003 and Alexeev et al_2021
+# SA2: tax increase only
 
-metareg.sens2 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp, random = ~ 1 | ref/id, method = "REML", data = pdat[ref != "Heeb et al_2003" & ref != "Alexeev et al_2021"])
+metareg.sens2 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp, random = ~ 1 | ref/id, method = "REML", data = pdat[tax_change >= 0])
 metareg.sens2 # no impact
 
+#I2
 i2 <- var.comp(metareg.sens2)
-summary(i2) #97.9
+summary(i2) #98.5
 
 # investigation of additional covariates
 
-# individual vs. aggregated data
+# SA3: individual vs. aggregated data
 
 data[, table(ref, design_level)] 
 data[, design_level := as.factor(design_level)]
 
-metareg.sens3 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + design_level, random = ~ 1 | ref/id, method = "REML", data = pdat)
+metareg.sens3 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + as.factor(design_level), random = ~ 1 | ref/id, method = "REML", data = pdat)
 metareg.sens3 # no impact
 
+#I2
 i2 <- var.comp(metareg.sens3)
-summary(i2) #98.8
+summary(i2) #98.9
 
-# beverage-specific versus holistic policy
+# SA4: beverage-specific versus holistic policy
 
-metareg.sens4 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + beverage, random = ~ 1 | ref/id, method = "REML", data = pdat)
+metareg.sens4 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + as.factor(beverage), random = ~ 1 | ref/id, method = "REML", data = pdat)
 metareg.sens4 # no impact
 
+#I2
 i2 <- var.comp(metareg.sens4)
-summary(i2) #98.7
+summary(i2) #98.8
 
-# ROB
-
-metareg.sens5 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + rob, random = ~ 1 | ref/id, method = "REML", data = pdat)
+# SA5: excluding those with critical ROB
+metareg.sens5 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp, random = ~ 1 | ref/id, method = "REML", data = pdat[rob == 0])
 metareg.sens5 # no impact
 
+#I2
 i2 <- var.comp(metareg.sens5)
-summary(i2) #98.8
+summary(i2) #99.1
+
+# SA6: study design
+metareg.sens6 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + as.factor(study_design), random = ~ 1 | ref/id, method = "REML", data = pdat)
+metareg.sens6 # no impact
+
+#I2
+i2 <- var.comp(metareg.sens6)
+summary(i2) #92.5
 
 # ----------------------------------------------------------------
 # VISUALISATION
@@ -174,12 +186,16 @@ shape <- c(24, 23)
 
 # labels
 
-pdat[, bev.ordered := factor(ifelse(study_type %like% "intervention" & beverage %like% "holistic", "holistic", 
-                                    ifelse(study_type %like% "intervention" & beverage %like% "specific", "specific",
-                                           ifelse(study_type %like% "correlation", "correlation", NA))), 
-                             levels = c("specific", "holistic", "correlation"))]
+pdat[, bev.ordered := factor(ifelse(study_type %like% "intervention" & beverage %like% "holistic" & rob == 0, "holistic/low", 
+                                    ifelse(study_type %like% "intervention" & beverage %like% "holistic" & rob == 1, "holistic/high", 
+                                          ifelse(study_type %like% "intervention" & beverage %like% "specific" & rob == 0, "specific/low",
+                                                 ifelse(study_type %like% "intervention" & beverage %like% "specific" & rob == 1, "specific/high",
+                                                        ifelse(study_type %like% "correlation" & rob == 0, "correlation/low", 
+                                                               ifelse(study_type %like% "correlation" & rob == 1, "correlation/high", NA)))))), 
+                             levels = c("specific/low", "specific/high", "holistic/low", "holistic/high", "correlation/low", "correlation/high"))]
 pdat[, tax.policy := as.factor(beverage)]
 pdat[, study_type := as.factor(study_type)]
+pdat[, rob := as.factor(rob)]
 pdat[, inv.var := 1 / (se^2)]
 
 # meta reg prediction
@@ -191,15 +207,17 @@ pred <- cbind(pred.val, as.data.frame(predict(metareg, newmods=cbind(pred.val, c
 
 ggplot() +
   geom_point(data = pdat, 
-             aes(x=tax_change, y=perc.change, size=inv.var, shape=tax.policy, fill=bev.ordered)) +
+             aes(x=tax_change, y=perc.change, size=inv.var, shape=tax.policy, fill=bev.ordered, color=rob)) +
   geom_vline(xintercept = 0, size = .2) +
   geom_hline(yintercept = 0, size = .2) +
   geom_line(data = pred, aes(x=pred.val, y = pred), colour = "#765874") +
   geom_line(data = pred, aes(x=pred.val, y = ci.lb), linetype = "dashed", colour = "#B397AB") +
   geom_line(data = pred, aes(x=pred.val, y = ci.ub), linetype = "dashed", colour = "#B397AB") +
+  geom_line(data = pred, aes(x=pred.val, y = pi.lb), linetype = "dotted", colour = "grey") +
+  geom_line(data = pred, aes(x=pred.val, y = pi.ub), linetype = "dotted", colour = "grey") +
   scale_size(range = c(3,9)) +
- # scale_color_manual(values = c("black", "grey"), name = "Independent variable") +
-  scale_fill_manual(values = c("black", "black", NA), name = "", na.value = "white") +
+  scale_color_manual(values = c("black", "grey"), name = "") +
+  scale_fill_manual(values = c("grey", "black", "grey", NA, NA), name = "", na.value = "white") +
   scale_shape_manual(values = shape, name = "") +
   scale_x_continuous(breaks = c(-.5, -.25, 0, .25, .5, .75, 1, 1.25), 
                      limits = c(-.5, 1.25), 
@@ -213,5 +231,5 @@ ggplot() +
   theme_base() +
   theme(axis.title = element_text(size = 14))
 
-#ggsave(paste0("figures/", DATE, "_Fig 1_TAX2.png"), dpi=300, width = 8, height = 6)
+#ggsave(paste0("figures/", DATE, "_Fig 1_TAX.png"), dpi=500, width = 8, height = 6)
 
