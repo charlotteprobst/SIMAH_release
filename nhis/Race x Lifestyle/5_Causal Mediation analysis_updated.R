@@ -14,8 +14,8 @@ library(knitr)      # formatted table
 
 # Specify the data and output file locations
 
-data <- "~/Dropbox/Mac/Desktop/Public Health Institute/Alcohol Research Group/Bash/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
-output <- "~/Dropbox/Mac/Desktop/Public Health Institute/Alcohol Research Group/Bash/SIMAH/SIMAH_workplace/nhis/Restricted access data/Causal mediation/Race x Lifestyle/CausMed/18-85 years old/"
+data <- "~/Dropbox/Mac/Desktop/Public Health Institute/Alcohol Research Group/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
+output <- "~/Dropbox/Mac/Desktop/Public Health Institute/Alcohol Research Group/SIMAH/SIMAH_workplace/nhis/Restricted access data/Causal mediation/Race x Lifestyle/CausMed/18-85 years old/"
 
 source("5_Causal Mediation functions.R")
 
