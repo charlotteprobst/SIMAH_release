@@ -10,6 +10,8 @@
 
 # --------------------------------------------------------------------------------------
 
+rm(list = ls())
+
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 # LIBARIES
@@ -56,15 +58,16 @@ wtd.ub <- function(x, w) {
 # LOAD DATA
 # ----------------------------------------------------------------
 
-rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230213
+DATE <- 20230228
 
 datBRFSS <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
 datIND <- datBRFSS[State %like% "Indiana"]
 
-datUNEMP <- data.table(read.xlsx("acp_brfss/data/20230209_UNEMPLOYMENT_Indiana.xlsx", sheet = 1, startRow = 12))
-
+datUNEMP <- data.table(read.csv("acp_brfss/data/20230228_INDIANAunempPREP.csv"))
+datGDP <- read.xlsx("acp_brfss/data/20230228_INDIANA_GDP.xlsx", sheet = 1, startRow = 1) %>% select("year","gdp") %>% data.table()
+datPOP <- data.table(read.csv("acp_brfss/data/20230228_INDIANApopPREP.csv"))
+ 
 # --------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------
@@ -105,20 +108,17 @@ datIND[, GPD_upshifted_capped := ifelse(gramsperday_upshifted > 200, 200, gramsp
 datIND[, GPD_orig_capped := ifelse(gramsperday_orig > 200, 200, gramsperday_orig)]
 
 # drop abstainers
-data <- datIND[drinkingstatus_upshifted == 1]
+#data <- datIND[drinkingstatus_upshifted == 1]
+data <- datIND[drinkingstatus_orig == 1]
 
-# unemployment data
-datUNEMP <- datUNEMP %>% 
-  mutate(Q = ifelse(Period %like% "M01|M02|M03", 125, ifelse(Period %like% "M04|M05|M06", 375, ifelse(Period %like% "M07|M08|M09", 625, ifelse(Period %like% "M10|M11|M12", 875, NA)))),
-       QYEAR = paste0(Year, ".", Q)) %>%
-  group_by(QYEAR) %>%
-  summarise(unemp.rate = mean(Observation.Value)) %>% 
-  filter(as.numeric(QYEAR) < 2020.375) %>% as.data.table()
-
-ggplot(data = datUNEMP) + geom_line(aes(x = as.numeric(QYEAR), y = unemp.rate))
-
+# add covariates
 data <- merge(data[, QYEAR := as.numeric(QYEAR)], datUNEMP[, QYEAR := as.numeric(QYEAR)], by = "QYEAR")
+data <- merge(data[, YEAR := as.numeric(YEAR)], datGDP[, YEAR := as.numeric(year)], by = "YEAR")
+data <- merge(data[, YEAR := as.numeric(YEAR)], datPOP[, YEAR := as.numeric(year)], by = "YEAR")
 
+# select data
+data <- data[, .(YEAR, QYEAR, INT_YEAR, INT_QYEAR, final_sample_weight, State, sex, education, group, GPD_orig_capped, unemp.rate, w.unemp.rate, m.unemp.rate, gdp, pop18_24, w.pop18_24, m.pop18_24)]
+  
 # ----------------------------------------------------------------
 # EXPLORE DATA
 # ----------------------------------------------------------------
@@ -126,8 +126,11 @@ data <- merge(data[, QYEAR := as.numeric(QYEAR)], datUNEMP[, QYEAR := as.numeric
 # participants by groups
 ggplot(data = data, aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline(yintercept = c(50, 100)) + 
   facet_grid(rows = vars(as.factor(education)), cols = vars(as.factor(sex)), scales = "free_y") +
+  scale_x_continuous(breaks = seq(2000, 2020, 1), limits = c(2000, 2020)) +
   theme_bw() + theme(axis.text.x = element_text(angle = 90), strip.background = element_rect(fill="white")) 
 #ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HIST_BY_GROUP.png'), dpi=300, width = 12, height = 7)
+
+data <- data[QYEAR > 2002]
 
 # ----------------------------------------------------------------
 # OUTCOME 1: GPD
@@ -135,7 +138,7 @@ ggplot(data = data, aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hlin
 
 # GPD distrubtion unweighted
 ggplot(data = data) +
-  geom_smooth(aes(x = QYEAR, y = GPD_upshifted_capped)) + 
+  geom_smooth(aes(x = QYEAR, y = GPD_orig_capped)) + 
   geom_vline(aes(xintercept = INT_QYEAR)) +
   scale_x_continuous(breaks = seq(2000, 2020, 1)) +
   facet_grid(rows = vars(as.factor(education)), cols = vars(sex), scales = "free") +
@@ -147,11 +150,12 @@ ggplot(data = data) +
 # GPD weighted (simply weights, not accounting for sampling design)
 wdat.gpd.sex <- data %>% 
   group_by(QYEAR, sex) %>%
-  summarise(GPD = wtd.mean(GPD_upshifted_capped, final_sample_weight),
-            GPD.LB = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.UB = wtd.ub(GPD_upshifted_capped, final_sample_weight),
+  summarise(GPD = wtd.mean(GPD_orig_capped, final_sample_weight),
+            GPD.LB = wtd.lb(GPD_orig_capped, final_sample_weight),
+            GPD.UB = wtd.ub(GPD_orig_capped, final_sample_weight),
             n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+            INT_QYEAR = mean(INT_QYEAR), w.unemp.rate = mean(w.unemp.rate), m.unemp.rate = mean(m.unemp.rate),
+            gdp = mean(gdp), pop18_24 = mean(pop18_24), w.pop18_24 = mean(w.pop18_24), m.pop18_24 = mean(m.pop18_24)) %>% as.data.table()
 
 wdat.gpd.sex.long <- reshape(wdat.gpd.sex, idvar = c("QYEAR", "sex", "n", "INT_QYEAR"),
                      varying = c("GPD", "GPD.LB", "GPD.UB"), v.name = c("GPD"), 
@@ -169,11 +173,12 @@ ggplot(data = wdat.gpd.sex.long) + geom_line(aes(x = QYEAR, y = GPD, color = tim
 # GPD weighted (simply weights, not accounting for sampling design)
 wdat.gpd.ses <- data %>% 
   group_by(QYEAR, education) %>%
-  summarise(GPD = wtd.mean(GPD_upshifted_capped, final_sample_weight),
-            GPD.LB = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.UB = wtd.ub(GPD_upshifted_capped, final_sample_weight),
+  summarise(GPD = wtd.mean(GPD_orig_capped, final_sample_weight),
+            GPD.LB = wtd.lb(GPD_orig_capped, final_sample_weight),
+            GPD.UB = wtd.ub(GPD_orig_capped, final_sample_weight),
             n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate),
+            gdp = mean(gdp), pop18_24 = mean(pop18_24), w.pop18_24 = mean(w.pop18_24), m.pop18_24 = mean(m.pop18_24)) %>% as.data.table()
 
 wdat.gpd.ses.long <- reshape(wdat.gpd.ses, idvar = c("QYEAR", "education", "n", "INT_QYEAR"),
                      varying = c("GPD", "GPD.LB", "GPD.UB"), v.name = c("GPD"), 
@@ -191,11 +196,12 @@ ggplot(data = wdat.gpd.ses.long) + geom_line(aes(x = QYEAR, y = GPD, color = tim
 # GPD weighted (simply weights, not accounting for sampling design)
 wdat.gpd <- data %>% 
   group_by(QYEAR, sex, education) %>%
-  summarise(GPD = wtd.mean(GPD_upshifted_capped, final_sample_weight),
-            GPD.LB = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.UB = wtd.ub(GPD_upshifted_capped, final_sample_weight),
+  summarise(GPD = wtd.mean(GPD_orig_capped, final_sample_weight),
+            GPD.LB = wtd.lb(GPD_orig_capped, final_sample_weight),
+            GPD.UB = wtd.ub(GPD_orig_capped, final_sample_weight),
             n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+            INT_QYEAR = mean(INT_QYEAR), w.unemp.rate = mean(w.unemp.rate), m.unemp.rate = mean(m.unemp.rate),
+            gdp = mean(gdp), pop18_24 = mean(pop18_24), w.pop18_24 = mean(w.pop18_24), m.pop18_24 = mean(m.pop18_24)) %>% as.data.table()
 
 wdat.gpd.long <- reshape(wdat.gpd, idvar = c("QYEAR", "sex", "education", "n", "INT_QYEAR"),
                      varying = c("GPD", "GPD.LB", "GPD.UB"), v.name = c("GPD"), 
@@ -213,9 +219,9 @@ ggplot(data = wdat.gpd.long) + geom_line(aes(x = QYEAR, y = GPD, color = time)) 
 # ----------------------------------------------------------------
 
 # subset
-sub <- data[sex == "Women" & GPD_upshifted_capped > 14 | sex == "Men" & GPD_upshifted_capped > 28,] 
-  # 20 / 40: n = 9244
-  # 14 / 28: n = 13388
+sub <- data[sex == "Women" & GPD_orig_capped >= 14 | sex == "Men" & GPD_orig_capped >= 28,] 
+  # 20 / 20: n = 8127 (original)
+  # 14 / 28: n = 8605 (original)
 
 # available participants by group -> by SEX and SES not possible due to low n
 ggplot(data = sub, aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline(yintercept = c(50, 100)) + 
@@ -229,20 +235,28 @@ ggplot(data = sub, aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline
   theme_bw() + theme(axis.text.x = element_text(angle = 90), strip.background = element_rect(fill="white")) 
 
 # reduce SES groups to two ? different level of consumption across groups
-wtd.mean(sub[education == "LEHS"]$GPD_upshifted_capped) # 57g
-wtd.mean(sub[education == "SomeC"]$GPD_upshifted_capped) # 47g
-wtd.mean(sub[education == "College"]$GPD_upshifted_capped) # 40g
+wtd.mean(sub[education == "LEHS"]$GPD_orig_capped) # 47g
+wtd.mean(sub[education == "SomeC"]$GPD_orig_capped) # 38g
+wtd.mean(sub[education == "College"]$GPD_orig_capped) # 33g
+  
+# combine LEHS and SomeC for subanalysis
+sub[, education := ifelse(education %like% "LEHS|SomeC", "LEHS/SomeC", ifelse(education %like% "College", "College", NA))]
+
+ggplot(data = sub, aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline(yintercept = c(50, 100)) + 
+  facet_grid(rows = vars(as.factor(education)), scales = "free_y") +
+  theme_bw() + theme(axis.text.x = element_text(angle = 90), strip.background = element_rect(fill="white")) 
 
 # SEX
 
 # GPD weighted (simply weights, not accounting for sampling design)
 sub.sex <- sub %>% 
   group_by(QYEAR, sex) %>%
-  summarise(GPD = wtd.mean(GPD_upshifted_capped, final_sample_weight),
-            GPD.LB = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.UB = wtd.ub(GPD_upshifted_capped, final_sample_weight),
+  summarise(GPD = wtd.mean(GPD_orig_capped, final_sample_weight),
+            GPD.LB = wtd.lb(GPD_orig_capped, final_sample_weight),
+            GPD.UB = wtd.ub(GPD_orig_capped, final_sample_weight),
             n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+            INT_QYEAR = mean(INT_QYEAR), w.unemp.rate = mean(w.unemp.rate), m.unemp.rate = mean(m.unemp.rate),
+            gdp = mean(gdp), pop18_24 = mean(pop18_24), w.pop18_24 = mean(w.pop18_24), m.pop18_24 = mean(m.pop18_24)) %>% as.data.table()
 
 sub.sex.long <- reshape(sub.sex, idvar = c("QYEAR", "sex", "n", "INT_QYEAR"),
                              varying = c("GPD", "GPD.LB", "GPD.UB"), v.name = c("GPD"), 
@@ -260,11 +274,12 @@ ggplot(data = sub.sex.long) + geom_line(aes(x = QYEAR, y = GPD, color = time)) +
 # GPD weighted (simply weights, not accounting for sampling design)
 sub.ses <- sub %>% 
   group_by(QYEAR, education) %>%
-  summarise(GPD = wtd.mean(GPD_upshifted_capped, final_sample_weight),
-            GPD.LB = wtd.lb(GPD_upshifted_capped, final_sample_weight),
-            GPD.UB = wtd.ub(GPD_upshifted_capped, final_sample_weight),
+  summarise(GPD = wtd.mean(GPD_orig_capped, final_sample_weight),
+            GPD.LB = wtd.lb(GPD_orig_capped, final_sample_weight),
+            GPD.UB = wtd.ub(GPD_orig_capped, final_sample_weight),
             n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate),
+            gdp = mean(gdp), pop18_24 = mean(pop18_24), w.pop18_24 = mean(w.pop18_24), m.pop18_24 = mean(m.pop18_24)) %>% as.data.table()
 
 sub.ses.long <- reshape(sub.ses, idvar = c("QYEAR", "education", "n", "INT_QYEAR"),
                              varying = c("GPD", "GPD.LB", "GPD.UB"), v.name = c("GPD"), 
@@ -277,88 +292,20 @@ ggplot(data = sub.ses.long) + geom_line(aes(x = QYEAR, y = GPD, color = time)) +
   labs(y = "GPD (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
 #ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_GPDweighted_BY_SES (SUBSAMPLE).png'), dpi=300, width = 12, height = 7)
 
-# ----------------------------------------------------------------
-# OUTCOME 3: HED
-# ----------------------------------------------------------------
+# CHECK COVARIATES
 
-# Missings
-count(data[is.na(data$hed)==T]) # n = 678
-count(data[is.na(data$hed)==T]) / count(data[is.na(data$hed)==F]) # 0.76% 
+# gdp x unemployment
+cor.test(wdat.gpd.ses[education == "LEHS"]$gdp, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "pearson") # sig
+cor.test(wdat.gpd.ses[education == "LEHS"]$gdp, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "spearman") # sig
 
-# HED, available participants by group
-ggplot(data = data[is.na(data$hed) == F], aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline(yintercept = c(50, 100)) + 
-  facet_grid(rows = vars(as.factor(education)), cols = vars(as.factor(sex)), scales = "free_y") +
-  theme_bw() + theme(axis.text.x = element_text(angle = 90), strip.background = element_rect(fill="white")) 
-#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HIST_BY_GROUP (HED).png'), dpi=300, width = 12, height = 7)
+# gdp x population
+cor.test(wdat.gpd.ses[education == "LEHS"]$gdp, log(wdat.gpd.ses[education == "LEHS"]$pop18_24), method = "pearson") # sig
+cor.test(wdat.gpd.ses[education == "LEHS"]$gdp, log(wdat.gpd.ses[education == "LEHS"]$pop18_24), method = "spearman") # sig
 
-# SEX
+# population x unemployment
+cor.test(wdat.gpd.ses[education == "LEHS"]$pop18_24, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "pearson") # sig
+cor.test(wdat.gpd.ses[education == "LEHS"]$pop18_24, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "spearman") # sig
 
-# HED prevalence weighted (simply weights, not accounting for sampling design)
-wdat.hed.sex <- data[is.na(data$hed)==F] %>% 
-  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
-  group_by(QYEAR, sex) %>%
-  summarise(HED = wtd.mean(hed.di, final_sample_weight),
-            HED.LB = wtd.lb(hed.di, final_sample_weight),
-            HED.UB = wtd.ub(hed.di, final_sample_weight),
-            n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
-
-wdat.hed.sex.long <- reshape(wdat.hed.sex, idvar = c("QYEAR", "sex", "n", "INT_QYEAR"),
-                             varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
-                             times = c("mean", "LB", "UB"), direction = "long")
-
-# GPD distribution weighted
-ggplot(data = wdat.hed.sex.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
-  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
-  facet_grid(cols = vars(sex), scales = "free") +
-  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
-#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_SEX.png'), dpi=300, width = 12, height = 7)
-
-# SES
-
-# HED prevalence weighted (simply weights, not accounting for sampling design)
-wdat.hed.ses <- data[is.na(data$hed)==F] %>% 
-  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
-  group_by(QYEAR, education) %>%
-  summarise(HED = wtd.mean(hed.di, final_sample_weight),
-            HED.LB = wtd.lb(hed.di, final_sample_weight),
-            HED.UB = wtd.ub(hed.di, final_sample_weight),
-            n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
-
-wdat.hed.ses.long <- reshape(wdat.hed.ses, idvar = c("QYEAR", "education", "n", "INT_QYEAR"),
-                             varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
-                             times = c("mean", "LB", "UB"), direction = "long")
-
-# GPD distribution weighted
-ggplot(data = wdat.hed.ses.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
-  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
-  facet_grid(rows = vars(as.factor(education)), scales = "free") +
-  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
-#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_SES.png'), dpi=300, width = 12, height = 7)
-
-# GROUP: SEX x SES
-
-# HED prevalence weighted (simply weights, not accounting for sampling design)
-wdat.hed <- data[is.na(data$hed)==F] %>% 
-  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
-  group_by(QYEAR, sex, education) %>%
-  summarise(HED = wtd.mean(hed.di, final_sample_weight),
-            HED.LB = wtd.lb(hed.di, final_sample_weight),
-            HED.UB = wtd.ub(hed.di, final_sample_weight),
-            n = n(),
-            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
-
-wdat.hed.long <- reshape(wdat.hed, idvar = c("QYEAR", "sex", "education", "n", "INT_QYEAR"),
-                         varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
-                         times = c("mean", "LB", "UB"), direction = "long")
-
-# GPD distribution weighted
-ggplot(data = wdat.hed.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
-  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
-  facet_grid(rows = vars(as.factor(education)), cols = vars(sex), scales = "free") +
-  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
-#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_GROUP.png'), dpi=300, width = 12, height = 7)
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD
@@ -373,22 +320,24 @@ ggplot(data = wdat.hed.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) 
 # COVARIATES
 
 # unemployment
-cor.test(wdat.gpd.sex[sex == "Women"]$GPD, wdat.gpd.sex[sex == "Women"]$unemp.rate, method = "pearson") # n.s.
+ggplot(wdat.gpd.sex[sex == "Women"], aes(x = log(w.unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd.sex[sex == "Women"]$GPD, log(wdat.gpd.sex[sex == "Women"]$w.unemp.rate), method = "pearson") # p = 0.015
+cor.test(wdat.gpd.sex[sex == "Women"]$GPD, log(wdat.gpd.sex[sex == "Women"]$w.unemp.rate), method = "spearman") # p = 0.049
+unemp <- log(wdat.gpd.sex[sex == "Women"]$w.unemp.rate)
+
+# % population 18-24
+ggplot(wdat.gpd.sex[sex == "Women"], aes(x = w.pop18_24)) + geom_histogram()
+cor.test(wdat.gpd.sex[sex == "Women"]$GPD, wdat.gpd.sex[sex == "Women"]$w.pop18_24, method = "pearson") # p = .02
+cor.test(wdat.gpd.sex[sex == "Women"]$GPD, wdat.gpd.sex[sex == "Women"]$w.pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.GPD.W <- ts(wdat.gpd.sex[sex == "Women", .(GPD)], frequency = 4, start = c(2001,1))
+TS.GPD.W <- ts(wdat.gpd.sex[sex == "Women", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.GPD.W) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.GPD.W) # p = .040
+shapiro.test(TS.GPD.W) # p = .052
 car::qqPlot(TS.GPD.W)
-
-# use log
-shapiro.test(log(TS.GPD.W)) # p = 0.1544
-car::qqPlot(log(TS.GPD.W))
-
-TS.GPD.W <- log(TS.GPD.W)
 
 # add intervention
 
@@ -397,19 +346,19 @@ step <- as.numeric(as.yearqtr(time(TS.GPD.W)) >= "2018 Q1")
 step 
 
 # slope increase
-slope <- c(rep(0,68), seq(1,9,1)) 
+slope <- c(rep(0,64), seq(1,9,1)) 
 slope
 
 # identify ARIMA model
-model1 <- auto.arima(TS.GPD.W, xreg = cbind(step, slope), stepwise = FALSE)
+model1 <- auto.arima(TS.GPD.W, xreg = cbind(step, slope, unemp), stepwise = FALSE)
 checkresiduals(model1)  
-model1 #ARIMA(3,1,0)(2,0,0)[4]
+model1 #ARIMA(0,1,2)
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.W, end = c(2017,4)), order = c(3, 1, 0), seasonal = list(order = c(2, 0, 0), period = 4))
-checkresiduals(model2)  
+model2 <- arima(window(TS.GPD.W, xreg = cbind(unemp), end = c(2017,4)), order = c(0, 1, 2))
+checkresiduals(model2) 
 
 # forecast based on the counterfactual model
 fc <- forecast(model2, h = 9)
@@ -426,13 +375,17 @@ TS.GPD.W.comb
 # plot combined data
 png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_WOMEN.png'), width = 800, height = 450)
 plot.ts(TS.GPD.W.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, WOMEN)", lty = c("solid", "dashed")) +
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (WOMEN)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
 # quantify intervention effect
 coeftest(model1) #n.s.
 confint(model1)
+
+# observations
+min(wdat.gpd.sex[sex == "Women"]$n)
+max(wdat.gpd.sex[sex == "Women"]$n)
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD
@@ -442,27 +395,35 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(wdat.gpd.sex[sex == "Men"]$GPD, wdat.gpd.sex[sex == "Men"]$unemp.rate, method = "pearson") # n.s.
+ggplot(wdat.gpd.sex[sex == "Men"], aes(x = log(m.unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd.sex[sex == "Men"]$GPD, log(wdat.gpd.sex[sex == "Men"]$m.unemp.rate), method = "pearson") # p < 0.001
+cor.test(wdat.gpd.sex[sex == "Men"]$GPD, log(wdat.gpd.sex[sex == "Men"]$m.unemp.rate), method = "spearman") # p < 0.001
+unemp <- log(wdat.gpd.sex[sex == "Men"]$m.unemp.rate)
+
+# % population 18-24
+ggplot(wdat.gpd.sex[sex == "Men"], aes(x = m.pop18_24)) + geom_histogram()
+cor.test(wdat.gpd.sex[sex == "Men"]$GPD, wdat.gpd.sex[sex == "Men"]$m.pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd.sex[sex == "Men"]$GPD, wdat.gpd.sex[sex == "Men"]$m.pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.GPD.M <- ts(wdat.gpd.sex[sex == "Men", .(GPD)], frequency = 4, start = c(2001,1))
+TS.GPD.M <- ts(wdat.gpd.sex[sex == "Men", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.GPD.M) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.GPD.M) # p = .953
+shapiro.test(TS.GPD.M) # p = .404
 car::qqPlot(TS.GPD.M)
 
 # identify ARIMA model
-model1 <- auto.arima(TS.GPD.M, xreg = cbind(step, slope), stepwise = FALSE)
+model1 <- auto.arima(TS.GPD.M, xreg = cbind(step, slope, unemp), stepwise = FALSE)
 checkresiduals(model1)  
-model1 #ARIMA(0,0,0)
+model1 #ARIMA(0,0,0)(1,0,0)[4] some autocorrelation left
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.M, end = c(2017,4)), order = c(0, 0, 0))
-checkresiduals(model2)  
+model2 <- arima(window(TS.GPD.M, xreg = cbind(unemp), end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(1, 0, 0), period = 4))
+checkresiduals(model2) # some autocorrelation left
 
 # forecast based on the counterfactual model
 fc <- forecast(model2, h = 9)
@@ -484,8 +445,12 @@ plot.ts(TS.GPD.M.comb, plot.type = "single",
 dev.off()
 
 # quantify intervention effect
-coeftest(model1) #n.s.
+coeftest(model1) # step increase, p = .041
 confint(model1)
+
+# observations
+min(wdat.gpd.sex[sex == "Men"]$n)
+max(wdat.gpd.sex[sex == "Men"]$n)
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD
@@ -495,22 +460,23 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(wdat.gpd.ses[education == "LEHS"]$GPD, wdat.gpd.ses[education == "LEHS"]$unemp.rate, method = "pearson") # n.s.
+ggplot(wdat.gpd.ses[education == "LEHS"], aes(x = log(unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "LEHS"]$GPD, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "pearson") # n.s.
+cor.test(wdat.gpd.ses[education == "LEHS"]$GPD, log(wdat.gpd.ses[education == "LEHS"]$unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(wdat.gpd.ses[education == "LEHS"], aes(x = pop18_24)) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "LEHS"]$GPD, wdat.gpd.ses[education == "LEHS"]$pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd.ses[education == "LEHS"]$GPD, wdat.gpd.ses[education == "LEHS"]$pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.GPD.LEHS <- ts(wdat.gpd.ses[education == "LEHS", .(GPD)], frequency = 4, start = c(2001,1))
+TS.GPD.LEHS <- ts(wdat.gpd.ses[education == "LEHS", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.GPD.LEHS) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.GPD.LEHS) # p = .0192
+shapiro.test(TS.GPD.LEHS) # p = .125
 car::qqPlot(TS.GPD.LEHS)
-
-# log
-shapiro.test(log(TS.GPD.LEHS)) # p = .096
-car::qqPlot(log(TS.GPD.LEHS))
-
-TS.GPD.LEHS <- log(TS.GPD.LEHS)
 
 # identify ARIMA model
 model1 <- auto.arima(TS.GPD.LEHS, xreg = cbind(step, slope), stepwise = FALSE)
@@ -538,7 +504,7 @@ TS.GPD.LEHS.comb
 # plot combined data
 png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_LEHS.png'), width = 800, height = 450)
 plot.ts(TS.GPD.LEHS.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, LEHS)", lty = c("solid", "dashed")) +
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (LEHS)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
@@ -546,6 +512,9 @@ dev.off()
 coeftest(model1) #n.s.
 confint(model1)
 
+# observations
+min(wdat.gpd.ses[education == "LEHS"]$n)
+max(wdat.gpd.ses[education == "LEHS"]$n)
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD
@@ -555,26 +524,34 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(wdat.gpd.ses[education == "SomeC"]$GPD, wdat.gpd.ses[education == "SomeC"]$unemp.rate, method = "pearson") # n.s.
+ggplot(wdat.gpd.ses[education == "SomeC"], aes(x = log(unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "SomeC"]$GPD, log(wdat.gpd.ses[education == "SomeC"]$unemp.rate), method = "pearson") # 0.02
+cor.test(wdat.gpd.ses[education == "SomeC"]$GPD, log(wdat.gpd.ses[education == "SomeC"]$unemp.rate), method = "spearman") # 0.03
+unemp <- log(wdat.gpd.ses[education == "SomeC"]$unemp.rate)
+  
+# % population 18-24
+ggplot(wdat.gpd.ses[education == "SomeC"], aes(x = pop18_24)) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "SomeC"]$GPD, wdat.gpd.ses[education == "SomeC"]$pop18_24, method = "pearson") # 0.05
+cor.test(wdat.gpd.ses[education == "SomeC"]$GPD, wdat.gpd.ses[education == "SomeC"]$pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.GPD.SomeC <- ts(wdat.gpd.ses[education == "SomeC", .(GPD)], frequency = 4, start = c(2001,1))
+TS.GPD.SomeC <- ts(wdat.gpd.ses[education == "SomeC", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.GPD.SomeC) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.GPD.SomeC) # p = .237
+shapiro.test(TS.GPD.SomeC) # p = .712
 car::qqPlot(TS.GPD.SomeC)
 
 # identify ARIMA model
-model1 <- auto.arima(TS.GPD.SomeC, xreg = cbind(step, slope), stepwise = FALSE)
+model1 <- auto.arima(TS.GPD.SomeC, xreg = cbind(step, slope, unemp), stepwise = FALSE)
 checkresiduals(model1)  
-model1 #ARIMA(0,0,0)(0,0,2)[4]
+model1 #ARIMA(0,0,0)(2,0,0)[4]
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.SomeC, end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(0, 0, 2), period = 4))
+model2 <- arima(window(TS.GPD.SomeC, xreg = cbind(unemp), end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(2, 0, 0), period = 4))
 checkresiduals(model2)  
 
 # forecast based on the counterfactual model
@@ -597,123 +574,12 @@ plot.ts(TS.GPD.SomeC.comb, plot.type = "single",
 dev.off()
 
 # quantify intervention effect
-coeftest(model1) # significant step increase p = 0.05
+coeftest(model1) # n.s.
 confint(model1)
 
-
-# ----------------------------------------------------------------
-# OUTCOME: GPD
-# ITS - W - SomeC
-# ----------------------------------------------------------------
-
-# COVARIATES
-
-# unemployment
-cor.test(wdat.gpd[sex == "Women" & education == "SomeC"]$GPD, wdat.gpd[sex == "Women" & education == "SomeC"]$unemp.rate, method = "pearson") # n.s.
-
-# BASELINE MODEL
-
-TS.GPD.WSomeC <- ts(wdat.gpd[sex == "Women" & education == "SomeC", .(GPD)], frequency = 4, start = c(2001,1))
-plot.ts(TS.GPD.WSomeC) + abline(v = 2018, lty = "dashed")
-
-# NORMALITY
-shapiro.test(TS.GPD.WSomeC) # p = .068
-car::qqPlot(TS.GPD.WSomeC)
-
-# identify ARIMA model
-model1 <- auto.arima(TS.GPD.WSomeC, xreg = cbind(step, slope), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,0,0)
-
-# COUNTREFACTUAL MODEL
-
-# use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.WSomeC, end = c(2017,4)), order = c(0, 0, 0))
-checkresiduals(model2)  
-
-# forecast based on the counterfactual model
-fc <- forecast(model2, h = 9)
-
-# make forecast a timeseries
-TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
-
-# COMBINE AND TEST INTERVENTION EFFECT
-
-# combine both timeseries
-TS.GPD.WSomeC.comb <- ts.union(TS.GPD.WSomeC, TS.fc)
-TS.GPD.WSomeC.comb
-
-# plot combined data
-png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_WSomeC.png'), width = 800, height = 450)
-plot.ts(TS.GPD.WSomeC.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (Women - SomeC)", lty = c("solid", "dashed")) +
-  abline(v = 2018, lty = "dashed")
-dev.off()
-
-# quantify intervention effect
-coeftest(model1) # significant step increase p = 0.05
-confint(model1)
-
-
-# ----------------------------------------------------------------
-# OUTCOME: GPD
-# ITS - M - SomeC
-# ----------------------------------------------------------------
-
-# COVARIATES
-
-# unemployment
-cor.test(wdat.gpd[sex == "Men" & education == "SomeC"]$GPD, wdat.gpd[sex == "Women" & education == "SomeC"]$unemp.rate, method = "pearson") # n.s.
-
-# BASELINE MODEL
-
-TS.GPD.MSomeC <- ts(wdat.gpd[sex == "Men" & education == "SomeC", .(GPD)], frequency = 4, start = c(2001,1))
-plot.ts(TS.GPD.MSomeC) + abline(v = 2018, lty = "dashed")
-
-# NORMALITY
-shapiro.test(TS.GPD.MSomeC) # p = .003
-car::qqPlot(TS.GPD.MSomeC)
-
-# log
-shapiro.test(log(TS.GPD.MSomeC)) # p = .297
-car::qqPlot(log(TS.GPD.MSomeC))
-
-TS.GPD.MSomeC <- log(TS.GPD.MSomeC)
-
-# identify ARIMA model
-model1 <- auto.arima(TS.GPD.MSomeC, xreg = cbind(step, slope), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,0,0)(0,0,2)[4]
-
-# COUNTREFACTUAL MODEL
-
-# use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.MSomeC, end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(0, 0, 2), period = 4))
-checkresiduals(model2)  
-
-# forecast based on the counterfactual model
-fc <- forecast(model2, h = 9)
-
-# make forecast a timeseries
-TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
-
-# COMBINE AND TEST INTERVENTION EFFECT
-
-# combine both timeseries
-TS.GPD.MSomeC.comb <- ts.union(TS.GPD.MSomeC, TS.fc)
-TS.GPD.MSomeC.comb
-
-# plot combined data
-png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_MSomeC.png'), width = 800, height = 450)
-plot.ts(TS.GPD.MSomeC.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (Men - SomeC)", lty = c("solid", "dashed")) +
-  abline(v = 2018, lty = "dashed")
-dev.off()
-
-# quantify intervention effect
-coeftest(model1) # significant step increase p = 0.05
-confint(model1)
-
+# observations
+min(wdat.gpd.ses[education == "SomeC"]$n)
+max(wdat.gpd.ses[education == "SomeC"]$n)
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD
@@ -723,26 +589,34 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(wdat.gpd.ses[education == "College"]$GPD, wdat.gpd.ses[education == "College"]$unemp.rate, method = "pearson") # n.s.
+ggplot(wdat.gpd.ses[education == "College"], aes(x = log(unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "College"]$GPD, log(wdat.gpd.ses[education == "College"]$unemp.rate), method = "pearson") # 0.008
+cor.test(wdat.gpd.ses[education == "College"]$GPD, log(wdat.gpd.ses[education == "College"]$unemp.rate), method = "spearman") # 0.006
+unemp <- log(wdat.gpd.ses[education == "College"]$unemp.rate)
+
+# % population 18-24
+ggplot(wdat.gpd.ses[education == "College"], aes(x = pop18_24)) + geom_histogram()
+cor.test(wdat.gpd.ses[education == "College"]$GPD, wdat.gpd.ses[education == "College"]$pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd.ses[education == "College"]$GPD, wdat.gpd.ses[education == "College"]$pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.GPD.College <- ts(wdat.gpd.ses[education == "College", .(GPD)], frequency = 4, start = c(2001,1))
+TS.GPD.College <- ts(wdat.gpd.ses[education == "College", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.GPD.College) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.GPD.College) # p = .851
+shapiro.test(TS.GPD.College) # p = .583
 car::qqPlot(TS.GPD.College)
 
 # identify ARIMA model
-model1 <- auto.arima(TS.GPD.College, xreg = cbind(step, slope), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,1,1)(1,0,0)[4]
+model1 <- auto.arima(TS.GPD.College, xreg = cbind(step, slope, unemp), stepwise = FALSE)
+checkresiduals(model1) #some autocorrelation left  
+model1 #ARIMA(0,1,1)(1,0,0)[4] 
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.GPD.College, end = c(2017,4)), order = c(0, 1, 1), seasonal = list(order = c(1, 0, 0), period = 4))
+model2 <- arima(window(TS.GPD.College, xreg = cbind(unemp), end = c(2017,4)), order = c(0, 1, 1), seasonal = list(order = c(1, 0, 0), period = 4))
 checkresiduals(model2)  
 
 # forecast based on the counterfactual model
@@ -768,6 +642,209 @@ dev.off()
 coeftest(model1) # n.s.
 confint(model1)
 
+# observations
+min(wdat.gpd.ses[education == "College"]$n)
+max(wdat.gpd.ses[education == "College"]$n)
+
+# ----------------------------------------------------------------
+# OUTCOME: GPD
+# ITS - M - LEHS
+# ----------------------------------------------------------------
+
+# COVARIATES
+
+# unemployment
+ggplot(wdat.gpd[sex == "Men" & education == "LEHS"], aes(x = log(m.unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "LEHS"]$GPD, log(wdat.gpd[sex == "Men" & education == "LEHS"]$m.unemp.rate), method = "pearson") # n.s.
+cor.test(wdat.gpd[sex == "Men" & education == "LEHS"]$GPD, log(wdat.gpd[sex == "Men" & education == "LEHS"]$m.unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(wdat.gpd[sex == "Men" & education == "LEHS"], aes(x = m.pop18_24)) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "LEHS"]$GPD, wdat.gpd[sex == "Men" & education == "LEHS"]$m.pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd[sex == "Men" & education == "LEHS"]$GPD, wdat.gpd[sex == "Men" & education == "LEHS"]$m.pop18_24, method = "spearman") # n.s.
+
+# BASELINE MODEL
+
+TS.GPD.MLEHS <- ts(wdat.gpd[sex == "Men" & education == "LEHS", .(GPD)], frequency = 4, start = c(2002,1))
+plot.ts(TS.GPD.MLEHS) + abline(v = 2018, lty = "dashed")
+
+# NORMALITY
+shapiro.test(TS.GPD.MLEHS) # p = .144
+car::qqPlot(TS.GPD.MLEHS)
+
+# identify ARIMA model
+model1 <- auto.arima(TS.GPD.MLEHS, xreg = cbind(step, slope), stepwise = FALSE)
+checkresiduals(model1)  
+model1 #ARIMA(0,0,1)
+
+# COUNTREFACTUAL MODEL
+
+# use arima model without post-intervention period
+model2 <- arima(window(TS.GPD.MLEHS, end = c(2017,4)), order = c(0, 0, 1))
+checkresiduals(model2)  
+
+# forecast based on the counterfactual model
+fc <- forecast(model2, h = 9)
+
+# make forecast a timeseries
+TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
+
+# COMBINE AND TEST INTERVENTION EFFECT
+
+# combine both timeseries
+TS.GPD.MLEHS.comb <- ts.union(TS.GPD.MLEHS, TS.fc)
+TS.GPD.MLEHS.comb
+
+# plot combined data
+png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_MLEHS.png'), width = 800, height = 450)
+plot.ts(TS.GPD.MLEHS.comb, plot.type = "single", 
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (Men - LEHS)", lty = c("solid", "dashed")) +
+  abline(v = 2018, lty = "dashed")
+dev.off()
+
+# quantify intervention effect
+coeftest(model1) # significant step increase p = 0.05
+confint(model1)
+
+# observations
+min(wdat.gpd[sex == "Men" & education == "LEHS"]$n)
+max(wdat.gpd[sex == "Men" & education == "LEHS"]$n)
+
+# ----------------------------------------------------------------
+# OUTCOME: GPD
+# ITS - M - SomeC
+# ----------------------------------------------------------------
+
+# COVARIATES
+
+# unemployment
+ggplot(wdat.gpd[sex == "Men" & education == "SomeC"], aes(x = log(m.unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "SomeC"]$GPD, log(wdat.gpd[sex == "Men" & education == "SomeC"]$m.unemp.rate), method = "pearson") # n.s.
+cor.test(wdat.gpd[sex == "Men" & education == "SomeC"]$GPD, log(wdat.gpd[sex == "Men" & education == "SomeC"]$m.unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(wdat.gpd[sex == "Men" & education == "SomeC"], aes(x = m.pop18_24)) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "SomeC"]$GPD, wdat.gpd[sex == "Men" & education == "SomeC"]$m.pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd[sex == "Men" & education == "SomeC"]$GPD, wdat.gpd[sex == "Men" & education == "SomeC"]$m.pop18_24, method = "spearman") # n.s.
+
+# BASELINE MODEL
+
+TS.GPD.MSomeC <- ts(wdat.gpd[sex == "Men" & education == "SomeC", .(GPD)], frequency = 4, start = c(2002,1))
+plot.ts(TS.GPD.MSomeC) + abline(v = 2018, lty = "dashed")
+
+# NORMALITY
+shapiro.test(TS.GPD.MSomeC) # p = .005
+car::qqPlot(TS.GPD.MSomeC)
+
+# use log
+shapiro.test(log(TS.GPD.MSomeC)) # p = .599
+car::qqPlot(log(TS.GPD.MSomeC))
+
+TS.GPD.MSomeC <- log(TS.GPD.MSomeC)
+
+# identify ARIMA model
+model1 <- auto.arima(TS.GPD.MSomeC, xreg = cbind(step, slope), stepwise = FALSE)
+checkresiduals(model1)  
+model1 #ARIMA(3,1,0)(2,0,0)[4]
+
+# COUNTREFACTUAL MODEL
+
+# use arima model without post-intervention period
+model2 <- arima(window(TS.GPD.MSomeC, end = c(2017,4)), order = c(3, 1, 0), seasonal = list(order = c(2, 0, 0), period = 4))
+checkresiduals(model2)  
+
+# forecast based on the counterfactual model
+fc <- forecast(model2, h = 9)
+
+# make forecast a timeseries
+TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
+
+# COMBINE AND TEST INTERVENTION EFFECT
+
+# combine both timeseries
+TS.GPD.MSomeC.comb <- ts.union(TS.GPD.MSomeC, TS.fc)
+TS.GPD.MSomeC.comb
+
+# plot combined data
+png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_MSomeC.png'), width = 800, height = 450)
+plot.ts(TS.GPD.MSomeC.comb, plot.type = "single", 
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, Men - SomeC)", lty = c("solid", "dashed")) +
+  abline(v = 2018, lty = "dashed")
+dev.off()
+
+# quantify intervention effect
+coeftest(model1) # significant step increase p = 0.05
+confint(model1)
+
+# observations
+min(wdat.gpd[sex == "Men" & education == "SomeC"]$n)
+max(wdat.gpd[sex == "Men" & education == "SomeC"]$n)
+
+# ----------------------------------------------------------------
+# OUTCOME: GPD
+# ITS - M - College
+# ----------------------------------------------------------------
+
+# COVARIATES
+
+# unemployment
+ggplot(wdat.gpd[sex == "Men" & education == "College"], aes(x = log(m.unemp.rate))) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "College"]$GPD, log(wdat.gpd[sex == "Men" & education == "College"]$m.unemp.rate), method = "pearson") # .002
+cor.test(wdat.gpd[sex == "Men" & education == "College"]$GPD, log(wdat.gpd[sex == "Men" & education == "College"]$m.unemp.rate), method = "spearman") # .001
+unemp <- log(wdat.gpd[sex == "Men" & education == "College"]$m.unemp.rate)
+
+# % population 18-24
+ggplot(wdat.gpd[sex == "Men" & education == "College"], aes(x = m.pop18_24)) + geom_histogram()
+cor.test(wdat.gpd[sex == "Men" & education == "College"]$GPD, wdat.gpd[sex == "Men" & education == "College"]$m.pop18_24, method = "pearson") # n.s.
+cor.test(wdat.gpd[sex == "Men" & education == "College"]$GPD, wdat.gpd[sex == "Men" & education == "College"]$m.pop18_24, method = "spearman") # n.s.
+
+# BASELINE MODEL
+
+TS.GPD.MCollege <- ts(wdat.gpd[sex == "Men" & education == "College", .(GPD)], frequency = 4, start = c(2002,1))
+plot.ts(TS.GPD.MCollege) + abline(v = 2018, lty = "dashed")
+
+# NORMALITY
+shapiro.test(TS.GPD.MCollege) # p = .817
+car::qqPlot(TS.GPD.MCollege)
+
+# identify ARIMA model
+model1 <- auto.arima(TS.GPD.MCollege, xreg = cbind(step, slope, unemp), stepwise = FALSE)
+checkresiduals(model1)  
+model1 #ARIMA(0,1,1)(1,0,0)[4]
+
+# COUNTREFACTUAL MODEL
+
+# use arima model without post-intervention period
+model2 <- arima(window(TS.GPD.MCollege, xreg = c(unemp), end = c(2017,4)), order = c(0, 1, 1), seasonal = list(order = c(1, 0, 0), period = 4))
+checkresiduals(model2)  
+
+# forecast based on the counterfactual model
+fc <- forecast(model2, h = 9)
+
+# make forecast a timeseries
+TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
+
+# COMBINE AND TEST INTERVENTION EFFECT
+
+# combine both timeseries
+TS.GPD.MCollege.comb <- ts.union(TS.GPD.MCollege, TS.fc)
+TS.GPD.MCollege.comb
+
+# plot combined data
+png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_MCollege.png'), width = 800, height = 450)
+plot.ts(TS.GPD.MCollege.comb, plot.type = "single", 
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (Men - College)", lty = c("solid", "dashed")) +
+  abline(v = 2018, lty = "dashed")
+dev.off()
+
+# quantify intervention effect
+coeftest(model1) # significant slope p = .04
+confint(model1)
+
+# observations
+min(wdat.gpd[sex == "Men" & education == "College"]$n)
+max(wdat.gpd[sex == "Men" & education == "College"]$n)
+
 # ----------------------------------------------------------------
 # OUTCOME: GPD SUBSAMPLE
 # ----------------------------------------------------------------
@@ -780,16 +857,31 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(sub.sex[sex == "Women"]$GPD, sub.sex[sex == "Women"]$unemp.rate, method = "pearson") # n.s.
+ggplot(sub.sex[sex == "Women"], aes(x = log(w.unemp.rate))) + geom_histogram()
+cor.test(sub.sex[sex == "Women"]$GPD, log(sub.sex[sex == "Women"]$w.unemp.rate), method = "pearson") # n.s.
+cor.test(sub.sex[sex == "Women"]$GPD, log(sub.sex[sex == "Women"]$w.unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(sub.sex[sex == "Women"], aes(x = w.pop18_24)) + geom_histogram()
+cor.test(sub.sex[sex == "Women"]$GPD, sub.sex[sex == "Women"]$w.pop18_24, method = "pearson") # n.s.
+cor.test(sub.sex[sex == "Women"]$GPD, sub.sex[sex == "Women"]$w.pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.SUB.W <- ts(sub.sex[sex == "Women", .(GPD)], frequency = 4, start = c(2001,1))
+TS.SUB.W <- ts(sub.sex[sex == "Women", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.SUB.W) + abline(v = 2018, lty = "dashed")
 
+Decomp <- decompose(TS.SUB.W)
+plot(Decomp)
+
 # NORMALITY
-shapiro.test(TS.SUB.W) # p = .175
+shapiro.test(TS.SUB.W) # p < .001
 car::qqPlot(TS.SUB.W)
+
+shapiro.test(log(TS.SUB.W)) # p = 0.474
+car::qqPlot(log(TS.SUB.W))
+
+TS.SUB.W <- log(TS.SUB.W)
 
 # identify ARIMA model
 model1 <- auto.arima(TS.SUB.W, xreg = cbind(step, slope), stepwise = FALSE)
@@ -815,9 +907,9 @@ TS.SUB.W.comb <- ts.union(TS.SUB.W, TS.fc)
 TS.SUB.W.comb
 
 # plot combined data
-png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_WOMEN (SUBSAMPLE.png'), width = 800, height = 450)
+png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_WOMEN (SUBSAMPLE).png'), width = 800, height = 450)
 plot.ts(TS.SUB.W.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - WOMEN)", lty = c("solid", "dashed")) +
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, SUBSAMPLE - WOMEN)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
@@ -825,6 +917,10 @@ dev.off()
 coeftest(model1) # n.s.
 confint(model1)
 
+# observations
+min(sub.sex[sex == "Women"]$n)
+max(sub.sex[sex == "Women"]$n)
+sub.sex[sex == "Women" & n < 50] %>% count()
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD SUBSAMPLE 
@@ -834,17 +930,29 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(sub.sex[sex == "Men"]$GPD, sub.sex[sex == "Men"]$unemp.rate, method = "pearson") # SIG! p = 0.01
-unemp <- sub.sex[sex == "Men"]$unemp.rate
+ggplot(sub.sex[sex == "Men"], aes(x = log(m.unemp.rate))) + geom_histogram()
+cor.test(sub.sex[sex == "Men"]$GPD, log(sub.sex[sex == "Men"]$m.unemp.rate), method = "pearson") # 0.07
+cor.test(sub.sex[sex == "Men"]$GPD, log(sub.sex[sex == "Men"]$m.unemp.rate), method = "spearman") # 0.05
+unemp <- log(sub.sex[sex == "Men"]$m.unemp.rate)
+
+# % population 18-24
+ggplot(sub.sex[sex == "Men"], aes(x = m.pop18_24)) + geom_histogram()
+cor.test(sub.sex[sex == "Men"]$GPD, sub.sex[sex == "Men"]$m.pop18_24, method = "pearson") # n.s.
+cor.test(sub.sex[sex == "Men"]$GPD, sub.sex[sex == "Men"]$m.pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.SUB.M <- ts(sub.sex[sex == "Men", .(GPD)], frequency = 4, start = c(2001,1))
+TS.SUB.M <- ts(sub.sex[sex == "Men", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.SUB.M) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.SUB.M) # p = .141
+shapiro.test(TS.SUB.M) # p = .02
 car::qqPlot(TS.SUB.M)
+
+shapiro.test(log(TS.SUB.M)) # p = 37
+car::qqPlot(log(TS.SUB.M))
+
+TS.SUB.M <- log(TS.SUB.M)
 
 # identify ARIMA model
 model1 <- auto.arima(TS.SUB.M, xreg = cbind(step, slope, unemp), stepwise = FALSE)
@@ -872,50 +980,54 @@ TS.SUB.M.comb
 # plot combined data
 png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_MEN_adj (SUBSAMPLE.png'), width = 800, height = 450)
 plot.ts(TS.SUB.M.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - MEN)", lty = c("solid", "dashed")) +
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, SUBSAMPLE - MEN)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
 # quantify intervention effect
-coeftest(model1) # step change p = .04 -> employment not significant so exclude 
+coeftest(model1) # n.s.
 confint(model1)
 
+# observations
+min(sub.sex[sex == "Men"]$n)
+max(sub.sex[sex == "Men"]$n)
+sub.sex[sex == "Men" & n < 50] %>% count()
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD SUBSAMPLE 
-# ITS - LEHS
+# ITS - LEHS/SomeC
 # ----------------------------------------------------------------
 
 # COVARIATES
 
 # unemployment
-cor.test(sub.ses[education == "LEHS"]$GPD, sub.ses[education == "LEHS"]$unemp.rate, method = "pearson") # SIG p = 0.007
+ggplot(sub.ses[education == "LEHS/SomeC"], aes(x = log(unemp.rate))) + geom_histogram()
+cor.test(sub.ses[education == "LEHS/SomeC"]$GPD, log(sub.ses[education == "LEHS/SomeC"]$unemp.rate), method = "pearson") # n.s.
+cor.test(sub.ses[education == "LEHS/SomeC"]$GPD, log(sub.ses[education == "LEHS/SomeC"]$unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(sub.ses[education == "LEHS/SomeC"], aes(x = pop18_24)) + geom_histogram()
+cor.test(sub.ses[education == "LEHS/SomeC"]$GPD, sub.ses[education == "LEHS/SomeC"]$pop18_24, method = "pearson") # n.s.
+cor.test(sub.ses[education == "LEHS/SomeC"]$GPD, sub.ses[education == "LEHS/SomeC"]$pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.SUB.LEHS <- ts(sub.ses[education == "LEHS", .(GPD)], frequency = 4, start = c(2001,1))
-plot.ts(TS.SUB.LEHS) + abline(v = 2018, lty = "dashed")
+TS.SUB.LSC <- ts(sub.ses[education == "LEHS/SomeC", .(GPD)], frequency = 4, start = c(2002,1))
+plot.ts(TS.SUB.LSC) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.SUB.LEHS) # p = .028
-car::qqPlot(TS.SUB.LEHS)
-
-# log
-shapiro.test(log(TS.SUB.LEHS)) # p = .504
-car::qqPlot(log(TS.SUB.LEHS))
-
-TS.SUB.LEHS <- log(TS.SUB.LEHS)
+shapiro.test(TS.SUB.LSC) # p = .296
+car::qqPlot(TS.SUB.LSC)
 
 # identify ARIMA model
-model1 <- auto.arima(TS.SUB.LEHS, xreg = cbind(step, slope, unemp), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,0,0)
+model1 <- auto.arima(TS.SUB.LSC, xreg = cbind(step, slope), stepwise = FALSE)
+checkresiduals(model1) #some autocorrelation left
+model1 #ARIMA(0,0,1)
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.SUB.LEHS, xreg = unemp, end = c(2017,4)), order = c(0, 0, 0))
-#model2 <- arima(window(TS.SUB.LEHS, end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(0, 0, 1), period = 4))
+model2 <- arima(window(TS.SUB.LSC, end = c(2017,4)), order = c(0, 0, 1))
 checkresiduals(model2)  
 
 # forecast based on the counterfactual model
@@ -927,80 +1039,24 @@ TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
 # COMBINE AND TEST INTERVENTION EFFECT
 
 # combine both timeseries
-TS.SUB.LEHS.comb <- ts.union(TS.SUB.LEHS, TS.fc)
-TS.SUB.LEHS.comb
+TS.SUB.LSC.comb <- ts.union(TS.SUB.LSC, TS.fc)
+TS.SUB.LSC.comb
 
 # plot combined data
-png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_LEHS (SUBSAMPLE) adj.png'), width = 800, height = 450)
-plot.ts(TS.SUB.LEHS.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - LEHS)", lty = c("solid", "dashed")) +
+png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_LEHS/SomeC (SUBSAMPLE) adj.png'), width = 800, height = 450)
+plot.ts(TS.SUB.LSC.comb, plot.type = "single", 
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - LEHS/SomeC)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
 # quantify intervention effect
-coeftest(model1) # step change p = 0.017
+coeftest(model1) # n.s.
 confint(model1)
 
-
-# ----------------------------------------------------------------
-# OUTCOME: GPD SUBSAMPLE 
-# ITS - SomeC
-# ----------------------------------------------------------------
-
-# COVARIATES
-
-# unemployment
-cor.test(sub.ses[education == "SomeC"]$GPD, sub.ses[education == "SomeC"]$unemp.rate, method = "pearson") # n.s.
-
-# BASELINE MODEL
-
-TS.SUB.SomeC <- ts(sub.ses[education == "SomeC", .(GPD)], frequency = 4, start = c(2001,1))
-plot.ts(TS.SUB.SomeC) + abline(v = 2018, lty = "dashed")
-
-# NORMALITY
-shapiro.test(TS.SUB.SomeC) # p = .003
-car::qqPlot(TS.SUB.SomeC)
-
-# log
-shapiro.test(log(TS.SUB.SomeC)) # p = .082
-car::qqPlot(log(TS.SUB.SomeC))
-
-TS.SUB.SomeC <- log(TS.SUB.SomeC)
-
-# identify ARIMA model
-model1 <- auto.arima(TS.SUB.SomeC, xreg = cbind(step, slope), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,0,0)(2,0,0)[4]
-
-# COUNTREFACTUAL MODEL
-
-# use arima model without post-intervention period
-model2 <- arima(window(TS.SUB.SomeC, end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(2, 0, 0), period = 4))
-checkresiduals(model2)  
-
-# forecast based on the counterfactual model
-fc <- forecast(model2, h = 9)
-
-# make forecast a timeseries
-TS.fc <- ts(as.numeric(fc$mean), start = c(2018,1), frequency = 4)
-
-# COMBINE AND TEST INTERVENTION EFFECT
-
-# combine both timeseries
-TS.SUB.SomeC.comb <- ts.union(TS.SUB.SomeC, TS.fc)
-TS.SUB.SomeC.comb
-
-# plot combined data
-png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_SomeC (SUBSAMPLE.png'), width = 800, height = 450)
-plot.ts(TS.SUB.SomeC.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - SomeC)", lty = c("solid", "dashed")) +
-  abline(v = 2018, lty = "dashed")
-dev.off()
-
-# quantify intervention effect
-coeftest(model1) # step change p < 0.001, slope change p = 0.032
-confint(model1)
-
+# observations
+min(sub.ses[education == "LEHS/SomeC"]$n)
+max(sub.ses[education == "LEHS/SomeC"]$n)
+sub.ses[education == "LEHS/SomeC" & n < 50] %>% count()
 
 # ----------------------------------------------------------------
 # OUTCOME: GPD SUBSAMPLE 
@@ -1010,26 +1066,39 @@ confint(model1)
 # COVARIATES
 
 # unemployment
-cor.test(sub.ses[education == "College"]$GPD, sub.ses[education == "College"]$unemp.rate, method = "pearson") # n.s.
+ggplot(sub.ses[education == "College"], aes(x = log(unemp.rate))) + geom_histogram()
+cor.test(sub.ses[education == "College"]$GPD, log(sub.ses[education == "College"]$unemp.rate), method = "pearson") # n.s.
+cor.test(sub.ses[education == "College"]$GPD, log(sub.ses[education == "College"]$unemp.rate), method = "spearman") # n.s.
+
+# % population 18-24
+ggplot(sub.ses[education == "College"], aes(x = pop18_24)) + geom_histogram()
+cor.test(sub.ses[education == "College"]$GPD, sub.ses[education == "College"]$pop18_24, method = "pearson") # n.s.
+cor.test(sub.ses[education == "College"]$GPD, sub.ses[education == "College"]$pop18_24, method = "spearman") # n.s.
 
 # BASELINE MODEL
 
-TS.SUB.College <- ts(sub.ses[education == "College", .(GPD)], frequency = 4, start = c(2001,1))
+TS.SUB.College <- ts(sub.ses[education == "College", .(GPD)], frequency = 4, start = c(2002,1))
 plot.ts(TS.SUB.College) + abline(v = 2018, lty = "dashed")
 
 # NORMALITY
-shapiro.test(TS.SUB.College) # p = .063
+shapiro.test(TS.SUB.College) # p = .04
 car::qqPlot(TS.SUB.College)
+
+# log
+shapiro.test(log(TS.SUB.College)) # p = .082
+car::qqPlot(log(TS.SUB.College))
+
+TS.SUB.College <- log(TS.SUB.College)
 
 # identify ARIMA model
 model1 <- auto.arima(TS.SUB.College, xreg = cbind(step, slope), stepwise = FALSE)
-checkresiduals(model1)  
-model1 #ARIMA(0,0,0)
+checkresiduals(model1) #some residual autocorrelation  
+model1 #ARIMA(0,0,0)(1,0,0)[4]
 
 # COUNTREFACTUAL MODEL
 
 # use arima model without post-intervention period
-model2 <- arima(window(TS.SUB.College, end = c(2017,4)), order = c(0, 0, 0))
+model2 <- arima(window(TS.SUB.College, end = c(2017,4)), order = c(0, 0, 0), seasonal = list(order = c(1, 0, 0), period = 4))
 checkresiduals(model2)  
 
 # forecast based on the counterfactual model
@@ -1047,13 +1116,24 @@ TS.SUB.College.comb
 # plot combined data
 png(file = paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_TS_GPD_College (SUBSAMPLE.png'), width = 800, height = 450)
 plot.ts(TS.SUB.College.comb, plot.type = "single", 
-        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (SUBSAMPLE - College)", lty = c("solid", "dashed")) +
+        col = c("blue", "red"), xlab = "QYEAR", ylab = "Grams pure alcohol per day (log, SUBSAMPLE - College)", lty = c("solid", "dashed")) +
   abline(v = 2018, lty = "dashed")
 dev.off()
 
 # quantify intervention effect
 coeftest(model1) # n.s.
 confint(model1)
+
+# observations
+min(sub.ses[education == "College"]$n)
+max(sub.ses[education == "College"]$n)
+sub.ses[education == "College" & n < 50] %>% count()
+
+
+
+
+## OLD ###
+
 
 
 # ----------------------------------------------------------------
@@ -1338,11 +1418,6 @@ coeftest(model1) # n.s.
 confint(model1)
 
 
-
-
-
-
-
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
@@ -1394,3 +1469,90 @@ test <- ts(wdat[sex == "Women" & education == "LEHS", .(GPD)], frequency=4)
 Decomp <- decompose(test)
 plot(Decomp)
 
+
+
+
+ ## OLD ## 
+
+# ----------------------------------------------------------------
+# OUTCOME 3: HED
+# ----------------------------------------------------------------
+
+# Missings
+count(data[is.na(data$hed)==T]) # n = 678
+count(data[is.na(data$hed)==T]) / count(data[is.na(data$hed)==F]) # 0.76% 
+
+# HED, available participants by group
+ggplot(data = data[is.na(data$hed) == F], aes(x = QYEAR)) + geom_histogram(stat = "count") + geom_hline(yintercept = c(50, 100)) + 
+  facet_grid(rows = vars(as.factor(education)), cols = vars(as.factor(sex)), scales = "free_y") +
+  theme_bw() + theme(axis.text.x = element_text(angle = 90), strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HIST_BY_GROUP (HED).png'), dpi=300, width = 12, height = 7)
+
+# SEX
+
+# HED prevalence weighted (simply weights, not accounting for sampling design)
+wdat.hed.sex <- data[is.na(data$hed)==F] %>% 
+  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
+  group_by(QYEAR, sex) %>%
+  summarise(HED = wtd.mean(hed.di, final_sample_weight),
+            HED.LB = wtd.lb(hed.di, final_sample_weight),
+            HED.UB = wtd.ub(hed.di, final_sample_weight),
+            n = n(),
+            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+
+wdat.hed.sex.long <- reshape(wdat.hed.sex, idvar = c("QYEAR", "sex", "n", "INT_QYEAR"),
+                             varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
+                             times = c("mean", "LB", "UB"), direction = "long")
+
+# GPD distribution weighted
+ggplot(data = wdat.hed.sex.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
+  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
+  facet_grid(cols = vars(sex), scales = "free") +
+  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_SEX.png'), dpi=300, width = 12, height = 7)
+
+# SES
+
+# HED prevalence weighted (simply weights, not accounting for sampling design)
+wdat.hed.ses <- data[is.na(data$hed)==F] %>% 
+  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
+  group_by(QYEAR, education) %>%
+  summarise(HED = wtd.mean(hed.di, final_sample_weight),
+            HED.LB = wtd.lb(hed.di, final_sample_weight),
+            HED.UB = wtd.ub(hed.di, final_sample_weight),
+            n = n(),
+            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+
+wdat.hed.ses.long <- reshape(wdat.hed.ses, idvar = c("QYEAR", "education", "n", "INT_QYEAR"),
+                             varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
+                             times = c("mean", "LB", "UB"), direction = "long")
+
+# GPD distribution weighted
+ggplot(data = wdat.hed.ses.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
+  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
+  facet_grid(rows = vars(as.factor(education)), scales = "free") +
+  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_SES.png'), dpi=300, width = 12, height = 7)
+
+# GROUP: SEX x SES
+
+# HED prevalence weighted (simply weights, not accounting for sampling design)
+wdat.hed <- data[is.na(data$hed)==F] %>% 
+  mutate(hed.di = ifelse(hed == 0, 0, ifelse(hed > 0, 1, NA))) %>%
+  group_by(QYEAR, sex, education) %>%
+  summarise(HED = wtd.mean(hed.di, final_sample_weight),
+            HED.LB = wtd.lb(hed.di, final_sample_weight),
+            HED.UB = wtd.ub(hed.di, final_sample_weight),
+            n = n(),
+            INT_QYEAR = mean(INT_QYEAR), unemp.rate = mean(unemp.rate)) %>% as.data.table()
+
+wdat.hed.long <- reshape(wdat.hed, idvar = c("QYEAR", "sex", "education", "n", "INT_QYEAR"),
+                         varying = c("HED", "HED.LB", "HED.UB"), v.name = c("HED"), 
+                         times = c("mean", "LB", "UB"), direction = "long")
+
+# GPD distribution weighted
+ggplot(data = wdat.hed.long) + geom_line(aes(x = QYEAR, y = HED, color = time)) + geom_vline(aes(xintercept = INT_QYEAR)) +
+  scale_x_continuous(breaks = seq(2000, 2020, 1)) + scale_y_continuous(labels = scales::percent) + scale_colour_manual(values = c("grey", "black", "grey")) +
+  facet_grid(rows = vars(as.factor(education)), cols = vars(sex), scales = "free") +
+  labs(y = "HED prevalence (weighted)") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill="white")) 
+#ggsave(paste0('acp_brfss/outputs/figures/Indiana/', DATE, '_HEDweighted_BY_GROUP.png'), dpi=300, width = 12, height = 7)
