@@ -22,16 +22,18 @@ setup_markov_model <- function(data,y){
   # 
   # data$racefinal <- ifelse(data$racefinal=="Native","other",
   #                          ifelse(data$racefinal=="Asian/PI","other",data$racefinal))
+  
   data$individualrace <- as.factor(data$individualrace)
   data$individualrace <- relevel(data$individualrace, ref="white")
   # data$educNUM <- ifelse(data$age==18 & data$educNUM>2, 1, data$educNUM)
   data$sex <- as.factor(data$sex)
   data$highestEd <- data$education
-  # source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function.R")
-  # backIDs <- getIDs(data)
-  # data <- data[!data$newID %in% backIDs,]
+  source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function.R")
+  backIDs <- getIDs(data)
+  data <- data[!data$newID %in% backIDs,]
   data$agesq <- data$age^2
   data$agescaled <- as.numeric(scale(data$age, center=T))
+  data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
   data$racefinal2 <- as.character(data$individualrace)
   # data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)

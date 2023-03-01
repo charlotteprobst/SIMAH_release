@@ -14,7 +14,7 @@ setwd("~/Google Drive/SIMAH Sheffield")
 
 source("SIMAH_code/education_transitions/2_analysis/new_analysis/1_setup_markov_model.R")
 
-# data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_processed_weighted.csv") %>% 
+# data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_processed_weighted.csv") %>%
 #   dplyr::select(-`...1`) %>% group_by(uniqueID) %>% mutate(consecID=1:n())
 # 
 # # # # # # # # function for assigning IDs - for each replication of an individual append a number to the end of the original ID
@@ -46,9 +46,9 @@ source("SIMAH_code/education_transitions/2_analysis/new_analysis/1_setup_markov_
 # # #
 # data$newID <- as.numeric(data$newID)
 # # # # # # # # # check that there are no duplicate newIDs for different original IDs
-# test <- data %>% group_by(newID) %>% tally()
-# # # 
-# write.csv(data, "SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
+# test <- data %>% group_by(newID,year) %>% tally()
+# # #
+# write.csv(data, "SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv", row.names=F)
 
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
@@ -68,16 +68,22 @@ Q <- rbind( c(0.5, 0.5, 0, 0, 0),
 # specify baseline models - just race and ethnicity 
 modelt1_baseline <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                                    center=FALSE,
-                                   covariates=~agescaled + agesqscaled + sex + racefinal2,
+                                   covariates=~agescaled + agesqscaled + sex*racefinal2,
                         control=list(trace=1))
 modelt1_baseline
+
+modelt1_income <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
+                        center=FALSE,
+                        covariates=~agescaled + agesqscaled + sex + racefinal2 + total_fam_income,
+                        control=list(trace=1))
+modelt1_income
 
 saveRDS(modelt1_baseline, "SIMAH_workplace/education_transitions/final_models/modelt1_baseline.RDS")
 
 modelt2_baseline <-   model <- msm(educNUM~year, newID, data=datat2, qmatrix=Q,
                                    center=FALSE,
-                                   covariates=~agescaled + agesqscaled + sex + racefinal2,
-                                   control=list(trace=1))
+                                   covariates=~agescaled + agesqscaled + sex*racefinal2,
+                                   control=list(trace=1, fnscale=1000))
 modelt2_baseline
 
 saveRDS(modelt2_baseline, "SIMAH_workplace/education_transitions/final_models/modelt2_baseline.RDS")
