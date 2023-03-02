@@ -154,9 +154,15 @@ nhis <- read_sas (paste0(data_orig, "rdcp2058dataset_temp_mort.sas7bdat")) %>%  
                                                                          "Category II without HED", "Category II with HED", "Category III")),
         
     ## SMOKING - 1997-2018 
-    smk = recode (SMKSTAT2, `1`=4, `2`=3, `3`=2, `4`=1, `5`=NA_real_, `9`=NA_real_),
+    smk = recode(SMKSTAT2, 
+                 `1`=4,  # Current every day smoker
+                 `2`=3,  # Current some day smoker
+                 `3`=2,  # Former smoker
+                 `4`=1,  # Never smoker
+                 `5`=NA_real_,  # Smoker, current status unknown
+                 `9`=NA_real_), # Unknown if ever smoked
   
-    smk4 = factor(smk, levels=c(1,2,3,4), labels=c("Current everyday smoker", "Current someday smoker", "Former smoker ", "Never smoker")), 
+    smk4 = factor(smk, levels=c(1,2,3,4), labels=c("Never smoker", "Former smoker", "Current someday smoker", "Current everyday smoker")), 
     
     
     ## BMI - 1997-2018
