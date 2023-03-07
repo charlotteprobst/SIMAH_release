@@ -46,7 +46,7 @@ pred_lin_normalm <- predict(linear_normalm, cbind(ms))
 regplot(linear_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,70),
         ylim = c(0, 2), pred = pred_lin_normalm, xvals = ms, main="Male - Linear Regression")
-
+abline(h=1)
 predict(linear_normalm, 0.57, transf=exp)
 
 #pch=NA_integer_,
@@ -66,7 +66,7 @@ predict(quad_normalm, c(15.5,15.5^2), transf=exp)
 
 #for figure3
 regplot(quad_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk", lwd = c(3.5,1.5), lcol= "blue4",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE, 
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE, 
         ylim = c(0.4, 2), pred = pred_quad_normalm, xvals = ms, main="Men")
 abline(h=1)
 
@@ -108,9 +108,9 @@ predict(linear_ovm, 0.57, transf=exp)
 
 #for figure 3
 regplot(linear_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
-        pred = pred_lin_ovm, xvals = ms, main="Overweight range")
+        pred = pred_lin_ovm, xvals = ms)
 abline(h=1)
 
 ##QUADRATIC REGRESSION
@@ -166,9 +166,9 @@ predict(linear_obm, 0.57, transf=exp)
 
 #for figure 3
 regplot(linear_obm, mod="dose", ylab="Relative Risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5), xlab="Alcohol intake, grams/day",
-        pred = pred_lin_obm, xvals = ms, main="Obesity range")
+        pred = pred_lin_obm, xvals = ms)
 abline(h=1)
 
 ##QUADRATIC REGRESSION
@@ -224,7 +224,7 @@ regplot(linear_normalf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Rela
 
 #for figure 3
 regplot(linear_normalf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
         pred = pred_lin_normalf, xvals = fs, main="Women")
 abline(h=1)
@@ -287,7 +287,7 @@ regplot(quad_ovf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative R
 
 #for figure 3
 regplot(quad_ovf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
         pred = pred_quad_ovf, xvals = fs)
 abline(h=1)
@@ -343,7 +343,7 @@ regplot(quad_obf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative R
 
 #for figure 3
 regplot(quad_obf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,50),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
         pred = pred_quad_obf, xvals = fs)
 abline(h=1)
