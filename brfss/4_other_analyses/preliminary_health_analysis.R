@@ -1,5 +1,4 @@
 library(foreign)
-library(SASxport)
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -14,59 +13,25 @@ wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS")
+data <- readRDS("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS")
 
 USA <- data %>% filter(State=="USA")
 
-summarystats <- data %>% 
-  # mutate(gpd_cat = cut(gramsperday_upshifted_crquotient,
-  #                                            breaks=c(-1,0,20,40,60,200),
-  #                                            labels=c("non drinker","1-20grams","21-40grams","41-60grams","61+grams"))) %>% 
-group_by(YEAR, State, sex_recode, education_summary) %>% 
-  summarise(meanmentalhealthdays = mean(mentalhealth,na.rm=T),
-            meanphysicalhealthdays = mean(physicalhealth, na.rm=T),
-            meanHED = mean(hed)) %>% drop_na() %>% 
-  mutate(sex_recode=ifelse(sex_recode=="Male","Men","Women"),
-         education_summary = ifelse(education_summary=="LEHS","High school or less",
-                                    ifelse(education_summary=="SomeC","Some college", "College plus")),
-         education_summary=factor(education_summary, levels=c("High school or less","Some college","College plus")))
-  # mutate(drinkingstatus_updated = recode(drinkingstatus_updated, "0"="non-drinker","1"="drinker"))
-
-ggplot(data=subset(summarystats,State=="USA"), aes(x=YEAR, y=meanmentalhealthdays, colour=as.factor(education_summary))) + 
-  geom_line() + 
-  facet_grid(cols=vars(sex_recode)) +
-  ylim(0,NA) + ylab("Mean poor mental health days") +
-  theme_bw() +
-  theme(legend.title=element_blank(),
-        strip.background=element_rect(fill="white"),
-        legend.position="bottom",
-        text = element_text(size=18))
-
-ggplot(data=subset(summarystats,State=="USA"), aes(x=YEAR, y=meanphysicalhealthdays, colour=as.factor(education_summary))) + 
-  geom_line() + 
-  facet_grid(cols=vars(sex_recode)) +
-  ylim(0,NA) + ylab("Mean poor physical health days") +
-  theme_bw() +
-  theme(legend.title=element_blank(),
-        strip.background=element_rect(fill="white"),
-        legend.position="bottom",
-        text = element_text(size=18))
-
 USA$race_eth <- factor(USA$race_eth, levels=c("White","Black","Hispanic","Other"))
-USA$period <- USA$YEAR-1993
-USA$drinkingcat <- ifelse(USA$gramsperday_upshifted_crquotient==0, "non-drinker",
-                          ifelse(USA$gramsperday_upshifted_crquotient>0 & USA$gramsperday_upshifted_crquotient<=20 & data$sex_recode=="Female","Category I",
-                                 ifelse(USA$gramsperday_upshifted_crquotient>0 & USA$gramsperday_upshifted_crquotient<=40 & data$sex_recode=="Male","Category I",
-                                        ifelse(USA$gramsperday_upshifted_crquotient>20 & USA$gramsperday_upshifted_crquotient<=40 & data$sex_recode=="Female","Category II",
-                                               ifelse(USA$gramsperday_upshifted_crquotient>40 & USA$gramsperday_upshifted_crquotient<=60 & data$sex_recode=="Male","Category II",
-                                                      ifelse(USA$gramsperday_upshifted_crquotient>40 & data$sex_recode=="Female","Category III",
-                                                             ifelse(USA$gramsperday_upshifted_crquotient>60 & data$sex_recode=="Male","Category III", NA)))))))
-  
+# USA$drinkingcat <- ifelse(USA$gramsperday_upshifted_crquotient==0, "non-drinker",
+#                           ifelse(USA$gramsperday_upshifted_crquotient>0 & USA$gramsperday_upshifted_crquotient<=20 & data$sex_recode=="Female","Category I",
+#                                  ifelse(USA$gramsperday_upshifted_crquotient>0 & USA$gramsperday_upshifted_crquotient<=40 & data$sex_recode=="Male","Category I",
+#                                         ifelse(USA$gramsperday_upshifted_crquotient>20 & USA$gramsperday_upshifted_crquotient<=40 & data$sex_recode=="Female","Category II",
+#                                                ifelse(USA$gramsperday_upshifted_crquotient>40 & USA$gramsperday_upshifted_crquotient<=60 & data$sex_recode=="Male","Category II",
+#                                                       ifelse(USA$gramsperday_upshifted_crquotient>40 & data$sex_recode=="Female","Category III",
+#                                                              ifelse(USA$gramsperday_upshifted_crquotient>60 & data$sex_recode=="Male","Category III", NA)))))))
+USA$period <- USA$YEAR-2000  
 summary(as.factor(USA$drinkingcat))
-USA$drinkingcat <- factor(USA$drinkingcat, levels=c("non-drinker","Category I","Category II","Category III"))
+# USA$drinkingcat <- factor(USA$drinkingcat, levels=c("non-drinker","Category I","Category II","Category III"))
 USA$education_summary <- factor(USA$education_summary, levels=c("LEHS","SomeC","College"))
-model <- lm(mentalhealth ~ period + education_summary + sex_recode + race_eth + age_var + drinkingcat +
-              period*education_summary + drinkingcat*education_summary, data=USA)
+model <- lm(mentalhealth ~ period + education_summary + sex_recode + race_eth + age_var + gramsperday_orig +
+              frequency_orig + 
+              period*education_summary + gramsperday_orig*education_summary, data=USA)
 options(scipen=999)
 summary(model)
 

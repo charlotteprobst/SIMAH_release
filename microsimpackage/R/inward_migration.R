@@ -11,8 +11,10 @@ summary <- basepop %>%
                                     64,69,74,100),
                       labels=c("18","19-24","25-29","30-34","35-39",
                                "40-44","45-49","50-54","55-59","60-64",
-                               "65-69","70-74","75-79"))) %>%
-  complete(agecat, microsim.init.race, microsim.init.sex, fill=list(n=0)) %>%
+                               "65-69","70-74","75-79")),
+         agecat = as.character(agecat),
+         agecat = ifelse(microsim.init.age==18, "18", agecat)) %>%
+  # complete(agecat, microsim.init.race, microsim.init.sex) %>%
   group_by(agecat, microsim.init.race, microsim.init.sex, .drop=FALSE) %>%
   summarise(n=sum(n)) %>% ungroup()
 
@@ -75,7 +77,10 @@ toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(
   dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                 microsim.init.alc.gpd, microsim.init.BMI,
                 microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
-microsim.init.id <- nrow(basepop)+1:nrow(toadd)+nrow(basepop)
+
+from <- max(basepop$microsim.init.id)+1
+to <- (nrow(toadd)) + max(basepop$microsim.init.id)
+microsim.init.id <- from:to
 toadd <- cbind(microsim.init.id, toadd)
 basepopnew <- rbind(basepop, toadd)
 # list <- list(basepop,summarymissing)

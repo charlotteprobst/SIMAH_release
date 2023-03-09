@@ -96,9 +96,17 @@ dataFiles <- lapply(dataFiles, recode_menthealth)
 # recode the sample weights 
 dataFiles <- lapply(dataFiles, recode_sample_weights)
 
+# extract survey date 
+dataFiles <- lapply(dataFiles, extract_date)
+
 # select the variables needed and save the output - 
 # to select new / different variables adjust this in the function "subset_data" in functions script 
 dataFilesSubset <- lapply(dataFiles, subset_data)
+
+# for(i in 1:length(dataFilesSubset)){
+#   print(unique(dataFilesSubset[[i]]$YEAR))
+#   print(summary(as.factor(dataFilesSubset[[i]]$surveyyear)))
+# }
 
 # save an RDS of the processed data
 saveRDS(dataFilesSubset, "SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
