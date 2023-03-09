@@ -10,6 +10,9 @@ library(viridis)
 wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
 # wd <- "G:/My Drive/SIMAH Sheffield/"
+# Julia laptop directory
+# wd <- "/Users/julialemp/Documents/HIGH/Project_SIMAH/"
+
 setwd(wd)
 
 data <- read.csv("SIMAH_workplace/covid-19_policy/OxCGRT_US_latest.csv") %>% filter(Jurisdiction=="STATE_WIDE") %>% 

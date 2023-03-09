@@ -4,13 +4,21 @@ setwd("~/Google Drive/SIMAH Sheffield")
 library(dplyr)
 library(tidyr)
 library(mice)
+library(naniar)
 
 education <- read.csv("SIMAH_workplace/education_transitions/alldata_2019_parentED_final_income.csv") %>% 
   group_by(uniqueID) %>% fill(c(mother_num, father_num), .direction="downup") %>% 
   mutate(mother_num2=max(mother_num),
-         father_num2=max(father_num))
+         father_num2=max(father_num),
+         composite = ifelse(mother_num2==3 | father_num2==3, 1,
+                            ifelse(mother_num2<3 | father_num2<3, 0, NA)))
 
-summary(education)
+summarymissing <- education %>% ungroup() %>% 
+  mutate(timeperiod = ifelse(year<=2009, 1,2)) %>% 
+  dplyr::select(year, timeperiod, relationshiptohead, sex, age, highestEd, weight, racefinal,
+                mother_num2, father_num2, composite, family_income) %>% 
+  group_by(year) %>% 
+  miss_var_summary() 
 
 toimpute <- education %>% dplyr::select(uniqueID, year, relationshiptohead, sex, age, highestEd, 
                                         racefinal, father_num2, mother_num2, family_income) %>% 

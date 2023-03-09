@@ -4,10 +4,10 @@ extractTP <- function(model,combo,mapping){
   for(i in 1:nrow(combo)){
     selectedage <- combo$age[i]
     selectedsex <- combo$sex[i]
-    selectedrace <- combo$racefinal2[i]
+    selectedrace <- combo$race[i]
     selectedcollege <- combo$oneCollegeplus[i]
-    agescaledvar <- (mapping %>% filter(age==selectedage))$agescaled
-    agesqvar <- (mapping %>% filter(age==selectedage))$agesqscaled
+    agescaledvar <- as.numeric((mapping %>% filter(age==selectedage))$agescaled)
+    agesqvar <- as.numeric((mapping %>% filter(age==selectedage))$agesqscaled)
     probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(sex=selectedsex, agescaled=agescaledvar,
                                                                     agesqscaled=agesqvar,
                                                                     racefinal2=selectedrace,

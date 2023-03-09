@@ -1,0 +1,6 @@
+Note: The data management files (files "1_" and "2_") are located in: 
+"...\SIMAH\SIMAH_code\nesarc\1_Data management"
+
+The files are named: 
+1_Extract and Combine Data
+2_Data management

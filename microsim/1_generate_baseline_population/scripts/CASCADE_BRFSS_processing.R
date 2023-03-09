@@ -25,7 +25,7 @@ selected <- brfss %>% filter(State==SelectedState) %>%
                 formerdrinker,gramsperday, frequency, quantity_per_occasion)
 
 # check that there is at least one BRFSS individual in each category in 2000 
-nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())==144
+nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())
 
 dropping <- F
 
@@ -73,7 +73,9 @@ if(dropping==T){
   brfss <- selected
 }
 }
-
+if(SelectedState=="USA"){
+  brfss <- selected
+}
 
 
 

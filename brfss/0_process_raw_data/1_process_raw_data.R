@@ -21,7 +21,7 @@ gc()
 # read in R script with the functions
 source("SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
-years <- 1984:2020
+years <- 1984:2020 # Extend this, if 2021 data is added 
 for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
