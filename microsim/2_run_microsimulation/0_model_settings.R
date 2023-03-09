@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC")
+diseases <- c("AUD")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -117,7 +117,7 @@ lhs <- sample_lhs(numsamples, PE)
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
-inflation_factor <- 100
+inflation_factor <- 200
 
 if(length(diseases)>=1){
   base_counts <- setup_base_counts(death_counts,diseases, inflation_factor)

@@ -93,6 +93,8 @@ basepop <- CirrhosisHepatitis(basepop,lhs)
   }else if(liverinteraction==0){
   basepop <- CirrhosisAll(basepop,lhs)
   }
+}else if("AUD" %in% diseases==TRUE){
+  basepop <- AUD(basepop,lhs)
 }
 
 # calculate base rates if year = 2000)
