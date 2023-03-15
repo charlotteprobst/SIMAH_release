@@ -168,8 +168,8 @@ metareg.sens5 # no impact
 i2 <- var.comp(metareg.sens5)
 summary(i2) #99.1
 
-# SA6: study design
-metareg.sens6 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp + as.factor(study_design), random = ~ 1 | ref/id, method = "REML", data = pdat)
+# SA6: exclude with repeated cross-sectional study design
+metareg.sens6 <- rma.mv(yi = perc.change, V = var, slab = ref, mods = ~ tax_change + z.gdp, random = ~ 1 | ref/id, method = "REML", data = pdat[study_design %like% "longitudinal"])
 metareg.sens6 # no impact
 
 #I2
