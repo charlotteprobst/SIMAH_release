@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 1000000
+PopulationSize <- 10000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("AUD")
+diseases <- c("AUD", "LVDC")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -71,7 +71,7 @@ proportion <- ifelse(proportion>1,1,proportion)
 
 # read in base population
 if(model=="SIMAH"){
-  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
+  basepop <- read_csv(paste0(DataDirectory, SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
 }else if(model=="CASCADE"){
   basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
