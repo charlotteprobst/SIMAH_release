@@ -1113,7 +1113,7 @@ cd "/Users/marie/Dropbox/NIH2020/SIMAH_workplace/mortality"
 			str R_condition_17 424-428 str R_condition_18 429-433	
 			str R_condition_19 434-438 str R_condition_20 439-443					
 
-		using "1_raw data/VS20MORT.DUSMCPUB_r20220105" ;
-		gen year=2020 ;
+		using "1_raw data/mort2021us.txt" ;
+		gen year=2021 ;
 		compress;
 		save "3_out data/Mort2021.dta", replace;		

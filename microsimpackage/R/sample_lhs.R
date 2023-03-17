@@ -18,9 +18,10 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
         c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
         c("qnorm", -0.00031181, 0.00005372), #FBLIVER2
-        c("qunif", 1.2336, 4.9818)), # LIVER FORMER DRINKERS  TO DO: Change to qnorm distribution (get values from Laura)
+        #TODO: update to qunorm (on the log scale)
+        c("qunif", 1.2336, 4.9818)), # LIVER FORMER DRINKERS  
       
-      HEP_LVDC <- list(        
+      HLVDC <- list(        
         c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 
         c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2)
 
@@ -30,10 +31,10 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   )
   
   # name the disease parameters
-  names(prior) <- c("LVDC", "HEP_LVDC", "AUD")
+  names(prior) <- c("LVDC", "HLVDC", "AUD")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
-  names(prior$HEP_LVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
+  names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
   
   prior <- prior %>% keep(names(.) %in% DISEASES) # keep only the requested diseases (specified in model_settings)
@@ -63,7 +64,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(lhsSample) <- c("SampleNum", names(prior))
   
   # Save the lhsSample table
-  write.csv(lhsSample, paste0("SIMAH_workplace/microsim/2_output_data", "lhsSamples_wave", WAVE, ".csv"), row.names=F)
+  #write.csv(lhsSample, paste0("SIMAH_workplace/microsim/2_output_data", "lhsSamples_wave", WAVE, ".csv"), row.names=F)
   ## Where is WAVE specified?
   
   # Convert the lhsSample table into list format
@@ -74,28 +75,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   lhsSample <- list
   }
   
-  # If requiring point estimates only, extract these from the specified prior distributions 
-  else if(PE==1){
-    
-  # Option 1 - lhsSample as list
+  # If requiring point estimates only, use as specified in the priors (midpoint for uniform) 
+  } else if (PE==1){
     lhsSample <- list()
-    for(i in 1:length(prior)) {
-        if("qnorm" %in% prior[[i]][1]){
-          lhsSample <- append(lhsSample, prior[[i]][c(2)])
-        }
-        else{ #if uniform distribution
-          lhsSample <- append(lhsSample, ((as.numeric(prior[[i]][2])+ as.numeric(prior[[i]][3]))/2))
-        }}
-
-  # Option 2 - lhs sample with a df inside a list (but loop overwrites itself)
-  # lhsSample <- list()
-  # for(i in 1:length(prior)) {
-  #   if("qnorm" %in% prior[[i]][1]){
-  #     lhsSample[[1]] <- as.data.frame(prior)[-c(2)]
-  #   }
-  #   else{ #if uniform distribution
-  #     lhsSample[[1]] <- as.data.frame((as.numeric(prior[[i]][2])+ as.numeric(prior[[i]][3]))/2)
-  #   }}
+    prior <- as.data.frame(prior)
+    lhsSample[[1]] <- unlist(as.numeric(ifelse(prior[1,] == "qnorm", prior[2,], 
+           ifelse(prior[1,] == "qunif", (as.numeric(prior[2,]) + as.numeric(prior[3,]))/2, NA)
+           )))
+  }
   
   return(lhsSample)
   }
