@@ -53,10 +53,10 @@ write.csv(summary[[1]], "SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-ca
 
 # summary 1 - table containing summary stats - observed to simulated 
 summary[[2]]
-summary[[3]]
 
 # summary 2 - plot comparing mortality rates (age standardised)
 summary[[2]]
+
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/Women_newTP_calibrated_mean.png", dpi=300,
        width=33, height=19, units="cm")
