@@ -76,15 +76,26 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   
   # If requiring point estimates only, extract these from the specified prior distributions 
   else if(PE==1){
-   
-    lhsSample_new <- list()
+    
+  # Option 1 - lhsSample as list
+    lhsSample <- list()
     for(i in 1:length(prior)) {
         if("qnorm" %in% prior[[i]][1]){
-          lhsSample_new <- append(lhsSample_new, prior[[i]][c(2)])
+          lhsSample <- append(lhsSample, prior[[i]][c(2)])
         }
         else{ #if uniform distribution
-          lhsSample_new <- append(lhsSample_new, ((as.numeric(prior[[i]][2])+ as.numeric(prior[[i]][3]))/2))
+          lhsSample <- append(lhsSample, ((as.numeric(prior[[i]][2])+ as.numeric(prior[[i]][3]))/2))
         }}
-    
+
+  # Option 2 - lhs sample with a df inside a list (but loop overwrites itself)
+  # lhsSample <- list()
+  # for(i in 1:length(prior)) {
+  #   if("qnorm" %in% prior[[i]][1]){
+  #     lhsSample[[1]] <- as.data.frame(prior)[-c(2)]
+  #   }
+  #   else{ #if uniform distribution
+  #     lhsSample[[1]] <- as.data.frame((as.numeric(prior[[i]][2])+ as.numeric(prior[[i]][3]))/2)
+  #   }}
+  
   return(lhsSample)
   }
