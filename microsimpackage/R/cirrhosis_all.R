@@ -17,7 +17,7 @@ CirrhosisAll <- function(data,lhs){
   B_LIVER2_MEN <- as.numeric(lhs["B_LIVER2_MEN"])
   B_LIVER1_WOMEN <- as.numeric(lhs["B_LIVER1_WOMEN"])
   B_LIVER2_WOMEN <- as.numeric(lhs["B_LIVER2_WOMEN"])
-  FORMERDRINKER <- as.numeric(lhs["LIVER_FORMERDRINKER"])
+  LIVER_FORMERDRINKER <- as.numeric(lhs["LIVER_FORMERDRINKER"])
   data <- data %>%
     mutate(RR = ifelse(microsim.init.alc.gpd<164.9 & microsim.init.sex=="m",
                        exp(0 + B_LIVER1_MEN*microsim.init.alc.gpd + B_LIVER2_MEN*(microsim.init.alc.gpd^2)),
@@ -27,6 +27,7 @@ CirrhosisAll <- function(data,lhs){
                                      exp(0 + B_LIVER1_WOMEN*microsim.init.alc.gpd + B_LIVER2_WOMEN*(microsim.init.alc.gpd^2)),
                                      ifelse(microsim.init.alc.gpd>=97.2 & microsim.init.sex=="f",
                                             exp(0 + B_LIVER1_WOMEN*97.2 + B_LIVER2_WOMEN*(97.2^2)), NA)))),
+           #TODO: once updated in the sample_lhs.R we need to exponentiate before assigning
            RR = ifelse(formerdrinker==1, LIVER_FORMERDRINKER, RR))
   return(data)
 }
