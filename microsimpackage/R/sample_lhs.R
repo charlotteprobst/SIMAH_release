@@ -9,6 +9,8 @@
 #' @description 
 #' Each prior contains the type of distribution, the point estimate and the variance
 
+library(data.table)
+
 #' sample_lhs
 sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
@@ -18,12 +20,11 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
         c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
         c("qnorm", -0.00031181, 0.00005372), #FBLIVER2
-        #TODO: update to qunorm (on the log scale)
-        c("qunif", 1.2336, 4.9818)), # LIVER FORMER DRINKERS  
+        c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS (on the log scale)
       
       HLVDC <- list(        
         c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 
-        c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2)
+        c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2
 
       AUD <- list(
         c("qnorm", 0.0319, 0.0017), #AUD MEN
@@ -65,8 +66,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   
   # Save the lhsSample table
   #write.csv(lhsSample, paste0("SIMAH_workplace/microsim/2_output_data", "lhsSamples_wave", WAVE, ".csv"), row.names=F)
-  ## Where is WAVE specified?
-  
+
   # Convert the lhsSample table into list format
     list <- list()
   for(i in 1:nrow(lhsSample)){
@@ -76,13 +76,15 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   }
   
   # If requiring point estimates only, use as specified in the priors (midpoint for uniform) 
-  } else if (PE==1){
+  else if (PE==1){
     lhsSample <- list()
-    prior <- as.data.frame(prior)
-    lhsSample[[1]] <- unlist(as.numeric(ifelse(prior[1,] == "qnorm", prior[2,], 
-           ifelse(prior[1,] == "qunif", (as.numeric(prior[2,]) + as.numeric(prior[3,]))/2, NA)
-           )))
+    prior_new <- data.frame(prior)
+    prior_new <- transpose(prior_new)
+    prior_new$PE <- ifelse(prior_new$V1=="qnorm",prior_new$V2,
+                           ifelse(prior_new$V1=="qunif", (as.numeric(prior_new$V2)+as.numeric(prior_new$V3))/2, NA))
+    lhsSample[[1]] <- prior_new$PE
+    names(lhsSample[[1]]) <- names(prior)
   }
   
   return(lhsSample)
-  }
+}

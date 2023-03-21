@@ -27,7 +27,6 @@ CirrhosisAll <- function(data,lhs){
                                      exp(0 + B_LIVER1_WOMEN*microsim.init.alc.gpd + B_LIVER2_WOMEN*(microsim.init.alc.gpd^2)),
                                      ifelse(microsim.init.alc.gpd>=97.2 & microsim.init.sex=="f",
                                             exp(0 + B_LIVER1_WOMEN*97.2 + B_LIVER2_WOMEN*(97.2^2)), NA)))),
-           #TODO: once updated in the sample_lhs.R we need to exponentiate before assigning
-           RR = ifelse(formerdrinker==1, LIVER_FORMERDRINKER, RR))
+           RR = ifelse(formerdrinker==1, exp(LIVER_FORMERDRINKER), RR))
   return(data)
 }
