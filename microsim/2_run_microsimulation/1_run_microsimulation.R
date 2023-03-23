@@ -10,14 +10,16 @@ library(lhs)
 library(truncnorm)
 options(dplyr.summarise.inform = FALSE)
 
-# load in microsim R package
-setwd("U:/SIMAH/SIMAH_code")
-install("microsimpackage", dep=T)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 WorkingDirectory <- "U:/SIMAH/"
-DataDirectory <- "U:/SIMAH/SIMAH_workplace/microsim/1_input_data/"
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
+
+
+# load in microsim R package
 setwd(paste(WorkingDirectory))
+
+install("SIMAH_code/microsimpackage", dep=T)
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 

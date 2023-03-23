@@ -20,7 +20,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
         c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
         c("qnorm", -0.00031181, 0.00005372), #FBLIVER2
-        c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS (on the log scale)
+        c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS
       
       HLVDC <- list(        
         c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 
