@@ -4,13 +4,14 @@ setup_markov_model <- function(data,y){
   }else{
     data <- data %>% filter(year>=2009)
   }
-  data$educNUM <- ifelse(data$education<=12, 1,
-                         ifelse(data$education==13, 2,
-                                ifelse(data$education==14,3,
-                                       ifelse(data$education==15,4,
-                                              ifelse(data$education>=16,5,NA)))))
+  data$educNUM <- ifelse(data$education<=11, 1,
+                      ifelse(data$education==12, 2,
+                         ifelse(data$education==13, 3,
+                                ifelse(data$education==14,4,
+                                       ifelse(data$education==15,5,
+                                              ifelse(data$education>=16,6,NA))))))
   
-  data <- data %>% drop_na(sex,age,education,individualrace)
+  data <- data %>% drop_na(sex,age,education,individualrace, total_fam_income)
 
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -28,20 +29,40 @@ setup_markov_model <- function(data,y){
   # data$educNUM <- ifelse(data$age==18 & data$educNUM>2, 1, data$educNUM)
   data$sex <- as.factor(data$sex)
   data$highestEd <- data$education
-  source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function.R")
+  source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function2.R")
   backIDs <- getIDs(data)
   data <- data[!data$newID %in% backIDs,]
+  data <- data %>% filter(age>=16)
+  data$age <- round(data$age, digits=0)
   data$agesq <- data$age^2
+  data$racefinal2 <- as.character(data$individualrace)
+  data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
+  data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
+  data$racefinal2 <- as.factor(data$racefinal2)
+  # data <- data %>% filter(racefinal2!="other")
+  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
+  data <- data.frame(data)
+  data <- as.data.frame(lapply(data, unlist))
+  # remove absorbing transitions - i.e. anyone after they have reached 16 
+  toremove <- data %>% group_by(newID) %>% 
+    filter(educNUM==6) %>% 
+    mutate(minyear = min(year),
+           keep = ifelse(minyear==year, 1,0)) %>% 
+    dplyr::select(newID, year, keep)
+  data <- left_join(data, toremove)
+  data$keep[is.na(data$keep)] <- 1
+  data <- data %>% filter(keep==1)
+  # remove those with 1 observation or less 
+  toremove <- data %>% group_by(newID) %>% 
+    tally() %>% mutate(toremove = ifelse(n==1, 1,0)) %>% 
+    filter(toremove==0)
+  IDS <- unique(toremove$newID)
+  data <- data %>% filter(newID %in% IDS)
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
-  data$racefinal2 <- as.character(data$individualrace)
-  # data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
-  data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
-  data$racefinal2 <- as.factor(data$racefinal2)
-  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
-  data <- data.frame(data)
-  return(data)
+  data <- data[order(data$newID, data$year),]
+    return(data)
 }
 
 run_markov_model_baseline <- function(data){
@@ -86,7 +107,7 @@ run_markov_model_parent <- function(data){
   
 }
 
-extract_coefficients <- function(model, type, timeperiod, data){
+extract_coefficients_6cat <- function(model, type, timeperiod, data){
   dat <- print(model)
   if(length(dat)>1){
   dat <- t(dat)
@@ -101,16 +122,18 @@ extract_coefficients <- function(model, type, timeperiod, data){
     mutate(Variable = gsub(".Estimate","",names),
            Variable = gsub(".L","",Variable),
            Variable = gsub(".U","",Variable)) %>% filter(Variable!="base.Fixed") %>% 
-    rename("LEHS->LEHS"=State.1...State.1,
-           "LEHS->SomeC1"=State.1...State.2,
-           "SomeC1->SomeC1"=State.2...State.2,
-           "SomeC1->SomeC2"=State.2...State.3,
-           "SomeC2->SomeC2"=State.3...State.3,
-           "SomeC2->SomeC3"=State.3...State.4,
-           "SomeC3->SomeC3"=State.4...State.4,
-           "SomeC3->College"=State.4...State.5) %>% select(-c(names)) %>% 
-    pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College")) %>% 
-    pivot_longer(`LEHS->LEHS_Estimate`:`SomeC3->College_Upper`) %>% 
+    rename("LHS->LHS"=State.1...State.1,
+           "LHS->HS"=State.1...State.2,
+           "HS->HS"=State.2...State.2,
+           "HS->SomeC1"=State.2...State.3,
+           "SomeC1->SomeC1"=State.3...State.3,
+           "SomeC1->SomeC2"=State.3...State.4,
+           "SomeC2->SomeC2"=State.4...State.4,
+           "SomeC2->SomeC3"=State.4...State.5,
+           "SomeC3->SomeC3"=State.5...State.5,
+           "SomeC3->College"=State.5...State.6) %>% select(-c(names)) %>% 
+    pivot_wider(names_from=Type, values_from=c("LHS->LHS":"SomeC3->College")) %>% 
+    pivot_longer(`LHS->LHS_Estimate`:`SomeC3->College_Upper`) %>% 
     separate(name, into=c("Transition","Type"),sep="_") %>% 
     filter(Variable!="agescaled") %>% filter(Variable!="agesqscaled") %>% 
     filter(Variable!="base") %>% drop_na() %>%
@@ -125,6 +148,49 @@ extract_coefficients <- function(model, type, timeperiod, data){
       newLower = round(exp(newLower), digits=2),
       newUpper = round(exp(newUpper), digits=2),
       newUpper = ifelse(newUpper>100, 100, newUpper))
+  }
+  return(dat)
+}
+
+extract_coefficients <- function(model, type, timeperiod, data){
+  dat <- print(model)
+  if(length(dat)>1){
+    dat <- t(dat)
+    dat <- data.frame(dat)
+    dat$names <- row.names(dat)
+    origsample <- length(unique(data$uniqueID))
+    expandedsample <- length(unique(data$newID))
+    dat <- dat %>% 
+      mutate(Type = ifelse(grepl("Estimate",names),"Estimate",
+                           ifelse(grepl(".L", names), "Lower",
+                                  ifelse(grepl(".U",names),"Upper",NA)))) %>%
+      mutate(Variable = gsub(".Estimate","",names),
+             Variable = gsub(".L","",Variable),
+             Variable = gsub(".U","",Variable)) %>% filter(Variable!="base.Fixed") %>% 
+      rename("LEHS->LEHS"=State.1...State.1,
+             "LEHS->SomeC1"=State.1...State.2,
+             "SomeC1->SomeC1"=State.2...State.2,
+             "SomeC1->SomeC2"=State.2...State.3,
+             "SomeC2->SomeC2"=State.3...State.3,
+             "SomeC2->SomeC3"=State.3...State.4,
+             "SomeC3->SomeC3"=State.4...State.4,
+             "SomeC3->College"=State.4...State.5) %>% select(-c(names)) %>% 
+      pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College")) %>% 
+      pivot_longer(`LEHS->LEHS_Estimate`:`SomeC3->College_Upper`) %>% 
+      separate(name, into=c("Transition","Type"),sep="_") %>% 
+      filter(Variable!="agescaled") %>% filter(Variable!="agesqscaled") %>% 
+      filter(Variable!="base") %>% drop_na() %>%
+      mutate(model = type, time = timeperiod) %>%
+      pivot_wider(names_from=Type, values_from=value) %>%
+      group_by(Variable, Transition, model, time) %>%
+      mutate(SE = (log(Upper) - log(Lower)) / 3.92,
+             SD = SE * sqrt(expandedsample),
+             newSE = SD / sqrt(origsample), 
+             newLower = log(Estimate) - (newSE * 1.96),
+             newUpper = log(Estimate) + (newSE * 1.96),
+             newLower = round(exp(newLower), digits=2),
+             newUpper = round(exp(newUpper), digits=2),
+             newUpper = ifelse(newUpper>100, 100, newUpper))
   }
   return(dat)
 }

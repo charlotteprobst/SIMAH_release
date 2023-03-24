@@ -17,7 +17,7 @@ alldata <- alldata %>%
 alldata <- alldata %>% group_by(uniqueID) %>% mutate(sampleweight = mean(weight)) %>% filter(sampleweight!=0)
 
 # filter on just younger ages for education model
-alldata <- alldata %>% filter(age>=18 & age<=34)
+alldata <- alldata %>% filter(age>=16 & age<=34)
 
 length(unique(alldata$uniqueID))
 

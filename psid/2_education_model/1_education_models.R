@@ -24,36 +24,52 @@ data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.cs
 datat1 <- setup_markov_model(data, y=2009)
 datat2 <- setup_markov_model(data, y=2011)
 
-Q <- rbind( c(0.5, 0.5, 0, 0, 0),
-            c(0, 0.5, 0.5, 0, 0),
-            c(0, 0, 0.5, 0.5, 0),
-            c(0, 0, 0, 0.5, 0.5),
-            c(0, 0, 0, 0, 0.5))
+# Q <- rbind( c(0.5, 0.5, 0, 0, 0),
+#             c(0, 0.5, 0.5, 0, 0),
+#             c(0, 0, 0.5, 0.5, 0),
+#             c(0, 0, 0, 0.5, 0.5),
+#             c(0, 0, 0, 0, 0.5))
+
+Q <- rbind( c(0.5, 0.5, 0, 0, 0,0),
+            c(0, 0.5, 0.5, 0, 0,0),
+            c(0, 0, 0.5, 0.5, 0,0),
+            c(0, 0, 0, 0.5, 0.5,0),
+            c(0, 0, 0, 0, 0.5,0.5),
+            c(0, 0, 0, 0, 0, 0.5))
+
+# E <- rbind( c(-0, -0.1, 0.1, 0, 0,0),
+#             c(-0.1, 0, 0.1, 0, 0,0),
+#             c(0, -0.1, 0, 0.1, 0,0),
+#             c(0, 0,-0.1, 0, 0.1,0),
+#             c(0, 0, 0, -0.1, 0, 0.1),
+#             c(0, 0, 0, 0.1, -0.1,0))
+
 # specify baseline models - just race and ethnicity 
 modelt1_baseline <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                                    center=FALSE,
                                    covariates=~agescaled + agesqscaled + sex + racefinal2,
-                        control=list(trace=1))
+                        control=list(trace=1, fnscale=329428, maxit=200))
 modelt1_baseline
 
 modelt1_income <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                         center=FALSE,
                         covariates=~agescaled + agesqscaled + sex + racefinal2 + incomescaled,
-                        control=list(trace=1))
+                        control=list(trace=1, fnscale=329428, maxit=200))
 modelt1_income
+
+Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat1)
 
 modelt1_income_int <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                       center=FALSE,
                       covariates=~agescaled + agesqscaled + sex + racefinal2*incomescaled,
-                      control=list(trace=1, fnscale=336424, maxit=200))
+                      hessian=F,
+                      control=list(trace=1, fnscale=577103, maxit=100))
 modelt1_income_int
 AIC(modelt1_baseline, modelt1_income, modelt1_income_int)
 
-AIC(modelt1_baseline, modelt1_income)
-
-saveRDS(modelt1_baseline, "SIMAH_workplace/education_transitions/final_models/modelt1_baseline.RDS")
-saveRDS(modelt1_income, "SIMAH_workplace/education_transitions/final_models/modelt1_income.RDS")
-saveRDS(modelt1_income_int, "SIMAH_workplace/education_transitions/final_models/modelt1_income_int.RDS")
+saveRDS(modelt1_baseline, "SIMAH_workplace/education_transitions/final_models/modelt1_baseline_6cat.RDS")
+saveRDS(modelt1_income, "SIMAH_workplace/education_transitions/final_models/modelt1_income_6cat.RDS")
+saveRDS(modelt1_income_int, "SIMAH_workplace/education_transitions/final_models/modelt1_income_int_6cat_16.RDS")
 
 modelt2_baseline <-   model <- msm(educNUM~year, newID, data=datat2, qmatrix=Q,
                                    center=FALSE,
@@ -67,16 +83,19 @@ modelt2_income <-   model <- msm(educNUM~year, newID, data=datat2, qmatrix=Q,
                                    control=list(trace=1,fnscale=255053, maxit=200))
 modelt2_income
 
+Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat2)
+
 modelt2_income_int <-   model <- msm(educNUM~year, newID, data=datat2, qmatrix=Q,
                                  center=FALSE,
                                  covariates=~agescaled + agesqscaled + sex + racefinal2*incomescaled,
-                                 control=list(trace=1,fnscale=255053, maxit=200))
+                                 hessian=F,
+                                 control=list(trace=1, fnscale=624617, maxit=200))
 modelt2_income_int
 
 
 AIC(modelt2_baseline, modelt2_income, modelt2_income_int)
 
-saveRDS(modelt2_baseline, "SIMAH_workplace/education_transitions/final_models/modelt2_baseline.RDS")
-saveRDS(modelt2_income, "SIMAH_workplace/education_transitions/final_models/modelt2_income.RDS")
-saveRDS(modelt2_income_int, "SIMAH_workplace/education_transitions/final_models/modelt2_income_int.RDS")
+saveRDS(modelt2_baseline, "SIMAH_workplace/education_transitions/final_models/modelt2_baseline_6cat.RDS")
+saveRDS(modelt2_income, "SIMAH_workplace/education_transitions/final_models/modelt2_income_6cat.RDS")
+saveRDS(modelt2_income_int, "SIMAH_workplace/education_transitions/final_models/modelt2_income_int_6cat_16.RDS")
 
