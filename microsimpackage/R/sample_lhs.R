@@ -71,6 +71,6 @@ sample_lhs <- function(N_SAMPLES, PE){
     )
 
   }
-
+# example
   return(lhsSample)
 }
