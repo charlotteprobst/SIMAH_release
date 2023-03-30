@@ -365,6 +365,7 @@ recode_alc_frequency <- function(data){
                                                            ifelse(alc_frequency==999,NA, alc_frequency)))))))
     }else if(data$YEAR[1]>=2011){
       data <- data %>% mutate(
+      raw_frequency = alc_frequency,
       alc_frequency = ifelse(alc_frequency<110, (alc_frequency-100)*52/12,
                                     ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                            ifelse(alc_frequency==777, NA,
@@ -431,8 +432,9 @@ recode_alc_quantity <- function(data){
                              ifelse(YEAR>=2001 & YEAR<=2004, AVEDRNK,
                                     ifelse(YEAR>=2005 & YEAR<=2018, AVEDRNK2,
                                            ifelse(YEAR>=2019, AVEDRNK3, NA)))),
+           raw_quantity_per_occasion = quantity_per_occasion,
            quantity_per_occasion = ifelse(quantity_per_occasion==88, 0,
-                                 ifelse(quantity_per_occasion==77, NA,
+                                 ifelse(quantity_per_occasion>=77, NA,
                                         ifelse(quantity_per_occasion==99, NA, 
                                                ifelse(drinkingstatus==0, 0, quantity_per_occasion)))))
   }

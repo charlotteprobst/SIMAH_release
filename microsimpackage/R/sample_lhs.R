@@ -84,6 +84,6 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
     lhsSample[[1]] <- prior_new$PE
     names(lhsSample[[1]]) <- names(prior)
   }
-  
+
   return(lhsSample)
 }
