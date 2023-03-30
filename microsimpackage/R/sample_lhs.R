@@ -9,7 +9,6 @@
 #' @description 
 #' Each prior contains the type of distribution, the point estimate and the variance
 
-library(data.table)
 
 #' sample_lhs
 sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
