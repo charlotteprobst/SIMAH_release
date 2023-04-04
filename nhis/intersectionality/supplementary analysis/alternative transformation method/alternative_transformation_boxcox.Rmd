@@ -1,0 +1,104 @@
+---
+title: "Boxcox trasnformation"
+output: html_notebook
+---
+
+```{r}
+drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
+```
+
+```{r}
+# Create smaller dataset to facilitate speed of plotting
+drinkers_plots <- dplyr::select(drinkers, "alc_daily_g_capped_200")
+ 
+# Check lowest possible value of alc_daily_g for drinkers:
+drinkers_plots %>% summarise(min(alc_daily_g_capped_200))
+# 0.03835616 i.e. positive therefore ok to undertake a box cox transformation
+```
+
+Transformation with alternative lambda values
+
+LAMBDA 1 - Taken from BRFSS alcohol processing script
+```{r}
+lambda <- 0.129
+transformed_drinkers_1 <- drinkers_plots %>%
+  mutate(transformed_grams_lambda_1 = (alc_daily_g_capped_200 ^ lambda - 1) / lambda)
+ 
+# View transformed alcohol consumption for drinkers
+ggplot(transformed_drinkers_1, aes(x=transformed_grams_lambda_1), y) +
+    (geom_histogram(bins=100)) +
+    ggtitle("Distribution of alc_daily_g - drinkers only (transformed data, lambda = 0.129)") 
+```
+
+```{r}
+ggsave("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinkers_transformed_distribution_lambda_0.129.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Create QQ plots for transformed alcohol consumption data (to assess normality)
+```{r}
+qqnorm(transformed_drinkers_1$transformed_grams_lambda_1, pch = 1, frame = FALSE)
+qqline(transformed_drinkers_1$transformed_grams_lambda_1, lwd = 2) 
+```
+
+
+LAMBDA 2 BoxCox.lambda method (forecast package)
+```{r}
+lambda2 <- forecast::BoxCox.lambda(drinkers_plots$alc_daily_g_capped_200)  # -0.054
+ 
+transformed_drinkers_2 <- drinkers_plots %>%
+    mutate(transformed_grams_lambda_2 = (alc_daily_g_capped_200 ^ lambda2 - 1) / lambda2)
+
+ggplot(transformed_drinkers_2, aes(x=transformed_grams_lambda_2), y) + 
+  (geom_histogram(bins=100)) +
+ ggtitle("Distribution of alc_daily_g - drinkers only (transformed data, lambda=-0.054)")
+```
+
+
+```{r}
+ggsave("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinkers_transformed_distribution_lambda_neg_0.054.png", dpi=300, width=33, height=19, units="cm")
+```
+
+
+```{r}
+qqnorm(transformed_drinkers_2$transformed_grams_lambda_2, pch = 1, frame = FALSE)
+qqline(transformed_drinkers_2$transformed_grams_lambda_2, lwd = 2)
+```
+
+
+LAMBDA 3 boxcox (MASS package)
+```{r}
+b <- MASS::boxcox(lm(drinkers_plots$alc_daily_g_capped_200 ~ 1))
+lambda3 <- b$x[which.max(b$y)] # 0.0606
+
+transformed_drinkers_3 <- drinkers_plots %>%
+  mutate(transformed_grams_lambda_3 = (alc_daily_g_capped_200 ^ lambda3 - 1) / lambda3)
+
+ggplot(transformed_drinkers_3, aes(x=transformed_grams_lambda_3), y) +
+  (geom_histogram(bins=100)) +
+ggtitle("Distribution of alc_daily_g - drinkers only (transformed data, lambda=0.06)")
+```
+
+
+```{r}
+ggsave("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinkers_transformed_distribution_lambda_0.06.png.png", dpi=300, width=33, height=19, units="cm")
+```
+
+```{r}
+qqnorm(transformed_drinkers_3$transformed_grams_lambda_3, pch = 1, frame = FALSE)
+qqline(transformed_drinkers_3$transformed_grams_lambda_3, lwd = 2)
+```
+
+
+Save transformed data that appears most normally distributed based on box cox (i.e. data transformed using a lambda of 0.129)
+
+```{r}
+# Append transformed data to full drinkers dataset
+lambda <- 0.129
+transformed_drinkers_1_full <- drinkers %>%
+  mutate(transformed_grams_lambda_1 = (alc_daily_g_capped_200 ^ lambda - 1) / lambda)
+ 
+# Save cleaned transformed data for drinkers
+saveRDS(transformed_drinkers_1_full, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_boxcox.RDS")
+ 
+write_csv(transformed_drinkers_1_full, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_boxcox.csv")
+```

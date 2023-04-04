@@ -1,0 +1,506 @@
+---
+title: "2_exploratory_analysis"
+---
+
+## Review of drinking patterns by subgroups
+Set up
+```{r, warning=FALSE}
+# Read in data:
+nhis_alc_clean <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
+
+# Read in necessary R packages & functions
+library(tidyverse)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(ragg)
+
+# Read in necessary functions
+source("U:/SIMAH/SIMAH_code/nhis/intersectionality/functions/remove_na.R")
+
+# Set default theme for plots:
+theme_set(theme_bw(base_size = 12))
+```
+
+# Basic demographic distribution of survey participants
+
+## Summary table of demographic characteristics of participants
+```{r}
+nhis_alc_clean %>% summarise(mean(AGE))
+nhis_alc_clean %>% group_by(age_3_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+nhis_alc_clean %>% group_by(SEX) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+nhis_alc_clean %>% group_by(race_5_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+nhis_alc_clean %>% group_by(education_3_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+nhis_alc_clean %>% group_by(decade) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+nhis_alc_clean %>% summarise(mean(alc_daily_g), sd(alc_daily_g)) # full survey
+nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker")%>% summarise(drinkers_mean = mean(alc_daily_g), sd(alc_daily_g)) 
+```
+## Comparisson of education status by age category 
+Undertaken to check that each age category contains all educational status (i.e. that adequate people in the youngest group have graduated college when surveyed)
+```{r}
+nhis_alc_clean %>% filter(age_3_cats=="18-24") %>% 
+  group_by(education_3_cats) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(percent=n/sum(n)*100)
+
+nhis_alc_clean %>% filter(age_3_cats=="25-69") %>% 
+  group_by(education_3_cats) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(percent=n/sum(n)*100)
+
+nhis_alc_clean %>% filter(age_3_cats=="70+") %>% 
+  group_by(education_3_cats) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(percent=n/sum(n)*100)
+```
+
+## Demographics by birth cohort
+
+Age ranges within each cohort
+```{r}
+nhis_alc_clean %>% filter(birth_cohort == "silent") %>% summarise(min(AGE), max(AGE)) # 55-85
+nhis_alc_clean %>% filter(birth_cohort == "baby_boomers") %>% summarise(min(AGE), max(AGE)) # 36-70
+nhis_alc_clean %>% filter(birth_cohort == "gen_x") %>% summarise(min(AGE), max(AGE)) # 20-51
+nhis_alc_clean %>% filter(birth_cohort == "millenials") %>% summarise(min(AGE), max(AGE))# 18-35
+nhis_alc_clean %>% filter(birth_cohort == "gen_z") %>% summarise(min(AGE), max(AGE)) # 18-19
+```
+nb. no people of legal drinking age in America captured within gen_z
+
+Racial/ethnic group prevalence by birth cohort
+```{r}
+nhis_alc_clean %>%
+  group_by(birth_cohort) %>%
+  count(race_5_cats) %>%
+  group_by(birth_cohort) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = birth_cohort, y = percent, fill = race_5_cats)) +
+  geom_col(position = position_dodge())+
+  xlab("birth_cohort") +
+  ylab("% of birth cohort") +
+  ylim(0,100) +
+  ggtitle("Racial/ethnic group prevelances by birth cohort")
+```
+
+Education group prevalence by birth cohort
+```{r}
+nhis_alc_clean %>%
+  group_by(birth_cohort) %>%
+  count(education_5_cats) %>%
+  group_by(birth_cohort) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = birth_cohort, y = percent, fill = education_5_cats)) +
+  geom_col(position = position_dodge())+
+  xlab("birth_cohort") +
+  ylab("% of birth cohort") +
+  ylim(0,100) +
+  ggtitle("Educational group prevelances by birth cohort")
+```
+nb. fewer people in gen-z with college education due to younger ages
+
+# Summary of drinkers versus non-drinkers by unitary factors
+
+By Sex
+```{r}
+nhis_alc_clean %>%
+  group_by(SEX) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = ALCSTAT1, y = percent, fill = SEX)) +
+  geom_col(position = position_dodge())+
+  xlab("Drinking status") +
+  ylab("% of total sex") +
+  ylim(0,100) +
+  ggtitle("Differences in drinking status by sex")
+# ggsave("drinking_status_by_sex.png", dpi=300, width=33, height=19, units="cm")
+```
+
+By race
+```{r}
+nhis_alc_clean %>%
+  group_by(race_5_cats) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = ALCSTAT1, y = percent, fill = race_5_cats)) +
+  geom_col(position = position_dodge())+
+  xlab("Drinking status") +
+  ylab("% of total racial/ethnic group") +
+  ylim(0,100) +
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Differences in drinking status by race/ethnicity")
+# ggsave("drinking_status_by_race.png", dpi=300, width=33, height=19, units="cm")
+```
+
+By educational status
+```{r}
+nhis_alc_clean %>%
+  group_by(education_5_cats) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = ALCSTAT1, y = percent, fill = education_5_cats)) +
+  geom_col(position = position_dodge())+
+  xlab("Drinking status") +
+  ylab("% of total SES group") +
+  theme(axis.text.x = element_text(size=10)) +
+  ylim(0,100) +
+  ggtitle("Differences in drinking status by SES")
+# ggsave("drinking_status_by_SES.png", dpi=300, width=33, height=19, units="cm")
+```
+
+By age group
+```{r}
+nhis_alc_clean %>%
+  group_by(age_3_cats) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = ALCSTAT1, y = percent, fill = age_3_cats)) +
+  geom_col(position = position_dodge())+
+  xlab("Drinking status") +
+  ylab("% of total age group") +
+  theme(axis.text.x = element_text(size=10), title=element_text(size=14)) +
+  ylim(0,100) +
+  ggtitle("Differences in drinking status by age group")
+# ggsave("drinking_status_by_age_group.png", dpi=300, width=33, height=19, units="cm")
+```
+
+By birth cohort
+```{r}
+nhis_alc_clean %>%
+  group_by(birth_cohort) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  ggplot(aes(x = ALCSTAT1, y = percent, fill = birth_cohort)) +
+  geom_col(position = position_dodge())+
+  xlab("Drinking status") +
+  ylab("% of total birth cohort") +
+  ylim(0,100) +
+  ggtitle("Differences in drinking status by birth cohort")
+```
+
+# Distribution of responses to alcohol questions for drinkers
+
+Number of drinks per occasion
+```{r}
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCAMT)) +
+  geom_histogram(binwidth=1)+
+  xlab("Average drinks per occassion") +
+  ylab("Count") +
+  xlim(0,20) +
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Distribution of drinks per occassion, drinkers only")
+```
+
+Number of drinking days per year
+```{r}
+# Overall
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCDAYSYR)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per year") +
+  ylab("Count") +
+  xlim(0,365) +
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Distribution of number of drinking days per year, all drinkers")
+
+# By sex
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCDAYSYR)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per year") +
+  ylab("Count") +
+  xlim(0,365) +
+  theme(axis.text.x = element_text(size=10)) +
+  facet_grid(cols=vars(SEX)) +
+  ggtitle("Distribution of drinking days per year, by sex")
+
+# By race
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCDAYSYR)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per year") +
+  ylab("Count") +
+  xlim(0,365) +
+  theme(axis.text.x = element_text(size=10)) +
+  facet_grid(cols=vars(race_5_cats)) +
+  ggtitle("Distribution of drinking days per year, by race")
+
+# By SES
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCDAYSYR)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per year") +
+  ylab("Count") +
+  xlim(0,365) +
+  theme(axis.text.x = element_text(size=10)) +
+  facet_grid(cols=vars(education_4_cats)) +
+  ggtitle("Distribution of drinking days per year, by education")
+```
+
+Number of drinking days per month
+```{r}
+# Overall
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALCDAYSMO)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per month") +
+  ylab("Count") +
+  xlim(0,31) +
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Distribution of number of drinking days per month, all drinkers")
+```
+
+Number of drinking days per week
+```{r}
+# Overall
+temp <- nhis_alc_clean %>% 
+  filter(ALCSTAT1 == "Current drinker") %>%
+  mutate(ALCDAYSWK = dplyr::case_when(
+   ALCDAYSWK == 0 ~ 0.1,
+   ALCDAYSWK == 10 ~ 1, 
+   ALCDAYSWK == 20 ~ 2, 
+   ALCDAYSWK == 30 ~ 3, 
+   ALCDAYSWK == 40 ~ 4, 
+   ALCDAYSWK == 50 ~ 5,
+   ALCDAYSWK == 60 ~ 6,
+   ALCDAYSWK == 70 ~ 7))
+
+temp %>%
+  ggplot(aes(x = ALCDAYSWK)) +
+  geom_bar() +
+  scale_x_binned()+
+  xlab("Number of days per week") +
+  ylab("Count") +
+  xlim(0,7.5) +
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Distribution of number of drinking days per week, drinkers only")
+```
+
+Number of days drinking > 5 units
+```{r}
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  ggplot(aes(x = ALC5UPYR)) +
+  geom_histogram(binwidth=1)+
+  xlab("Number of days per year") +
+  ylab("Count") +
+  xlim(0,365) +
+  ylim(0,20000)+
+  theme(axis.text.x = element_text(size=10)) +
+  ggtitle("Distribution of number of days a year that drink > 5 drinks (per year), drinkers only")
+```
+
+# Average consumption for drinkers, grouped by sociodemographic factors
+
+Mean consumption by age
+```{r}
+# Continuous age
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(SEX, AGE) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+  ggplot(aes(x=AGE, y= mean_alc_daily_g, color = SEX)) + geom_point() +
+  scale_x_continuous(breaks=seq(0,85,5)) +
+  scale_y_continuous(breaks=seq(0,12,1)) +
+  geom_line() +
+  ggtitle("mean daily grams of alcohol for drinkers, by age")
+# ggsave("alc_daily_g_by_age_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+
+# Categorical age variable with 5 year splits
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  mutate(age_group =
+    case_when(
+    AGE >= 18 & AGE <=20 ~ "18-20",
+    AGE >= 21 & AGE <=23 ~ "21-23",
+    AGE >= 24 & AGE <=30 ~ "24-30",
+    AGE >= 31 & AGE <=40 ~ "31-40",
+    AGE >= 41 & AGE <=50 ~ "41-50",
+    AGE >= 51 & AGE <=60 ~ "51-60",
+    AGE >= 61 & AGE <=70 ~ "61-70",
+    AGE >= 71 & AGE <=80 ~ "71-80",
+    AGE >= 81  ~ "81+")) %>%
+  group_by(SEX, age_group) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+ggplot(aes(x=age_group, y=mean_alc_daily_g, colour=SEX)) +
+  facet_grid(. ~ SEX) +
+  geom_point() + 
+  geom_segment( aes(x=age_group, xend=age_group, y=0, yend=mean_alc_daily_g))+
+  theme(axis.text.x = element_text(size = 8), legend.position = "none") +
+  ggtitle("mean daily grams of alcohol for drinkers, by age group") 
+# ggsave("alc_daily_g_by_agegroup_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by sex
+```{r}
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(SEX) %>%
+  ggplot(aes(x = SEX, y = alc_daily_g, colour=SEX)) +            
+  geom_boxplot()+
+  ylim(0,80)
+  ggtitle("mean grams of alcohol per day, split by sex - drinkers only")
+  # NB. removed 1996 rows due to y-limit set to 80grams
+# ggsave("alc_daily_g_by_sex_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by race 
+```{r}
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(race_5_cats) %>%
+  ggplot(aes(x = race_5_cats, y = alc_daily_g, colour = race_5_cats)) +            
+  geom_boxplot()+
+  ylim(0,20) +
+  theme(axis.text.x=element_blank()) +
+  ggtitle("mean grams of alcohol per day, split by race")
+# ggsave("alc_daily_g_by_race_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by educational status
+```{r}
+# Five education categories
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(education_5_cats) %>%
+  ggplot(aes(x = as.factor(education_5_cats), y = alc_daily_g, colour = education_5_cats)) +            
+  geom_boxplot() +
+  ylim(0,20) +
+  xlab("educational status") +
+  theme(axis.text.x=element_blank()) +
+  ggtitle("mean grams of alcohol per day, split by education status")
+# ggsave("alc_daily_g_by_education_drinkers_only_5_cats.png", dpi=300, width=33, height=19, units="cm")
+
+# Three education categories
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(education_3_cats) %>%
+  ggplot(aes(x = as.factor(education_3_cats), y = alc_daily_g)) +            
+  geom_boxplot()+
+  ylim(0,50) +
+  ggtitle("mean grams of alcohol per day, split by education status (3 cats) - drinkers only")
+# ggsave("alc_daily_g_by_education_drinkers_only_3_cats.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by sexual orientation
+```{r}
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  remove_na("SEXORIEN") %>%
+  group_by(SEXORIEN) %>%
+  ggplot(aes(x = SEXORIEN, y = alc_daily_g, colour=SEXORIEN)) +            
+  geom_boxplot()+
+  ylim(0,80) +
+  ggtitle("mean grams of alcohol per day, split by sexual orientation - drinkers only")
+# ggsave("alc_daily_g_by_sex_orien_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by year 
+```{r}
+# Continuous year
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(SEX, YEAR) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+  ggplot(aes(x=YEAR, y= mean_alc_daily_g, color = SEX)) + geom_point(size=3) +
+  geom_line() +
+  ggtitle("mean grams of alcohol per day, split by year and sex (drinkers only)")
+# ggsave("alc_daily_g_by_year_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+
+# Year in groups of 5 years
+par(mfrow=c(1,2))
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  mutate(year_group =
+    case_when(
+    YEAR >= 2000 & YEAR <=2004 ~ "2000-2004",
+    YEAR >= 2005 & YEAR <=2009 ~ "2005-2009",
+    YEAR >= 2010 & YEAR <=2014 ~ "2010-2014",
+    YEAR >= 2015 & YEAR <=2019 ~ "2015-2018")) %>%
+  group_by(year_group, SEX) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+ggplot(aes(x=year_group, y=mean_alc_daily_g, colour=SEX)) +
+  facet_grid(. ~ SEX) +
+  geom_point() + 
+  geom_segment( aes(x=year_group, xend=year_group, y=0, yend=mean_alc_daily_g))+
+  theme(axis.text.x = element_text(size = 8)) 
+  ggtitle("mean grams of alcohol per day, split by year groups and sex - drinkers only") 
+# ggsave("alc_daily_g_by_year_group_cats_drinkers.png", dpi=300, width=33, height=19, units="cm")
+
+# Year split into decades
+par(mfrow=c(1,2))
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(decade, SEX) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+ggplot(aes(x=decade, y=mean_alc_daily_g, colour=SEX)) +
+  facet_grid(. ~ SEX) +
+  geom_point() + 
+  geom_segment( aes(x=decade, xend=decade, y=0, yend=mean_alc_daily_g))+
+  theme(axis.text.x = element_text(size = 8)) 
+  ggtitle("mean grams of alcohol per day, split by decade and sex - drinkers only")
+# ggsave("alc_daily_g_by_decade_drinkers.png", dpi=300, width=33, height=19, units="cm")
+```
+
+Mean consumption by birth_year
+```{r}
+# Continuous birth year
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(SEX, birth_year) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+  ggplot(aes(x=birth_year, y= mean_alc_daily_g, color = SEX)) + geom_point() + 
+  scale_x_continuous(breaks=seq(1910,2000,5)) +
+  scale_y_continuous(breaks=seq(0,14,1)) +
+  geom_line() +
+  theme(axis.text.x = element_text(size = 8), title = element_text(size=12)) +
+  ggtitle("mean daily grams of alcohol for drinkers, by birth year") 
+# ggsave("alc_daily_g_by_birth_year_drinker_only.png", dpi=300, width=33, height=19, units="cm")
+
+# Categorical birth year
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  mutate(birth_year_group =
+    case_when(
+    birth_year >= 1915 & birth_year <=1924 ~ "1915-1924",
+    birth_year >= 1925 & birth_year <=1934 ~ "1925-1934",
+    birth_year >= 1935 & birth_year <=1944 ~ "1935-1944",
+    birth_year >= 1945 & birth_year <=1954 ~ "1945-1954",
+    birth_year >= 1955 & birth_year <=1964 ~ "1955-1964",
+    birth_year >= 1965 & birth_year <=1974 ~ "1965-1974",
+    birth_year >= 1975 & birth_year <=1984 ~ "1975-1984",
+    birth_year >= 1985 & birth_year <=1994 ~ "1985-1994",
+    birth_year >= 1995 & birth_year <=2004 ~ "1995-2004")) %>%
+  group_by(SEX, birth_year_group) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+ggplot(aes(x=birth_year_group, y=mean_alc_daily_g, colour=SEX)) +
+  facet_grid(. ~ SEX) +
+  geom_point() + 
+  geom_segment( aes(x=birth_year_group, xend=birth_year_group, y=0, yend=mean_alc_daily_g))+
+  theme(axis.text.x = element_text(size = 8, angle = 90), title = element_text(size = 14), legend.position = "none") +
+  ggtitle("mean daily grams of alcohol for drinkers, by birth year") 
+# ggsave("alc_daily_g_by_birth_year_groups_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+
+# Birth cohorts
+par(mfrow=c(1,2))
+nhis_alc_clean %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(birth_cohort, SEX) %>%
+  summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
+ggplot(aes(x=birth_cohort, y=mean_alc_daily_g, colour=SEX)) +
+  facet_grid(. ~ SEX) +
+  geom_point() + 
+  geom_segment( aes(x=birth_cohort, xend=birth_cohort, y=0, yend=mean_alc_daily_g))+
+  theme(axis.text.x = element_text(size = 8)) 
+  ggtitle("mean grams of alcohol per day, split by birth_cohort and sex - drinkers only") 
+ggsave("alc_daily_g_by_birth_cohort_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+```

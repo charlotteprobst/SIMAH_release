@@ -1,0 +1,71 @@
+
+---
+title: "Run MAIHDA analysis with glmer"
+output: html_notebook
+---
+
+This script undertakes a multi-level analysis of individual heterogeneity and discriminatory accuracy (MAIHDA) to estimate average alcohol consumption per intersectional group of sex/age/race/SES
+
+Setup
+```{r, warning=FALSE}
+# Load in data
+transformed_drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+
+# Load necessary packages
+library("R2MLwiN")
+library(tidyr)
+library(dplyr)
+
+# Bias toward non-scientific notation
+options(scipen=10)
+
+# Change file path ONLY IF using Uni desktop
+# options(MLwiN_path="C:\\Program Files\\MLwiN v3.01")
+```
+
+Generate intersectional groups
+```{r}
+data_intersections_MAIHDA <- transformed_drinkers %>% 
+  group_by(SEX, race_5_cats, education_3_cats, age_3_cats, decade) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n())
+```
+
+Create a reference table of the intersectional groups - numbers and names
+```{r}
+temp <- data_intersections_MAIHDA %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp2 <- temp %>% 
+  mutate(intersectional_names = as.character(paste(sex, age_3_cats, race_5_cats, education_3_cats, decade)))
+
+MAIHDA_intersections_reference <- distinct(temp2, intersections, .keep_all = TRUE) %>% dplyr::select(intersections, intersectional_names)
+```
+
+# Run the null two-level model and calculate the variance partition coefficient (VPC)
+```{r}
+linear_null <- lmer(capped_daily_grams_log ~ 1 + (1 | intersections),
+                       data = data_intersections_MAIHDA,
+                       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(linear_null)
+performance::icc(linear_null)
+```
+
+# Intersectional model (all main effects)
+```{r}
+linear_main_effects <- lmer(capped_daily_grams_log ~ 1 + SEX + age_3_cats + race_5_cats + education_3_cats + decade + (1 | intersections),
+                       data = data_intersections_MAIHDA,
+                       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+summary(linear_main_effects)
+performance::icc(linear_main_effects)
+```
+
+# Try to work out how to get the residuals and estimates....

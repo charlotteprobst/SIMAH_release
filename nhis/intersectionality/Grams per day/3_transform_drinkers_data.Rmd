@@ -1,0 +1,71 @@
+---
+title: "3_transform_drinkers_data"
+---
+
+"This script transforms drinkers data to fit the normal distribution."
+
+## Read in necessary packages, functions & data, & specify preferences
+
+# Setup
+```{r, warning = FALSE}
+
+# Read in R packages
+library(tidyverse)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(labelled)
+library(haven)
+library(mice)
+library(clipr)
+library(forecast)
+library(MASS)
+library(ggplot2)
+
+# Set default theme for plots
+theme_set(theme_bw(base_size = 10))
+
+# bias against scientific notiation
+options(scipen=999)
+
+# Read in drinkers data
+drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
+```
+
+Review basic stats of estimated grams per day data for drinkers
+```{r}
+drinkers %>% summarise(min(alc_daily_g), max(alc_daily_g), mean(alc_daily_g))
+drinkers %>% summarise(min(alc_daily_g_capped_200), max(alc_daily_g_capped_200), mean(alc_daily_g_capped_200))
+```
+# Transform consumption data for drinkers
+
+Check recommended lambda with boxcox
+```{r}
+b <- MASS::boxcox(lm(drinkers$alc_daily_g_capped_200 ~ 1))
+lambda <- b$x[which.max(b$y)] # 0.0606
+
+lambda2 <- forecast::BoxCox.lambda(drinkers$alc_daily_g_capped_200)  # -0.054
+```
+As the suggested lambda are close to 0, log transformation is appropriate
+
+Log transformation
+```{r}
+drinkers$capped_daily_grams_log <- log(drinkers$alc_daily_g_capped_200)
+
+# Distribution plot 
+ggplot(drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=100) + 
+ylim(0,20000)
+
+# qq plot
+qqnorm(drinkers$capped_daily_grams_log, pch = 1, frame = FALSE)
+qqline(drinkers$capped_daily_grams_log, lwd = 2)
+```
+# Check transformation method by back-transforming and re-calculating the back transformed mean
+```{r}
+drinkers$test <- exp(drinkers$capped_daily_grams_log)
+mean(drinkers$test)
+```
+Save log transformed data
+```{r}
+saveRDS(drinkers, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+```

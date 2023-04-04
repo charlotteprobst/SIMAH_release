@@ -1,0 +1,157 @@
+---
+title: "5_Model_specification"
+---
+
+Setup
+```{r}
+# Load relevant packages
+library(tidyr)
+library(dplyr)
+library(haven)
+library(lmtest)
+library(car)
+library(stargazer)
+
+# Read in transformed data (for drinkers only)
+transformed_drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+```
+
+Check the type of data of each variable that may be used in the regression
+```{r}
+# Sex
+typeof(transformed_drinkers$SEX)
+# Race
+typeof(transformed_drinkers$race_5_cats)
+# Education
+typeof(transformed_drinkers$education_3_cats)
+typeof(transformed_drinkers$education_4_cats)
+typeof(transformed_drinkers$education_5_cats)
+# Age
+typeof(transformed_drinkers$AGE)
+typeof(transformed_drinkers$age_3_cats)
+typeof(transformed_drinkers$age_4_cats)
+# Sexual orientation
+typeof(transformed_drinkers$SEXORIEN)
+# year
+typeof(transformed_drinkers$decade)
+```
+# Check distribution of dependant variable
+```{r}
+hist(transformed_drinkers$capped_daily_grams_log)
+```
+# Check recommended model specification from a statistical standpoint
+```{r}
+model_variables <- dplyr::select(transformed_drinkers, capped_daily_grams_log, age_3_cats,age_4_cats,SEX,race_5_cats,education_3_cats,education_4_cats,education_5_cats, birth_cohort, decade)
+drinkers_model <- lm(capped_daily_grams_log ~ ., data = model_variables)
+step_spec_lr <- stepAIC(drinkers_model, trace=TRUE, direction = "both")
+stargazer(drinkers_model,step_spec_lr,type="text")
+```
+# suggests best model would include:
+age_3_cats + age_4_cats + SEX + race_5_cats + education_5_cats + birth_cohort + decade
+# However, not appropriate to include more than one age variable or to include all of age/year/birth cohort.
+# Based on exploratory analysis decade seemes more appropriate than birth_cohort.
+# Based on intersectional group sizes, 3 age groups more feasible for interpreatble results
+# Based on intersectional group sizes, 3 education groups more feasible for interpreatble results
+
+# Specify chosen model
+```{r}
+model_1 <- lm(capped_daily_grams_log ~ age_3_cats + decade + race_5_cats + education_3_cats + SEX, data = model_variables)
+```
+
+# Check assumptions of basic model
+
+### Heteroskedasicty of residuals
+```{r}
+plot(fitted(model_1), resid(model_1))
+abline(h = 0, lty = 2, col = "red")
+
+# standardized residuals
+plot(fitted(model_1), rstandard(model_1))
+abline(h = 0, lty = 2, col = "red")
+```
+### Check if residuals normally distributed
+```{r}
+qqnorm(residuals(model_1))
+qqline(residuals(model_1), col = "steelblue", lwd = 2)
+
+qqnorm(rstandard(model_1))
+qqline(rstandard(model_1), col = "steelblue", lwd = 2)
+```
+### Model specification
+Ramsey's RESET test for functional form.
+H0: that the model has no omitted variables.
+```{r}
+resettest(model_1, power = 2:3, type = c("fitted", "regressor",
+  "princomp"), data = transformed_drinkers)
+```
+Interpretation: omitted variables likely
+
+### Multicollinearity
+Calculate VIF
+```{r}
+car::vif(model_1)
+```
+Interpretation: Very low VIF values, suggesting no issues of multicollinearity
+
+Compare predicted_transformed alc_daily_g versus actual transformed alc_daily_g
+```{r}
+pred_lr_1 <- predict(model_1, interval = 'confidence', type = 'response')
+par(mfrow=c(1,2))
+hist(pred_lr_1, col = "blue", breaks = 10, xlim=c(-4,8), xlab=("transformed daily grams"), main="modelled data - lr1")
+hist(transformed_drinkers$capped_daily_grams_log, col = "blue", breaks = 10, xlim=c(-4,8), xlab=("transformed daily grams"), main="nhis data")
+```
+
+
+
+
+
+
+
+
+Run a standard single level linear model and a single level glm (including the intersectional attributes as fixed effects) and compare the results, to test the extent to which a linear model is appropriate...
+
+1.Comparing lm and glm on the non-transformed data
+```{r}
+model_2 <- lm(alc_daily_g_capped_200 ~ age_3_cats + decade + race_5_cats + education_3_cats + SEX, data = transformed_drinkers)
+model_3 <- glm(alc_daily_g_capped_200 ~ age_3_cats + decade + race_5_cats + education_5_cats + SEX, data = transformed_drinkers, family = Gamma(link = "identity"))
+```
+
+```{r}
+summary(model_1) # non-comparable as on log scale
+summary(model_2)
+summary(model_3)
+```
+
+# Nb. Main difference for lm and glm (raw data) is that educational categories (changes the direction of change and the significance of these findings)
+
+2. Comparing the accuracy of predictions using transformed data with a lm (model 1), raw data with a lm (model 2), and raw data with a glm (model 3)
+```{r}
+pred_lr_1 <- predict(model_1, interval = 'confidence', type="response")
+par(mfrow=c(1,2))
+hist(pred_lr_1, col = "blue", breaks = 10, xlim=c(-4,8), xlab=("transformed daily grams"), main="modelled data - lr1")
+hist(transformed_drinkers$capped_daily_grams_log, col = "blue", breaks = 10, xlim=c(-4,8), xlab=("transformed daily grams"), main="nhis transformed data")
+
+pred_lr_2 <- predict(model_2, interval = 'confidence', type="response")
+par(mfrow=c(1,2))
+hist(pred_lr_2, col = "blue", xlab=("daily grams"), main="modelled data - lm")
+hist(transformed_drinkers$alc_daily_g_capped_200, col = "blue", xlab=("daily grams"), main="nhis raw data")
+
+pred_lr_3 <- predict(model_3, interval = 'confidence', type="response")
+par(mfrow=c(1,2))
+hist(pred_lr_2, col = "blue", xlab=("daily grams"), main="modelled data - glm")
+hist(transformed_drinkers$alc_daily_g_capped_200, col = "blue", xlab=("daily grams"), main="nhis raw data")
+```
+
+```{r}
+# Means - predicted versus observed
+
+# Model 1
+summary(pred_lr_1) # 0.7151 (log value) 
+transformed_drinkers %>% summarise(transformed_mean = mean(capped_daily_grams_log)) # 0.715
+
+
+# Models 2 and 3
+summary(pred_lr_2) # 7.9024 grams
+summary(pred_lr_3) # 7.879 grams
+transformed_drinkers %>% summarise(mean = mean(alc_daily_g_capped_200)) # 7.924
+```

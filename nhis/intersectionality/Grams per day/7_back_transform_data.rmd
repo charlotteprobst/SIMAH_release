@@ -1,0 +1,57 @@
+---
+title: "7_back_transform_data"
+---
+
+Setup
+```{r}
+# Read in packages
+library(tidyr)
+library(readr)
+library(dplyr)
+
+# Read in data (from )post-transformation and post-MAIHDA)
+log_transformed_data_post_MAIHDA <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA_results_MCMC_log.RDS")
+```
+
+Generate a function to undertaken back transformation
+```{r}
+back_transform_log <- function(x) (exp(x))
+```
+
+Undertake back transformation
+```{r}
+# Back transform means
+back_transformed_data_log <- log_transformed_data_post_MAIHDA %>% 
+  mutate(
+  back_transformed_estimate = back_transform_log(estimate),
+  back_transformed_CI_lower = back_transform_log(estimate - 1.96*SE),
+  back_transformed_CI_upper = back_transform_log(estimate + 1.96*SE)
+  )
+```
+
+# Explore face validity of back-transformed data
+```{r}
+# Compare overall mean
+mean(back_transformed_data_log$mean_observed_grams)
+mean(back_transformed_data_log$back_transformed_estimate)
+
+# Compare mean grams per day of each intersectional group with the predicted grams per day
+temp <- back_transformed_data_log %>% dplyr::select(intersectional_names, count, mean_observed_grams, back_transformed_estimate)
+
+temp$rank_observed_grams <-rank(temp$mean_observed_grams)
+temp$rank_estimated_grams <-rank(temp$back_transformed_estimate)
+
+# Visually review the correlation between the observed and estimated values
+ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point()
+ggplot(temp, aes(x=mean_observed_grams, y=back_transformed_estimate)) + geom_point()
+
+saveRDS(temp, "U:\\SIMAH\\SIMAH_workplace\\nhis\\intersectionality\\cleaned_data\\comparisson of observed and estimated grams.RDS")
+```
+
+# Save back-transformed data
+```{r}
+saveRDS(back_transformed_data_log, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_transformed_data_log.RDS")
+
+write_xlsx(x = back_transformed_data_log, path = "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_Transformed_data_log.xlsx", col_names = TRUE)
+```
+

@@ -6,12 +6,12 @@ recode_race_ethnicity <- function(data){
       
       race_5_cats = dplyr::case_when(
         
-        hisp == 1 & RACENEW == 100 ~ 1, # Non-hispanic, White
-        hisp == 1 & RACENEW == 200 ~ 2, # Non-hispanic, Black/African American
-        hisp == 1 & RACENEW == 400 ~ 3, # Non-hispanic, Asian
-        hisp == 1 & (RACENEW == 500 | RACENEW == 510 | RACENEW == 520 | RACENEW == 530 | 
-                     RACENEW == 540 | RACENEW == 541 | RACENEW == 542 | RACENEW == 300) ~ 5, # Non-hispanic, Other 
-        hisp == 2  ~ 12) # Hispanic
+        HISPYN == 1 & RACENEW == 100 ~ 1, # Non-hispanic, White
+        HISPYN == 1 & RACENEW == 200 ~ 2, # Non-hispanic, Black/African American
+        HISPYN == 1 & RACENEW == 400 ~ 3, # Non-hispanic, Asian
+        HISPYN == 1 & (RACENEW == 500 | RACENEW == 510 | RACENEW == 520 | RACENEW == 530 | 
+                     RACENEW == 540 | RACENEW == 541 | RACENEW == 542 | RACENEW == 300) ~ 4, # Non-hispanic, Other 
+        HISPYN == 2  ~ 5) # Hispanic
 
 )
              return(data)
@@ -19,7 +19,7 @@ recode_race_ethnicity <- function(data){
 
 # Key:
 
-# hisp:
+# HISPYN:
 # 1 Not hispanic
 # 2 hispanic
 
