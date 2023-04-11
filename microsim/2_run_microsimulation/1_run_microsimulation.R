@@ -8,22 +8,24 @@ library(tidyverse)
 library(fitdistrplus)
 library(lhs)
 library(truncnorm)
+library(data.table)
 options(dplyr.summarise.inform = FALSE)
 
-# load in microsim R package
-setwd("~/Google Drive/SIMAH Sheffield/SIMAH_code")
-install("microsimpackage", dep=T)
 
 ###set working directory to the main "SIMAH" folder in your directory 
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-DataDirectory <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/1_input_data/"
+WorkingDirectory <- "U:/SIMAH/"
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
+
+# load in microsim R package
 setwd(paste(WorkingDirectory))
+
+install("SIMAH_code/microsimpackage", dep=T)
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
 # alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
-alcohol_transitions <- readRDS("SIMAH_workplace/microsim/1_input_data/calibrated_newTP_mean.RDS")
+alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.RDS"))
 
 output_type <- "mortality"
 Output <- list()
@@ -54,10 +56,10 @@ write.csv(summary[[1]], "SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-ca
 
 # summary 1 - table containing summary stats - observed to simulated 
 summary[[2]]
-summary[[3]]
 
 # summary 2 - plot comparing mortality rates (age standardised)
 summary[[2]]
+
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/Women_newTP_calibrated_mean.png", dpi=300,
        width=33, height=19, units="cm")

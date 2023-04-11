@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 1000000
+PopulationSize <- 10000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("AUD")
+diseases <- c("LVDC")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
