@@ -99,8 +99,9 @@ generate lvdc = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K73", "K739
 
 // add liver disease and cirrhosis due to chronic hepatitis Oct 2022 
 // B18 
+// Dec 2022: add B92.4
 generate hlvdc = 1 if inrange(icd10, "B18", "B189")
-
+replace hlvdc = 1 if icd10 == "B171" | icd10 == "B924" 
 
 // Diabetes mellitus [E10-E14]
 
@@ -176,13 +177,13 @@ bysort age_gp sex edclass race year: egen IJmort = total(ij)
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
-save "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", replace
+save "3_out data/allethn_sumCOD_0020_SIMAH.dta", replace
 
 //assigning deaths without education information
 //Deaths with missing data on SES were assigned to an education category based 
 //on the proportion in each education group by year, race/ethnicity, sex, age group, and cause of death.
 
-use "3_out data/2_allethn_sumCOD_0020_LE_decomp.dta", clear
+use "3_out data/allethn_sumCOD_0020_SIMAH.dta", clear
 
 keep year sex age_gp edclass race *mort
 reshape wide Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
@@ -212,5 +213,5 @@ reshape long Tmort LVDCmort HLVDCmort DMmort IHDmort ISTRmort HYPHDmort ///
 	
 lab define edlab 1 "LEHS" 2 "SomeC" 3 "College", modify
  
-save "3_out data/allethn_sumCOD_0020_LE_decomp.dta", replace
-outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv" , comma replace
+save "3_out data/allethn_sumCOD_0020_SIMAH.dta", replace
+outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_SIMAH.csv" , comma replace

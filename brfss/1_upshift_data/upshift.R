@@ -3,7 +3,6 @@
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(foreign)
-library(SASxport)
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -114,21 +113,22 @@ test <- data %>% filter(drinkingstatus_updated==1) %>% filter(gramsperday_upshif
 data <- add_brfss_regions(data)
 
 final_version <- data %>%
-  dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var,
+  dplyr::select(YEAR, surveymonth, surveyyear, State, region, race_eth, sex_recode, age_var,
                 education_summary, household_income,
                 employment, marital_status, BMI,
                 drinkingstatus_detailed, drinkingstatus_updated,
+                gramsperday, alc_frequency, quantity_per_occasion,
                 gramsperday_upshifted,
-                frequency_upshifted,
+                frequency_upshifted, 
                 quantity_per_occasion_upshifted) %>% 
-  rename(gramsperday = gramsperday_upshifted,
-         frequency = frequency_upshifted,
-         quantity_per_occasion = quantity_per_occasion_upshifted,
+  rename(gramsperday_raw = gramsperday,
+         frequency_raw = alc_frequency,
+         quantity_per_occasion_raw = quantity_per_occasion,
          drinkingstatus = drinkingstatus_updated) %>% 
-  mutate(gramsperday = ifelse(gramsperday>200, 200, gramsperday),
-         formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0))
+  mutate(gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted),
+         formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0)) %>% filter(YEAR>=2000)
   
-saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS")
+saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS")
 
 
 # select variables and save the upshifted data 

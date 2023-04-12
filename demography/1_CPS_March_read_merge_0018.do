@@ -3,7 +3,7 @@ set more off
 
 // CPS data (March) 2000 - 2018
 
-global dir `"C:/Users/marie/Dropbox/NIH2020/"'
+global dir `"C:/Users/marie/Dropbox/NIH2020/SIMAH_workplace/"'
 
 cd "${dir}/Demography/"
 

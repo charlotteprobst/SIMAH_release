@@ -15,6 +15,8 @@ setwd(k.wd)
 ######## plot for uncertainty BY SEX 
 col.vec <- c('#062D59', '#576F81','#A8B0AA', '#EBE0B0') #Microsim first
 col.vec <- c("black", "#2B2B2B", "#808080", "#D3D3D3")
+col.vec <- c('#062D59', '#A8B0AA', '#EBE0B0') #Microsim first
+
 
 uncertainty <- read.csv("SIMAH_workplace/protocol/output_data/2_uncertainty_estimatessex.csv") %>% rename(sex = microsim.init.sex,
                                                                             edclass = microsim.init.education) %>% 
@@ -62,9 +64,9 @@ ggplot(data = uncertainty, aes(x = year, y = percent*100, shape=datatype)) +
         panel.border = element_blank(), 
         axis.ticks = element_line(colour="black", size = 0.352), 
         axis.line = element_line(colour="black", size = 0.352),
-        strip.text = element_text(size = 8, colour = 'black'), 
-        axis.text = element_text(size = 8, colour="black"), 
-        text = element_text(size = 8, colour="black", family="sans"), 
+        strip.text = element_text(size = 9, colour = 'black'), 
+        axis.text = element_text(size = 9, colour="black"), 
+        text = element_text(size = 9, colour="black", family="sans"), 
         legend.background = element_rect(size=0.352, 
                                          linetype = "solid", 
                                          color = "black", 
@@ -72,50 +74,72 @@ ggplot(data = uncertainty, aes(x = year, y = percent*100, shape=datatype)) +
         legend.position= "right",
         legend.justification = "top",
         legend.title.align = 0.5,
-        legend.title = element_text(size = 8, colour="black", family="sans"),
-        legend.text = element_text(size = 8, colour="black", family="sans"),
+        legend.title = element_text(size = 9, colour="black", family="sans"),
+        legend.text = element_text(size = 9, colour="black", family="sans"),
         strip.placement = "outside") +
   labs(x = "Year ", y = "Proportion, %", shape=expression(underline("Data Type"))) +
   theme(panel.spacing = unit(1.2, "lines"))
 
 
 ggsave("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 3.pdf", 
-       width = 7, height = 5, units = "in")
+       width = 8, height = 5, units = "in")
 
 k <- 0
 
 for (i in levels(as.factor(uncertainty$sex))) {
   for (j in levels(uncertainty$edclass)) {
     k <- k + 1
-    ggplot(data = uncertainty[which(uncertainty$sex == i & uncertainty$edclass == j),], 
+    edu_plot <- ggplot(data = uncertainty[which(uncertainty$sex == i & uncertainty$edclass == j),], 
            aes(x = year, y = percent*100, shape=datatype)) +
       geom_ribbon(aes(ymin=min*100, ymax=max*100), fill = "grey90",
                   colour= "grey", linetype = 2, size=0.352) + 
       geom_line(aes(), size=0.352, colour = 'black') +
       geom_point(size = 1.4) +
-      
       scale_shape_manual(values = c(16, 17, 18, 15))  + 
       scale_fill_manual(values = c("grey30","white","white","white")) + 
       ylim(0,60) + 
       xlim(2000,2020) + 
-      theme_light() + 
-      theme(strip.background = element_rect(fill = "white"), 
-            panel.grid = element_blank(),
-            panel.border = element_blank(), 
-            axis.ticks = element_line(colour="black", size = 0.352), 
-            axis.line = element_line(colour="black", size = 0.352),
-            strip.text = element_text(size = 8, colour = 'black'), 
-            axis.text = element_text(size = 8, colour="black"), 
-            text = element_text(size = 8, colour="black"), 
-            strip.placement = "outside", 
-            legend.position="none") +
-      labs(x = "Year ", y = "Proportion, %") +
-      theme(panel.spacing = unit(1.2, "lines")) 
-      #labs(tag = LETTERS[k])
-      
-      
+      theme_light()  
+      if (k>1) {
+        edu_plot <- edu_plot + 
+          theme(strip.background = element_rect(fill = "white"), 
+              panel.grid = element_blank(),
+              panel.border = element_blank(), 
+              axis.ticks = element_line(colour="black", size = 0.352), 
+              axis.line = element_line(colour="black", size = 0.352),
+              strip.text = element_text(size = 9, colour = 'black'), 
+              axis.text = element_text(size = 9, colour="black"), 
+              text = element_text(size = 9, colour="black"), 
+              strip.placement = "outside", 
+              legend.position="none") +
+          ggtitle(paste0(i,", ",sep="\n", j)) +
+          labs(x = "Year ", y = "Proportion, %") 
+      } else if (k==1) {
+        edu_plot <- edu_plot + 
+          theme(strip.background = element_rect(fill = "white"), 
+              panel.grid = element_blank(),
+              panel.border = element_blank(), 
+              axis.ticks = element_line(colour="black", size = 0.352), 
+              axis.line = element_line(colour="black", size = 0.352),
+              strip.text = element_text(size = 9, colour = 'black'), 
+              axis.text = element_text(size = 9, colour="black"), 
+              text = element_text(size = 9, colour="black"), 
+              legend.background = element_rect(size=0.352, 
+                                               linetype = "solid", 
+                                               color = "black", 
+                                               fill=NA),
+              legend.title.align = 0.5,
+              legend.text = element_text(size = 9, colour="black"),
+              strip.placement = "outside", 
+              legend.position=c(0.34,0.31), legend.spacing.y = unit(0.1, 'cm'), 
+              legend.spacing = unit(0.1, 'cm')) +
+          guides(fill = guide_legend(byrow = TRUE)) +
+          ggtitle(paste0(i,", ",sep="\n", j)) +
+          labs(x = "Year ", y = "Proportion, %", shape=expression(underline("Data Type")))     
+        }  
+    edu_plot  
     ggsave(paste0("SIMAH_workplace/protocol/graphs/AJE-00063-2022 Probst Figure 3", LETTERS[k], ".eps"), 
-           width = 2, height = 2.2, units = "in",  
+           width = 3, height = 3.3, units = "in",  
            device = "eps")
     
   }
@@ -163,14 +187,15 @@ ggplot(data = uncertainty, aes(x = year, y = percent*100, color=datatype, shape=
   theme_light() + 
   theme(strip.background = element_rect(fill = "white"), 
         strip.text = element_text(colour = 'black'), 
-        text = element_text(size = 14),
-        axis.text = element_text(size = 12), legend.position="bottom", 
-        legend.title = element_text(size = 12),
+        text = element_text(size = 9),
+        axis.text = element_text(size = 9), legend.position="bottom", 
+        legend.title = element_text(size = 9),
         strip.placement = "outside") +
   labs(x = "Year ", y = "Proportion (%)", color = "Data Type", size = "Data Type", shape = "Data Type") +
   theme(panel.spacing = unit(1.2, "lines"))
 
-ggsave("SIMAH_workplace/protocol/graphs/2_microsim_education_graph_uncertaintyrace_revised.pdf", width = 22, height = 20, units = "cm")
+ggsave("SIMAH_workplace/protocol/graphs/2_microsim_education_graph_uncertaintyrace_revised.pdf", 
+       width = 22, height = 20, units = "cm")
 
 
 

@@ -19,6 +19,8 @@
 library(tidyverse)
 library(data.table)
 library(dplyr)
+library(powerjoin) 
+library(metafor)
 
 # --------------------------------------------------------------------------------------
 
@@ -30,11 +32,11 @@ library(dplyr)
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/lit_reviews/ACP/")
-DATE <- 07112022
+DATE <- 20230222
 
-rdat.tax <- data.table(read.csv("raw data/rdata_acp_TAX_07112022.csv", na.strings = "."))
-rdat.mup <- data.table(read.csv("raw data/rdata_acp_MUP_07112022.csv", na.strings = "."))
-rdat.tav <- data.table(read.csv("raw data/rdata_acp_TAV_07112022.csv", na.strings = "."))
+rdat.tax <- data.table(read.csv("raw data/rdata_acp_TAX_20230222.csv", na.strings = "."))
+rdat.mup <- data.table(read.csv("raw data/rdata_acp_MUP_20230222.csv", na.strings = "."))
+rdat.tav <- data.table(read.csv("raw data/rdata_acp_TAV_20230222.csv", na.strings = "."))
 
 # --------------------------------------------------------------------------------------
 
@@ -44,7 +46,7 @@ rdat.tav <- data.table(read.csv("raw data/rdata_acp_TAV_07112022.csv", na.string
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 
-dat.tax <- rdat.tax[dat_include == 1, .(id, ref, study_type, design_level, country, region, tax_bev, tax_change, tax_base_NC, tax_base_ref, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_sd, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
+dat.tax <- rdat.tax[dat_include == 1, .(id, ref, study_type, study_design, design_level, country, region, tax_bev, tax_change, tax_base_NC, tax_base_ref, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_sd, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
 
 # ----------------------------------------------------------------
 # DATA INSPECTION
@@ -63,11 +65,13 @@ dat.tax[, table(out_calc, study_type)]
 dat.tax[out_calc %like% "relative", perc.change := effect_size]
 dat.tax[out_calc %like% "absolute", perc.change := effect_size / cons_base]
 
-# estimate relative change for Freeman 2011
+# estimate relative change for Freeman 2011 and Stehr 2007 (taxes indicated in $)
 
-dat.tax[ref %like% "Freeman", tax.perc := tax_base_NC / (tax_base_NC + 1)]
-dat.tax[ref %like% "Freeman", abs.change := effect_size / (tax.perc * 100)]
+dat.tax[ref %like% "Freeman", tax_change := tax_base_NC / (tax_base_NC + 1)]
+dat.tax[ref %like% "Freeman", abs.change := effect_size / (tax_change * 100)]
 dat.tax[ref %like% "Freeman",  perc.change := abs.change / cons_base * 100]
+
+dat.tax[ref %like% "Stehr", tax_change := tax_base_NC / (tax_base_NC + 1)]
 
 # ----------------------------------------------------------------
 # ESTIMATING STANDARD ERRORS
@@ -78,7 +82,6 @@ dat.tax[is.na(se), table(out_calc, ref)]
 # estimate standard error if confidence interval is known (formula 1)
 
 dat.tax[is.na(se) & !is.na(lb), table(n)] # all n ≥ 50
-#dat.tax[out_calc %like% "relative" & is.na(se) & !is.na(lb), test := abs(ub - lb)]
 dat.tax[out_calc %like% "relative" & is.na(se) & !is.na(lb), se := abs(ub - lb) / (1.96 * 2)]
 
 # estimate standard error if t statistic is known (formula 4)
@@ -94,7 +97,7 @@ dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), table(ref)]
 
 dat.tax[out_calc %like% "absolute" & !is.na(se) & is.na(cons_sd), se := se / cons_base] 
 
-dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se.beta := abs(perc.change) / qnorm(1-(as.numeric(p)/2))] 
+dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se.beta := abs(effect_size) / qnorm(1-(as.numeric(p)/2))] 
 dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se.y := cons_sd / sqrt(n)]
 dat.tax[out_calc %like% "absolute" & is.na(se) & !is.na(cons_sd), se := sqrt((se.beta^2) + ((se.y^2) * ((effect_size / cons_base)^2))) / cons_base]
 
@@ -106,7 +109,7 @@ dat.tax[is.na(se), table(out_calc, ref)]
 # 1.1) ALCOHOL TAXATION BY SUBGROUP
 # ----------------------------------------------------------------
 
-dat.tax.sub <- rdat.tax[dat_include == 2, .(id, ref, study_type, design_level, country, region, tax_bev, tax_change, tax_base_NC, tax_base_ref, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_sd, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
+dat.tax.sub <- rdat.tax[dat_include == 2, .(id, ref, study_type, study_design, design_level, country, region, tax_bev, tax_change, tax_base_NC, tax_base_ref, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_sd, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
 
 # ----------------------------------------------------------------
 # DATA INSPECTION
@@ -152,17 +155,61 @@ dat.tax.sub[out_calc %like% "absolute" & !is.na(se) & !is.na(cons_sd), se := sqr
 # ----------------------------------------------------------------
 #(Subbaraman et al 2020: alcohol use prevalence = 0.6397)
 
-dat.tax.sub[ref %like% "Subbaraman", perc.change := perc.change * 0.6397]
+dat.tax.sub[ref %like% "Subbaraman" & design_level == "individual", perc.change := perc.change * 0.6397]
 
-# ----------------------------------------------------------------
-# MERGE AND EXPORT
-# ----------------------------------------------------------------
-
+# MERGE
 dat.tax[, sub := 0]
 dat.tax.sub[, sub := 1]
 
-dat.tax.comb <- rbind(dat.tax[,.(id, ref, study_type, design_level, country, region, tax_bev, tax_base_NC, tax_base_ref, tax_change, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, sub, rob)], 
-                      dat.tax.sub[,.(id, ref, study_type, design_level, country, region, tax_bev, tax_base_NC, tax_base_ref, tax_change, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, sub, rob)]) 
+dat.tax.comb <- rbind(dat.tax[,.(id, ref, study_type, study_design, design_level, country, region, tax_bev, tax_base_NC, tax_base_ref, tax_change, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, sub, rob)], 
+                      dat.tax.sub[,.(id, ref, study_type, study_design, design_level, country, region, tax_bev, tax_base_NC, tax_base_ref, tax_change, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, sub, rob)]) 
+
+
+# ----------------------------------------------------------------
+# COMBINE TWO AGE GROUPS Alexeev et al_2021
+# ----------------------------------------------------------------
+
+# Function to run fixed-effect model by group
+
+fixed.meta <- function(data){
+  
+  data <- as.data.table(data)
+  m <- length(unique(data$out_period))
+  out <- data.frame(matrix(ncol = 3, nrow = m))
+  colnames(out) <- c("out_period", "perc.change", "se") 
+  
+  for (i in 1:m) {
+    
+    # run fixed-effect model
+    model <- rma.uni(yi = perc.change, sei = se, data = data[out_period == unique(data$out_period)[i]], method = "FE")
+    sum <- summary(model)
+      
+    # output
+    out$out_period[i] <- unique(data$out_period)[i]
+    out$perc.change[i] <- sum[[1]]
+    out$se[i] <- sum[[3]]
+  }
+  return(out)
+}
+
+# run meta-analysis model
+
+fmeta <- fixed.meta(dat.tax.comb[ref == "Alexeev et al_2021"])
+
+# combine new fixed-effect data with original data
+
+dat.alexeev <- dat.tax.comb[ref == "Alexeev et al_2021" & subgroup == "25-69"]  
+dat.alexeev$subgroup <- "15-69"
+
+dat.alexeev <- power_left_join(dat.alexeev, fmeta, by = "out_period", conflict = rw ~ .y)
+
+# NEW MAIN DATA
+
+dat.tax.comb <- rbind(dat.tax.comb[ref != "Alexeev et al_2021"], dat.alexeev)
+
+# ----------------------------------------------------------------
+# EXPORT
+# ----------------------------------------------------------------
 
 write.csv(dat.tax.comb, paste0("data_acp_TAX_", DATE, ".csv"))
 
@@ -174,7 +221,7 @@ write.csv(dat.tax.comb, paste0("data_acp_TAX_", DATE, ".csv"))
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 
-dat.mup <- rdat.mup[dat_include == 1, .(id, ref, study_type, design_level, country, region, mp_bev, mp_level, mp_unit, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_base_se, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
+dat.mup <- rdat.mup[dat_include == 1, .(id, ref, study_type, study_design, design_level, country, region, mp_bev, mp_level, mp_unit, int_year, out_calc, out_level, out_period, out_base, out_fu, cons_base, cons_base_se, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
 
 # ----------------------------------------------------------------
 # DATA INSPECTION
@@ -216,7 +263,7 @@ dat.mup[out_calc %like% "absolute" & is.na(se) & !is.na(cons_base_se), se := sqr
 # EXPORT
 # ----------------------------------------------------------------
 
-write.csv(dat.mup[,.(id, ref, study_type, design_level, country, region, mp_bev, mp_level, mp_unit, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, rob)],
+write.csv(dat.mup[,.(id, ref, study_type, study_design, design_level, country, region, mp_bev, mp_level, mp_unit, int_year, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, rob)],
           paste0("data_acp_MUP_", DATE, ".csv"))
 
 # --------------------------------------------------------------------------------------
@@ -227,7 +274,7 @@ write.csv(dat.mup[,.(id, ref, study_type, design_level, country, region, mp_bev,
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 
-dat.tav <- rdat.tav[dat_include == 1, .(id, ref, study_type, design_level, country, region, intervention, int_type, int_direction, int_year, out_bev, out_calc, out_level, out_period, out_base, out_fu, cons_base, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
+dat.tav <- rdat.tav[dat_include == 1, .(id, ref, study_type, study_design, design_level, country, region, intervention, int_type, int_direction, int_year, out_bev, out_calc, out_level, out_period, out_base, out_fu, cons_base, comparator, subgroup, n, effect_size, se, lb, ub, p, t, rob)]
 
 # ----------------------------------------------------------------
 # DATA INSPECTION
@@ -280,5 +327,5 @@ dat.tav[out_calc %like% "absolute", se := se.beta / cons_base]
 # EXPORT
 # ----------------------------------------------------------------
 
-write.csv(dat.tav[,.(id, ref, study_type, design_level, country, region, int_type, int_direction, int_year, out_bev, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, rob)],
+write.csv(dat.tav[,.(id, ref, study_type, study_design, design_level, country, region, int_type, int_direction, int_year, out_bev, out_level, out_period, out_base, out_fu, comparator, subgroup, n, perc.change, se, p, rob)],
           paste0("data_acp_TAV_", DATE, ".csv"))

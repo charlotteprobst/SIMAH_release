@@ -5,37 +5,56 @@
 #' @export
 #' @examples
 #' allocate_gpd
-allocate_gramsperday <- function(basepop, DataDirectory){
+allocate_gramsperday <- function(basepop, y, model, DataDirectory){
+  prepdata <- basepop %>% filter(AlcCAT!="Non-drinker") %>%
+    mutate(age_var = microsim.init.age, sex_recode = ifelse(microsim.init.sex=="m","Male","Female"),
+           YEAR = y, education_summary = microsim.init.education, race_eth = ifelse(microsim.init.race=="BLA","Black",
+                                                                                    ifelse(microsim.init.race=="WHI","White",
+                                                                                           ifelse(microsim.init.race=="SPA","Hispanic",
+                                                                                                  ifelse(microsim.init.race=="OTH","Other",NA)))),
+           # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
+           group = paste(AlcCAT, race_eth, microsim.init.education, sex_recode, sep="_"))
 
-# distributions <- list()
-# basepop$cat <- paste0(basepop$AlcCAT, basepop$microsim.init.sex)
-# cats <- cats[-c(1,5)]
-# for(i in unique(cats)){
-#   sub <- basepop %>% filter(cat==i)
-#   distribution <- fitdist(sub$microsim.init.alc.gpd, "lnorm")
-#   distributions[[paste(i)]] <- data.frame(mean = distribution$estimate[1],
-#                                           sd = distribution$estimate[2],
-#                                           cat = paste(i))
-# }
-# distributions <- distributions %>% do.call(rbind,.) %>%
-#   separate(cat, into=c("AlcCAT","microsim.init.sex"), sep=c(-1))
-# write.csv(distributions, paste0(DataDirectory,"gramsperday_distributions.csv"),row.names=F)
-distributions <- read.csv(paste0(DataDirectory,"gramsperday_distributions.csv"))
-impute_gpd <- function(data){
-  if(data$AlcCAT[1]!="Non-drinker"){
-  data$newgpd <- rlnorm(nrow(data), mean=data$mean, sd=data$sd)
-  data$newgpd <- ifelse(data$newgpd<0, 0, ifelse(data$newgpd>200, 200, data$newgpd))
-  }else{
-    data$newgpd <- 0
+  distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv")
+  prepdata <- left_join(prepdata, distribution)
+
+samplegpd <- function(data){
+    # shape <- unique(data$shape)
+    # rate <- unique(data$rate)
+    shape1 <- unique(data$shape1)
+    shape2 <- unique(data$shape2)
+    min <- unique(data$min)
+    max <- unique(data$max)
+    # newgpd <- rgamma(nrow(data), shape, rate)
+    raw <- rbeta(nrow(data), shape1, shape2)
+    newgpd <- ((max - min + 10e-10)*raw) + (min - 10e-9)
+    # newgpd <- order(newgpd)
+    data <- data[order(data$microsim.init.alc.gpd),]
+    newgpd <- sort(newgpd)
+    data$newgpd <- newgpd
+    data$newgpd <- ifelse(data$newgpd > 200, 200, data$newgpd)
+    return(data)
   }
-  return(data)
-}
 
-basepop <- left_join(basepop,distributions, by=c("microsim.init.sex","AlcCAT")) %>%
-  group_by(microsim.init.sex, AlcCAT) %>%
-  do(impute_gpd(.)) %>%
-  mutate(microsim.init.alc.gpd=newgpd) %>%
-  dplyr::select(-c(mean,sd,newgpd))
-return(basepop)
+prepdata <- prepdata %>% group_by(group) %>% do(samplegpd(.)) %>%
+  mutate(microsim.init.alc.gpd = newgpd) %>% ungroup() %>%
+  dplyr::select(microsim.init.id, newgpd)
+
+  # # lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
+  # back.tran <- function(x, lambda){(lambda * x + 1) ^ (1/lambda)}
+  #
+  # women <- prepdata %>% filter(sex_recode=="Female")
+  # women$newgpd <- back.tran(predict(model[[1]], women), lambda=-0.22)
+  # women <- women %>% dplyr::select(microsim.init.id, newgpd)
+  #
+  # men <- prepdata %>% filter(sex_recode=="Male")
+  # men$newgpd <- back.tran(predict(model[[2]], men), lambda=0.06)
+  # men <- men %>% dplyr::select(microsim.init.id, newgpd)
+  # prepdata <- rbind(men, women)
+  basepop <- left_join(basepop, prepdata)
+  basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
+                                          basepop$newgpd)
+  basepop$newgpd <- NULL
+  return(basepop)
 }
 

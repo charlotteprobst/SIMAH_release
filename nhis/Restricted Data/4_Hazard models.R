@@ -15,11 +15,11 @@ library(srvyr)
 library(foreach)    # loops 
 library(tidycmprsk)
 
+
 memory.limit(size=1e+13)
 options(scipen=999)
 
 
-# Yachen
 data_path    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 output_tables <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
 output_models <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
@@ -115,8 +115,8 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     cat("    Completed", "\n")
     
     
-    
-    # Fine-Gray interaction model 
+    ## tidycmprsk package
+    # Fine-Gray interaction model
     cat("    Crr Interaction model in progress", "\n")  # progress indicator
     if(data_name == "all"){
       crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
@@ -124,15 +124,15 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
       crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
     }
     cat("    Completed", "\n")  # progress indicator
-    
-    # Fine-Gray joint effect model 
-    cat("    Crr Joint effects model in progress", "\n")  
+
+    # Fine-Gray joint effect model
+    cat("    Crr Joint effects model in progress", "\n")
     if(data_name == "all"){
       crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
     } else if(data_name %in% c("female", "male")){
       crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
     }
-    cat("    Completed", "\n")    
+    cat("    Completed", "\n")
     
     
     
@@ -411,8 +411,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                   select(variable, RERI_crr, CI_RERI_crr, p.value_RERI_crr), 
                 by = "variable") %>%
       mutate(variable = str_remove(variable, fixed("SES")), 
-             variable = str_remove(variable, fixed("lifestyle"))) %>%
-      add_row(variable = death_name, .before=1) 
+             variable = str_remove(variable, fixed("lifestyle"))) 
     cat("    Completed", "\n")
     
     
@@ -432,7 +431,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 
 
 # Test the function:
-death_list <- "heart_death" # specify cause of death for testing
+death_list <- "heart_death"   # specify cause of death for testing
 
 nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
 nhis_female_svy <- nhis_female %>%
