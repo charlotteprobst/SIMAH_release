@@ -335,3 +335,143 @@ usa6 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+dose:type + dose:quali
 usa6
 
 anova(usa6, usa5a)
+
+###results by cause
+
+#ALL LC
+all <- final
+
+library(rms)
+s <- seq(0,150,length=150)
+knots_all <- quantile(all$dose, c(.05, .35, .65, .95))
+
+rcs_all <- rma.mv(yi= lnor ~ rcs(dose, knots_all)+0, V=se^2, data=all, 
+                  random = ~ 1 | study, method = "REML")
+summary(rcs_all)
+
+pred_rcs_all <- predict(rcs_all, newmods=rcspline.eval(s, knots_all, inclx=TRUE))
+regplot(rcs_all, mod="rcs(dose, knots_all)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), 
+        ylim = c(0, 30), pred = pred_rcs_all, xvals = s, main="All LC RCS Regression")
+abline(v=knots_all, lty="dotted")
+
+predict(rcs_all, newmods= rcspline.eval(100, knots_all, inclx=TRUE), transf=exp)
+
+#ALC 
+alc <- final %>%
+  filter(type == 1)
+
+knots_alc <- quantile(alc$dose, c(.05, .35, .65, .95))
+
+rcs_alc <- rma.mv(yi= lnor ~ rcs(dose, knots_alc)+0, V=se^2, data=alc, 
+                  random = ~ 1 | study, method = "REML")
+summary(rcs_alc)
+
+pred_rcs_alc <- predict(rcs_alc, newmods=rcspline.eval(s, knots_alc, inclx=TRUE))
+regplot(rcs_alc, mod="rcs(dose, knots_alc)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), 
+        ylim = c(0, 100), pred = pred_rcs_alc, xvals = s, main="ALC RCS Regression")
+abline(v=knots_alc, lty="dotted")
+
+predict(rcs_alc, newmods= rcspline.eval(50, knots_alc, inclx=TRUE), transf=exp)
+
+#HCV
+hcv <- final %>%
+  filter(type == 3)
+hcv <- hcv[-c(14),]
+
+knots_hcv <- quantile(hcv$dose, c(.05, .35, .65, .95))
+
+rcs_hcv <- rma.mv(yi= lnor ~ rcs(dose, knots_hcv)+0, V=se^2, data=hcv, 
+                  random = ~ 1 | study, method = "REML")
+summary(rcs_hcv)
+
+pred_rcs_hcv <- predict(rcs_hcv, newmods=rcspline.eval(s, knots_hcv, inclx=TRUE))
+regplot(rcs_hcv, mod="rcs(dose, knots_hcv)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,150), 
+        ylim = c(0, 30), pred = pred_rcs_hcv, xvals = s, main="HCV RCS Regression")
+abline(v=knots_hcv, lty="dotted")
+weights(rcs_hcv)
+
+predict(rcs_hcv, newmods= rcspline.eval(50, knots_hcv, inclx=TRUE), transf=exp)
+
+#graph types
+pred_rcs_all <- predict(rcs_all, newmods=rcspline.eval(s, knots_all, inclx=TRUE))
+regplot(rcs_all, mod="rcs(dose, knots_all)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,125), shade =FALSE, pch=NA_integer_, 
+        ylim = c(0, 50), pred = pred_rcs_all, xvals = s, cex.lab=1.2, cex.axis=1.1)
+lines(exp(pred_rcs_alc$pred), lwd = "4", col = "blue")
+lines(exp(pred_rcs_alc$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_rcs_alc$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_rcs_hcv$pred), lwd = "4", col = "red")
+lines(exp(pred_rcs_hcv$ci.lb), lwd = "3", lty = "dotted", col = "red")
+lines(exp(pred_rcs_hcv$ci.ub), lwd = "3", lty = "dotted", col = "red")
+legend("topleft",inset =0.1, legend=c("All Cause LC", "Alcohol-related LC", "HCV LC"), lty=1:1, lwd=3:3, cex=1.2, col=c("black", "blue", "red"))
+
+#second sensitivity analysis
+final2 <- final %>%  
+  filter(studyyear != 1)
+
+#RCS
+s <- seq(0,150,length=150)
+knots2 <- quantile(final2$dose, c(.05, .35, .65, .95))
+
+rcs2 <- rma.mv(yi= lnor ~ rcs(dose, knots2)+0, V=se^2, data=final2, 
+               random = ~ 1 | study, method = "REML")
+summary(rcs2)
+
+pred_rcs2 <- predict(rcs2, newmods=rcspline.eval(s, knots2, inclx=TRUE))
+regplot(rcs2, mod="rcs(dose, knots2)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,125),
+        ylim = c(0, 30), pred = pred_rcs2, xvals = s)
+
+regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,125), shade =FALSE, pch=NA_integer_, 
+        ylim = c(0, 25), pred = pred_rcs, xvals = s)
+lines(exp(pred_rcs2$pred), lwd = "4", col = "blue")
+lines(exp(pred_rcs2$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_rcs2$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Main results", "Sensitivity analysis 2"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue", "red"))
+
+
+#shade =FALSE, pch=NA_integer_,
+
+model2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2)
+                 + dose:type + I(dose^2):type + 
+                   + dose:region + I(dose^2):region + dose:mortality + I(dose^2):mortality, 
+                 digits = 6,data=final2, random = ~ 1 | study, method = "REML")
+model2
+
+
+#third sensitivity analysis
+final3 <- final %>%  
+  filter(qualitySC != 1 & study != 54 & study != 55)
+
+#RCS
+s <- seq(0,150,length=150)
+knots3 <- quantile(final3$dose, c(.05, .35, .65, .95))
+
+rcs3 <- rma.mv(yi= lnor ~ rcs(dose, knots3)+0, V=se^2, data=final3, 
+               random = ~ 1 | study, method = "REML")
+summary(rcs3)
+
+pred_rcs3 <- predict(rcs3, newmods=rcspline.eval(s, knots3, inclx=TRUE))
+regplot(rcs3, mod="rcs(dose, knots3)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,125),
+        ylim = c(0, 30), pred = pred_rcs3, xvals = s)
+
+regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,125), shade =FALSE, pch=NA_integer_, 
+        ylim = c(0, 25), pred = pred_rcs, xvals = s)
+lines(exp(pred_rcs3$pred), lwd = "4", col = "blue")
+lines(exp(pred_rcs3$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_rcs3$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Main results", "Sensitivity analysis 3"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue", "red"))
+
+
+model3 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2)
+                 + dose:type + I(dose^2):type + 
+                   + dose:region + I(dose^2):region + dose:mortality + I(dose^2):mortality, 
+                 digits = 6,data=final3, random = ~ 1 | study, method = "REML")
+model3
+
