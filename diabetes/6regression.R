@@ -21,6 +21,7 @@ dataset$usa <- as.factor(dataset$usa)
 dataset$over_45 <- as.factor(dataset$over_45)
 dataset$outcome.ascertaiment <- as.factor(dataset$outcome.ascertaiment)
 dataset$NOS_cat <- as.factor(dataset$NOS_cat)
+dataset$NOS_cat_new <- as.factor(dataset$NOS_cat_new)
 
 #ALL STUDIES
 final <- dataset %>%
@@ -104,6 +105,12 @@ model9
 
 anova(model8, model9,refit=TRUE)
 
+#FINAL MODEL
+model10 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:sex + I(dose^2):sex
+                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat_new, data=final, digits = 6, 
+                  random = ~ 1 | cohort_id/line_id, method = "REML")
+model10
+
 #MALE MODEL
 male <- dataset %>%
   filter(analysis_id==0 & dose != 0.00 & sex ==1)
@@ -144,9 +151,9 @@ model6am <- rma.mv(yi=lnor, V=se^2, mods = ~ dose
                    + dose:age_all + dose:usa, data=male, random = ~ 1 | cohort_id/line_id, method = "REML")
 model6am
 
-##missing risk of bias
+##final
 model7am <- rma.mv(yi=lnor, V=se^2, mods = ~ dose 
-                   + dose:age_all + dose:usa + dose:NOS_cat
+                   + dose:age_all + dose:usa + dose:NOS_cat_new
                    , data=male, random = ~ 1 | cohort_id/line_id, method = "REML")
 model7am
 
@@ -208,15 +215,15 @@ model8f
 
 anova(model7f, model8f,refit=TRUE)
 
-##risk of bias
+##final
 model9f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
-                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat
+                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat_new
                   , data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
 model9f
 
 model10f <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) 
-                  + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat + I(dose^2):NOS_cat
-                  , data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
+                   + dose:age_all + I(dose^2):age_all + dose:usa + dose:NOS_cat_new + I(dose^2):NOS_cat_new
+                   , data=female, random = ~ 1 | cohort_id/line_id, method = "REML")
 model10f
 
-anova(model8f, model9f,refit=TRUE)
+anova(model10f, model9f,refit=TRUE)
