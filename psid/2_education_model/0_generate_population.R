@@ -2,20 +2,21 @@ generate_population <- function(TPs, sizepop){
   races <- unique(TPs$racefinal)
   sex <- unique(TPs$sex)
   incomequintile = unique(TPs$incomequintile)
+  incomecat = unique(TPs$incomecat)
   
-  samplecats <- expand.grid(race=races,sex=sex,income=incomequintile) %>% 
-    mutate(samplecats = paste(race,sex,incomequintile,sep="_"))
+  samplecats <- expand.grid(race=races,sex=sex,income=incomequintile,incomecat=incomecat) %>% 
+    mutate(samplecats = paste(race,sex,incomequintile,incomecat, sep="_"))
   samplecats <- samplecats$samplecats
   sampleprobs <- rep(1/length(samplecats), times=length(samplecats))
   
   
   population1 <- data.frame(sample(samplecats, sizepop, replace=T, prob=sampleprobs))
   names(population1)[1] <- "cats"
-  population1 <- population1 %>% separate(cats, into=c("racefinal","sex","incomequintile")) %>% mutate(id = 1:nrow(population1)) %>% 
-    select(id, sex, racefinal, incomequintile) %>% 
+  population1 <- population1 %>% separate(cats, into=c("racefinal","sex","incomequintile","incomecat")) %>% mutate(id = 1:nrow(population1)) %>% 
+    select(id, sex, racefinal, incomequintile, incomecat) %>% 
     mutate(age=16,
            state="LHS",
-           cat = paste(age,sex,racefinal,incomequintile, "STATEFROM", state, sep="_"))
+           cat = paste(age,sex,racefinal,incomequintile,incomecat, "STATEFROM", state, sep="_"))
   return(population1)
 }
 
@@ -37,7 +38,7 @@ simulate_population <- function(population, TPs, timeperiod){
     minyear <- 1999
     maxyear <- 2009
     transitions <- TPs %>% filter(time=="1999 - 2009") %>% 
-      mutate(cat = paste(age,sex,racefinal, incomequintile, "STATEFROM", Transition1, sep="_")) %>% 
+      mutate(cat = paste(age,sex,racefinal, incomequintile, incomecat, "STATEFROM", Transition1, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, Transition2,prob) %>% 
       group_by(cat) %>% 
       mutate(cumsum=cumsum(prob),
@@ -47,7 +48,7 @@ simulate_population <- function(population, TPs, timeperiod){
     minyear <- 2009
     maxyear <- 2019
     transitions <- TPs %>% filter(time=="2009 - 2019") %>% 
-      mutate(cat = paste(age,sex,racefinal, incomequintile, "STATEFROM", Transition1, sep="_")) %>% 
+      mutate(cat = paste(age,sex,racefinal, incomequintile, incomecat, "STATEFROM", Transition1, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, Transition2, prob) %>% 
       group_by(cat) %>% 
       mutate(cumsum=cumsum(prob),
@@ -62,7 +63,7 @@ simulate_population <- function(population, TPs, timeperiod){
     population <- population %>% group_by(cat) %>% do(transition_ed(., transitions)) %>% 
       mutate(age = age+1,
              year = i,
-             cat = paste(age,sex,racefinal, incomequintile, "STATEFROM", education, sep="_")) %>% 
+             cat = paste(age,sex,racefinal, incomequintile, incomecat, "STATEFROM", education, sep="_")) %>% 
       dplyr::select(-prob) %>% 
       data.frame(.)
     output[[paste(i)]] <- population    

@@ -11,9 +11,9 @@ library(parallel)
 library(ggplot2)
 
 # setwd("/home/cbuckley")
-setwd("~/Google Drive/SIMAH Sheffield")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
-data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
+data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
 
 source("SIMAH_code/psid/2_education_model/0_generate_population.R")
 
@@ -29,10 +29,12 @@ TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model
          sex = ifelse(sex=="male","Men","Women")) %>% filter(incomequintile==1 | incomequintile==5) %>% 
   mutate(incomecat = ifelse(incomequintile==1, "Lowest income quintile","Highest income quintile"))
   
-population <- generate_population(TPs, 1000)
+population <- generate_population(TPs, 1000) # population starts all aged 16.
+# Warning message:   Expected 4 pieces. Additional pieces discarded in 1000 rows ??
 
-simulatedpop1999 <- simulate_population(population, TPs, "1999-2009")
-simulatedpop2009<- simulate_population(population, TPs, "2009-2019")
+# need to add incomecat to simulate_population function
+simulatedpop1999 <- simulate_population(population, TPs, "1999-2009") # only up to age 26 as only simulating 20 years
+simulatedpop2009<- simulate_population(population, TPs, "2009-2019") # only up to age 26 as only simulating 20 years
 
 output <- rbind(simulatedpop1999, simulatedpop2009)
 
@@ -40,24 +42,26 @@ output <- rbind(simulatedpop1999, simulatedpop2009)
 # @ Sophie the code should work up to here but this code needs updating to the new version 
 # 6 categories instead of 5 
 # Including income as a breakdown
-totals <- output %>% filter(age==18 | age==21 | age==24 | age==27) %>% 
-  filter(age==27)  %>% 
-  group_by(sex, racefinal, education, period) %>% 
+totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>% 
+  filter(age==26)  %>% # As nobody aged 27 has been generated, working with age 26 for now to test
+  group_by(sex, racefinal, education, period, incomecat) %>% 
   tally(name="Npergroup") %>% ungroup() %>% group_by(sex, period, .drop=FALSE) %>% 
-  mutate(TotalN = sum(Npergroup)) %>% ungroup() %>% group_by(sex, racefinal, period, .drop=FALSE) %>% 
-  pivot_wider(names_from=education, values_from=Npergroup) %>% group_by(sex, period, racefinal) %>% 
-  mutate(sumHS = sum(c_across(`High school diploma or less`:`College degree or more`), na.rm=T),
-         sum1YR = sum(c_across(`1 year college`:`College degree or more`), na.rm=T),
-         sum2YR = sum(c_across(`2 year college`:`College degree or more`), na.rm=T),
-         sum3YR = sum(c_across(`3 year college`:`College degree or more`), na.rm=T),
-         sumCollege = `College degree or more`,
+  mutate(TotalN = sum(Npergroup)) %>% ungroup() %>% group_by(sex, racefinal, period, incomecat, .drop=FALSE) %>% 
+  pivot_wider(names_from=education, values_from=Npergroup) %>% group_by(sex, period, racefinal, incomecat) %>% 
+  mutate(sumLHS = sum(c_across(`LHS`:`College`), na.rm=T), # added additional LHS category
+         sumHS = sum(c_across(`HS`:`College`), na.rm=T),
+         sum1YR = sum(c_across(`SomeC1`:`College`), na.rm=T),
+         sum2YR = sum(c_across(`SomeC2`:`College`), na.rm=T),
+         sum3YR = sum(c_across(`SomeC3`:`College`), na.rm=T),
+         sumCollege = `College`,
+         percentLHS = sumLHS/TotalN,
          percentHS = sumHS/TotalN,
          percent1yr = sum1YR/TotalN,
          percent2yr = sum2YR/TotalN,
          percent3yr = sum3YR/TotalN,
          percentcollege = sumCollege/TotalN)
 
-totals <- totals %>% select(sex, race, period, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
+totals <- totals %>% select(sex, race, period, incomecat, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
   pivot_longer(cols=c(sumHS:sumCollege), names_to="education") %>% ungroup() %>% 
   mutate(education = ifelse(education=="sumHS","High school diploma or less",
                             ifelse(education=="sum1YR", "One year of college",
@@ -69,7 +73,7 @@ totals <- totals %>% select(sex, race, period, sumHS, sum1YR, sum2YR, sum3YR, su
                                                "Two years of college",
                                                "Three years of college",
                                                "College degree or more")),
-         period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)"))
+         period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)")) ## add names for income cats
 summary(totals$race)
 totals$race <- factor(totals$race, levels=c("Native American","Others","Black","Hispanic","Asian/PI","White"))
 # totals$race <- factor(totals$race, levels=c("Hispanic","others", "Black","White"))
