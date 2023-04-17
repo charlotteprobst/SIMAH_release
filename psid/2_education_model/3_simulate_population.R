@@ -13,7 +13,8 @@ library(RColorBrewer)
 library(ggalluvial)
 
 # setwd("/home/cbuckley")
-setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+setwd("~/Google Drive/SIMAH Sheffield/")
+# setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
 
@@ -31,7 +32,7 @@ TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model
          sex = ifelse(sex=="male","Men","Women")) %>% filter(incomequintile==1 | incomequintile==5) %>% 
   mutate(incomecat = ifelse(incomequintile==1, "Lowest","Highest"))
   
-population <- generate_population(TPs, 1000) # population starts all aged 16.
+population <- generate_population(TPs, 10000) # population starts all aged 16.
 
 # need to add incomecat to simulate_population function
 simulatedpop1999 <- simulate_population(population, TPs, "1999-2009") # only up to age 26 as only simulating 20 years
@@ -48,7 +49,8 @@ totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>%
   group_by(sex, racefinal, education, period, incomecat) %>% 
   tally(name="Npergroup") %>% ungroup() %>% group_by(sex, period, .drop=FALSE) %>% 
   mutate(TotalN = sum(Npergroup)) %>% ungroup() %>% group_by(sex, racefinal, period, incomecat, .drop=FALSE) %>% 
-  pivot_wider(names_from=education, values_from=Npergroup) %>% group_by(sex, period, racefinal, incomecat) %>% 
+  pivot_wider(names_from=education, values_from=Npergroup) %>% group_by(sex, period, racefinal, incomecat) %>%
+  dplyr::select(TotalN, sex, period, racefinal, incomecat, LHS, HS, SomeC1, SomeC2, SomeC3,College) %>% 
   mutate(sumLHS = sum(c_across(`LHS`:`College`), na.rm=T), # added additional LHS category
          sumHS = sum(c_across(`HS`:`College`), na.rm=T),
          sum1YR = sum(c_across(`SomeC1`:`College`), na.rm=T),
@@ -77,7 +79,7 @@ totals <- totals %>% select(sex, racefinal, period, incomecat, sumLHS, sumHS, su
                                                "Three years of college",
                                                "College degree or more")),
          period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)")) 
-summary(totals$racefinal)
+summary(as.factor(totals$racefinal))
 totals$racefinal <- factor(totals$racefinal, levels=c("Native American","Others","Black","Hispanic","Asian/PI","White"))
 # totals$race <- factor(totals$race, levels=c("Hispanic","others", "Black","White"))
 totals$incomecat <- factor(totals$incomecat, levels=c("Lowest", "Highest"))
@@ -89,8 +91,15 @@ addline_format <- function(x,...){
 col.vec <-  c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854")
 display.brewer.pal(5, "Set2")
 scale_fill_brewer(type="qual", palette="Set2")
+totals$period <- as.factor(totals$period)
+totals$sex <- as.factor(totals$sex)
 
-plot1 <- ggplot(totals, aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
+# check alluvia form - correct 
+is_alluvia_form(as.data.frame(totals), axes = 1:6, silent = TRUE)
+
+# plot separately for men and women and then join together afterwards 
+# code was breaking because it didn't know what to do with the "incomecat" column
+plot1 <- ggplot(subset(totals,sex=="Men"), aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
                             fill=racefinal, label=racefinal)) + 
   scale_fill_manual(values=col.vec) + 
   geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
@@ -98,7 +107,7 @@ plot1 <- ggplot(totals, aes(x=education, stratum=racefinal, alluvium=racefinal, 
                          legend.title=element_blank(),
                          strip.background = element_rect(colour="black", fill="white"),
                          text = element_text(size=22)) + 
-  facet_grid(cols=vars(sex),rows=vars(period), scales="free") + ylab("Total population") + 
+  facet_grid(cols=vars(incomecat), rows=vars(period), scales="free") + ylab("Total population") + 
   xlab("Educational Attainment by age 26") +
   scale_x_discrete(breaks=unique(totals$education),
                    labels=(c("Less than \nHigh school diploma",
