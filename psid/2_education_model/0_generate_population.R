@@ -2,7 +2,7 @@ generate_population <- function(TPs, sizepop){
   races <- unique(TPs$racefinal)
   sex <- unique(TPs$sex)
   incomequintile = unique(TPs$incomequintile)
-  incomecat = unique(TPs$incomecat)
+  incomecat <- unique(TPs$incomecat)
   
   samplecats <- expand.grid(race=races,sex=sex,income=incomequintile,incomecat=incomecat) %>% 
     mutate(samplecats = paste(race,sex,incomequintile,incomecat, sep="_"))

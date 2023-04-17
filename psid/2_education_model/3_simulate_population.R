@@ -9,11 +9,13 @@ library(doParallel)
 library(foreach)
 library(parallel)
 library(ggplot2)
+library(RColorBrewer)
+library(ggalluvial)
 
 # setwd("/home/cbuckley")
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
-data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
+# data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
 
 source("SIMAH_code/psid/2_education_model/0_generate_population.R")
 
@@ -27,10 +29,9 @@ TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model
          racefinal = factor(racefinal,
                             levels=c("Black","Hispanic","White","AsianPI","Others")),
          sex = ifelse(sex=="male","Men","Women")) %>% filter(incomequintile==1 | incomequintile==5) %>% 
-  mutate(incomecat = ifelse(incomequintile==1, "Lowest income quintile","Highest income quintile"))
+  mutate(incomecat = ifelse(incomequintile==1, "Lowest","Highest"))
   
 population <- generate_population(TPs, 1000) # population starts all aged 16.
-# Warning message:   Expected 4 pieces. Additional pieces discarded in 1000 rows ??
 
 # need to add incomecat to simulate_population function
 simulatedpop1999 <- simulate_population(population, TPs, "1999-2009") # only up to age 26 as only simulating 20 years
@@ -61,22 +62,25 @@ totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>%
          percent3yr = sum3YR/TotalN,
          percentcollege = sumCollege/TotalN)
 
-totals <- totals %>% select(sex, race, period, incomecat, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
-  pivot_longer(cols=c(sumHS:sumCollege), names_to="education") %>% ungroup() %>% 
-  mutate(education = ifelse(education=="sumHS","High school diploma or less",
+totals <- totals %>% select(sex, racefinal, period, incomecat, sumLHS, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
+  pivot_longer(cols=c(sumLHS:sumCollege), names_to="education") %>% ungroup() %>% 
+  mutate(education = ifelse(education=="sumLHS", "Less than High school diploma",
+                        ifelse(education=="sumHS","High school diploma",
                             ifelse(education=="sum1YR", "One year of college",
                                    ifelse(education=="sum2YR", "Two years of college",
                                           ifelse(education=="sum3YR", "Three years of college",
-                                                 ifelse(education=="sumCollege", "College degree or more", NA))))),
-         education= factor(education, levels=c("High school diploma or less",
+                                                 ifelse(education=="sumCollege", "College degree or more", NA)))))),
+         education= factor(education, levels=c("Less than High school diploma",
+                                               "High school diploma",
                                                "One year of college",
                                                "Two years of college",
                                                "Three years of college",
                                                "College degree or more")),
-         period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)")) ## add names for income cats
-summary(totals$race)
-totals$race <- factor(totals$race, levels=c("Native American","Others","Black","Hispanic","Asian/PI","White"))
+         period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)")) 
+summary(totals$racefinal)
+totals$racefinal <- factor(totals$racefinal, levels=c("Native American","Others","Black","Hispanic","Asian/PI","White"))
 # totals$race <- factor(totals$race, levels=c("Hispanic","others", "Black","White"))
+totals$incomecat <- factor(totals$incomecat, levels=c("Lowest", "Highest"))
 
 addline_format <- function(x,...){
   gsub('\\s','\n',x)
@@ -86,8 +90,8 @@ col.vec <-  c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854")
 display.brewer.pal(5, "Set2")
 scale_fill_brewer(type="qual", palette="Set2")
 
-plot1 <- ggplot(totals, aes(x=education, stratum=race, alluvium=race, y=value,
-                            fill=race, label=race)) + 
+plot1 <- ggplot(totals, aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
+                            fill=racefinal, label=racefinal)) + 
   scale_fill_manual(values=col.vec) + 
   geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
   geom_stratum() + theme(legend.position="bottom",
@@ -95,17 +99,18 @@ plot1 <- ggplot(totals, aes(x=education, stratum=race, alluvium=race, y=value,
                          strip.background = element_rect(colour="black", fill="white"),
                          text = element_text(size=22)) + 
   facet_grid(cols=vars(sex),rows=vars(period), scales="free") + ylab("Total population") + 
-  xlab("Educational Attainment by age 27") +
+  xlab("Educational Attainment by age 26") +
   scale_x_discrete(breaks=unique(totals$education),
-                   labels=(c("High school \ndiploma or less",
+                   labels=(c("Less than \nHigh school diploma",
+                             "High school \ndiploma",
                              "One year \nof college",
                              "Two years \nof college",
                              "Three years \nof college",
                              "College degree \nor more"))) +
   scale_y_continuous(label=scales::comma)
 
-
+# Data is not in a recognized alluvial form
 plot1
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 ggsave("SIMAH_workplace/education_transitions/Figure2_main.pdf", dpi = 300, width = 45, height = 30, units = "cm")
 
