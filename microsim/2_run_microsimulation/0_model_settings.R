@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 10000
+PopulationSize <- 1000000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -109,11 +109,15 @@ rm(list)
 
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
-numsamples <- 1
+n_samples <- 20
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 1
-lhs <- sample_lhs(numsamples, PE)
+PE <- 0
+lhs <- sample_lhs(n_samples, PE)
+
+samples <- do.call(rbind,lhs)
+
+write.csv(lhs, "SIMAH_workplace/microsim/2_output_data/factor_calibrate/lhs_samples.csv", row.names=F)
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 

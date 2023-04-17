@@ -7,7 +7,7 @@
 #' summarise_mortality_output
 summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, inflation_factor){
 
-age2010 <- Output %>% filter(year=="2000") %>%
+age2010 <- Output %>% filter(year=="2010") %>%
   ungroup() %>%
   group_by(year, sex, agecat, education) %>%
   summarise(totalpop = sum(popcount)) %>% ungroup() %>%

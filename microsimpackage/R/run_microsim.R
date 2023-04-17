@@ -43,6 +43,7 @@ basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overall
 
 # transition education for individuals aged 34 and under
 if(updatingeducation==1 & y>=2000){
+  print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
   totransition <- education_setup(totransition,y)
@@ -61,6 +62,7 @@ if(updatingeducation==1 & y>=2000){
 # TODO add more printing updates e.g. "alcohol transitions running"
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
+  print("updating alcohol")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
@@ -84,6 +86,7 @@ if(updatingalcohol==1 & y>=2000){
 }
 
 # simulate mortality from specific diseases
+print("simulating disease mortality")
 disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
@@ -100,6 +103,11 @@ basepop <- CirrhosisHepatitis(basepop,lhs)
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)
+}
+
+if(y>=2010){
+  FACTOR <- as.numeric(lhs["BASERATES_FACTOR"])
+  rates$rate <- rates$rate + (rates$rate*FACTOR)
 }
 
 basepop <- left_join(basepop, rates, by=c("cat")) %>%
@@ -139,6 +147,8 @@ basepop <- subset(basepop, microsim.init.age<=79)
 if(output=="mortality"){
   # add samplenum and seed as an output for this function TODO
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor)
+  Summary$seed <- seed
+  Summary$samplenum <- samplenum
   }else if(output=="demographics"){
     # add seed to the output file here TODO
   SummaryPop <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
