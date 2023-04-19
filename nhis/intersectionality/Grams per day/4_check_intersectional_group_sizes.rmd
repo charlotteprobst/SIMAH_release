@@ -9,7 +9,7 @@ library(tidyr)
 library(dplyr)
 
 # Read in transformed data (for drinkers only)
-transformed_drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_log_transformed_drinkers.RDS")
+transformed_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
 ```
 
 # Check intersectional group sizes with various subgroup splits

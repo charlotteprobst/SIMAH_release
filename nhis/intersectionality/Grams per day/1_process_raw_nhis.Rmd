@@ -14,6 +14,9 @@ title: "1_process_raw_nhis"
 
 # Setup
 ```{r, warning = FALSE}
+# Set wd
+setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
+
 # Read in necessary R packages
 library(tidyverse)
 library(readr)
@@ -50,14 +53,14 @@ theme_set(theme_bw(base_size = 12))
 options(scipen = 100)
 
 # Read in data extracted from IPUMS:
-# ddi <- read_ipums_ddi("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
+# ddi <- read_ipums_ddi("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
 # data <- read_ipums_micro(ddi)
 
 # Save extracted data as .RDS file
-# saveRDS(data, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
+# saveRDS(data, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
  
 # Read in extracted data:
-nhis_full_extract <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
+# nhis_full_extract <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
 ```
 NB. Extracted NHIS data obtained from nhis.ipums.org (Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021).
 Available at: https://doi.org/10.18128/D070.V7.1
@@ -88,7 +91,7 @@ Years requested: 2000-2020
 # saveRDS(nhis_subset, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
 
 # Read in the subset data
-nhis_subset <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
+nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
 ```
 
 # Recategorise demographic variables
@@ -164,17 +167,12 @@ nhis_subset_education$education_5_cats <- factor(nhis_subset_education$education
 nhis_subset_cohort <- rename(nhis_subset_education, birth_year = BIRTHYR)
 
 # Check number missing birth year:
-sum(is.na(nhis_subset_cohort$birth_year)) # 77,046 individuals missing birth year
+sum(is.na(nhis_subset_cohort$birth_year)) # 77,046 individuals missing birth year, therefore generate a birth year estimate for those missing birth year
 
 # Generate birth year estimate manually
 nhis_subset_cohort <- nhis_subset_cohort %>% 
-  filter(!is.na(birth_year)) %>% 
-  mutate(birth_year_est = YEAR-AGE) %>% 
-# Compare accuracy of estimated versus actual birth years (for individuals with birth year known)
-  mutate(difference = birth_year - birth_year_est)
-
-nhis_subset_cohort %>% summarise(min(difference), max(difference)) # -2 to 1
-
+  mutate(birth_year_est = ifelse(is.na(birth_year), YEAR-AGE, birth_year))
+  
 # Group into cohorts based on estimated year of birth
 nhis_subset_cohort <- recode_cohort(nhis_subset_cohort)
 
@@ -218,7 +216,7 @@ sample_adults_by_sex_race_age <- nhis_subset_recoded %>%
   group_by(SEX) %>%
   arrange(desc(percent), .by_group = TRUE)
 
-saveRDS(sample_adults_by_sex_race_age, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/sample_adults_demographics.RDS")
+saveRDS(sample_adults_by_sex_race_age, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/sample_adults_demographics.RDS")
 ```
 
 # Review missing data
@@ -317,28 +315,32 @@ As shown, Alc status and education are not missing > 3% in any year
 Sexual orientation has a large proportion of missing data as this was not captured pre-2013.
 Income data was missing more pre-2006.
 
-## Missing data by intersectiona group
-This table shows the percentage of missing data for all intersectional groups.
-As shown, <4% of alcohol status and education status are missing (across all combinations of age, gender, race and education).
+## Missing data by intersectional group
+Some groups (small n) missing alc data entirely.
 Income is missing more than education.
+
+# KEEP THINKING ABOUT THIS! ANALYSIS ON DRINKERS ONLY - CURRENT LOOKING AT MISSING DATA IS FOR ALL.
+# MISMATCH BETWEEN WHAT THIS SAYS AND WHAT INTERSECTIONAL GROUP SIZES SAYS
 
 ```{r,  warning = FALSE}
 ## Review missing data for full sample by combinations of key demographics:
-nhis_subset_recoded %>% 
-  group_by(SEX, age_3_cats, race_5_cats, education_3_cats) %>%
-  mutate(n=1) %>%
-  summarise(total_pop = sum(n), 
+view <- nhis_subset_recoded %>% 
+  group_by(SEX, age_3_cats, race_5_cats, education_3_cats, decade) %>%
+  mutate(n=1,
+         total_pop = sum(n), 
             Age_NA = sum(is.na(AGE)), 
             Educ_NA = sum(is.na(EDUCREC2)),
             Sex_orien_NA = sum(is.na(SEXORIEN)),
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             # Calculate percentages for variables with some missing data:
+            perc_missing_age = (Age_NA/total_pop)*100, 
             perc_missing_edu = (Educ_NA/total_pop)*100, 
             perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
             perc_missing_income = (Income_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100) %>%
-    arrange(perc_missing_Alc_status)
+            arrange(desc(perc_missing_Alc_status))
+  
 ```
 
 ## Missing data by alcohol variable (drinkers only))
@@ -380,7 +382,6 @@ shadow_variables <- nhis_subset_recoded %>% dplyr::select(age_3_cats, race_5_cat
 shadow <- as.data.frame(abs(is.na(shadow_variables)))
 
 # Create a new data frame in which only variables with one or more missing values are retained.
-
 missing_shadow <- shadow[,which(unlist(lapply(shadow,sum))!=0)]
 round(cor(missing_shadow),3)
 ```
