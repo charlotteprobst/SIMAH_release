@@ -29,7 +29,37 @@ theme_set(theme_bw(base_size = 10))
 options(scipen=999)
 
 # Read in drinkers data
-drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
+drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
+
+# Read in full sample data
+full_sample <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
+
+```
+
+Trial transformation of full sample data
+```{r}
+# add smallest grams value (for drinkers) to zero values
+full_sample <- 
+  full_sample %>% mutate(new_grams = alc_daily_g_capped_200 + 0.03835616)
+
+# Check recommended lambda with boxcox
+b <- MASS::boxcox(lm(full_sample$new_grams ~ 1))
+lambda <- b$x[which.max(b$y)] # -0.1414
+
+lambda2 <- forecast::BoxCox.lambda(full_sample$new_grams)  # -0.0773
+
+# As both suggested lambda are close to 0, log transformation is appropriate
+full_sample$transformed_grams <- log(full_sample$new_grams)
+
+# Distribution plot 
+ggplot(full_sample, aes(x=transformed_grams), y) + geom_histogram(bins=200) + xlim(-4,6) +
+ylim(0,22000) + ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
+  xlab("Daily grams of alcohol, post transformation") +
+  ylab("Frequency")
+
+# qq plot
+qqnorm(full_sample$transformed_grams, pch = 1, frame = FALSE)
+qqline(full_sample$transformed_grams, lwd = 2)
 ```
 
 Review basic stats of estimated grams per day data for drinkers
@@ -37,6 +67,14 @@ Review basic stats of estimated grams per day data for drinkers
 drinkers %>% summarise(min(alc_daily_g), max(alc_daily_g), mean(alc_daily_g))
 drinkers %>% summarise(min(alc_daily_g_capped_200), max(alc_daily_g_capped_200), mean(alc_daily_g_capped_200))
 ```
+
+Re-review original distribution
+```{r}
+ggplot(drinkers, aes(x=alc_daily_g_capped_200), y) + geom_histogram(bins=100) + 
+ylim(0,20000)
+```
+
+
 # Transform consumption data for drinkers
 
 Check recommended lambda with boxcox
@@ -60,12 +98,16 @@ ylim(0,20000)
 qqnorm(drinkers$capped_daily_grams_log, pch = 1, frame = FALSE)
 qqline(drinkers$capped_daily_grams_log, lwd = 2)
 ```
+
 # Check transformation method by back-transforming and re-calculating the back transformed mean
 ```{r}
 drinkers$test <- exp(drinkers$capped_daily_grams_log)
 mean(drinkers$test)
 ```
+
 Save log transformed data
 ```{r}
-saveRDS(drinkers, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+saveRDS(drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log_drinkers.RDS")
+
+saveRDS(full_sample, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log_full_sample.RDS")
 ```

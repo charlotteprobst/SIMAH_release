@@ -319,8 +319,6 @@ Income data was missing more pre-2006.
 Some groups (small n) missing alc data entirely.
 Income is missing more than education.
 
-# KEEP THINKING ABOUT THIS! ANALYSIS ON DRINKERS ONLY - CURRENT LOOKING AT MISSING DATA IS FOR ALL.
-# MISMATCH BETWEEN WHAT THIS SAYS AND WHAT INTERSECTIONAL GROUP SIZES SAYS
 
 ```{r,  warning = FALSE}
 ## Review missing data for full sample by combinations of key demographics:
@@ -396,7 +394,82 @@ nhis_subset_dropped_demo_na <- remove_na(nhis_subset_recoded, all_of(edu_variabl
 Remove individuals missing drinking status (drinking status 'NA'):
 ```{r}
 nhis_subset_dropped_alcstat_na <- remove_na(nhis_subset_dropped_demo_na, "ALCSTAT1")
+
+saveRDS(nhis_subset_dropped_alcstat_na,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/sampleadults_droppedNA_edu_alcstat.RDS")
 ```
+
+View sample size of intersectional groups now that missing data dropped
+```{r}
+# Generate intersections & count people in each group
+data_intersections <- nhis_subset_dropped_alcstat_na %>% 
+  group_by(SEX, race_5_cats, education_3_cats, decade, age_3_cats) %>% 
+  mutate(intersections = cur_group_id())%>%
+  group_by(intersections) %>%
+  mutate(count=n()) 
+
+data_intersections %>%
+  distinct(intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, count, SEX, race_5_cats, education_3_cats, decade, age_3_cats) %>% 
+  arrange(count)
+
+# % of intersectional groups with more than 20 people in the group
+sum(data_intersections$count >= 20)/nrow(data_intersections)  
+
+intersections_reference <- subset(data_intersections, select = c(intersections, SEX, race_5_cats, education_3_cats, age_3_cats, decade)) %>% 
+  unique()  %>%
+  mutate(SEX = recode(SEX, "1" = "Male", "2" = "Female")) %>%
+  mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_5_cats, education_3_cats, decade)))
+```
+
+Review distribution of drinkers vs non-drinkers in full sample
+```{r}
+# Total
+drinking_status <- data_intersections %>%
+  group_by(ALCSTAT1) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(percent = n/sum(n)*100) %>%
+  round(digits=1)
+
+# By intersections
+drinking_status_1 <- data_intersections %>%
+  group_by(intersections) %>%
+  count(ALCSTAT1) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  pivot_wider(names_from = ALCSTAT1, values_from = c(n, percent)) %>%
+  round(digits=1)%>%
+  rename(
+    n_abstainers = n_1,
+    n_former_drinkers = n_2,
+    n_current_drinkers = n_3,
+    percent_abstainers = percent_1,
+    percent_former_drinkers = percent_2,
+    percent_current_drinkers = percent_3
+  )
+
+drinking_status_1 <- merge(intersections_reference,drinking_status_1,by="intersections")
+
+saveRDS(drinking_status,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/sampleadults_drinkingstatus.RDS")
+
+# By drinking status
+drinking_status_2 <- data_intersections %>%
+  group_by(ALCSTAT1) %>%
+  count(intersections) %>%
+  mutate(percent = n/sum(n)*100) %>%
+  subset(select= -(n)) %>%
+  pivot_wider(names_from = ALCSTAT1, values_from = percent) %>%
+  round(digits=2)%>%
+  rename(
+    abstainers = "1",
+    former_drinkers = "2",
+    drinkers = "3"
+  ) %>%
+  arrange(desc(drinkers)) 
+
+drinking_status_2 <- merge(intersections_reference,drinking_status_2,by="intersections") %>%
+    subset(select = - c(SEX,race_5_cats, education_3_cats, decade, age_3_cats))
+```
+
 Remove individuals missing essential alcohol consumption data:
 ```{r}
 # Drop individuals who drink, but who are missing information on consumption patterns...
@@ -448,7 +521,7 @@ nhis_subset_alc_cats$SEX <- factor(nhis_subset_alc_cats$SEX,
 
 # Check face validity of new alcohol variables:
 nhis_subset_alc_cats %>%
-  group_by(alc_4_cats) %>% 
+  group_by(alc_5_cats) %>% 
   summarise(mean(alc_daily_g), mean(ALCDAYSYR), mean(ALCAMT), mean(ALC5UPYR))
 ```
 
@@ -501,10 +574,23 @@ data_with_inconsistancies %>%
 ```
 Most inconsistencies are for those drinking 364 days a year, those reporting that they drink 5 or 6 drinks on average and those reporting they either never or always drink > 5 units.
 
-## Remove drinkers with incosnstant alcohol data
+## Remove drinkers with inconsistant alcohol data
 ```{r}
 nhis_alc_clean <- data_with_inconsistancies %>% filter(inconsistent_alc==0)
 ```
+
+## Summarise drinking status within sample adults
+```{r}
+sample_by_drink_stat <- nhis_alc_clean %>%
+  group_by(alc_5_cats) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(percent = n/sum(n)*100)
+
+# copy into excel
+clipr::write_clip(sample_by_drink_stat)
+```
+
 
 # Cap alcohol data
 Add a column for alc_daily_g with a cap of 200grams applied
@@ -513,12 +599,25 @@ nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
 ```
 
+Review distribution of alc_daily_grams amongst full sample
+```{r}
+#non-capped
+ggplot(nhis_alc_clean, aes(x=alc_daily_g), y) + geom_histogram(bins=400) + xlim(0,201) + ylim(0,30000) + 
+ggtitle("Distribution of  estimated alc_daily_g")
+
+#capped
+ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + geom_histogram(bins=400) + xlim(0,201) + ylim(0,30000) + 
+  xlab("Daily grams of alcohol") +
+  ylab("Frequency") +
+ggtitle("Distribution of estimated daily grams of alcohol amongst NHIS sample adults")
+```
+
 Review distribution of alc_daily_grams data (comparing capped and non-capped)
 ```{r}
 # non-capped
 nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>%
-  ggplot(aes(x=alc_daily_g), y) + geom_histogram(bins=400) + xlim(0,200) + ylim(0,30000) + 
+  ggplot(aes(x=alc_daily_g), y) + geom_histogram(bins=400) + xlim(0,201) + ylim(0,30000) + 
 ggtitle("Distribution of  estimated alc_daily_g amongst drinkers")
 # ggsave("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_grams_data_distribution_drinkers.png", dpi=300, width=33, height=19, units="cm")
 
