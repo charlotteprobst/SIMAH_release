@@ -84,16 +84,16 @@ summary <- data %>%
                       edclass = ifelse(EDUC<=6, "LEHS",
                                     ifelse(EDUC>6 & EDUC<=9, "SomeC","College")),
                       sex = SEX) %>% 
-  group_by(YEAR, state, sex, AGE, edclass) %>%
-  summarise(TPop=sum(PERWT)) %>% rename(year=YEAR, ind_age=AGE)
+  group_by(YEAR, state, sex, race, age_gp, edclass) %>%
+  summarise(TPop=sum(PERWT)) %>% rename(year=YEAR)
 
-summaryUSA <- summary %>% group_by(year, sex, ind_age, edclass) %>% 
+summaryUSA <- summary %>% group_by(year, sex, race, age_gp, edclass) %>% 
   summarise(TPop = sum(TPop)) %>% mutate(state="USA")
 
 summary <- rbind(summary, summaryUSA)
 
 # save ACS population counts 2000 to 2021 
-write.csv(summary, "SIMAH_workplace/ACS/ACS_popcounts_2000_2021_bystate_indage.csv", row.names=F)
+write.csv(summary, "SIMAH_workplace/ACS/ACS_popcounts_2000_2021_bystate_age_gp.csv", row.names=F)
 
 totalpop <- summary %>% filter(state=="USA") %>% 
   group_by(year) %>% summarise(TPop=sum(TPop))
