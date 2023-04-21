@@ -6,7 +6,7 @@ title: "2_exploratory_analysis"
 Set up
 ```{r, warning=FALSE}
 # Read in data:
-nhis_alc_clean <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
+nhis_alc_clean <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
 
 # Read in necessary R packages & functions
 library(tidyverse)
@@ -17,7 +17,7 @@ library(ggplot2)
 library(ragg)
 
 # Read in necessary functions
-source("U:/SIMAH/SIMAH_code/nhis/intersectionality/functions/remove_na.R")
+source("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality/functions/remove_na.R")
 
 # Set default theme for plots:
 theme_set(theme_bw(base_size = 12))

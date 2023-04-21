@@ -315,32 +315,43 @@ As shown, Alc status and education are not missing > 3% in any year
 Sexual orientation has a large proportion of missing data as this was not captured pre-2013.
 Income data was missing more pre-2006.
 
-## Missing data by intersectional group
-Some groups (small n) missing alc data entirely.
-Income is missing more than education.
-
+## Missing data by intersectional group characteristics
 
 ```{r,  warning = FALSE}
 ## Review missing data for full sample by combinations of key demographics:
-view <- nhis_subset_recoded %>% 
+missing <- nhis_subset_recoded %>% 
   group_by(SEX, age_3_cats, race_5_cats, education_3_cats, decade) %>%
-  mutate(n=1,
-         total_pop = sum(n), 
-            Age_NA = sum(is.na(AGE)), 
-            Educ_NA = sum(is.na(EDUCREC2)),
-            Sex_orien_NA = sum(is.na(SEXORIEN)),
-            Income_NA = sum(is.na(income)),
+  mutate(n=1) %>%
+  summarise(total_pop = sum(n), 
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             # Calculate percentages for variables with some missing data:
-            perc_missing_age = (Age_NA/total_pop)*100, 
-            perc_missing_edu = (Educ_NA/total_pop)*100, 
-            perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
-            perc_missing_income = (Income_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100) %>%
             arrange(desc(perc_missing_Alc_status))
-  
-```
 
+# boxplots of missing alc status
+ggplot(missing) + geom_boxplot(aes(x = factor(age_3_cats), y = perc_missing_Alc_status))  
+ggplot(missing) + geom_boxplot(aes(x = factor(race_5_cats), y = perc_missing_Alc_status))  
+ggplot(missing) + geom_boxplot(aes(x = factor(education_3_cats), y = perc_missing_Alc_status)) 
+ggplot(missing) + geom_boxplot(aes(x = factor(decade), y = perc_missing_Alc_status))  
+ggplot(missing) + geom_boxplot(aes(x = factor(SEX), y = perc_missing_Alc_status)) 
+
+missing_2 <- nhis_subset_recoded %>% 
+  group_by(SEX, age_3_cats, race_5_cats, decade) %>%
+  mutate(n=1) %>%
+  summarise(total_pop = sum(n), 
+            Educ_NA = sum(is.na(education_3_cats)),
+            # Calculate percentages for variables with some missing data:
+            perc_missing_edu = (Educ_NA/total_pop)*100) %>% 
+            arrange(desc(perc_missing_edu))
+
+# boxplots of missing education status
+ggplot(missing_2) + geom_boxplot(aes(x = factor(age_3_cats), y = perc_missing_edu))  
+ggplot(missing_2) + geom_boxplot(aes(x = factor(race_5_cats), y = perc_missing_edu))  
+ggplot(missing_2) + geom_boxplot(aes(x = factor(decade), y = perc_missing_edu))  
+ggplot(missing_2) + geom_boxplot(aes(x = factor(SEX), y = perc_missing_edu)) 
+
+```
+  
 ## Missing data by alcohol variable (drinkers only))
 This table shows the percentage of missing alcohol consumption patterns data for drinkers.
 As shown, <3% of specific alcohol consumption variables are missing (across age, gender and race).
@@ -407,7 +418,7 @@ data_intersections <- nhis_subset_dropped_alcstat_na %>%
   group_by(intersections) %>%
   mutate(count=n()) 
 
-data_intersections %>%
+data_intersections <- data_intersections %>%
   distinct(intersections, .keep_all = TRUE) %>% 
   dplyr::select(intersections, count, SEX, race_5_cats, education_3_cats, decade, age_3_cats) %>% 
   arrange(count)
@@ -484,6 +495,7 @@ drinkers_dropped_na <- remove_na(drinkers, variables)
 ## Rejoin drinkers (those with adequate data) and non-drinkers together
 nhis_subset_dropped_alc_na <- rbind(drinkers_dropped_na, non_drinkers)
 ```
+
 
 # Process alcohol data (estimate grams_per_day)
 ```{r}
@@ -597,10 +609,9 @@ Add a column for alc_daily_g with a cap of 200grams applied
 ```{r}
 nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
-```
 
-Review distribution of alc_daily_grams amongst full sample
-```{r}
+# Full sample
+
 #non-capped
 ggplot(nhis_alc_clean, aes(x=alc_daily_g), y) + geom_histogram(bins=400) + xlim(0,201) + ylim(0,30000) + 
 ggtitle("Distribution of  estimated alc_daily_g")
@@ -610,10 +621,8 @@ ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + geom_histogram(bins=4
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
 ggtitle("Distribution of estimated daily grams of alcohol amongst NHIS sample adults")
-```
 
-Review distribution of alc_daily_grams data (comparing capped and non-capped)
-```{r}
+# Drinkers only 
 # non-capped
 nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>%
@@ -634,14 +643,14 @@ a) full cleaned dataset
 b) drinkers only
 ```{r}
 # a) Save full cleaned data
-saveRDS(nhis_alc_clean, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
+saveRDS(nhis_alc_clean, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
 
 # b) Save subset of drinkers only 
 nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>%
-  saveRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
+  saveRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/5_nhis_alc_clean_drinkers_only.RDS")
 
 nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>% 
-   write_csv("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
+   write_csv("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
 ```
