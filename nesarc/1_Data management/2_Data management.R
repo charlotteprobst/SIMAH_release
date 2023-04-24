@@ -11,8 +11,8 @@ library(splitstackshape) # To replicate data based on sampling weight
 
 
 # Specify the data file locations
-data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Processed data/"
-
+# data <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Processed data/"
+data <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"
 
 # NESARC WAVE 1 and 2 --------------------------------------------------------------------------------------------------------
 # Edit data - recode and recategorize variables
@@ -129,11 +129,17 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     
     
     # Convert daily ounces to grams
-    alc_daily_g = alc_daily_oz * 28.3495,  
-    coolers_daily_g = coolers_daily_oz * 28.3495,
-    beers_daily_g = beers_daily_oz * 28.3495,
-    wine_daily_g = wine_daily_oz * 28.3495,
-    liquor_daily_g = liquor_daily_oz * 28.3495,
+    # alc_daily_g = alc_daily_oz * 28.3495,  
+    # coolers_daily_g = coolers_daily_oz * 28.3495,
+    # beers_daily_g = beers_daily_oz * 28.3495,
+    # wine_daily_g = wine_daily_oz * 28.3495,
+    # liquor_daily_g = liquor_daily_oz * 28.3495,
+    
+    alc_daily_g = alc_daily_oz * 23.1561,
+    coolers_daily_g = coolers_daily_oz * 23.1561,
+    beers_daily_g = beers_daily_oz * 23.1561,
+    wine_daily_g = wine_daily_oz * 23.1561,
+    liquor_daily_g = liquor_daily_oz * 23.1561,
     
     # Proportion of beverage
     coolers_prop = coolers_daily_g / alc_daily_g * 100,
@@ -283,9 +289,9 @@ nesarc_cc_expanded <- nesarc_cc %>%
 
 
 # Save data
-saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
-saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
-saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))
+saveRDS(nesarc, paste0(data, "nesarc_all_new.rds"))
+saveRDS(nesarc_cc, paste0(data, "nesarc_clean_new.rds"))
+saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded_new.rds"))
 
 
 # NESARC WAVE 3 --------------------------------------------------------------------------------------------------------
@@ -384,11 +390,17 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
       
       
       # Convert daily ounces to grams
-      alc_daily_g = alc_daily_oz * 28.3495,     
-      coolers_daily_g = coolers_daily_oz * 28.3495,
-      beers_daily_g = beers_daily_oz * 28.3495,
-      wine_daily_g = wine_daily_oz * 28.3495,
-      liquor_daily_g = liquor_daily_oz * 28.3495,
+      # alc_daily_g = alc_daily_oz * 28.3495,
+      # coolers_daily_g = coolers_daily_oz * 28.3495,
+      # beers_daily_g = beers_daily_oz * 28.3495,
+      # wine_daily_g = wine_daily_oz * 28.3495,
+      # liquor_daily_g = liquor_daily_oz * 28.3495,
+      
+      alc_daily_g = alc_daily_oz * 23.1561,
+      coolers_daily_g = coolers_daily_oz * 23.1561,
+      beers_daily_g = beers_daily_oz * 23.1561,
+      wine_daily_g = wine_daily_oz * 23.1561,
+      liquor_daily_g = liquor_daily_oz * 23.1561,
       
       
       # Proportion of beverage
@@ -484,8 +496,8 @@ nesarc3_expanded <- nesarc3_clean %>%
 
 
 # Save data
-saveRDS(nesarc3, paste0(data, "nesarc3_all.rds"))
-saveRDS(nesarc3_clean, paste0(data, "nesarc3_clean.rds"))
-saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded.rds"))
+saveRDS(nesarc3, paste0(data, "nesarc3_all_new.rds"))
+saveRDS(nesarc3_clean, paste0(data, "nesarc3_clean_new.rds"))
+saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded_new.rds"))
 
 
