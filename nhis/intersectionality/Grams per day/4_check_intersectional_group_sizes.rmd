@@ -9,7 +9,7 @@ library(tidyr)
 library(dplyr)
 
 # Read in transformed data (for drinkers only)
-transformed_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+transformed_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_log_drinkers.RDS")
 ```
 
 # Check intersectional group sizes with various subgroup splits
@@ -212,6 +212,8 @@ sum(data_intersections_H$count >= 20)/nrow(data_intersections_H)
 
 # Save reference table for intersectional split of choice
 ```{r}
-saveRDS(data_intersections_E, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/intersections_count.RDS")
+saveRDS(data_intersections_E, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/intersections_count.RDS")
+
+write_csv(data_intersections_E, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/intersections_count.csv")
 ```
 

@@ -21,7 +21,7 @@ theme_set(theme_bw(base_size = 12))
 
 Load in data
 ```{r}
-plot_data <- read_rds("U:\\SIMAH\\SIMAH_workplace\\nhis\\intersectionality\\cleaned_data\\HED\\Results_table_HED_probability.RDS")
+plot_data <- read_rds("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/HED/Results_table_HED_probability.RDS")
 ```
 
 Generate columns as want them named & ordered in the graph
@@ -80,8 +80,7 @@ plot_data %>%
                           ymin < 0 & ymax > 0 ~ "expected")
   ) %>%
   filter(sig_resid!="expected") %>%
-  select(intersections, SEX, decade, race, age_3_cats, education, ymin, ymax, sig_resid) %>%
-  nrow()
+  select(intersections, SEX, decade, race, age_3_cats, education, ymin, ymax, sig_resid) 
 ```
 ### Plots of predicted probabilities and standard errors 
 
@@ -90,30 +89,30 @@ Separate plots for men and women
 # Plot males
 male_HED_probability <- plot_data %>%
   filter(SEX=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=probability, colour=decade)) +
-  geom_point(position=position_dodge(width=1)) +
+  ggplot(aes(x=decade, y=total_probability, colour=race)) +
+  geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = CI_lower,
                     ymax = CI_upper),
-                    position=position_dodge(width=1)) +
-  ylim(0, 1) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
+                    position=position_dodge(width=0.8)) +
+  ylim(0, 100) +
+  facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ggtitle("Males: probability of HED by intersectional groups")+
-  labs(y= "Probability")
+  ggtitle("Men")+
+  labs(y= "Estimated percentage of HEDs")
 male_HED_probability
 
 # Plot females
 female_HED_probability <- plot_data %>%
   filter(SEX=="Female") %>%
-  ggplot(aes(x=age_3_cats, y=probability, colour=decade)) +
-  geom_point(position=position_dodge(width=1)) +
+  ggplot(aes(x=decade, y=total_probability, colour=race)) +
+  geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = CI_lower,
                     ymax = CI_upper),
-                    position=position_dodge(width=1)) +
-  ylim(0, 1) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
+                    position=position_dodge(width=0.8)) +
+  ylim(0, 100) +
+  facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ggtitle("Females: probability of HED by intersectional groups")+
-  labs(y= "Probability")
+  ggtitle("Women")+
+  labs(y= "Estimated percentage of HEDs")
 female_HED_probability
 ```

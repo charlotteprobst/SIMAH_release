@@ -8,9 +8,11 @@ Setup
 library(tidyr)
 library(readr)
 library(dplyr)
+library(ggplot2)
+library(writexl)
 
 # Read in data (from )post-transformation and post-MAIHDA)
-log_transformed_data_post_MAIHDA <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA_results_MCMC_log.RDS")
+log_transformed_data_post_MAIHDA <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA_results_MCMC_log.RDS")
 ```
 
 Generate a function to undertaken back transformation
@@ -45,13 +47,13 @@ temp$rank_estimated_grams <-rank(temp$back_transformed_estimate)
 ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point()
 ggplot(temp, aes(x=mean_observed_grams, y=back_transformed_estimate)) + geom_point()
 
-saveRDS(temp, "U:\\SIMAH\\SIMAH_workplace\\nhis\\intersectionality\\cleaned_data\\comparisson of observed and estimated grams.RDS")
+saveRDS(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/comparisson of observed and estimated grams.RDS")
 ```
 
 # Save back-transformed data
 ```{r}
-saveRDS(back_transformed_data_log, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_transformed_data_log.RDS")
+saveRDS(back_transformed_data_log, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_transformed_data_log.RDS")
 
-write_xlsx(x = back_transformed_data_log, path = "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_Transformed_data_log.xlsx", col_names = TRUE)
+write_xlsx(x = back_transformed_data_log, path = "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_Transformed_data_log.xlsx", col_names = TRUE)
 ```
 

@@ -11,6 +11,7 @@ library(labelled)
 library(haven)
 library(ggplot2)
 library(forcats)
+library(patchwork)
 
 ## Bias toward non-scientific notation
 options(scipen=10)
@@ -21,7 +22,7 @@ theme_set(theme_bw(base_size = 12))
 
 Load in data
 ```{r}
-data <- read_rds("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_transformed_data_log.rds")
+data <- read_rds("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/back_transformed_data_log.rds")
 ```
 
 Generate columns for race, sex, education and generation (as want them named in the graph) using column intersectional names
@@ -70,14 +71,20 @@ female_residuals_log
 ```{r}
 interactions <- data %>% 
   mutate(
-    ymin = residuals - (1.96*residualsSE),
-    ymax = residuals + (1.96*residualsSE),
-    sig_resid = case_when(ymin > 0 & ymax > 0 ~ "more",
-                          ymin < 0 & ymax < 0 ~ "less", 
-                          ymin < 0 & ymax > 0 ~ "expected")
-  ) %>%
-  filter(sig_resid!="expected") %>%
-  select(sex, decade, race, age_3_cats, education, ymin, ymax, sig_resid)
+    residual_lower_CI = residuals - (1.96*residualsSE),
+    residual_upper_CI = residuals + (1.96*residualsSE),
+    significance_and_direction = case_when(residual_lower_CI > 0 & residual_upper_CI > 0 ~ "yes_drinks_more",
+                          residual_lower_CI < 0 & residual_upper_CI < 0 ~ "yes_drinks_less", 
+                          residual_lower_CI < 0 & residual_upper_CI > 0 ~ "no")
+  ) 
+
+
+interactions %>%
+  filter(significance_and_direction=="no") %>%
+  select(sex, decade, race, age_3_cats, education, residual_lower_CI, residual_upper_CI, significance_and_direction)
+
+write_csv(interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/interactions.csv")
+# 50 intersections with significant interactions
 ```
 
 
@@ -88,10 +95,10 @@ Separate plots for men and women
 # Plot males
 male_grams_log <- data %>%
   filter(sex=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=mean, colour=decade)) +
+  ggplot(aes(x=age_3_cats, y=estimate, colour=decade)) +
   geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = mean - (1.96*SE),
-                    ymax = mean + (1.96*SE)),
+  geom_errorbar(aes(ymin = estimate - (1.96*SE),
+                    ymax = estimate + (1.96*SE)),
                     position=position_dodge(width=0.8)) +
                 facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
@@ -102,10 +109,10 @@ male_grams_log
 # Plot females
 female_grams_log <- data %>%
   filter(sex=="Female") %>%
-  ggplot(aes(x=age_3_cats, y=mean, colour=decade)) +
+  ggplot(aes(x=age_3_cats, y=estimate, colour=decade)) +
   geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = mean - (1.96*SE),
-                    ymax = mean + (1.96*SE)),
+  geom_errorbar(aes(ymin = estimate - (1.96*SE),
+                    ymax = estimate + (1.96*SE)),
                     position=position_dodge(width=0.8)) +
   facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom")+
@@ -113,47 +120,12 @@ female_grams_log <- data %>%
   labs(y= "log(grams per day)")
 female_grams_log
 ```
-
-
-# Plots of back transformed data
-Residuals after being back transformed
-```{r}
-male_residuals <- data %>%
-  filter(sex=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_residual, colour=decade)) +
-  geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = back_transformed_residual_CI_lower,
-                    ymax = back_transformed_residual_CI_upper),
-                position=position_dodge(width=0.8)) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
-  theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  geom_hline(yintercept=1, linetype="dashed", color = "red") +
-  ggtitle("Male Residuals")
-male_residuals
-
-female_residuals <- data %>%
-  filter(sex=="Female") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_residual, colour=decade)) +
-  geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = back_transformed_residual_CI_lower,
-                    ymax = back_transformed_residual_CI_upper),
-                position=position_dodge(width=0.8)) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
-  theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  geom_hline(yintercept=1, linetype="dashed", color = "red") +
-  ggtitle("Female Residuals")
-female_residuals
-
-# nb. intercept at 1 due to back transformation (exp(0) = 1)
-# Note patterning identical to transformed data
-```
-
 # Plot of estimates on back transformed data
 ```{r}
 # Plot males
 male_grams <- data %>%
   filter(sex=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean, colour=decade)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate, colour=decade)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
@@ -170,7 +142,7 @@ male_grams
 # Plot females
 female_grams <- data %>%
   filter(sex=="Female") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean, colour=decade)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate, colour=decade)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
@@ -188,14 +160,13 @@ Plots split by both sex and decade
 # 2000-2009
 plot_4_male <- data %>%
   filter(sex=="Male", decade=="2000-2009") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
                 facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 10) +
   ggtitle("Males: average alcohol consumption split by intersectional groups, 2000-2009")+
   labs(y= "grams per day")
 plot_4_male
@@ -203,14 +174,13 @@ plot_4_male
 #2010-2018
 plot_5_male <- data %>%
   filter(sex=="Male", decade=="2010-2018") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
                 facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 10) +
   ggtitle("Males: average alcohol consumption split by intersectional groups, 2010-2018")+
   labs(y= "grams per day")
 plot_5_male
@@ -219,14 +189,13 @@ plot_5_male
 # 2000-2009
 plot_4_female <- data %>%
   filter(sex=="Female", decade=="2000-2009") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
                 facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 10) +
   ggtitle("Females: average alcohol consumption split by intersectional groups, 2000-2009")+
   labs(y= "grams per day")
 plot_4_female
@@ -234,14 +203,13 @@ plot_4_female
 #2010-2018
 plot_5_female <- data %>%
   filter(sex=="Female", decade=="2010-2018") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean)) +
+  ggplot(aes(x=age_3_cats, y=back_transformed_estimate)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
                 facet_grid(cols=vars(education),rows=vars(race)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 10) +
   ggtitle("Females: average alcohol consumption split by intersectional groups, 2010-2018")+
   labs(y= "grams per day")
 plot_5_female
@@ -251,44 +219,35 @@ plot_5_female
 
 ```
 Plots with race as colours instead
-
 ```{r}
+
 # Plot males
 male_grams_2 <- data %>%
   filter(sex=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=back_transformed_mean, colour=race)) +
+  ggplot(aes(x=decade, y=back_transformed_estimate, colour=race)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
-                facet_grid(cols=vars(education),rows=vars(decade)) +
+                facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 9) +
-  ggtitle("Males: average alcohol consumption split by intersectional groups")+
-  labs(y= "grams per day")
+  ggtitle("Men")+
+  labs(y= "grams per day", colour = "Race and ethnicity") 
 male_grams_2
 
 # Plot females
 female_grams_2 <- data %>%
   filter(sex=="Female") %>%
-    ggplot(aes(x=age_3_cats, y=back_transformed_mean, colour=race)) +
+  ggplot(aes(x=decade, y=back_transformed_estimate, colour=race)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
                     position=position_dodge(width=0.8)) +
-                facet_grid(cols=vars(education),rows=vars(decade)) +
+                facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
-  ylim(0, 4.1) +
-  ggtitle("Females: average alcohol consumption split by intersectional groups") +
-  labs(y= "grams per day")
+  ggtitle("Women") +
+  labs(y= "grams per day", colour = "Race and ethnicity")
 female_grams_2
 ```
 Education level has a greater influence on the drinking habits of younger people than older people
-In the last decade, education level has had a large influence on the drinking habits of young black, hispanic, other and white groups - but not on young asians.
-
-
-
-
-
-
-
+In the last decade, education level has had a large influence on the drinking habits of young black, hispanic, other and white groups - but not on young Asians.
