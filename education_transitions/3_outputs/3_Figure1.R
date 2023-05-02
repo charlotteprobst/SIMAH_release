@@ -67,7 +67,8 @@ col.vec <- c("#A6D854", "#E78AC3", "#8DA0CB", "#FC8D62")
 
 ggplot(data=plots, aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
-  geom_line(size=1.5, alpha=0.8) + xlab("Age") +
+  # geom_line(size=1.5, alpha=0.8) + xlab("Age") +
+  geom_smooth(se=FALSE) +
   # geom_smooth(se=FALSE) + xlab("Age") + 
   ylab("Transition probability") + theme_bw() +
   scale_x_continuous(limits = c(18,34), breaks=c(18,20,22,24,26,28,30,32,34)) + 
