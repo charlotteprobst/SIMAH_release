@@ -65,11 +65,11 @@ plots <- prob %>%
 
 col.vec <- c("#A6D854", "#E78AC3", "#8DA0CB", "#FC8D62")
 
+# Full sample
 ggplot(data=plots, aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
   # geom_line(size=1.5, alpha=0.8) + xlab("Age") +
   geom_smooth(se=FALSE) +
-  # geom_smooth(se=FALSE) + xlab("Age") + 
   ylab("Transition probability") + theme_bw() +
   scale_x_continuous(limits = c(18,34), breaks=c(18,20,22,24,26,28,30,32,34)) + 
   theme(legend.title=element_blank(),
@@ -80,6 +80,43 @@ ggplot(data=plots, aes(x=age, y=prob, colour=racefinal, order=racefinal, linetyp
   scale_colour_manual(values=col.vec) +
   scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
 
+# Men only
+male_plot <- plots %>%
+  filter(sex=="male") %>%
+ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
+  facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
+  geom_line(size=1.5, alpha=0.8) + xlab("Age") +
+  # geom_smooth(se=FALSE) +
+  ylab("Transition probability") + theme_bw() +
+  ggtitle("Men") +
+  scale_x_continuous(limits = c(18,34), breaks=c(18,20,22,24,26,28,30,32,34)) + 
+  theme(legend.title=element_blank(),
+        legend.position="bottom",
+        strip.background = element_rect(colour="black",fill="white"),
+        text=element_text(size=20),
+        strip.text.y=element_text(size=14)) +
+  scale_colour_manual(values=col.vec) +
+  scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+print(male_plot)
 
-ggsave("SIMAH_workplace/education_transitions/Figure1_main.pdf", dpi = 300, width = 33, height = 32, units = "cm")
+# Women only
+female_plot <- plots %>%
+  filter(sex=="female") %>%
+  ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
+  facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
+  geom_line(size=1.5, alpha=0.8) + xlab("Age") +
+  # geom_smooth(se=FALSE) +
+  ylab("Transition probability") + theme_bw() +
+  ggtitle("Women") +
+  scale_x_continuous(limits = c(18,34), breaks=c(18,20,22,24,26,28,30,32,34)) + 
+  theme(legend.title=element_blank(),
+        legend.position="bottom",
+        strip.background = element_rect(colour="black",fill="white"),
+        text=element_text(size=20),
+        strip.text.y=element_text(size=14)) +
+  scale_colour_manual(values=col.vec) +
+  scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+print(female_plot)
+
+# ggsave("SIMAH_workplace/education_transitions/Figure1_main.pdf", dpi = 300, width = 33, height = 32, units = "cm")
 
