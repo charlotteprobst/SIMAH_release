@@ -87,13 +87,15 @@ if(updatingalcohol==1 & y>=2000){
 disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
-}else if("LVDC" %in% diseases==TRUE){
+}
+if("LVDC" %in% diseases==TRUE){
   if(liverinteraction==1){
     basepop <- CirrhosisAllInteraction(basepop,lhs)
   }else if(liverinteraction==0){
   basepop <- CirrhosisAll(basepop,lhs)
   }
-}else if("AUD" %in% diseases==TRUE){
+}
+  if("AUD" %in% diseases==TRUE){
   basepop <- AUD(basepop,lhs)
 }
 

@@ -13,7 +13,8 @@ options(dplyr.summarise.inform = FALSE)
 
 
 ###set working directory to the main "SIMAH" folder in your directory 
-WorkingDirectory <- "U:/SIMAH/"
+# WorkingDirectory <- "U:/SIMAH/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 

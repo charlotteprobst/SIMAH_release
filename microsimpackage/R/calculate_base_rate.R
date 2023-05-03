@@ -5,15 +5,30 @@
 #' @export
 #' @examples
 #' base rates
-calculate_base_rate <- function(data,base_rates,diseases){
+calculate_base_rate <- function(data,base_counts,diseases){
   disease <- unique(diseases)
-    rates <- data %>%
+
+  rates <- list()
+  for(i in unique(diseases)){
+    rates[[paste(i)]] <- data %>%
       group_by(cat) %>% add_tally() %>%
-      summarise(sumrisk = sum(RR),
+      summarise(
+        !!paste0("sumrisk_", i):= sum(!!as.name(paste0("RR_", i))),
                 .groups='drop') %>% ungroup() %>% distinct()
-    rates <- left_join(rates, base_rates, by=c("cat"))
-    rates <- rates %>%
-      mutate(rate = !!as.name(paste0(disease))/sumrisk) %>%
-      dplyr::select(cat, rate)
+    rates[[paste(i)]] <- left_join(rates[[paste(i)]], base_counts, by=c("cat"))
+    rates[[paste(i)]] <- rates[[paste(i)]] %>%
+      mutate(!!paste0("rate_", i):= !!as.name(paste0(i))/!!as.name(paste0("sumrisk_", i)))
+
+  }
+  names(rates) <- NULL
+  base_rates <- do.call(cbind, rates) %>%
+    dplyr::select(rate_AUD, rate_LVDC)
+
+  base_rates$cat <- rates[[1]]$cat
+
+  #   rates <- left_join(rates, base_counts, by=c("cat"))
+  #   rates <- rates %>%
+  #     mutate(rate = !!as.name(paste0(disease))/sumrisk) %>%
+  #     dplyr::select(cat, rate)
     return(rates)
 }
