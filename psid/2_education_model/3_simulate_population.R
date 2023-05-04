@@ -14,7 +14,7 @@ library(ggalluvial)
 library(patchwork)
 
 # setwd("/home/cbuckley")
-# setwd("~/Google Drive/SIMAH Sheffield/")
+setwd("~/Google Drive/SIMAH Sheffield/")
  setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
@@ -64,6 +64,43 @@ totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>%
          percent2yr = sum2YR/TotalN,
          percent3yr = sum3YR/TotalN,
          percentcollege = sumCollege/TotalN)
+
+# extract info for table 3
+HS <- totals %>% select(sex, period, racefinal, incomecat, `sumHS`, `sumLHS`) %>% 
+  mutate(percent=`sumHS`/`sumLHS`) %>% select(-c(`sumHS`, `sumLHS`)) %>% 
+  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="LHS->HS")
+
+one <- totals %>% select(sex, period, racefinal, incomecat, `sum1YR`, `sumLHS`) %>% 
+  mutate(percent=`sum1YR`/`sumLHS`) %>% select(-c(`sum1YR`, `sumLHS`)) %>% 
+  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="HS->C1")
+
+two <- totals %>% select(sex, period, racefinal, incomecat, `sum2YR`, `sumLHS`) %>% 
+  mutate(percent=`sum2YR`/`sumLHS`) %>% select(-c(`sum2YR`, `sumLHS`)) %>% 
+  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="C1->C2")
+
+three <- totals %>% select(sex, period, racefinal, incomecat, `sum3YR`, `sumLHS`) %>% 
+  mutate(percent=`sum3YR`/`sumLHS`) %>% select(-c(`sum3YR`, `sumLHS`)) %>% 
+  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="C2->C3")
+
+college <- totals %>% select(sex, period, racefinal, incomecat, `sumCollege`, `sumLHS`) %>% 
+  mutate(percent=`sumCollege`/`sumLHS`) %>% select(-c(`sumCollege`, `sumLHS`)) %>% 
+  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="C3->College")
+
+
+summary <- rbind(HS,one,two,three,college) %>%
+  mutate(period=ifelse(period=="1999-2009",1,2)) %>% 
+  pivot_wider(names_from=period,
+              values_from=c("White","Black","Hispanic","Others")) %>% 
+  mutate(WhiteChange = White_2-White_1,
+         BlackChange = Black_2-Black_1,
+         HispanicChange = Hispanic_2-Hispanic_1,
+         OtherChange = Others_2-Others_1) %>% select(sex, Transition, WhiteChange, BlackChange,HispanicChange,
+                                                     OtherChange) %>% 
+  pivot_longer(cols=WhiteChange:OtherChange) %>% 
+  pivot_wider(names_from=Transition, values_from=value) %>% 
+  mutate(name=gsub("Change","",name))
+
+write.csv(summary, "SIMAH_workplace/education_transitions/Table3_percentage_summary_change.csv", row.names=F)
 
 totals_n <- totals %>% select(sex, racefinal, period, incomecat, sumLHS, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
   pivot_longer(cols=c(sumLHS:sumCollege), names_to="education") %>% ungroup() %>% 
