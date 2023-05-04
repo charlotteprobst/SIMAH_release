@@ -43,8 +43,6 @@ nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker") %>% group_by(race_5_cat
 nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker") %>% group_by(education_3_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
 nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker") %>% group_by(decade) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100)
 nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker") %>% summarise(median(alc_daily_g), IQR(alc_daily_g)) 
-
-nhis_alc_clean %>% filter(ALCSTAT1 == "Current drinker") %>% 
 ```
 ## Comparisson of education status by age category 
 Undertaken to check that each age category contains all educational status (i.e. that adequate people in the youngest group have graduated college when surveyed)
