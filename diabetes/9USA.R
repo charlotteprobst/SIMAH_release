@@ -28,7 +28,7 @@ dim(table(male_us$results_id))
 
 ##LINEAR REGRESSION  
 
-linear_male_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male_us, digits =6,
+linear_male_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male_us, digits =8,
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear_male_us)
 
@@ -36,8 +36,8 @@ summary(linear_male_us)
 ms <- seq(0,150,length=150)
 pred_lin_male_us <- predict(linear_male_us, cbind(ms))
 regplot(linear_male_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_lin_male_us, xvals = ms, main="Male - Linear Regression")
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE, 
+        ylim = c(0, 2), pred = pred_lin_male_us, xvals = ms)
 
 weights(linear_male)
 #pch=NA_integer_,
@@ -110,27 +110,27 @@ waldtest(b = coef(linear_female_us), Sigma = vcov(linear_female_us), Terms = 1:n
 
 ##QUADRATIC REGRESSION
 
-quad_female_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female_us, digits =6, 
+quad_female_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female_us, digits =8, 
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(quad_female_us)
 
 pred_quad_female_us <- predict(quad_female_us, newmods=cbind(fs,fs^2))
 regplot(quad_female_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_quad_female_us, xvals = fs, main="Female - Quadratic Regression")
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE, 
+        ylim = c(0, 2), pred = pred_quad_female_us, xvals = fs)
 
 ##RESTRICTED CUBIC SPLINE
 
 knotsfus <- quantile(female_us$dose, c(.05, .35, .65, .95))
 
-rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, 
+rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, digits = 8, 
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female_us)
 
 pred_rcs_female_us <- predict(rcs_female_us, newmods=rcspline.eval(fs, knotsfus, inclx=TRUE))
 regplot(rcs_female_us, mod="rcs(dose, knotsfus)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs, main="RCS Regression")
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE,
+        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs)
 abline(h=1)
 #use var.comp function
 i2 <- var.comp(rcs_female)
