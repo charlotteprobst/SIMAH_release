@@ -32,8 +32,18 @@ TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model
                             levels=c("Black","Hispanic","White","AsianPI","Others")),
          sex = ifelse(sex=="male","Men","Women")) %>% filter(incomequintile==1 | incomequintile==5) %>% 
   mutate(incomecat = ifelse(incomequintile==1, "Lowest","Highest"))
+
+# Generate a table showing only TPs that are feasible i.e. excluding categories such as College -> HS (for supplementary info)
+TPs_allowed <- TPs %>% filter(Transition=="LHS->LHS"|Transition=="LHS->HS"|
+                              Transition=="HS->HS"|Transition=="HS->SomeC1"|
+                              Transition=="SomeC1->SomeC1"|Transition=="SomeC1->SomeC2"|
+                              Transition=="SomeC2->SomeC2"|Transition=="SomeC2->SomeC3"|
+                              Transition=="SomeC3->SomeC3"|Transition=="SomeC3->College"|
+                              Transition=="College->College")
+
+write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/TPs_allowed.csv")
   
-population <- generate_population(TPs, 10000) # population starts all aged 16.
+population <- generate_population(TPs_allowed, 10000) # population starts all aged 16.
 
 # need to add incomecat to simulate_population function
 simulatedpop1999 <- simulate_population(population, TPs, "1999-2009") # only up to age 26 as only simulating 20 years
@@ -41,14 +51,13 @@ simulatedpop2009<- simulate_population(population, TPs, "2009-2019") # only up t
 
 output <- rbind(simulatedpop1999, simulatedpop2009)
 
-# by age 27 where have people ended up
-# @ Sophie the code should work up to here but this code needs updating to the new version 
+# by age 26 where have people ended up
 # 6 categories instead of 5 
 # Including income as a breakdown
 totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>% 
-  filter(age==26)  %>% # As nobody aged 27 has been generated, working with age 26 for now to test
+  filter(age==26)  %>%
   group_by(sex, racefinal, education, period, incomecat) %>% 
-  tally(name="Npergroup") %>% ungroup() %>% group_by(sex, period, .drop=FALSE) %>% 
+  tally(name="Npergroup") %>% ungroup() %>% group_by(sex, period, incomecat, .drop=FALSE) %>% 
   mutate(TotalN = sum(Npergroup)) %>% ungroup() %>% group_by(sex, racefinal, period, incomecat, .drop=FALSE) %>% 
   pivot_wider(names_from=education, values_from=Npergroup) %>% group_by(sex, period, racefinal, incomecat) %>%
   dplyr::select(TotalN, sex, period, racefinal, incomecat, LHS, HS, SomeC1, SomeC2, SomeC3,College) %>% 
@@ -85,6 +94,8 @@ totals_n$racefinal <- factor(totals_n$racefinal, levels=c("Native American","Oth
 # totals_n$race <- factor(totals_n$race, levels=c("Hispanic","others", "Black","White"))
 totals_n$incomecat <- factor(totals_n$incomecat, levels=c("Lowest", "Highest"), labels=(c("Lowest income cat.", "Highest income cat.")))
 
+# Figure 2: Total number of simulated individuals at each level of education by age 26.
+
 addline_format <- function(x,...){
   gsub('\\s','\n',x)
 }
@@ -97,186 +108,6 @@ totals_n$sex <- as.factor(totals_n$sex)
 
 # check alluvia form - correct 
 is_alluvia_form(as.data.frame(totals_n), axes = 1:6, silent = TRUE)
-
-### Option: Sex, income
-
-# Men
-plot_men <- ggplot(subset(totals_n,sex=="Men"), aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                                                        fill=racefinal)) + 
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="none",
-                         strip.background = element_rect(colour="black", fill="white"),
-                         strip.text.y = element_blank(),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90)) + 
-  facet_grid(cols=vars(incomecat), rows=vars(period), scales="free") + ylab("Population count") + 
-  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("Men") 
-plot_men
-
-# Women
-plot_women <- ggplot(subset(totals_n,sex=="Women"), aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                                               fill=racefinal)) + 
-  labs(fill='Race and ethnicity') +
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="right",
-                         legend.title=element_blank(),
-                         legend.text=element_text(size=10),
-                         strip.background = element_rect(colour="black", fill="white"),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90),
-                         axis.text.y = element_blank(),
-                         axis.title.y=element_blank(),
-                         axis.ticks.y = element_blank()) + 
-  facet_grid(cols=vars(incomecat), rows=vars(period), scales="free") + ylab("") + 
-  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("Women") 
-plot_women
-
-plot_men + plot_women + plot_annotation(
-  title = 'Educational attainment at age 26',
-  subtitle = 'Split by sex, income, time period, and race and ethnicity',
-  caption = 'Note: Based on 10,000 simulated individuals (starting population counts by group vary slightly)')
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-ggsave("SIMAH_workplace/education_transitions/Figure2_option_sex_income.pdf", dpi = 300, width = 45, height = 30, units = "cm")
-
-### Option: period, sex
-
-# 1999-2009
-plot_1999_2009 <- ggplot(subset(totals_n,period=="1999-2009"), 
-                   aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                                                    fill=racefinal)) + 
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="none",
-                         strip.background = element_rect(colour="black", fill="white"),
-                         strip.text.y = element_blank(),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90)) + 
-  facet_grid(cols=vars(sex), rows=vars(incomecat), scales="free") + ylab("Population count") + 
-  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("1999-2009") 
-plot_1999_2009
-
-# 2009-2019
-plot_2009_2019 <- ggplot(subset(totals_n,period=="2009-2019"), 
-                         aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                             fill=racefinal)) + 
-  labs(fill='Race and ethnicity') +
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="right",
-                         strip.background = element_rect(colour="black", fill="white"),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90),
-                         axis.text.y = element_blank(),
-                         axis.title.y=element_blank(),
-                         axis.ticks.y = element_blank()) + 
-  facet_grid(cols=vars(sex), rows=vars(incomecat), scales="free") + ylab("Population count") + 
-  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("2009-2019") 
-
-plot_1999_2009 + plot_2009_2019 + plot_annotation(
-  title = 'Educational attainment at age 26',
-  subtitle = 'Split by time period, sex, income, and race and ethnicity',
-  caption = 'Note: Based on 10,000 simulated individuals (starting population counts by group vary slightly)')
-
-ggsave("SIMAH_workplace/education_transitions/Figure2_option_period_sex.pdf", dpi = 300, width = 45, height = 30, units = "cm")
-
-### Option: period, income
-
-# 1999-2009
-plot_1999_income <- ggplot(subset(totals_n,period=="1999-2009"), 
-                         aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                             fill=racefinal, label=racefinal)) + 
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="none",
-                         strip.background = element_rect(colour="black", fill="white"),
-                         strip.text.y = element_blank(),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90)) + 
-  facet_grid(cols=vars(incomecat), rows=vars(sex), scales="free") + ylab("Population count") + 
-  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("1999-2009") 
-plot_1999_income
-
-# 2009-2019
-plot_2009_income <- ggplot(subset(totals_n,period=="2009-2019"), 
-                         aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
-                             fill=racefinal)) + 
-  labs(fill='Race and ethnicity') +
-  scale_fill_manual(values=col.vec) + 
-  geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
-  geom_stratum() + theme(legend.position="right",
-                         strip.background = element_rect(colour="black", fill="white"),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90),
-                         axis.text.y = element_blank(),
-                         axis.title.y=element_blank(),
-                         axis.ticks.y = element_blank()) + 
-  facet_grid(cols=vars(incomecat), rows=vars(sex), scales="free") +  xlab("Educational attainment") +
-  scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("2009-2019") 
-
-plot_1999_income + plot_2009_income + plot_annotation(
-  title = 'Educational attainment at age 26',
-  subtitle = 'Split by time period, income, sex, and race and ethnicity',
-  caption = 'Note: Based on 10,000 simulated individuals (starting population counts by group vary slightly)')
-
-ggsave("SIMAH_workplace/education_transitions/Figure2_option_period_income.pdf", dpi = 300, width = 45, height = 30, units = "cm")
-
-
-### Option: income, period
 
 # Low income
 plot_lowest_income <- ggplot(subset(totals_n,incomecat=="Lowest income cat."), 
@@ -329,23 +160,17 @@ plot_highest_income <- ggplot(subset(totals_n,incomecat=="Highest income cat."),
   ggtitle("Highest income") 
 plot_highest_income
 
-plot_lowest_income + plot_highest_income + plot_annotation(
+Figure_2_counts <- plot_lowest_income + plot_highest_income + plot_annotation(
   title = 'Educational attainment at age 26',
   subtitle = 'Split by time parental income, time period, sex, and race and ethnicity',
   caption = 'Note: Based on 10,000 simulated individuals (starting population counts by group vary slightly)')
 
-ggsave("SIMAH_workplace/education_transitions/Figure2_option_income_period.pdf", dpi = 300, width = 45, height = 30, units = "cm")
+plot(Figure_2_counts)
+ggsave("SIMAH_workplace/education_transitions/Figure2_counts.png", dpi = 300, width = 45, height = 30, units = "cm")
 
 
+# As percentage of population ??
 
-
-
-# 
-# 
-# 
-# ### TBC...
-# 
-# # As percentage of population
 # plot_men+percent <- ggplot(subset(totals,sex=="Men"), aes(x=education, stratum=racefinal, alluvium=racefinal, y=value,
 #                                                   fill=racefinal, label=racefinal)) + 
 #   scale_fill_manual(values=col.vec) + 

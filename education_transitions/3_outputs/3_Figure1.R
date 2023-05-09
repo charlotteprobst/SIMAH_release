@@ -44,7 +44,7 @@ library(tidyr)
 #                                    "Stage 1 to Stage 2",
 #                                    "Stage 4 to Stage 5"))
 
-prob <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16.csv")
+prob <- read.csv("SIMAH_workplace/education_transitions/TPs_allowed.csv")
 
 plots <- prob %>% 
   filter(Transition=="LHS->HS" | Transition=="HS->SomeC1" | Transition=="SomeC3->College") %>%
@@ -60,8 +60,6 @@ plots <- prob %>%
                                                  "5" = "highest parental income"),
          incomequintile = factor(incomequintile, levels=c("lowest parental income", "highest parental income")),
          Transition = factor(Transition, levels=c("Graduating high school", "Starting college", "Graduating college")))
-
-# note that the time period is different from that previously used, is this correct?
 
 col.vec <- c("#A6D854", "#E78AC3", "#8DA0CB", "#FC8D62")
 
@@ -82,26 +80,28 @@ ggplot(data=plots, aes(x=age, y=prob, colour=racefinal, order=racefinal, linetyp
 
 # Men only
 male_plot <- plots %>%
-  filter(sex=="male") %>%
+  filter(sex=="Men") %>%
 ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
   geom_line(size=1.5, alpha=0.8) + xlab("Age") +
   # geom_smooth(se=FALSE) +
   ylab("Transition probability") + theme_bw() +
   ggtitle("Men") +
-  scale_x_continuous(limits = c(18,34), breaks=c(18,20,22,24,26,28,30,32,34)) + 
+  scale_x_continuous(limits = c(16,34), breaks=c(16,18,20,22,24,26,28,30,32,34)) + 
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(colour="black",fill="white"),
         text=element_text(size=20),
-        strip.text.y=element_text(size=14)) +
+        strip.text.y=element_text(size=11)) +
   scale_colour_manual(values=col.vec) +
   scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
 print(male_plot)
 
+ggsave("SIMAH_workplace/education_transitions/Figure1_men.png", dpi = 300, width = 33, height = 32, units = "cm")
+
 # Women only
 female_plot <- plots %>%
-  filter(sex=="female") %>%
+  filter(sex=="Women") %>%
   ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
   geom_line(size=1.5, alpha=0.8) + xlab("Age") +
@@ -113,10 +113,13 @@ female_plot <- plots %>%
         legend.position="bottom",
         strip.background = element_rect(colour="black",fill="white"),
         text=element_text(size=20),
-        strip.text.y=element_text(size=14)) +
+        strip.text.y=element_text(size=11)) +
   scale_colour_manual(values=col.vec) +
   scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
 print(female_plot)
+
+ggsave("SIMAH_workplace/education_transitions/Figure1_women.png", dpi = 300, width = 33, height = 32, units = "cm")
+
 
 # ggsave("SIMAH_workplace/education_transitions/Figure1_main.pdf", dpi = 300, width = 33, height = 32, units = "cm")
 

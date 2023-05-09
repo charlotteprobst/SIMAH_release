@@ -207,7 +207,7 @@ write.csv(summary, "SIMAH_workplace/education_transitions/table_3.csv", row.name
 
 # write.csv(totals, "totals_equaldistr.csv", row.names=FALSE)
 
-# Figure 2
+# Figure 2 
 
 totals <- totals %>% select(sex, race, period, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
   pivot_longer(cols=c(sumHS:sumCollege), names_to="education") %>% ungroup() %>% 
