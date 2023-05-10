@@ -129,8 +129,8 @@ summary(rcs_female_us)
 
 pred_rcs_female_us <- predict(rcs_female_us, newmods=rcspline.eval(fs, knotsfus, inclx=TRUE))
 regplot(rcs_female_us, mod="rcs(dose, knotsfus)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE,
-        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs)
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,30), shade =FALSE,
+        ylim = c(0, 1), pred = pred_rcs_female_us, xvals = fs)
 abline(h=1)
 #use var.comp function
 i2 <- var.comp(rcs_female)
@@ -142,7 +142,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female_us, newmods= rcspline.eval(100, knotsfus, inclx=TRUE), transf=exp)
+predict(rcs_female_us, newmods= rcspline.eval(20, knotsfus, inclx=TRUE), transf=exp)
 
 fitstats(linear_female_us, quad_female_us, rcs_female_us)
 
@@ -184,4 +184,7 @@ DIST_3		<- function(alc_1){ pmax((alc_1 - knots_T[2])/kd, 0)^3 + ((knots_T[3] - 
 ( pmax((x - 2.20)/13.94057, 0)^3 + ((24.60 - 1) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 1) * (pmax((x - 24.60)/13.94057, 0)^3))  / (54.25 - 24.60)  )
 #DIST_3
 ( pmax((x - 10.44)/13.94057, 0)^3 + ((24.60 - 10.44) * pmax((x - 54.25)/12.99405, 0)^3 - (54.25 - 10.44) * (pmax((x - 24.60)/13.94057, 0)^3)) / (54.25 - 24.60) )
+
+20*-0.03335731 + DIST_2(20)*0.17509468 + DIST_3(20)*-0.27494185
+exp(-0.3913205)
 

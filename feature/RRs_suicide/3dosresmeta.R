@@ -17,7 +17,7 @@ male <- dataset %>%
   filter(sex ==0 & first_author != "Grazioli")
 
 linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
-                          intercept = F, cases = cases, n = n, method = "reml", data = male)
+                          intercept = F, cases = cases, n = n, method = "reml", data = male, proc = "1stage")
 summary(linear_male)
 predict(linear_male, delta = 50, exp = TRUE)
 
@@ -62,7 +62,7 @@ female <- dataset %>%
   filter(sex ==1)
 
 lin_female <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se, intercept = F,
-                  cases = cases, n = n, method = "reml", data = female)
+                  cases = cases, n = n, method = "reml", data = female, proc = "1stage")
 summary(lin_female)
 predict(lin_female, delta = 50, exp = TRUE)
 
@@ -130,15 +130,31 @@ with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE),
 lines(exp(pred_lin_male1$pred), lwd = "4", col = "blue")
 lines(exp(pred_lin_male1$ci.lb), lwd = "3", lty = "dotted", col = "blue")
 lines(exp(pred_lin_male1$ci.ub), lwd = "3", lty = "dotted", col = "blue")
-legend("topleft",inset =0.1, legend=c("LTA", "Non-drinkers"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue"))
-
+legend("topleft",inset =0.03, legend=c("LTA", "Non-drinkers"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue"))
 
 ####FEMALE MODELS
 
 female1 <- nondrinkers %>%
-  filter(dose != 0.00 & sex ==1)
+  filter(sex ==1)
 
-dim(table(female1$cohort_id))
+lin_female1 <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se, intercept = F,
+                         cases = cases, n = n, method = "reml", data = female1)
+summary(lin_female1)
+predict(lin_female1, delta = 50, exp = TRUE)
+pred_lin_female1 <- predict(lin_female1, dosex_bin, order=TRUE)
+
+dosex_bin <- data.frame(dose=seq(0, 50, 1))
+with(predict(lin_female, dosex_bin, order=TRUE, exp=TRUE), 
+     {plot(dose, pred, type="l", col="black", main="b) Women", las=1, lwd = "3", cex.lab=1.2, cex.axis=1.1,
+           ylim=c(0.5, 5), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
+       lines(dose, ci.lb, lty=2, lwd = "2")
+       lines(dose, ci.ub, lty=2, lwd = "2")})
+lines(exp(pred_lin_female1$pred), lwd = "4", col = "blue")
+lines(exp(pred_lin_female1$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_lin_female1$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft", inset =0.02, legend=c("LTA", "Non-drinkers"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue"))
+
+
 
 ##LINEAR REGRESSION
 
