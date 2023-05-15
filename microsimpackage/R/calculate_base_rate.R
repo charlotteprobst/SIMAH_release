@@ -6,8 +6,6 @@
 #' @examples
 #' base rates
 calculate_base_rate <- function(data,base_counts,diseases){
-  disease <- unique(diseases)
-
   rates <- list()
   for(i in unique(diseases)){
     rates[[paste(i)]] <- data %>%
@@ -22,13 +20,9 @@ calculate_base_rate <- function(data,base_counts,diseases){
   }
   names(rates) <- NULL
   base_rates <- do.call(cbind, rates) %>%
-    dplyr::select(rate_AUD, rate_LVDC)
+    dplyr::select(any_of(paste0("rate_",diseases)))
 
   base_rates$cat <- rates[[1]]$cat
 
-  #   rates <- left_join(rates, base_counts, by=c("cat"))
-  #   rates <- rates %>%
-  #     mutate(rate = !!as.name(paste0(disease))/sumrisk) %>%
-  #     dplyr::select(cat, rate)
-    return(rates)
+  return(base_rates)
 }

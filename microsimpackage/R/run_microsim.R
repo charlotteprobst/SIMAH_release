@@ -104,10 +104,52 @@ if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)
 }
 
-basepop <- left_join(basepop, rates, by=c("cat")) %>%
-  mutate(risk = RR*rate,
-         prob = runif(nrow(.)),
-         !!paste0("mort", quo_name(disease)) := ifelse(prob<risk, 1,0))
+basepop <- left_join(basepop, rates, by=c("cat"))
+
+# step 1 calculating the risk
+for(i in 1:length(diseases)){
+  if(i==1){
+  diseases[i]
+  basepop <- basepop %>%
+    mutate(!!paste0("risk_", quo_name(diseases[i])) :=
+             !!as.name(paste0('RR_',quo_name(diseases[i])))*
+             !!as.name(paste0('rate_',quo_name(diseases[i]))))
+  }else if(i>1){
+  basepop <- basepop %>%
+      mutate(!!paste0("risk_", quo_name(diseases[i])) :=
+               !!as.name(paste0('RR_',quo_name(diseases[i])))*
+               !!as.name(paste0('rate_',quo_name(diseases[i]))),
+             !!paste0("risk_", quo_name(diseases[i])) :=
+               !!as.name(paste0("risk_", quo_name(diseases[i])))+
+               !!as.name(paste0("risk_", quo_name(diseases[i-1])))) }
+}
+
+basepop$prob <- runif(nrow(basepop))
+
+for(i in 1:length(diseases)){
+  if(i==1){
+    basepop <- basepop %>%
+      mutate(
+        !!paste0("mort_", quo_name(diseases[i])) := ifelse(!!as.name(paste0('risk_',quo_name(diseases[i])))>prob, 1,0))
+  }else if(i>1){
+    basepop <- basepop %>%
+      mutate(!!paste0("mort_", quo_name(diseases[i])) := ifelse(!!as.name(paste0('risk_',quo_name(diseases[i])))>prob &
+                                                                  !!as.name(paste0('risk_',quo_name(diseases[i-1])))<prob, 1,0))
+
+  }
+}
+
+
+# cumulative within the loop
+# are we assigning mortality prob larger than 1 - to check
+
+# then loop through causes
+
+# homework -> propose solution for looping through and assigning mortality based on cumulative prob generated above
+# essentially modifying the below
+
+# prob = runif(nrow(.)),
+#          !!paste0("mort", quo_name(disease)) := ifelse(prob<risk, 1,0))
 
 DiseaseSummary[[paste(y)]] <- basepop %>%
   group_by(cat) %>% add_tally() %>%
