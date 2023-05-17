@@ -13,7 +13,7 @@ process_education <- function(data){
     mutate(education = ifelse(education==0, NA,
                               ifelse(education==99, NA, 
                                      ifelse(education==98, NA, education))),
-           education_cat = ifelse(education<=12, "LEHS",
+           education_cat = ifelse(education<12, "LHS",
                                   ifelse(education>12 & education<16, "SomeC",
                                          ifelse(education>=16, "College", NA))),
            education_cat_detailed = ifelse(education<=12, "LEHS",
@@ -617,3 +617,40 @@ recode_alcohol <- function(data){
   return(data)
   
 }
+
+
+process_TAS_race <- function(data){
+  varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
+  years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  race <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(race)[2:9] <- years
+  race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="TAS_race") %>% 
+    mutate(TAS_race = ifelse(TAS_race==1, "white",
+                             ifelse(TAS_race==2 & year<=2015, "black",
+                                    ifelse(TAS_race==3 & year<=2015, "Native",
+                                           ifelse(TAS_race>=4 & TAS_race<=6 & year<=2015, "Asian/PI",
+                                                  ifelse(TAS_race==7 & year<=2015, "other",
+                                                         ifelse(TAS_race==2 & year>2015, "hispanic",
+                                                                ifelse(TAS_race==3 & year>2015, "black",
+                                                                       ifelse(TAS_race==4 & year>2015, "Asian/PI",
+                                                                              ifelse(TAS_race==5 & year>2015, "Native",
+                                                                                     ifelse(TAS_race==7 & year>2015, "Asian/PI",
+                                                                                            ifelse(TAS_race==6 & year>2015, "other",
+                                                                                                   ifelse(TAS_race==8 & year>2015, "other",
+                                                                                                          NA))))))))))))) %>% 
+    group_by(uniqueID) %>% fill(TAS_race, .direction=c("downup")) %>% 
+    dplyr::select(uniqueID, TAS_race) %>% distinct()
+  return(race)
+}
+
+process_TAS_education <- function(data){
+  varlist<-c("TA110687", "TA130707", "TA150717", "TA170780", "TA190917")
+  years <- c(2011, 2013, 2015, 2017, 2019)
+  ed <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(ed)[2:6] <- years
+  ed <- ed %>% pivot_longer(cols='2011':'2019', names_to="year", values_to="TAS_education") %>% 
+    mutate(TAS_education = ifelse(TAS_education==0, NA,
+                                  ifelse(TAS_education>=96, NA, TAS_education))) %>% 
+    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down"))
+  return(ed)
+  }

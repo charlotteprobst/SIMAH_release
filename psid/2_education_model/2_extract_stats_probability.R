@@ -26,8 +26,8 @@ datat2 <- setup_markov_model(data, y=2011)
 
 source("SIMAH_code/psid/2_education_model/0_extractTP_function.R")
 
-modelt1_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt1_income_int_6cat_16.RDS")
-modelt2_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt2_income_int_6cat_16.RDS")
+modelt1_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt1_income_int_6cat_16_new.RDS")
+modelt2_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt2_income_int_6cat_16_new.RDS")
 
 mappingt1 <- datat1 %>% ungroup() %>% select(age, agescaled, agesqscaled) %>% 
   distinct()
@@ -66,10 +66,6 @@ TPt2$time <- "2009 - 2019"
 
 TPs <- rbind(TPt1, TPt2) 
 
-write.csv(TPs, "SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16.csv", row.names=F)
+write.csv(TPs, "SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new.csv", row.names=F)
 
 
-
-
-ggplot(data=subset(TPs, age==18 & Transition=="LEHS->SomeC1"), aes(x=racefinal, y=prob, colour=as.factor(incomequintile))) + 
-  geom_point() + facet_grid(cols=vars(time), rows=vars(sex)) + theme_bw()

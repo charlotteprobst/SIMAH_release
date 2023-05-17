@@ -11,12 +11,12 @@ library(parallel)
 library(ggplot2)
 
 # setwd("/home/cbuckley")
-# setwd("~/Google Drive/SIMAH Sheffield")
+setwd("~/Google Drive/SIMAH Sheffield")
 
 # setwd Sophie
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
-TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16.csv") %>% 
+TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new.csv") %>% 
   mutate(racefinal=ifelse(racefinal=="white","White",
                           ifelse(racefinal=="black","Black",
                                  ifelse(racefinal=="hispanic","Hispanic",
