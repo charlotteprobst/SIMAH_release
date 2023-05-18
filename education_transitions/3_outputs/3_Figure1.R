@@ -1,5 +1,7 @@
 # Generating Figure 1 for education transitions paper, with new TPs (including parental)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+setwd("~/Google Drive/SIMAH Sheffield")
+
 gc()
 library(ggplot2)
 library(dplyr)
@@ -44,7 +46,7 @@ library(tidyr)
 #                                    "Stage 1 to Stage 2",
 #                                    "Stage 4 to Stage 5"))
 
-prob <- read.csv("SIMAH_workplace/education_transitions/TPs_allowed.csv")
+prob <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new_noint.csv")
 
 plots <- prob %>% 
   filter(Transition=="LHS->HS" | Transition=="HS->SomeC1" | Transition=="SomeC3->College") %>%
@@ -80,7 +82,7 @@ ggplot(data=plots, aes(x=age, y=prob, colour=racefinal, order=racefinal, linetyp
 
 # Men only
 male_plot <- plots %>%
-  filter(sex=="Men") %>%
+  filter(sex=="male") %>%
 ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
   geom_line(size=1.5, alpha=0.8) + xlab("Age") +
@@ -94,14 +96,15 @@ ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)
         text=element_text(size=20),
         strip.text.y=element_text(size=11)) +
   scale_colour_manual(values=col.vec) +
-  scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+  # scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+  scale_linetype_manual(values=c("solid","solid","solid","solid"))
 print(male_plot)
 
 ggsave("SIMAH_workplace/education_transitions/Figure1_men.png", dpi = 300, width = 33, height = 32, units = "cm")
 
 # Women only
 female_plot <- plots %>%
-  filter(sex=="Women") %>%
+  filter(sex=="female") %>%
   ggplot(aes(x=age, y=prob, colour=racefinal, order=racefinal, linetype=racefinal)) + 
   facet_grid(cols=vars(incomequintile), rows=vars(Transition), scales="free") +
   geom_line(size=1.5, alpha=0.8) + xlab("Age") +
@@ -115,11 +118,21 @@ female_plot <- plots %>%
         text=element_text(size=20),
         strip.text.y=element_text(size=11)) +
   scale_colour_manual(values=col.vec) +
-  scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+  # scale_linetype_manual(values=c("dashed","dashed","dashed","dashed"))
+  scale_linetype_manual(values=c("solid","solid","solid","solid"))
+
 print(female_plot)
 
 ggsave("SIMAH_workplace/education_transitions/Figure1_women.png", dpi = 300, width = 33, height = 32, units = "cm")
 
+library(gridExtra)
+Figure1 <- grid.arrange(male_plot, female_plot, ncol=2)
 
-# ggsave("SIMAH_workplace/education_transitions/Figure1_main.pdf", dpi = 300, width = 33, height = 32, units = "cm")
+ggsave("SIMAH_workplace/education_transitions/Figure1_main_nointeraction.png", Figure1, dpi = 300, width = 45, height = 30, units = "cm")
+
+test <- prob %>% filter(age==21) %>% filter(Transition=="SomeC3->College") %>% 
+  # filter(time=="2009 - 2019") %>% 
+  filter(incomequintile==1 | incomequintile==5) %>% 
+  pivot_wider(names_from=racefinal, values_from=prob)
+
 

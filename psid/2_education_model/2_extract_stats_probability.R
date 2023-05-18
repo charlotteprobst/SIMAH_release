@@ -29,6 +29,18 @@ source("SIMAH_code/psid/2_education_model/0_extractTP_function.R")
 modelt1_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt1_income_int_6cat_16_new.RDS")
 modelt2_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt2_income_int_6cat_16_new.RDS")
 
+pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="white",
+                                                incomescaled=-0.514))
+pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="white",
+                                                incomescaled=0.543))
+pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="black",
+                                                incomescaled=-0.514))
+pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="black",
+                                                incomescaled=0.543))
+
+
+
+
 mappingt1 <- datat1 %>% ungroup() %>% select(age, agescaled, agesqscaled) %>% 
   distinct()
 names(mappingt1) <- c("age","agescaled","agesqscaled")
@@ -66,6 +78,6 @@ TPt2$time <- "2009 - 2019"
 
 TPs <- rbind(TPt1, TPt2) 
 
-write.csv(TPs, "SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new.csv", row.names=F)
+write.csv(TPs, "SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new_noint.csv", row.names=F)
 
 

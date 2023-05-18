@@ -21,7 +21,7 @@ setwd("~/Google Drive/SIMAH Sheffield/")
 
 source("SIMAH_code/psid/2_education_model/0_generate_population.R")
 
-TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16.csv") %>% 
+TPs <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new_noint.csv") %>% 
   mutate(racefinal=ifelse(racefinal=="white","White",
                           ifelse(racefinal=="black","Black",
                                  ifelse(racefinal=="hispanic","Hispanic",
@@ -43,7 +43,7 @@ TPs_allowed <- TPs %>% filter(Transition=="LHS->LHS"|Transition=="LHS->HS"|
 
 write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/TPs_allowed.csv")
   
-population <- generate_population(TPs_allowed, 10000) # population starts all aged 16.
+population <- generate_population(TPs, 1000000) # population starts all aged 16.
 
 # need to add incomecat to simulate_population function
 simulatedpop1999 <- simulate_population(population, TPs, "1999-2009") # only up to age 26 as only simulating 20 years
@@ -67,12 +67,12 @@ totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>%
          sum2YR = sum(c_across(`SomeC2`:`College`), na.rm=T),
          sum3YR = sum(c_across(`SomeC3`:`College`), na.rm=T),
          sumCollege = `College`,
-         percentLHS = sumLHS/TotalN,
-         percentHS = sumHS/TotalN,
-         percent1yr = sum1YR/TotalN,
-         percent2yr = sum2YR/TotalN,
-         percent3yr = sum3YR/TotalN,
-         percentcollege = sumCollege/TotalN)
+         percentLHS = sumLHS/sumLHS,
+         percentHS = sumHS/sumLHS,
+         percent1yr = sum1YR/sumLHS,
+         percent2yr = sum2YR/sumLHS,
+         percent3yr = sum3YR/sumLHS,
+         percentcollege = sumCollege/sumLHS)
 
 # extract info for table 3
 HS <- totals %>% select(sex, period, racefinal, incomecat, `sumHS`, `sumLHS`) %>% 
@@ -109,7 +109,7 @@ summary <- rbind(HS,one,two,three,college) %>%
   pivot_wider(names_from=Transition, values_from=value) %>% 
   mutate(name=gsub("Change","",name))
 
-write.csv(summary, "SIMAH_workplace/education_transitions/Table3_percentage_summary_change.csv", row.names=F)
+write.csv(summary, "SIMAH_workplace/education_transitions/Table3_percentage_summary_change_noint.csv", row.names=F)
 
 totals_n <- totals %>% select(sex, racefinal, period, incomecat, sumLHS, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
   pivot_longer(cols=c(sumLHS:sumCollege), names_to="education") %>% ungroup() %>% 
@@ -166,7 +166,9 @@ plot_lowest_income <- ggplot(subset(totals_n,incomecat=="Lowest income cat."),
                              "Two years \nof college",
                              "Three years \nof college",
                              "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
+  scale_y_continuous(breaks = seq(0, 260000, by=50000), limits=c(0,260000),
+                     labels= scales::comma
+                     ) +
   ggtitle("Lowest income") 
 plot_lowest_income
 
@@ -193,17 +195,18 @@ plot_highest_income <- ggplot(subset(totals_n,incomecat=="Highest income cat."),
                              "Two years \nof college",
                              "Three years \nof college",
                              "College grad. \nor more"))) +
-  scale_y_continuous(breaks = seq(0, 2500, by=500), limits=c(0,2600))+
-  ggtitle("Highest income") 
+  scale_y_continuous(breaks = seq(0, 260000, by=50000), limits=c(0,260000),
+                     labels=scales::comma) + 
+          ggtitle("Highest income") 
 plot_highest_income
 
 Figure_2_counts <- plot_lowest_income + plot_highest_income + plot_annotation(
   title = 'Educational attainment at age 26',
   subtitle = 'Split by time parental income, time period, sex, and race and ethnicity',
-  caption = 'Note: Based on 10,000 simulated individuals (starting population counts by group vary slightly)')
+  caption = 'Note: Based on 1,000,000 simulated individuals (starting population counts by group vary slightly)')
 
 plot(Figure_2_counts)
-ggsave("SIMAH_workplace/education_transitions/Figure2_counts.png", dpi = 300, width = 45, height = 30, units = "cm")
+ggsave("SIMAH_workplace/education_transitions/Figure2_counts_nointeraction.png", dpi = 300, width = 45, height = 30, units = "cm")
 
 
 # As percentage of population ??

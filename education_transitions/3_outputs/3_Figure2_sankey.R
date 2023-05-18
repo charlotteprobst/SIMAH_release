@@ -10,7 +10,7 @@ setwd("C:/Users/cmp21seb/Documents/SIMAH")
 source('SIMAH_code/education_transitions/3_outputs/transition_ed.R')
 
 # for first time period 
-prob <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16.csv") 
+prob <- read.csv("SIMAH_workplace/education_transitions/final_models/income_model_TP_6cat_16_new_noint.csv") 
 summary(as.factor(prob$racefinal))
   
 prob <- prob %>% select(StateFrom, StateTo,prob, age, sex, racefinal, time) %>% 
@@ -22,9 +22,9 @@ prob <- prob %>% select(StateFrom, StateTo,prob, age, sex, racefinal, time) %>%
 
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
 
-summary(as.factor(data$individualrace))
-data$racefinal <- ifelse(data$individualrace=="Native","other",
-                          ifelse(data$individualrace=="Asian/PI","other",data$individualrace))
+summary(as.factor(data$race_new_unique))
+data$racefinal <- ifelse(data$race_new_unique=="Native","other",
+                          ifelse(data$race_new_unique=="Asian/PI","other",data$race_new_unique))
 summary(as.factor(data$racefinal))
 
 # get age,sex,race 
