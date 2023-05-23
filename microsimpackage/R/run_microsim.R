@@ -43,6 +43,7 @@ basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overall
 
 # transition education for individuals aged 34 and under
 if(updatingeducation==1 & y>=2000){
+  print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
   totransition <- education_setup(totransition,y)
@@ -58,9 +59,9 @@ if(updatingeducation==1 & y>=2000){
   basepop <- rbind(totransition, tostay)
 }
 
-# TODO add more printing updates e.g. "alcohol transitions running"
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
+  print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
     agecat = cut(microsim.init.age,
@@ -84,7 +85,6 @@ if(updatingalcohol==1 & y>=2000){
 }
 
 # simulate mortality from specific diseases
-disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
 }
@@ -95,7 +95,7 @@ if("LVDC" %in% diseases==TRUE){
   basepop <- CirrhosisAll(basepop,lhs)
   }
 }
-  if("AUD" %in% diseases==TRUE){
+if("AUD" %in% diseases==TRUE){
   basepop <- AUD(basepop,lhs)
 }
 
@@ -106,62 +106,50 @@ rates <- calculate_base_rate(basepop,base_counts,diseases)
 
 basepop <- left_join(basepop, rates, by=c("cat"))
 
-# step 1 calculating the risk
-for(i in 1:length(diseases)){
-  if(i==1){
-  diseases[i]
-  basepop <- basepop %>%
-    mutate(!!paste0("risk_", quo_name(diseases[i])) :=
-             !!as.name(paste0('RR_',quo_name(diseases[i])))*
-             !!as.name(paste0('rate_',quo_name(diseases[i]))))
-  }else if(i>1){
-  basepop <- basepop %>%
-      mutate(!!paste0("risk_", quo_name(diseases[i])) :=
-               !!as.name(paste0('RR_',quo_name(diseases[i])))*
-               !!as.name(paste0('rate_',quo_name(diseases[i]))),
-             !!paste0("risk_", quo_name(diseases[i])) :=
-               !!as.name(paste0("risk_", quo_name(diseases[i])))+
-               !!as.name(paste0("risk_", quo_name(diseases[i-1])))) }
+# now simulate mortality
+basepop <- simulate_mortality(basepop, diseases)
+
+# now loop through and summarise the N from each cause of death
+summary_list <- list()
+for (disease in diseases) {
+    # Generate and add the summary to the list with automatic naming
+    summary_list[[paste0(disease)]] <- basepop %>%
+      group_by(cat) %>%
+      summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))))
 }
 
-basepop$prob <- runif(nrow(basepop))
+DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
+  mutate(year=y)
 
-for(i in 1:length(diseases)){
-  if(i==1){
-    basepop <- basepop %>%
-      mutate(
-        !!paste0("mort_", quo_name(diseases[i])) := ifelse(!!as.name(paste0('risk_',quo_name(diseases[i])))>prob, 1,0))
-  }else if(i>1){
-    basepop <- basepop %>%
-      mutate(!!paste0("mort_", quo_name(diseases[i])) := ifelse(!!as.name(paste0('risk_',quo_name(diseases[i])))>prob &
-                                                                  !!as.name(paste0('risk_',quo_name(diseases[i-1])))<prob, 1,0))
-
-  }
+# now join together to make a diseases dataframe for that year
+for(disease in diseases){
+  DiseaseSummary[[paste(y)]] <-
+    left_join(DiseaseSummary[[paste(y)]], summary_list[[paste0(disease)]], by=c("cat"))
 }
 
-
-# cumulative within the loop
-# are we assigning mortality prob larger than 1 - to check
-
-# then loop through causes
-
-# homework -> propose solution for looping through and assigning mortality based on cumulative prob generated above
-# essentially modifying the below
-
-# prob = runif(nrow(.)),
-#          !!paste0("mort", quo_name(disease)) := ifelse(prob<risk, 1,0))
-
-DiseaseSummary[[paste(y)]] <- basepop %>%
-  group_by(cat) %>% add_tally() %>%
-  mutate(!!paste0("mort", quo_name(disease)) := sum(!!as.name(paste0('mort',quo_name(disease))))) %>% ungroup() %>%
-  mutate(year=y) %>% dplyr::select(year, cat, n, !!as.name(paste0('mort',quo_name(disease)))) %>%
-  distinct()
 # now sample the correct proportion of those to be removed (due to inflated mortality rate)
-toremove <- basepop %>% filter(!!as.name(paste0('mort',quo_name(disease)))==1) %>% add_tally() %>%
-    mutate(toremove=round(n/inflation_factor)) %>% do(dplyr::sample_n(.,size=unique(toremove), replace=F))
-ids <- toremove$microsim.init.id
-basepop <- basepop %>% filter(!microsim.init.id %in% ids)
-basepop <- basepop %>% dplyr::select(-c(cat, RR, rate, risk, prob, !!as.name(paste0('mort',quo_name(disease)))))
+for (disease in diseases) {
+  # Filter individuals with mortality equal to 1 for the current disease
+  toremove <- basepop %>%
+    filter(!!sym(paste0('mort_', disease)) == 1) %>%
+    add_tally() %>%
+    mutate(toremove = round(n / inflation_factor)) %>%
+    dplyr::sample_n(size = unique(toremove), replace = FALSE)
+  # Get the IDs to be removed
+  ids <- toremove$microsim.init.id
+  # Remove the individuals with the specified IDs
+  basepop <- basepop %>%
+    filter(!microsim.init.id %in% ids)
+
+  # Remove the unnecessary columns for the current disease
+  basepop <- basepop %>%
+    dplyr::select(-c(!!sym(paste0('mort_', disease)),
+                     !!sym(paste0("RR_", disease)),
+                     !!sym(paste0("risk_", disease)),
+                     !!sym(paste0("rate_", disease))))
+}
+
+basepop <- basepop %>% dplyr::select(-c(cat, prob))
 
 # if policy flag switched on - simulate a reduction in alcohol consumption
 # if(policy==1){

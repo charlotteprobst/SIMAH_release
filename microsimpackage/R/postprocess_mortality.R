@@ -27,12 +27,13 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflati
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
     dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
+
   Diseases <- left_join(Diseases, death_counts)
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",
                               ifelse(education=="Som","SomeC","College"))) %>%
-    rename(popcount = n, simulated = !!as.name(paste0('mort',quo_name(disease))), observed = !!as.name(paste0(quo_name(disease))))
+    rename(popcount = n)
   return(Diseases)
 
 
