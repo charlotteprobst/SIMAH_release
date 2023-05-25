@@ -41,7 +41,7 @@ for(disease in diseases){
 }
 
 first <- paste0("observed_",diseases[1])
-last <- paste0("simulated_", diseases[-1])
+last <- paste0("simulated_", tail(diseases, n=1))
 
 summary <- summary %>%
   mutate(sex = ifelse(sex=="f","Women","Men"),
@@ -68,15 +68,15 @@ plot2 <- ggplot(data=subset(summary, sex=="Men"), aes(x=year, y=value, colour=ty
   facet_grid(cols=vars(education),
              rows=vars(cause), scales="free") +
   ylab("Age-st Mortality per 100,000") +
-  ggtitle("Men") +
   xlab("") + theme_bw() + theme(legend.position = "bottom",
                                 legend.title=element_blank(),
                                 strip.background=element_rect(fill="white"),
                                 text = element_text(size=18)) +
+  ggtitle("Men") +
   # geom_ribbon(aes(ymin=lower_ci, ymax=upper_ci, colour=name, fill=name)) +
   scale_colour_manual(values=c("#93aebf","#132268")) +
   scale_y_continuous(labels=scaleFUN, limits=c(0,NA))
-plot <- grid.arrange(plot1, plot2)
+plot <- grid.arrange(plot1, plot2, ncol=2)
 
 list <- list(summary, plot)
 return(list)

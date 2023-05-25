@@ -98,6 +98,9 @@ if("LVDC" %in% diseases==TRUE){
 if("AUD" %in% diseases==TRUE){
   basepop <- AUD(basepop,lhs)
 }
+if("IJ" %in% diseases==TRUE){
+  basepop <- SUICIDE(basepop, lhs)
+}
 
 # calculate base rates if year = 2000)
 if(y == 2000){

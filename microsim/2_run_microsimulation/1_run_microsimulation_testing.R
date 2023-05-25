@@ -51,7 +51,7 @@ Output <- run_microsim(1,1,basepop,brfss,
                        updatingalcohol, alcohol_transitions,
                        base_counts, diseases, lhs, liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
-                       2000, 2019, output_type)
+                       2000, 2005, output_type)
 
 alcohol_type <- "categorical"
 
@@ -69,5 +69,5 @@ summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, infl
 summary[[2]]
 
 # save a copy of the plot
-ggsave("SIMAH_workplace/microsim/2_output_data/Women_newTP_calibrated_mean.png", dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple.png", dpi=300,
        width=33, height=19, units="cm")
