@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 10000
+PopulationSize <- 1000000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1

@@ -9,8 +9,8 @@ library(fitdistrplus)
 library(lhs)
 library(truncnorm)
 library(data.table)
+library(gridExtra)
 options(dplyr.summarise.inform = FALSE)
-
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
@@ -43,12 +43,13 @@ lhs <- lhs[[1]]
 minyear <- 2000
 maxyear <- 2010
 
+Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
                        death_counts,
                        updatingeducation, education_setup,
                        migration_counts,
                        updatingalcohol, alcohol_transitions,
-                       base_counts, diseases, lhs[[1]], liverinteraction,
+                       base_counts, diseases, lhs, liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
                        2000, 2019, output_type)
 
@@ -63,15 +64,8 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor, diseases)
 }
-summary[[2]]
-write.csv(summary[[1]], "SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-calibratedmean.csv")
-
-# summary 1 - table containing summary stats - observed to simulated 
-summary[[2]]
-
-# summary 2 - plot comparing mortality rates (age standardised)
 summary[[2]]
 
 # save a copy of the plot

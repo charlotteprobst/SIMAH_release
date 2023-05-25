@@ -28,7 +28,7 @@ print(y)
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 # add and remove migrants
 if(y>=2001){
-  basepop <- inward_migration(basepop,migration_counts,y, brfss)
+  basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
   basepop <- outward_migration(basepop,migration_counts,y)
 }
 
