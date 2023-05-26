@@ -9,14 +9,14 @@ library(metafor)
 library(rms)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/4dataset.xlsx", 
+dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx", 
                       col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 ####MALE MODELS
 
@@ -41,7 +41,6 @@ i2$results
 i2$totalI2
 i2$plot
 
-
 #comparing model to check if it is necessary to run a multilevel analysis
 linear_male_2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male,
                         random = ~ 1 | cohort_id/line_id, method = "REML", sigma2 =  c(0, NA))
@@ -49,7 +48,7 @@ summary(linear_male_2)
 
 anova(linear_male, linear_male_2)
 
-predict(linear_male, 100, transf=exp)
+predict(linear_male, 20, transf=exp)
 
 #graph
 ms <- seq(0,150,length=150)
@@ -60,10 +59,11 @@ regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relativ
 
 #for figure 2
 regplot(linear_male, mod="dose", ylab="Relative risk", 
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_, shade =FALSE,
+        transf=exp, digits=2L, xlab="Alcohol intake, grams/day", las=1, bty="l", xlim = c(0,100),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
         pred = pred_lin_male, xvals = ms)
 abline(h=1)
+title("a) Men", adj = 0, line = 2)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -162,6 +162,7 @@ regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day
         ylim = c(0.4, 2), lcol= "firebrick2", pred = pred_rcs_female, lwd = c(3.5,1.5),
         xvals = fs)
 abline(h=1)
+title("b) Women", adj = 0, line = 2)
 
 #use var.comp function
 i2 <- var.comp(rcs_female)
@@ -173,16 +174,18 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female, newmods= rcspline.eval(15, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(17, knotsf, inclx=TRUE), transf=exp)
 
 fitstats(linear_female, quad_female, rcs_female)
+
+
 
 ######BOTH SEXES COMBINED
 
 final <- dataset %>%
   filter(analysis_id==0 & dose != 0.00)
 #erase male and female from two papers that provides estimates for both/male/female to avoid duplicate population
-final <- final[-c(35,36,37,38,39,162,163,164,165,166),]
+final <- final[-c(35,36,37,38,39,162,163,164,165,166,249,250,251),]
 
 dim(table(final$cohort_id))
 
@@ -242,7 +245,7 @@ summary(rcs)
 pred_rcs <- predict(rcs, newmods=rcspline.eval(s, knots, inclx=TRUE))
 regplot(rcs, mod="rcs(dose, knots)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100),pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_rcs, xvals = s)
+        ylim = c(0, 2), pred = pred_rcs, xvals = s,shade =FALSE)
 abline(v=knots, lty="dotted")
 
 waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
@@ -252,7 +255,7 @@ waldtest(b = coef(rcs), Sigma = vcov(rcs), Terms = 1:nrow(vcov(rcs)))
 weights(rcs)
 
 #prediction rcs model
-predict(rcs, newmods= rcspline.eval(15, knots, inclx=TRUE), transf=exp)
+predict(rcs, newmods= rcspline.eval(14, knots, inclx=TRUE), transf=exp)
 
 #TEST I2
 

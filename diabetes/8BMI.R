@@ -123,6 +123,7 @@ pred_quad_ovm <- predict(quad_ovm, newmods=cbind(ms,ms^2))
 regplot(quad_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80),
         ylim = c(0, 2), pred = pred_quad_ovm, xvals = ms, main="Male - Quadratic Regression")
+abline(h=1)
 
 ##RESTRICTED CUBIC SPLINE
 knotsovm <- quantile(ovm$dose, c(.05, .35, .65, .95))
@@ -135,7 +136,7 @@ pred_rcs_ovm <- predict(rcs_ovm, newmods=rcspline.eval(ms, knotsovm, inclx=TRUE)
 regplot(rcs_ovm, mod="rcs(dose, knotsovm)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80),
         ylim = c(0, 2), pred = pred_rcs_ovm, xvals = ms, main="Male - RCS Regression")
-
+abline(h=1)
 waldtest(b = coef(rcs_ovm), Sigma = vcov(rcs_ovm), Terms = 1:nrow(vcov(rcs_ovm)))
 
 fitstats(linear_ovm, quad_ovm, rcs_ovm)
@@ -348,7 +349,7 @@ regplot(quad_obf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative r
         pred = pred_quad_obf, xvals = fs)
 abline(h=1)
 
-predict(quad_obf, c(26,26^2), transf=exp)
+predict(quad_obf, c(28,28^2), transf=exp)
 
 ##RESTRICTED CUBIC SPLINE
 knotsobf <- quantile(obf$dose, c(.05, .35, .65, .95))
