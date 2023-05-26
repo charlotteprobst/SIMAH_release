@@ -349,7 +349,7 @@ regplot(quad_obf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative r
         pred = pred_quad_obf, xvals = fs)
 abline(h=1)
 
-predict(quad_obf, c(28,28^2), transf=exp)
+predict(quad_obf, c(18,18^2), transf=exp)
 
 ##RESTRICTED CUBIC SPLINE
 knotsobf <- quantile(obf$dose, c(.05, .35, .65, .95))

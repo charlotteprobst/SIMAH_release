@@ -48,7 +48,7 @@ summary(linear_male_2)
 
 anova(linear_male, linear_male_2)
 
-predict(linear_male, 20, transf=exp)
+predict(linear_male, 100, transf=exp)
 
 #graph
 ms <- seq(0,150,length=150)
@@ -174,7 +174,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female, newmods= rcspline.eval(17, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(100, knotsf, inclx=TRUE), transf=exp)
 
 fitstats(linear_female, quad_female, rcs_female)
 
@@ -307,10 +307,11 @@ fitstats(linear, quad, rcs)
 #male
 
 male2 <- male %>%
-  filter(first_author != "Kerr" & reference != 3)
-
+  filter(first_author != "Kerr")
+# & reference != 3
 ##LINEAR REGRESSION
-
+dim(table(male2$results_id))
+dim(table(maled$id))
 linear_male2 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male2,
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear_male2)

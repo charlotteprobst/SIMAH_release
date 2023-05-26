@@ -17,7 +17,7 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
-                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 #ONLY OBJECTIVE ASCERTAIMENT
 
@@ -48,12 +48,13 @@ anova(linear_male, linear_male_2)
 ms <- seq(0,150,length=150)
 pred_lin_male <- predict(linear_male, cbind(ms))
 regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_lin_male, xvals = ms)
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade=FALSE,
+        ylim = c(0.4, 2), pred = pred_lin_male, xvals = ms)
+abline(h=1)
 
 weights(linear_male)
 
-predict(linear_male, 20, transf=exp)
+predict(linear_male, 100, transf=exp)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -135,26 +136,27 @@ summary(rcs_female)
 pred_rcs_female <- predict(rcs_female, newmods=rcspline.eval(fs, knotsf, inclx=TRUE))
 regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_rcs_female, xvals = fs)
+        ylim = c(0, 2), pred = pred_rcs_female, xvals = fs, shade=FALSE)
+abline(h=1)
 abline(v=knotsf, lty="dotted")
 
 weights(rcs_female)
 
 fitstats(linear_female, quad_female, rcs_female)
 
-predict(rcs_female, newmods= rcspline.eval(67, knotsf, inclx=TRUE), transf=exp)
+predict(rcs_female, newmods= rcspline.eval(100, knotsf, inclx=TRUE), transf=exp)
 
 ###sensitivity 2: studies with new criteria dx 1998
 
 ####MALE MODELS
 
 male2 <- dataset %>%
-  filter(analysis_id==0 & dose != 0.00 & sex ==1 & new_dx %in% c(1))
+  filter(analysis_id==0 & dose != 0.00 & sex ==1 & new_dx %in% c(1,2))
 
 #erase extreme value - Burke 2007
 male2 <- male2[-c(10),]
 
-dim(table(male2$results_id))
+dim(table(male2$cohort_id))
 
 ##LINEAR REGRESSION
 
@@ -166,8 +168,9 @@ summary(linear_male2)
 ms <- seq(0,150,length=150)
 pred_lin_male2 <- predict(linear_male2, cbind(ms))
 regplot(linear_male2, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
-        ylim = c(0, 2), pred = pred_lin_male2, xvals = ms)
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade=FALSE,
+        ylim = c(0.4, 2), pred = pred_lin_male2, xvals = ms)
+abline(h=1)
 
 predict(linear_male2, 100, transf=exp)
 
@@ -209,7 +212,7 @@ fitstats(linear_male2, quad_male2, rcs_male2)
 ####FEMALE MODELS
 
 female2 <- dataset %>%
-  filter(analysis_id==0 & dose != 0.00 & sex ==0 & new_dx %in% c(1))
+  filter(analysis_id==0 & dose != 0.00 & sex ==0 & new_dx %in% c(1,2))
 
 #erase extreme value - Burke 2007
 female2 <- female2[-c(12),]
@@ -250,11 +253,11 @@ summary(rcs_female2)
 
 pred_rcs_female2 <- predict(rcs_female2, newmods=rcspline.eval(fs, knotsf2, inclx=TRUE))
 regplot(rcs_female2, mod="rcs(dose, knotsf2)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade=FALSE,
         ylim = c(0, 2), pred = pred_rcs_female2, xvals = fs)
 abline(v=knotsf2, lty="dotted")
 
 fitstats(linear_female2, quad_female2, rcs_female2)
 
-predict(rcs_female2, newmods= rcspline.eval(100, knotsf2, inclx=TRUE), transf=exp)
+predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp)
 
