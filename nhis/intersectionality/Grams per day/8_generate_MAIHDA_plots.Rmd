@@ -220,7 +220,6 @@ plot_5_female
 ```
 Plots with race as colours instead
 ```{r}
-
 # Plot males
 male_grams_2 <- data %>%
   filter(sex=="Male") %>%
@@ -251,3 +250,35 @@ female_grams_2
 ```
 Education level has a greater influence on the drinking habits of younger people than older people
 In the last decade, education level has had a large influence on the drinking habits of young black, hispanic, other and white groups - but not on young Asians.
+
+Plot with education as colours and race as columns
+```{r}
+# Plot males
+male_grams_3 <- data %>%
+  filter(sex=="Male") %>%
+  ggplot(aes(x=decade, y=back_transformed_estimate, colour=education)) +
+  geom_point(position=position_dodge(width=0.8)) +
+  geom_errorbar(aes(ymin = back_transformed_CI_lower,
+                    ymax = back_transformed_CI_upper),
+                    position=position_dodge(width=0.8)) +
+                facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
+  theme(axis.title.x = element_blank(), legend.position = "bottom", axis.text=element_text(size=6))+
+  ggtitle("Men")+
+  labs(y= "Estimated grams per day", colour = "Educational attainment") 
+male_grams_3
+
+# Plot females
+female_grams_3 <- data %>%
+  filter(sex=="Female") %>%
+  ggplot(aes(x=decade, y=back_transformed_estimate, colour=education)) +
+  geom_point(position=position_dodge(width=0.8)) +
+  geom_errorbar(aes(ymin = back_transformed_CI_lower,
+                    ymax = back_transformed_CI_upper),
+                    position=position_dodge(width=0.8)) +
+                facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
+  theme(axis.title.x = element_blank(), legend.position = "bottom", axis.text=element_text(size=6))+
+  ggtitle("Women") +
+  labs(y= "Estimated grams per day", colour = "Educational attainment")
+female_grams_3
+```
+

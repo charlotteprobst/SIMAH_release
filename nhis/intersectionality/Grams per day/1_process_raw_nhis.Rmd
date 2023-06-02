@@ -60,7 +60,7 @@ options(scipen = 100)
 # saveRDS(data, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
  
 # Read in extracted data:
-# nhis_full_extract <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
+nhis_full_extract <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/1_nhis_full_extract.RDS")
 ```
 NB. Extracted NHIS data obtained from nhis.ipums.org (Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021).
 Available at: https://doi.org/10.18128/D070.V7.1
@@ -93,6 +93,17 @@ Years requested: 2000-2020
 # Read in the subset data
 nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
 ```
+
+# Calculate how many individuals would be included if we were to use person weighting
+```{r}
+sum(nhis_subset$SAMPWEIGHT)
+# Look at whether it would be possible to divide the sample by 10
+
+min(nhis_subset$SAMPWEIGHT)
+# If divided by 10 would not lose any individuals entirely as all person weights are > 10
+```
+
+
 
 # Recategorise demographic variables
 ```{r}
@@ -654,3 +665,11 @@ nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>% 
    write_csv("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
 ```
+
+# View summary of cleaned data
+```{r}
+nhis_alc_clean <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/4_nhis_alc_clean.RDS")
+
+
+```
+

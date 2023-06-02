@@ -2,8 +2,7 @@
 title: "6_Run_MAIHDA_grams_per_day"
 ---
 
-This script undertakes a multi-level analysis of individual heterogeneity and discriminatory accuracy (MAIHDA)
-to estimate average alcohol consumption per intersectional group of sex/age/race/SES
+This script undertakes a multi-level analysis of individual heterogeneity and discriminatory accuracy (MAIHDA)to estimate average alcohol consumption per intersectional group of sex/age/race/SES
 
 Setup
 ```{r, warning=FALSE}
@@ -18,8 +17,8 @@ library(dplyr)
 # Bias toward non-scientific notation
 options(scipen=10)
 
-# Change file path ONLY IF using Uni desktop
-# options(MLwiN_path="C:\\Program Files\\MLwiN v3.01")
+# State file path for MLwiN
+options(MLwiN_path="C:\\Program Files\\MLwiN v3.05")
 ```
 
 Prep data
@@ -76,13 +75,26 @@ F2 <- capped_daily_grams_log ~ 1 + SEX + age_3_cats + race_5_cats + education_3_
 Run the null two-level model and calculate the variance partition coefficient (VPC)
 ```{r}
 VarCompModel <- runMLwiN(Formula = F1, 
-                          data = data_intersections_MAIHDA)
+                          data = data_intersections_MAIHDA,
+                         estoptions = list(resi.store = TRUE))
 
 # Calculate the VPC
 print(VPC <- VarCompModel["RP"][["RP2_var_Intercept"]]/
         (VarCompModel["RP"][["RP1_var_Intercept"]] + VarCompModel["RP"][["RP2_var_Intercept"]]))
 ```
 
+# View the residuals at each level (null model)
+```{r}
+# level 1 residuals
+hist(VarCompModel@residual$lev_1_resi_est_Intercept)
+qqnorm(VarCompModel@residual$lev_1_resi_est_Intercept)
+qqline(VarCompModel@residual$lev_1_resi_est_Intercept, col = "steelblue", lwd = 2)
+
+# level 2 residuals
+hist(VarCompModel@residual$lev_2_resi_est_Intercept)
+qqnorm(VarCompModel@residual$lev_2_resi_est_Intercept)
+qqline(VarCompModel@residual$lev_2_resi_est_Intercept, col = "steelblue", lwd = 2)
+```
 Run the main-effects two-level model (storing residuals) and recalculate VPC
 ```{r}
 VarCompResid <- runMLwiN(Formula = F2, 
@@ -94,6 +106,23 @@ print(VPC <- VarCompResid["RP"][["RP2_var_Intercept"]]/(VarCompResid["RP"][["RP1
 
 # Save the results
 saveRDS(VarCompResid, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/VarCompResidIGLS_log.RDS")
+```
+
+View the residuals at each level (full model)
+```{r}
+# level 1 residuals
+hist(VarCompResid@residual$lev_1_resi_est_Intercept)
+qqnorm(VarCompResid@residual$lev_1_resi_est_Intercept)
+qqline(VarCompResid@residual$lev_1_resi_est_Intercept, col = "steelblue", lwd = 2)
+plot(VarCompResid@residual$lev_1_resi_est_Intercept)
+abline(h = 0, lty = 2, col = "red")
+
+# level 2 residuals
+hist(VarCompResid@residual$lev_2_resi_est_Intercept)
+qqnorm(VarCompResid@residual$lev_2_resi_est_Intercept)
+qqline(VarCompResid@residual$lev_2_resi_est_Intercept, col = "steelblue", lwd = 2)
+plot(VarCompResid@residual$lev_2_resi_est_Intercept)
+abline(h = 0, lty = 2, col = "red")
 ```
 
 Extract model results
@@ -141,29 +170,43 @@ Duplicate data for use with MCMC
 data_intersections_MAIHDA_MCMC <- data_intersections_MAIHDA
 ```
 
-Multilevel model, null
+Multilevel model, null, MCMC
 ```{r}
 # Run the null two-level model and calculate the variance partition coefficient (VPC)
 VarCompModelMCMC <- runMLwiN(Formula = F1, 
                               data = data_intersections_MAIHDA_MCMC, 
-                              estoptions = list(EstM = 1))
+                              estoptions = list(resi.store = TRUE, EstM = 1,
+                             burnin = 5000,
+                             iter = 50000))
 
 print(VPC <- VarCompModelMCMC["RP"][["RP2_var_Intercept"]]/(VarCompModelMCMC["RP"][["RP1_var_Intercept"]] + VarCompModelMCMC["RP"][["RP2_var_Intercept"]]))
+
+saveRDS(VarCompModelMCMC, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/VarCompModelMCMC.RDS")
+
+summary(VarCompModelMCMC@chains)
+mcmc_trace(VarCompModelMCMC@chains)
+autocorr(VarCompModelMCMC@chains)
 ```
 
-Multilevel model, main effects
+
+Multilevel model, main effects, MCMC
 ```{r}
 # Run the main-effects two-level model (storing residuals) and recalculate VPC
 VarCompResidMCMC <- runMLwiN(Formula = F2, 
                              data = data_intersections_MAIHDA_MCMC, 
-                             estoptions = list(resi.store = TRUE, EstM = 1))
+                             estoptions = list(resi.store = TRUE, EstM = 1,
+                             burnin = 500,
+                             iter = 5000))
 # Default: burn in = 500, iterations = 5000, a thinning factor of 1, a random number seed of 1, 1 chain 
-# For fixed parameters MLwiN employs, by default, an improper uniform prior p(β) ∝ 1
 
 print(VPC <- VarCompResidMCMC["RP"][["RP2_var_Intercept"]]/
         (VarCompResidMCMC["RP"][["RP1_var_Intercept"]] + VarCompResidMCMC["RP"][["RP2_var_Intercept"]]))
 
 saveRDS(VarCompResidMCMC, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/VarCompResidMCMC_log.RDS")
+
+summary(VarCompResidMCMC@chains[, "FP_Intercept"])
+mcmc_trace(VarCompResidMCMC@chains)
+autocorr(VarCompResidMCMC@chains)
 ```
 
 # Extract model results
@@ -210,5 +253,3 @@ Results_table_IGLS %>% group_by(SEX) %>% summarise(min=min(estimate), max=max(es
 
 Results_table_MCMC %>% group_by(SEX) %>% summarise(min=min(estimate), max=max(estimate), exp_min = exp(min), exp_max= exp(max))
 ```
-
-
