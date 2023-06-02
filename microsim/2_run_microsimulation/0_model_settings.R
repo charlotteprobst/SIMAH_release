@@ -13,7 +13,7 @@ options(scipen=999)
 SelectedState <- "USA"
 
 ####Size of population 
-PopulationSize <- 10000
+PopulationSize <- 1000000
 
 # switch on and off migration and deaths
 migrationdeaths <- 1
@@ -109,11 +109,13 @@ rm(list)
 
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
-numsamples <- 1
+numsamples <- 15
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 1
+PE <- 0
 lhs <- sample_lhs(numsamples, PE)
+
+update_base_rate <- 1
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 

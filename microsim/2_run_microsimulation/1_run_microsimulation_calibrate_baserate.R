@@ -10,6 +10,8 @@ library(lhs)
 library(truncnorm)
 library(data.table)
 library(gridExtra)
+library(foreach)
+library(doParallel)
 options(dplyr.summarise.inform = FALSE)
 
 ###set working directory to the main "SIMAH" folder in your directory 
@@ -30,32 +32,34 @@ alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.R
 output_type <- "mortality"
 
 # random number seed - sample random number 
-seed <- as.numeric(sample(1:100, 1))
+numsamples <- 5
+sampleseeds <- expand.grid(sampleum=1:numsamples)
+sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
 
-# sample number - set to 1 when just running 1 simulation 
-samplenum <- 1
+registerDoParallel(15)
+# explore different base rates
 
-# set lhs to the first element of the lhs list- for testing 
-lhs <- lhs[[1]]
+baseorig <- basepop
 
-# set minyear and maxyear 
-minyear <- 2000
-maxyear <- 2010
+lhs <- lhs[1:5]
 
-Output <- list()
-Output <- run_microsim(1,1,basepop,brfss,
+Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+print(i)
+samplenum <- as.numeric(sampleseeds$sampleum[i])
+seed <- as.numeric(sampleseeds$seed[i])
+selectedlhs <- lhs[[samplenum]]
+basepop <- baseorig
+run_microsim(seed,samplenum,basepop,brfss,
                        death_counts,
                        updatingeducation, education_setup,
                        migration_counts,
                        updatingalcohol, alcohol_transitions,
-                       base_counts, diseases, lhs, liverinteraction,
+                       base_counts, diseases, selectedlhs, liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
-                       update_base_rate,
-                       2000, 2019, output_type)
+                       2000, 2002, output_type)
+}
 
 alcohol_type <- "categorical"
-
-Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)
@@ -71,5 +75,5 @@ summary <- summarise_mortality_output_calibration(Output, SelectedState, DataDir
 summary[[2]]
 
 # save a copy of the plot
-ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
+ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple.png", dpi=300,
        width=33, height=19, units="cm")

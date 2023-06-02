@@ -14,36 +14,41 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
     prior <- list(
       LVDC <- list(
-        c("qnorm", 0.03655479, 0.01144372), #MBLIVER1
-        c("qnorm", -0.00011081, 0.00011053), #MBLIVER2
-        c("qnorm", 0.06064636, 0.00649378), #FBLIVER1
-        c("qnorm", -0.00031181, 0.00005372), #FBLIVER2
-        c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS
+        c("qnorm", 0.03655479, 0.01144372), #MBLIVER1 SD 0.01144372
+        c("qnorm", -0.00011081, 0.00011053), #MBLIVER2 SD 0.00011053
+        c("qnorm", 0.06064636, 0.00649378), #FBLIVER1 SD 0.00649378
+        c("qnorm", -0.00031181, 0.00005372), #FBLIVER2 SD 0.00005372
+        c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS SD 0.3016328
 
       HLVDC <- list(
-        c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1
-        c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2
+        c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 SD 0.00071320
+        c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2 SD 0.00000872
 
       AUD <- list(
-        c("qnorm", 0.0319, 0.0017), #BAUD MEN
-        c("qnorm", 0.0343, 0.0014)), #BAUD ALL
+        c("qnorm", 0.0319, 0.0017), #BAUD MEN SD 0.0017
+        c("qnorm", 0.0343, 0.0014)), #BAUD ALL SD 0.0014
 
       IJ <- list(
-        c("qnorm", 0.01100787, 0.0032), #BIJ MEN
-        c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN
-        c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN
-        c("qnorm", 0.5068176, 0.3721027)) #IJ FORMER DRINKERS WOMEN
+        c("qnorm", 0.01100787, 0.0032), #BIJ MEN SD 0.0032
+        c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
+        c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
+        c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
+      ALL <- list(
+        c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
+        c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
+        c("qunif", 2006, 2011)) #BASE RATE YEAR TO IMPLEMENT
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "ALL")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
+  names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
 
-  prior <- prior %>% keep(names(.) %in% DISEASES) # keep only the requested diseases (specified in model_settings)
+  prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
   prior <- unlist(prior, recursive=FALSE) # convert the lists of priors into vectors
   names(prior) <- gsub("^.*\\.","", names(prior)) # remove duplicated disease names (generated during the listing and unlisting process)
 

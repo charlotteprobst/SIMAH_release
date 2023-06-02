@@ -13,6 +13,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
+                         update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
 Summary <- list()
@@ -107,6 +108,11 @@ if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)
 }
 
+# update the base rate based on lhs file
+if(update_base_rate==1){
+rates <- update_base_rate(rates, lhs, y)
+}
+
 basepop <- left_join(basepop, rates, by=c("cat"))
 
 # now simulate mortality
@@ -173,7 +179,8 @@ basepop <- subset(basepop, microsim.init.age<=79)
 # indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
   # add samplenum and seed as an output for this function TODO
-  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor)
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor) %>%
+    mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
   SummaryPop <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
