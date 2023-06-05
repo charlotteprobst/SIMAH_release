@@ -62,9 +62,6 @@ write_dta(temp, "U:\\STATA HED\\full_nhis_HED_data.dta")
 saveRDS(temp, "U:\\STATA HED\\full_nhis_HED_data.rds")
 ```
 
-
-
-
 Generate a table with results for just one intersection and HED only
 ```{r}
 # Identify any groups with zero HEDs
