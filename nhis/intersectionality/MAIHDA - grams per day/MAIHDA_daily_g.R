@@ -189,6 +189,52 @@ saveRDS(VarCompResidMCMC, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhi
 # OR read in model object
 VarCompResidMCMC <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/grams_MCMC_full.RDS")
 
+# Generate a table of model coefficients & variance estimates, comparing the null and full models
+
+temp_null <- getSummary(VarCompModelMCMC) 
+temp_null <- as.data.frame(Coefs_null[["coef"]])
+temp_null <- round(temp_null, 3) %>% dplyr::select(est,lwr,upr,p)
+rownames(temp_null) <- c("fixed intercept","between strata variance, null","within strata variance, null")
+
+# seperate out coefs and variance
+coefs_null <- temp_null['fixed intercept',]
+variance_null <- temp_null[c('between strata variance, null','within strata variance, null'),]
+
+temp_main_effects <- getSummary(VarCompResidMCMC)
+temp_main_effects <- as.data.frame(temp_main_effects[["coef"]])
+temp_main_effects <- round(temp_main_effects, 3) %>% dplyr::select(est,lwr,upr,p)
+rownames(temp_main_effects) <- c("fixed intercept","female","age 25-69", "age 70+", 
+                                  "Non-Hispanic Black", "Non-Hispanic Asian", "Non-Hispanic Other", 
+                                  "Hispanic", "Some college", "4+ years college","2010-2018", 
+                                  "between strata variance, main effects", "within strata variance, main effects")
+
+# seperate out coefs and variance
+coefs_main_effects <- temp_main_effects[c("fixed intercept","female","age 25-69", "age 70+", 
+                                  "Non-Hispanic Black", "Non-Hispanic Asian", "Non-Hispanic Other", 
+                                  "Hispanic", "Some college", "4+ years college","2010-2018"),]
+variance_main_effects <- temp_main_effects[c("between strata variance, main effects", "within strata variance, main effects"),]
+
+coefs_table <- rbind(coefs_null, coefs_main_effects)
+variance_table <- rbind(variance_null, variance_main_effects)
+coef_variance_table <- rbind(coefs_table, variance_table)
+
+# Create a gt object to enable addition of headers
+gt_table <- gt(coef_variance_table, rownames_to_stub = TRUE) %>%
+ tab_row_group(
+    label = "Variance",
+    rows = 13:16
+  ) %>%
+  tab_row_group(
+    label = "Main effects model",
+    rows = 2:12
+  ) %>%
+  tab_row_group(
+    label = "Null model",
+    rows = 1:1
+  )
+  
+gt_table
+
 # Estimate yhat (and SEs) using predict function
 data_intersections_MAIHDA_MCMC$yhat <- predict(VarCompResidMCMC) # the predicted expected value
 data_intersections_MAIHDA_MCMC$yhat_se <- predict(VarCompResidMCMC, se.fit=TRUE)$se.fit # the standard error of the predicted expected value

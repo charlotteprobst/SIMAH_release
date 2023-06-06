@@ -49,7 +49,6 @@ model2 <- lmer(capped_daily_grams_log ~ SEX + age_3_cats + race_5_cats + educati
 summary(model2)
 0.0526/(0.0526+3.2515) # 0.0159
 
-
 #combine both models into a single table
 results_table <- tab_model(model1, model2, digits=3, digits.re=3)
 
@@ -57,7 +56,8 @@ results_table <- tab_model(model1, model2, digits=3, digits.re=3)
 (0.122-0.0159)/(0.122) # 0.869
 #ie. 87% reduction in strata level variance, 13% of intersectional difference is multiplicative
 
-# The question, now, is whether that remaining multiplicative variance is significant. If it isn’t, it would make sense to simplify the model to a single level model, since there is no significant additional variance at level 2. To judge this, we need to run the same model as a single level model, using the lm function
+# The question, now, is whether that remaining multiplicative variance is significant. If it isn’t, it would make sense to simplify the model to a single level model, since there is no significant additional variance at level 2. 
+# To judge this, we need to run the same model as a single level model, using the lm function
 
 model3 <- lm(capped_daily_grams_log ~ SEX + age_3_cats + race_5_cats + education_3_cats + decade, data=data_intersections_MAIHDA)
 
@@ -81,7 +81,7 @@ reEX2 <- REsim(model2)
 plotREsim(reEX2, labs=T) + coord_flip()
 #and these are what remains when additive effects are removed 9i.e. the multiplicative effects
 
-# Generate prediction data
+# Generate prediction data ?????
 prediction_data <- data_intersections_MAIHDA %>%
   mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_5_cats, education_3_cats, decade))) %>%
   distinct(intersections, .keep_all = TRUE) %>% dplyr::select(intersections, intersectional_names, SEX, age_3_cats, race_5_cats, education_3_cats, decade, capped_daily_grams_log, mean_observed_grams)
