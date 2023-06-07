@@ -19,9 +19,9 @@ male <- dataset %>%
 linear_male <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", lb = rr.low, ub = rr.hi,
                           intercept = F, cases = cases, n = n, method = "reml", data = male, proc = "1stage")
 summary(linear_male)
-predict(linear_male, delta = 50, exp = TRUE)
+predict(linear_male, delta = 83, exp = TRUE)
 
-dosex_bin <- data.frame(dose=seq(0, 50, 1))
+dosex_bin <- data.frame(dose=seq(0, 83, 1))
 with(predict(linear_male, dosex_bin, order=TRUE, exp=TRUE), 
      {plot(dose, pred, type="l", col="black",main="a) Men", las=1, lwd = "3", cex.lab=1.2, cex.axis=1.1,
            ylim=c(0.5, 5), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
@@ -64,9 +64,9 @@ female <- dataset %>%
 lin_female <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se = se, intercept = F,
                   cases = cases, n = n, method = "reml", data = female, proc = "1stage")
 summary(lin_female)
-predict(lin_female, delta = 50, exp = TRUE)
+predict(lin_female, delta = 37, exp = TRUE)
 
-dosex_bin <- data.frame(dose=seq(0, 50, 1))
+dosex_bin <- data.frame(dose=seq(0, 37, 1))
 with(predict(lin_female, dosex_bin, order=TRUE, exp=TRUE), 
      {plot(dose, pred, type="l", col="black", main="b) Women", las=1, lwd = "3", cex.lab=1.2, cex.axis=1.1,
            ylim=c(0.5, 5), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
