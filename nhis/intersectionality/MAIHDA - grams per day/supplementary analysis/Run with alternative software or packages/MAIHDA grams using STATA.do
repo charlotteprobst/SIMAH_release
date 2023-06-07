@@ -1,23 +1,24 @@
 // MAIHDA analysis of alcohol_grams_day
 
 clear all
-cd "U:\SIMAH\SIMAH_code\nhis\intersectionality"
+cd "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_code\nhis\intersectionality"
 capture log close
 log using "MAIHDA_alc_consumption.smcl", replace
 set maxvar 100000
 ssc install runmlwin
 global MLwiN_path "C:\Program Files\MLwiN v3.05\mlwin.exe"
 
-insheet using "U:\SIMAH\SIMAH_workplace\nhis\intersectionality\cleaned_data\6_nhis_alc_clean_transformed_drinkers.csv", comma clear
+insheet using "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\cleaned_data\log_transformed_drinkers.csv", comma clear
 
 * Convert variables from strings to new numeric categorical variable
 encode sex, generate(sex_factor)
 encode education_3_cats, generate(education_3_cats_factor)
 encode age_3_cats, generate(age_3_cats_factor)
 encode race_5_cats, generate(race_5_cats_factor)
+encode decade, generate(decade_factor)
 
-* Null model
-regress transformed_grams_lambda_1 i.sex_factor i.education_3_cats_factor i.age_3_cats_factor i.race_5_cats_factor
+* Simple multiple regression model
+regress capped_daily_grams_log i.sex_factor i.education_3_cats_factor i.age_3_cats_factor i.race_5_cats_factor i.decade_factor
 estimates store model_1
 ovtest // H0: that the model has no omitted variables.  In this case, p-value =0.000 implying the model DOES have missing variables
 rvfplot // residuals does not appear uniformly distributed
@@ -36,41 +37,7 @@ gen cons=1
 *generate dummy variables for runmlwin to being able to calculate predicted effects:
 foreach var of varlist sex age_3_cats education_3_cats race_5_cats {
 tabulate `var', generate(`var'_dum)
-}  // Mlwin can't treat data as a categorical variable.  Produces dummy variables manually so that you don't have to use the operator (i).
-
-/*      SEX |      Freq.     Percent        Cum.
-------------+-----------------------------------
-     Female |    172,637       51.25       51.25
-       Male |    164,187       48.75      100.00
-------------+-----------------------------------
-      Total |    336,824      100.00
-
- age_3_cats |      Freq.     Percent        Cum.
-------------+-----------------------------------
-      18-24 |     33,375        9.91        9.91
-      25-69 |    269,312       79.96       89.87
-        70+ |     34,137       10.13      100.00
-------------+-----------------------------------
-      Total |    336,824      100.00
-
-   education_3_cats |      Freq.     Percent        Cum.
---------------------+-----------------------------------
-   4+ years college |    110,410       32.78       32.78
-high school or less |    118,473       35.17       67.95
-       some college |    107,941       32.05      100.00
---------------------+-----------------------------------
-              Total |    336,824      100.00
-
-           race_5_cats |      Freq.     Percent        Cum.
------------------------+-----------------------------------
-                 Asian |     12,527        3.72        3.72
-Black/African American |     38,073       11.30       15.02
-       Hispanic, White |     41,843       12.42       27.45
-                 Other |     12,859        3.82       31.26
-                 White |    231,522       68.74      100.00
------------------------+-----------------------------------
-                 Total |    336,824      100.00
-*/
+} 
 
 // Multilevel model, null
 sort intersections nhispid // an mlwin specific request to sort by the nhis patient ID - doesn't actually mean anything but mlwin wants them in numerical order.

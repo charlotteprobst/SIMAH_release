@@ -3,7 +3,7 @@
 setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality/")
 
 # Load in data
-transformed_drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_log.RDS")
+transformed_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/log_transformed_drinkers.RDS")
 
 # Load necessary packages
 library("R2MLwiN")
@@ -92,7 +92,7 @@ VarCompResid <- runMLwiN(Formula = F2,
                          data = data_intersections_MAIHDA,
                          estoptions = list(resi.store = TRUE))
 # Re-calculate VPC
-print(VPC_IGLS_full <- VarCompResid["RP"][["RP2_var_Intercept"]]/(VarCompResid["RP"][["RP1_var_Intercep"]] + VarCompResid["RP"][["RP2_var_Intercept"]]))
+print(VPC_IGLS_full <- VarCompResid["RP"][["RP2_var_Intercept"]]/(VarCompResid["RP"][["RP1_var_Intercept"]] + VarCompResid["RP"][["RP2_var_Intercept"]]))
 
 # View level 1 residuals
 hist(VarCompResid@residual$lev_1_resi_est_Intercept)
@@ -140,6 +140,9 @@ Results_table_IGLS <- processed_intersections_MAIHDA %>%
   dplyr::select(intersections, count, birth_year, YEAR, decade, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, estimate, SE)
 
 Results_table_IGLS <- inner_join(Results_table_IGLS, MAIHDA_intersections_reference, by = "intersections")
+
+# Save the IGLS results table
+saveRDS(VarCompResid, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/grams_IGLS_full_estimates.RDS")
 
 ### 2. Run MAIHDA with MCMC
 
@@ -189,51 +192,40 @@ saveRDS(VarCompResidMCMC, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhi
 # OR read in model object
 VarCompResidMCMC <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/grams_MCMC_full.RDS")
 
-# Generate a table of model coefficients & variance estimates, comparing the null and full models
-
+# Generate a table of model coefficients, comparing the null and full models
 temp_null <- getSummary(VarCompModelMCMC) 
 temp_null <- as.data.frame(Coefs_null[["coef"]])
 temp_null <- round(temp_null, 3) %>% dplyr::select(est,lwr,upr,p)
-rownames(temp_null) <- c("fixed intercept","between strata variance, null","within strata variance, null")
-
-# seperate out coefs and variance
-coefs_null <- temp_null['fixed intercept',]
-variance_null <- temp_null[c('between strata variance, null','within strata variance, null'),]
+rownames(temp_null) <- c("intercept_FE_1","strata_RE_1","individuals_RE_1")
 
 temp_main_effects <- getSummary(VarCompResidMCMC)
 temp_main_effects <- as.data.frame(temp_main_effects[["coef"]])
 temp_main_effects <- round(temp_main_effects, 3) %>% dplyr::select(est,lwr,upr,p)
-rownames(temp_main_effects) <- c("fixed intercept","female","age 25-69", "age 70+", 
+rownames(temp_main_effects) <- c("intercept_FE_2","female","age 25-69", "age 70+", 
                                   "Non-Hispanic Black", "Non-Hispanic Asian", "Non-Hispanic Other", 
                                   "Hispanic", "Some college", "4+ years college","2010-2018", 
-                                  "between strata variance, main effects", "within strata variance, main effects")
+                                  "strata_RE_2", "individuals_RE_2")
 
-# seperate out coefs and variance
-coefs_main_effects <- temp_main_effects[c("fixed intercept","female","age 25-69", "age 70+", 
-                                  "Non-Hispanic Black", "Non-Hispanic Asian", "Non-Hispanic Other", 
-                                  "Hispanic", "Some college", "4+ years college","2010-2018"),]
-variance_main_effects <- temp_main_effects[c("between strata variance, main effects", "within strata variance, main effects"),]
-
-coefs_table <- rbind(coefs_null, coefs_main_effects)
-variance_table <- rbind(variance_null, variance_main_effects)
-coef_variance_table <- rbind(coefs_table, variance_table)
+coefs_table <- rbind(temp_null, temp_main_effects)
 
 # Create a gt object to enable addition of headers
-gt_table <- gt(coef_variance_table, rownames_to_stub = TRUE) %>%
+gt_table <- gt(coefs_table, rownames_to_stub = TRUE) %>%
  tab_row_group(
-    label = "Variance",
-    rows = 13:16
-  ) %>%
-  tab_row_group(
     label = "Main effects model",
-    rows = 2:12
+    rows = 4:16
   ) %>%
   tab_row_group(
     label = "Null model",
-    rows = 1:1
+    rows = 1:3
   )
   
 gt_table
+gtsave(gt_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/daily grams - model coefficients and variance.html")
+
+# Generate a table summarizing VPC
+VPC_table <- data.frame(Model = c("null", "main effects"),
+                 VPC = c(VPC_MCMC_null, VPC_MCMC_full))
+saveRDS(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/MCMC_grams_VPC.Rmd")
 
 # Estimate yhat (and SEs) using predict function
 data_intersections_MAIHDA_MCMC$yhat <- predict(VarCompResidMCMC) # the predicted expected value

@@ -1,0 +1,131 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}C:\Users\cmp21seb\Documents\SIMAH\SIMAH_code\nhis\intersectionality\MAIHDA_alc_consumption.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res} 6 Jun 2023, 18:15:28
+{txt}
+{com}. set maxvar 100000
+
+{txt}
+{com}. ssc install runmlwin
+{txt}checking {hilite:runmlwin} consistency and verifying not already installed...
+all files already exist and are up to date.
+
+{com}. global MLwiN_path "C:\Program Files\MLwiN v3.05\mlwin.exe"
+{txt}
+{com}. 
+. insheet using "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\cleaned_data\log_transformed_drinkers.csv", comma clear
+{txt}(65 vars, 336,824 obs)
+
+{com}. 
+. * Convert variables from strings to new numeric categorical variable
+. encode sex, generate(sex_factor)
+{txt}
+{com}. encode education_3_cats, generate(education_3_cats_factor)
+{txt}
+{com}. encode age_3_cats, generate(age_3_cats_factor)
+{txt}
+{com}. encode race_5_cats, generate(race_5_cats_factor)
+{txt}
+{com}. encode decade, generate(decade_factor)
+{txt}
+{com}. 
+. * Simple multiple regression model
+. regress transformed_grams_lambda_1 i.sex_factor i.education_3_cats_factor i.age_3_cats_factor i.race_5_cats_factor i.decade_factor
+{err}variable {bf}transformed_grams_lambda_1{sf} not found
+{txt}{search r(111), local:r(111);}
+
+end of do-file
+
+{search r(111), local:r(111);}
+
+{com}. do "C:\Users\cmp21seb\AppData\Local\Temp\STD388c_000000.tmp"
+{txt}
+{com}. 
+. * Simple multiple regression model
+. regress capped_daily_grams_log i.sex_factor i.education_3_cats_factor i.age_3_cats_factor i.race_5_cats_factor i.decade_factor
+
+{txt}      Source {c |}       SS           df       MS      Number of obs   ={res}   336,824
+{txt}{hline 13}{c +}{hline 34}   F(10, 336813)   = {res}  3304.46
+{txt}       Model {c |} {res} 108405.574        10  10840.5574   {txt}Prob > F        ={res}    0.0000
+{txt}    Residual {c |} {res} 1104941.81   336,813  3.28057945   {txt}R-squared       ={res}    0.0893
+{txt}{hline 13}{c +}{hline 34}   Adj R-squared   ={res}    0.0893
+{txt}       Total {c |} {res} 1213347.38   336,823  3.60232935   {txt}Root MSE        =   {res} 1.8112
+
+{txt}{hline 37}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}              capped_daily_grams_log{col 38}{c |} Coefficient{col 50}  Std. err.{col 62}      t{col 70}   P>|t|{col 78}     [95% con{col 91}f. interval]
+{hline 37}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 26}sex_factor {c |}
+{space 31}Male  {c |}{col 38}{res}{space 2} 1.006297{col 50}{space 2} .0062666{col 61}{space 1}  160.58{col 70}{space 3}0.000{col 78}{space 4} .9940146{col 91}{space 3} 1.018579
+{txt}{space 36} {c |}
+{space 13}education_3_cats_factor {c |}
+{space 16}high school or less  {c |}{col 38}{res}{space 2}-.3203678{col 50}{space 2} .0078679{col 61}{space 1}  -40.72{col 70}{space 3}0.000{col 78}{space 4}-.3357887{col 91}{space 3}-.3049468
+{txt}{space 23}some college  {c |}{col 38}{res}{space 2}-.2389988{col 50}{space 2} .0078919{col 61}{space 1}  -30.28{col 70}{space 3}0.000{col 78}{space 4}-.2544667{col 91}{space 3}-.2235308
+{txt}{space 36} {c |}
+{space 19}age_3_cats_factor {c |}
+{space 30}25-69  {c |}{col 38}{res}{space 2}-.3586592{col 50}{space 2} .0106254{col 61}{space 1}  -33.75{col 70}{space 3}0.000{col 78}{space 4}-.3794846{col 91}{space 3}-.3378337
+{txt}{space 32}70+  {c |}{col 38}{res}{space 2}-.6391785{col 50}{space 2} .0141393{col 61}{space 1}  -45.21{col 70}{space 3}0.000{col 78}{space 4}-.6668912{col 91}{space 3}-.6114659
+{txt}{space 36} {c |}
+{space 18}race_5_cats_factor {c |}
+{space 17}Non-Hispanic Asian  {c |}{col 38}{res}{space 2}-.3906104{col 50}{space 2} .0184679{col 61}{space 1}  -21.15{col 70}{space 3}0.000{col 78}{space 4} -.426807{col 91}{space 3}-.3544138
+{txt}Non-Hispanic Black/African American  {c |}{col 38}{res}{space 2} .0220174{col 50}{space 2}  .012486{col 61}{space 1}    1.76{col 70}{space 3}0.078{col 78}{space 4}-.0024549{col 91}{space 3} .0464896
+{txt}{space 17}Non-Hispanic Other  {c |}{col 38}{res}{space 2} .2727066{col 50}{space 2} .0235605{col 61}{space 1}   11.57{col 70}{space 3}0.000{col 78}{space 4} .2265287{col 91}{space 3} .3188846
+{txt}{space 17}Non-Hispanic White  {c |}{col 38}{res}{space 2} .3721122{col 50}{space 2} .0093402{col 61}{space 1}   39.84{col 70}{space 3}0.000{col 78}{space 4} .3538056{col 91}{space 3} .3904187
+{txt}{space 36} {c |}
+{space 23}decade_factor {c |}
+{space 26}2010-2018  {c |}{col 38}{res}{space 2} .0731725{col 50}{space 2} .0062796{col 61}{space 1}   11.65{col 70}{space 3}0.000{col 78}{space 4} .0608647{col 91}{space 3} .0854803
+{txt}{space 31}_cons {c |}{col 38}{res}{space 2} .4819072{col 50}{space 2} .0147966{col 61}{space 1}   32.57{col 70}{space 3}0.000{col 78}{space 4} .4529063{col 91}{space 3} .5109082
+{txt}{hline 37}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. 
+{txt}end of do-file
+
+{com}. do "C:\Users\cmp21seb\AppData\Local\Temp\STD388c_000000.tmp"
+{txt}
+{com}. estimates store model_1
+{txt}
+{com}. ovtest // H0: that the model has no omitted variables.  In this case, p-value =0.000 implying the model DOES have missing variables
+
+{txt}Ramsey RESET test for omitted variables
+Omitted: Powers of fitted values of {res:capped_daily_grams_log}
+
+H0: Model has no omitted variables
+
+{ralign 12:F({res:3}, {res:336810})} = {res}{ralign 6:275.22}
+{txt}{ralign 12:Prob > F} = {res}{ralign 6:0.0000}
+{txt}
+{com}. rvfplot // residuals does not appear uniformly distributed
+{res}{txt}
+{com}. hettest // checks for heteroscedascity. H0: There is constant variance.  In this case, p-value = 0.0000 implying that there is NOT constant variance
+
+{txt}Breusch–Pagan/Cook–Weisberg test for heteroskedasticity 
+Assumption: Normal error terms
+{p 0 11 0}Variable:{space 1}{res:{txt:Fitted values of} {res:capped_daily_grams_log}}{p_end}
+
+H0: Constant variance
+
+{ralign 11:chi2({res:1})} = {res}{ralign 6:281.62}
+{txt}{ralign 11:Prob > chi2} = {res}{ralign 6:0.0000}
+{txt}
+{com}. linktest // checks for a link error. significant hat test and significant _hatsq therefore there is a link error
+
+{txt}      Source {c |}       SS           df       MS      Number of obs   ={res}   336,824
+{txt}{hline 13}{c +}{hline 34}   F(2, 336821)    = {res} 16750.48
+{txt}       Model {c |} {res} 109764.755         2  54882.3777   {txt}Prob > F        ={res}    0.0000
+{txt}    Residual {c |} {res} 1103582.62   336,821  3.27646621   {txt}R-squared       ={res}    0.0905
+{txt}{hline 13}{c +}{hline 34}   Adj R-squared   ={res}    0.0905
+{txt}       Total {c |} {res} 1213347.38   336,823  3.60232935   {txt}Root MSE        =   {res} 1.8101
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 1}capped_dai~g{col 14}{c |} Coefficient{col 26}  Std. err.{col 38}      t{col 46}   P>|t|{col 54}     [95% con{col 67}f. interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 8}_hat {c |}{col 14}{res}{space 2} 1.315723{col 26}{space 2} .0164474{col 37}{space 1}   80.00{col 46}{space 3}0.000{col 54}{space 4} 1.283487{col 67}{space 3}  1.34796
+{txt}{space 6}_hatsq {c |}{col 14}{res}{space 2}-.2183225{col 26}{space 2} .0107192{col 37}{space 1}  -20.37{col 46}{space 3}0.000{col 54}{space 4}-.2393318{col 67}{space 3}-.1973131
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.0438742{col 26}{space 2}  .005476{col 37}{space 1}   -8.01{col 46}{space 3}0.000{col 54}{space 4}-.0546069{col 67}{space 3}-.0331415
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{res}{txt}
+{com}. 
+{txt}end of do-file
+
+{com}. exit, clear

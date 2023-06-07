@@ -86,8 +86,11 @@ summary(MAIHDA_main_effects)
 VPC_full <- performance::icc(MAIHDA_main_effects) 
 
 # Combine null and full models into a single table
-results_table <- tab_model(MAIHDA_null, MAIHDA_main_effects, digits=3, digits.re=3)
-results_table
+coeffs_and_variance <- tab_model(MAIHDA_null, MAIHDA_main_effects, digits=3, digits.re=3)
+coeffs_and_variance
+# Save the output
+tab_model(MAIHDA_null, MAIHDA_main_effects, digits=3, digits.re=3, file = "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/supplementary analysis/daily grams - model coefs and variance - lmer.html")
+
 
 #calculate reduction in strata-level variance
 percent_reduction_in_strata_variance <- (VPC_null-VPC_full$ICC_unadjusted)/VPC_null*100
@@ -117,11 +120,20 @@ reEX2 <- REsim(MAIHDA_main_effects)
 plotREsim(reEX2, labs=T) + coord_flip()
 #and these are what remains when additive effects are removed i.e. the multiplicative effects
 
-
-######### ??? btain estimates from the model
-
-# Obtain model estimates (full model) using the predict function
+# Generate estimates for each intersectional group (full model) using the predict function
 data_intersections_MAIHDA$yhat <- predict(MAIHDA_main_effects) # the predicted expected value
+data_intersections_MAIHDA$estimated_grams <- exp(data_intersections_MAIHDA$yhat)
+estimated_grams_lmer <- data_intersections_MAIHDA %>% 
+  dplyr::select(intersections, count, yhat, estimated_grams) %>% 
+  distinct(intersections, .keep_all = TRUE)
 
-# Obtain confidence intervals around the estimates
+estimates_table_grams_lmer <- inner_join(data_intersections_MAIHDA, MAIHDA_intersections_reference)
+estimates_table_grams_lmer <- estimates_table_grams_lmer %>% 
+  dplyr::select(intersections, count, age_3_cats, race_5_cats, SEX, intersectional_names, yhat, estimated_grams)%>% 
+  distinct(intersections, .keep_all = TRUE)
+
+## Save the estimates
+saveRDS(estimates_table_grams_lmer,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/supplementary analysis/estiamtes_grams_lmer.rds" )
+
+# Obtain confidence intervals around the estimates (not working)
 ci <- confint(MAIHDA_main_effects, newdata = data_intersections_MAIHDA, level=0.95, method="boot")
