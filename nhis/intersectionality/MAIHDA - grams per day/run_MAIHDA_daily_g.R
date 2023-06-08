@@ -12,6 +12,8 @@ library(dplyr)
 library(bayesplot)
 library(coda)
 library(ggplot2)
+library(memisc)
+library(gt)
 
 # Bias toward non-scientific notation
 options(scipen=10)
@@ -194,7 +196,7 @@ VarCompResidMCMC <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/n
 
 # Generate a table of model coefficients, comparing the null and full models
 temp_null <- getSummary(VarCompModelMCMC) 
-temp_null <- as.data.frame(Coefs_null[["coef"]])
+temp_null <- as.data.frame(temp_null[["coef"]])
 temp_null <- round(temp_null, 3) %>% dplyr::select(est,lwr,upr,p)
 rownames(temp_null) <- c("intercept_FE_1","strata_RE_1","individuals_RE_1")
 

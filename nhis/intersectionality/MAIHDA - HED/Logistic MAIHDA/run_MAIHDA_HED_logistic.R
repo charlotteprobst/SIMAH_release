@@ -7,7 +7,10 @@ library(dplyr)
 library(sjstats)
 library(haven)
 library(performance)
+library(memisc)
+library()
 library(R2MLwiN)
+options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 
 # Set working directory
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
@@ -79,31 +82,71 @@ model_data <- data %>%
   mutate(cons=1) %>% 
   arrange(intersections, NHISPID)
 
-################# CONTINUE FROM HERE
+## MAIHDA IGLS
 
 # Run the null model
-(myModel <- runMLwiN(logit(HED) ~ 1 + (1|intersections), D = "Binomial", data = model_data))
+(null_HED <- runMLwiN(logit(HED) ~ 1 + (1|intersections), D = "Binomial", data = model_data))
 
 # Calculate the VPC
-slotNames(myModel)
+slotNames(null_HED)
 
-VPC_myModel_null <- print(VPC <- myModel["RP"][["RP2_var_Intercept"]]/(pi^2/3 + myModel["RP"][["RP2_var_Intercept"]]))
+VPC_HED_null <- print(VPC <- null_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + myModel["RP"][["RP2_var_Intercept"]]))
 #0.208
 
-
-## ----------------------------------------------------------------------------------------------
-(myModel_full <- runMLwiN(logit(HED) ~ 1 + + SEX + age_3_cats + 
-                      race_5_cats + education_3_cats + decade + (1|intersections), D = "Binomial", data = data, estoptions=list(EstM=1, resi.store=TRUE)))
+# Run the full model (including main effects)
+(full_HED <- runMLwiN(logit(HED) ~ 1 + + SEX + age_3_cats + race_5_cats + education_3_cats + decade + 
+                        (1|intersections), 
+                      D = "Binomial", data = model_data, estoptions=list(EstM=1, resi.store=TRUE)))
 
 # Calculate the VPC
 summary(myModel_full)
-VPC_myModel_full <- print(VPC <- myModel_full["RP"][["RP2_var_Intercept"]]/(pi^2/3 + myModel_full["RP"][["RP2_var_Intercept"]]))
+VPC_full_HED <- print(VPC <- full_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + full_HED["RP"][["RP2_var_Intercept"]]))
 # 0.031
 
-saveRDS(myModel_full, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/myModel_full_HED.RDS")
+# Save the model objects
+saveRDS(null_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/HED_MCMC_null.RDS")
+saveRDS(full_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/HED_MCMC_full.RDS")
 
+# Generate a table of model coefficients, comparing the null and full models
+temp_null <- getSummary(null_HED) 
+temp_null <- as.data.frame(temp_null[["coef"]])
+temp_null <- round(temp_null, 3) %>% dplyr::select(est,lwr,upr,p)
+rownames(temp_null) <- c("intercept_FE_1","strata_RE_1","individuals_RE_1")
 
-## ----------------------------------------------------------------------------------------------
+temp_main_effects <- getSummary(full_HED)
+temp_main_effects <- as.data.frame(temp_main_effects[["coef"]])
+temp_main_effects <- round(temp_main_effects, 3) %>% dplyr::select(est,lwr,upr,p)
+rownames(temp_main_effects) <- c("intercept_FE_2","female","age 25-69", "age 70+", 
+                                 "Non-Hispanic Black", "Non-Hispanic Asian", "Non-Hispanic Other", 
+                                 "Hispanic", "Some college", "4+ years college","2010-2018", 
+                                 "strata_RE_2", "individuals_RE_2")
+
+coefs_table <- rbind(temp_null, temp_main_effects)
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/HED - model coefficients and variance.csv")
+
+# Create a gt object to enable addition of headers
+gt_table <- gt(coefs_table, rownames_to_stub = TRUE) %>%
+  tab_row_group(
+    label = "Main effects model",
+    rows = 4:16
+  ) %>%
+  tab_row_group(
+    label = "Null model",
+    rows = 1:3
+  )
+
+gt_table
+gtsave(gt_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/HED - model coefficients and variance.html")
+
+# Generate a table summarizing VPC
+VPC_table <- data.frame(Model = c("null", "main effects"),
+                        VPC = c(VPC_HED_null, VPC_full_HED))
+saveRDS(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/MCMC_grams_HED.Rmd")
+
+###################################################
+# TRY UPDATING THIS TO FIT WITH THE FORMAT USED IN GRAMS PER DAY
+####################################################
+
 # Estimate log odds (and SEs) using predict function
 data$fit <- predict(myModel_full, data)
 # the predicted expected value (in this case the log odds of being a HED)
