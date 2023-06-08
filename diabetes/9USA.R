@@ -9,7 +9,7 @@ library(metafor)
 library(rms)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx", 
+dataset <- read_excel("C:/Users/laura/Documents/CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx", 
                       col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
@@ -121,16 +121,16 @@ regplot(quad_female_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Rela
 
 ##RESTRICTED CUBIC SPLINE
 
-knotsfus <- quantile(female_us$dose, c(.05, .35, .65, .95))
-
+knotsfus <- quantile(female_us$dose, c(.10, .50, .90))
+#.05, .35, .65, .95
 rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, digits = 8, 
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female_us)
 
 pred_rcs_female_us <- predict(rcs_female_us, newmods=rcspline.eval(fs, knotsfus, inclx=TRUE))
 regplot(rcs_female_us, mod="rcs(dose, knotsfus)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,30), shade =FALSE,
-        ylim = c(0, 1), pred = pred_rcs_female_us, xvals = fs)
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE,
+        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs)
 abline(h=1)
 #use var.comp function
 i2 <- var.comp(rcs_female)
@@ -142,7 +142,7 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female_us, newmods= rcspline.eval(20, knotsfus, inclx=TRUE), transf=exp)
+predict(rcs_female_us, newmods= rcspline.eval(30, knotsfus, inclx=TRUE), transf=exp)
 
 fitstats(linear_female_us, quad_female_us, rcs_female_us)
 
@@ -181,10 +181,27 @@ DIST_3		<- function(alc_1){ pmax((alc_1 - knots_T[2])/kd, 0)^3 + ((knots_T[3] - 
 
 ### VALUE BASED FUNCTIONS
 #DIST_2
-( pmax((x - 2.20)/13.94057, 0)^3 + ((24.60 - 1) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 1) * (pmax((x - 24.60)/13.94057, 0)^3))  / (54.25 - 24.60)  )
+( pmax((x - 2.20)/13.94057, 0)^3 + ((24.60 - 2.20) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 2.20) * (pmax((x - 24.60)/13.94057, 0)^3))  / (54.25 - 24.60)  )
 #DIST_3
-( pmax((x - 10.44)/13.94057, 0)^3 + ((24.60 - 10.44) * pmax((x - 54.25)/12.99405, 0)^3 - (54.25 - 10.44) * (pmax((x - 24.60)/13.94057, 0)^3)) / (54.25 - 24.60) )
+( pmax((x - 10.44)/13.94057, 0)^3 + ((24.60 - 10.44) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 10.44) * (pmax((x - 24.60)/13.94057, 0)^3)) / (54.25 - 24.60) )
 
-20*-0.03335731 + DIST_2(20)*0.17509468 + DIST_3(20)*-0.27494185
-exp(-0.3913205)
+30*-0.02561281 + DIST_2(30)*0.04322303
+exp(-0.3944864)
 
+#Using 3 knots
+
+### VARIABLE BASED FUNCTIONS
+knotsfus
+sprintf("%.10f", knotsfus)
+
+knots_T		<- c(2.79, 14, 43.74)
+kd			<- (knots_T[3] - knots_T[1])^(2/3)
+
+DIST_1		<- function(alc_1){alc_1}
+DIST_2		<- function(alc_1){ pmax((alc_1 - knots_T[1])/kd, 0)^3 + ((knots_T[2] - knots_T[1]) * pmax((alc_1 - knots_T[3])/kd, 0)^3 - (knots_T[3] - knots_T[1]) * 
+                                                                    (pmax((alc_1 - knots_T[2])/kd, 0)^3))/ (knots_T[3] - knots_T[2]) }
+### VALUE BASED FUNCTIONS
+#DIST_2
+( pmax((x - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((x - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((x - 14)/11.88053, 0)^3))  / (43.74 - 14)  )
+
+x <- 20
