@@ -28,7 +28,7 @@ ggplot(drinkers, aes(x=alc_daily_g_capped_200), y) + geom_histogram() +
   xlab("Daily grams of alcohol, pre transformation") +
   ylab("Frequency")
 
-### Specify null models based on raw data and check the assumptions
+### Specify null linear models based on raw data and check the assumptions
 # NB. The variables included in the model are chosen based on theoretical rationale, data availability, the results of exploratory analysis and feasbile numbers of intersections/intersectional group sizes.
 
 # Full sample

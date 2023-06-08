@@ -1,0 +1,220 @@
+# This script runs a multilevel logistic regression with the binary variable of HED (1, 0)
+
+# Load necessary packages
+library("lme4")
+library(tidyr)
+library(dplyr)
+library(sjstats)
+library(haven)
+library(performance)
+library(R2MLwiN)
+
+# Set working directory
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+
+# Read in data:
+drinkers <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.RDS")
+
+# Generate a binary HED variable
+drinkers <- drinkers %>%
+  mutate(HED =
+           case_when(ALC5UPYR >= 1 ~ 1,
+                     ALC5UPYR == 0 ~ 0))
+
+# Bias toward non-scientific notation
+options(scipen=10)
+
+data <- drinkers %>% 
+  group_by(SEX, race_5_cats, education_3_cats, age_3_cats, decade) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(denominator=n()) %>%
+  group_by(HED, intersections) %>%
+  mutate(numerator=n(),
+         proportion=numerator/denominator,
+         percentage=proportion*100) %>%
+  ungroup()
+
+# Subset data to keep only the variables of interest
+temp <- data %>%
+select(intersections, HED, proportion, age_3_cats, SEX, race_5_cats, education_3_cats, decade)
+
+# Generate a summary table showing the proportion of HEDs by intersection
+summary_table <- data %>%
+  select(intersections, HED, numerator, denominator, proportion) %>%
+  filter(HED==1) %>%
+  distinct()
+
+# Identify any groups with zero HEDs
+temp <- data %>% 
+  ungroup() %>%
+  select(intersections, HED, age_3_cats, SEX, race_5_cats, education_3_cats, decade, numerator, denominator, proportion, percentage)%>%
+  filter(percentage==100)%>%
+  distinct()
+# Intersections: 131, 137, 149, 161, 173	
+
+# Generate a HED=0 row for these intersections
+data_2 <- data %>% 
+  add_row(intersections = 173, HED = 1, age_3_cats = "70+", SEX = "Female", race_5_cats = "Hispanic", education_3_cats = "some college", decade = "2000-2009", numerator = 0, denominator = 58, proportion = 0, percentage = 0) %>% 
+  add_row(intersections = 149, HED = 1, age_3_cats = "70+", SEX = "Female", race_5_cats = "Non-Hispanic Other", education_3_cats = "high school or less", decade = "2000-2009", numerator = 0, denominator = 29, proportion = 0, percentage = 0) %>% 
+  add_row(intersections = 161, HED = 1, age_3_cats = "70+", SEX = "Female", race_5_cats = "Non-Hispanic Other", education_3_cats = "4+ years college", decade = "2000-2009", numerator = 0, denominator = 5, proportion = 0, percentage = 0) %>% 
+  add_row(intersections = 137, HED = 1, age_3_cats = "70+", SEX = "Female", race_5_cats = "Non-Hispanic Asian", education_3_cats = "some college", decade = "2000-2009", numerator = 0, denominator = 20, proportion = 0, percentage = 0) %>% 
+  add_row(intersections = 131, HED = 1, age_3_cats = "70+", SEX = "Female", race_5_cats = "Non-Hispanic Asian", education_3_cats = "high school or less", decade = "2000-2009", numerator = 0, denominator = 34, proportion = 0, percentage = 0)
+
+# Subset the results for just one intersectional group and just HEDs
+data_3 <- data_2 %>%
+  filter(HED==1) %>%
+select(intersections, HED, age_3_cats, SEX, race_5_cats, education_3_cats, decade, numerator, denominator, proportion, percentage)%>%
+  distinct() %>%
+  mutate(cons=1)
+
+# Save results
+write_dta(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/drinkers_HED_data.dta")
+saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/drinkers_HED_data.rds")
+
+## Run MAIHDA logit model
+
+# Prep data for use with Mlwin
+model_data <- data %>%
+  mutate(cons=1) %>% 
+  arrange(intersections, NHISPID)
+
+################# CONTINUE FROM HERE
+
+# Run the null model
+(myModel <- runMLwiN(logit(HED) ~ 1 + (1|intersections), D = "Binomial", data = model_data))
+
+# Calculate the VPC
+slotNames(myModel)
+
+VPC_myModel_null <- print(VPC <- myModel["RP"][["RP2_var_Intercept"]]/(pi^2/3 + myModel["RP"][["RP2_var_Intercept"]]))
+#0.208
+
+
+## ----------------------------------------------------------------------------------------------
+(myModel_full <- runMLwiN(logit(HED) ~ 1 + + SEX + age_3_cats + 
+                      race_5_cats + education_3_cats + decade + (1|intersections), D = "Binomial", data = data, estoptions=list(EstM=1, resi.store=TRUE)))
+
+# Calculate the VPC
+summary(myModel_full)
+VPC_myModel_full <- print(VPC <- myModel_full["RP"][["RP2_var_Intercept"]]/(pi^2/3 + myModel_full["RP"][["RP2_var_Intercept"]]))
+# 0.031
+
+saveRDS(myModel_full, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/myModel_full_HED.RDS")
+
+
+## ----------------------------------------------------------------------------------------------
+# Estimate log odds (and SEs) using predict function
+data$fit <- predict(myModel_full, data)
+# the predicted expected value (in this case the log odds of being a HED)
+data$se_fit <- predict(myModel_full, data, se.fit=TRUE)$se.fit 
+
+# Subset just one intersection
+data_HED_myModel <- data %>% select(intersections, SEX, education_3_cats, race_5_cats, age_3_cats, decade, fit, se_fit) %>% unique()
+
+##### Extract residuals from the Mlwin output object
+data_HED_myModel$residuals <- myModel_full@residual$lev_2_resi_est_Intercept 
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+data_HED_myModel$residuals_se <- sqrt(myModel_full@residual$lev_2_resi_variance_Intercept) # standard error around residuals
+
+##### Generate overall estimates by combining the additive effects and mutliplicative effects (residuals)
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+data_HED_myModel <- data_HED_myModel %>% 
+  mutate(total_log_odds = sum(fit, residuals))
+
+# Estimate the total standard error by combining the SE around the log_odds plus the SE around the residuals:
+data_HED_myModel <- data_HED_myModel %>% 
+  mutate(total_se = (sqrt((se_fit*se_fit)+(residuals_se*residuals_se)))/2)
+
+###### Convert everything to get the predicted probability of being a HED
+logit2prob <- function(logit){
+  odds <- exp(logit)
+  prob <- odds / (1 + odds)
+  return(prob)
+}
+
+# NEED TO CORRECT THIS CODE
+data_HED_myModel <- data_HED_myModel %>%
+mutate(total_probability = logit2prob(total_log_odds)*100,
+       CI_lower = logit2prob(total_log_odds-1.96*total_se)*100,
+       CI_upper = logit2prob(total_log_odds+1.96*total_se)*100,
+       additive_probability = logit2prob(fit)*100,
+       additive_CI_lower = logit2prob(fit - 1.96*se_fit)*100,
+       additive_CI_upper = logit2prob(fit + 1.96*se_fit)*100,
+       interaction_effects = total_probability - additive_probability,
+       interaction_effects_CI_lower = interaction_effects - (logit2prob(1.96*residuals_se)),
+       interaction_effects_CI_upper = interaction_effects + (logit2prob(1.96*residuals_se)))
+
+# Save results 
+saveRDS(data_HED_myModel, "U:\\SIMAH\\SIMAH_workplace\\nhis\\intersectionality\\cleaned_data\\HED\\Results_table_HED_probability.RDS")
+
+write_xlsx(data_HED_myModel,"U:\\SIMAH\\SIMAH_workplace\\nhis\\intersectionality\\cleaned_data\\HED\\Results_table_HED_probability.xlsx")
+
+
+## ----------------------------------------------------------------------------------------------
+logistic_null <- glmer(HED ~ 1 + (1 | intersections),
+                       family = binomial,
+                       data = data)
+summary(logistic_null)
+
+# Calculate VPC for null model
+# Because HED is coded as a binary outcome, logistic (Bernoulli) HLM modeling was used.
+# The proportion of the total unexplained variance at Level 1 was estimated from the unconditional model as τ0/(τ0 + π2/3), where τ0 is the Level 2 intercept variance (unexplained random variance) and π2/3 is the Level 1 variance (error variance, which is fixed to π2/3 = 3.29).
+
+# Manually...
+glmer_null_VPC <- 1.397/(1.397 + 3.29)
+# or using the performance package...
+performance::icc(logistic_null)
+# 0.298
+
+
+## ----------------------------------------------------------------------------------------------
+logistic_main <- glmer(HED ~ 1 + SEX + age_3_cats + 
+                      race_5_cats + education_3_cats + decade + (1 | intersections),
+                      family = binomial,
+                      data = data)
+summary(logistic_main, corr = FALSE)
+
+#Manually:
+glmer_main_VPC <- 0.09586/(0.09586 + (3.29))
+#or using performance package:
+performance::icc(logistic_main)
+# 0.0283
+
+se <- sqrt(diag(vcov(logistic_main)))
+# vcov() returns the variance-covariance matrix for a model object. The diagonal of this matrix is the variance of the parameters. Hence,diag(someMatrix)extracts the diagonal entries of a matrix, and so is used to get the variances.
+
+# # table of estimates with 95% CI
+(tab <- cbind(Est = fixef(logistic_main), LL = fixef(logistic_main) - 1.96 * se, UL = fixef(logistic_main) + 1.96 * se))
+
+# table of odds ratios instead of co-efficients on the logit scale
+exp(tab)
+
+
+## ----------------------------------------------------------------------------------------------
+input_data_for_predict <- data %>% select(intersections, SEX, education_3_cats, race_5_cats, age_3_cats, decade) %>% unique()
+
+output_predict <- predict(logistic_main, newdata=input_data_for_predict, type="response") # NB these are probabilities with the response option
+
+predicted_probs_HED_logistic_glmer <- modelr::add_predictions(input_data_for_predict, logistic_main, type="response")
+# nb. unsure how to get CIs around the percentages directly
+
+# Therefore, alternatively...
+# df with predictions, lower and upper limits of CIs: 
+preddat <- predict(logistic_main, newdata=input_data_for_predict, type="link", se.fit=TRUE)
+# model object mod1 has a component called linkinv that is a function that inverts the link function of the GLM:
+  mutate(lower = logistic_main$family$linkinv(fit - 1.96*se.fit), 
+         point.estimate = logistic_main$family$linkinv(fit), 
+         upper = logistic_main$family$linkinv(fit + 1.96*se.fit)) 
+
+### ??? how to extract residuals
+
+# logistic_main_results_table <- broom.mixed::augment(logistic_main, interval = "confidence") %>% 
+#   select(SEX, age_3_cats, education_3_cats, race_5_cats, decade, .fitted, .resid) %>% 
+#   unique()
+# 
+# # .fitted: the predicted values, on the same scale as the data.
+# # .resid: residuals: the actual y values minus the fitted values  (???? want the level 2 residual intercept)
+
