@@ -1,10 +1,6 @@
+
 ********************************************************************************
-* Multilevel modeling for measuring interaction of effects between multiple
-* categorical variables: an illustrative application using risk factors for
-* preeclampsia
-********************************************************************************
-********************************************************************************
-cd "U:\STATA HED\linear probability model"
+cd "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\cleaned_data\"
  
 ********************************************************************************
 * (1) PREPARE THE DATA
@@ -14,26 +10,61 @@ cd "U:\STATA HED\linear probability model"
 Drop any missing data */
 
 * Load the data
-use "nhis_data.dta", clear
-drop cons
+use "drinkers_data_for_LPM.dta", clear
 format %9.3f prop
 
 rename intersections stratum
 egen pickone = tag(stratum)
 
+*generate constant for runmlwin
+gen cons=1
+
+/* Manually add any missing stratum
+* Stratum 36 
+set obs 36
+replace stratum = 36 in 36
+replace numer = 0 in 36
+replace denom = 0 in 36
+replace prop = 0 in 36
+replace parpre = 3 in 36
+replace hyper = 2 in 36
+replace multiple = 2 in 36
+replace bmi = 3 in 36*/
+
+*generate dummy variables for runmlwin to being able to calculate predicted effects:
+foreach var of varlist SEX age_3_cats education_3_cats race_5_cats decade {
+tabulate `var', generate(`var'_dum)
+} 
+
+rename SEX_dum1 male
+rename SEX_dum2 female
+rename age_3_cats_dum1 younger_adult
+rename age_3_cats_dum2 adult
+rename age_3_cats_dum3 older_adult
+rename race_5_cats_dum1 White
+rename race_5_cats_dum2 Black
+rename race_5_cats_dum3 Asian
+rename race_5_cats_dum4 Other
+rename race_5_cats_dum5 Hispanic
+rename education_3_cats_dum1 low
+rename education_3_cats_dum2 med
+rename education_3_cats_dum3 high
+rename decade_dum1 first_decade
+rename decade_dum2 second_decade
+
 * Compress and save the data
 compress
-save "datashort.dta", replace
+save "LPM_data_short.dta", replace
 
 * Make a long version of the data
-use "datashort.dta", clear
+use "LPM_data_short.dta", clear
 drop if denom==0
 expand denom // generates the same number of indiviudals (row) as the denominator. 
 bysort stratum: generate y = (_n<=numer) // assigns the value of 1 to X of the individuals (where X is the numerator)
 sort stratum y
 generate id = _n, after(stratum) // generates an individual ID for each person (row)
 compress
-save "datalong.dta", replace
+save "LPM_data_long.dta", replace
 
 ********************************************************************************
 * (2) FIT MODELS
@@ -45,7 +76,7 @@ save "datalong.dta", replace
 // Can fit MLE versions to cluster robust standard errors to assess importance
 // Weights are not allowed with the bootstrap prefix
 * Load the data
-use "datalong.dta", clear
+use "LPM_data_long.dta", clear
 set cformat %9.3f
 
 ***** Multilevel linear regression: Model 1
@@ -74,26 +105,26 @@ scalar m1J = e(N_g)[1,1] // The number of interesections included in the analysi
 estadd scalar sigma2u = m1sigma2u // add the level 2 variance (residual) to the e() object (and call it sigma2u)	0.04
 estadd scalar sigma2e = m1sigma2e  // add the level 1 variance (residual) to the e() object (and call it sigma2e)	0.20
 estadd scalar sigma2r = m1sigma2r // add the total variance to the e() object (and call it sigma2r)					0.24
-estadd scalar vpc = m1vpc //  // add the VPC to the e() object (and call it vpc) - 0.17
-estadd scalar J = m1J // Add the number of intersections to the e() object (and call it J) - 180
+estadd scalar vpc = m1vpc //  // add the VPC to the e() object (and call it vpc) 									0.17
+estadd scalar J = m1J // Add the number of intersections to the e() object (and call it J) 							180
 
 // Model predictions
 predict m1xb, xb // The predicted proportion or 'AR' across all strata 
 summarize m1xb //	0.32
 predict m1xbse, stdp // the standard error of the predicted proportion 
-summarize m1xbse//	0.02
+summarize m1xbse //	0.02
 generate m1r = y - m1xb // The raw residual rij (the difference between the individual outcome (1 or 0) and the predicted proportion across all strata
 generate m1s = m1sigma2u/(m1sigma2u + (m1sigma2e/denom)) // Calculate the shrinkage factor for each intersection.
 predict m1u, reffects // predict the random effects (intercept) for each strata 
 predict m1use, reses // and the standard error around the random effects (varies by strata)
-generate m1xbu = m1xb + m1u // *** combine the overall estimate and the strata residuals to get the total predicted proportion for each strata)
+generate m1xbu = m1xb + m1u // combine the overall estimate and the strata residuals to get the total predicted proportion for each strata)
 
 // Estimate the area under the reciever operator curve as a measure of DA, and CIs around it
 roctab y m1xb // reciever operator curve
 estadd scalar aurocxb = r(area) // add the area under the ROC area to the e() object (and call it aurocxb) 
 roctab y m1xbu // reciever operator curve
 estadd scalar aurocxbu = r(area) // add the area under the ROC area to the e() object (and call it aurocxb)		0.70
-estimates save "m1.ster", replace // save the model estimates as a .ster file so that can be used later
+estimates save "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_null.ster", replace // save the model estimates as a .ster file so that can be used later
 
 // Confidence intervals
 generate m1xblo = m1xb -1.96*m1xbse // lower CI for additive effects, ARDM (29%)
@@ -136,14 +167,12 @@ predict m2u, reffects // ARDI. predict the random intercept (interactions) for e
 predict m2use, reses // and their SEs
 generate m2xbu = m2xb + m2u // AR. The 'best' estimate, combining the additive and multiplicative effects (i.e. the total predicted proportion for each strata)
 
-// NB (for understading):  predictions would be = coefficeints of the fixed effects + m2u ? (where m2u incorporates both the individual and group variance)
-
 // AUC
 roctab y m2xb 
 estadd scalar aurocxb = r(area)
 roctab y m2xbu
 estadd scalar aurocxbu = r(area)	0.70
-estimates save "m2.ster", replace
+estimates save "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_full.ster", replace 
 
 // Confidence intervals
 generate m2xblo = m2xb - 1.96*m2xbse // lower CI for additive effects (ARDM)
@@ -154,8 +183,8 @@ generate m2xbulo = m2xbu -1.96*sqrt(m2xbse^2 + m2use^2) // overall estimate lowe
 generate m2xbuhi = m2xbu +1.96*sqrt(m2xbse^2 + m2use^2) // overall estimate upper CI (using combined SE estimate) (AR)
 generate m2usig = (m2uhi<0 | m2ulo>0) if m2uhi<. & m2ulo<. // identify which random effects (interactions) are significant
 
-// Predicting the proportion due to interaction effects?
-regress m2r i.stratum // model to predicct the difference between the observed and predicted values, based on strata (? similar to the mean difference?)
+// Predicting the proportion due to interaction effects
+regress m2r i.stratum // model to predict the difference between the observed and predicted values, based on strata
 predict m2a, xb // the predicted difference per strata 
 predict m2ase, stdp // SE
 generate m2xba = m2xb + m2a //the predicted difference + the standard estimate (nb. almost identifcal to m2xbu)
@@ -163,14 +192,14 @@ generate m2xba = m2xb + m2a //the predicted difference + the standard estimate (
 * Format variables
 * Compress and save the data
 compress
-save "resultslong.dta", replace
+save "LPM_estimates_long.dta", replace
 * Save a short version of the data
-use "resultslong.dta", clear
+use "LPM_estimates_long.dta", clear
 drop id y m1r m2r
 duplicates drop
 isid stratum
 compress
-save "resultsshort.dta", replace
+save "LPM_estimates_short.dta", replace
 
 ********************************************************************************
 * (3) ANALYSE RESULTS
@@ -179,89 +208,73 @@ save "resultsshort.dta", replace
 * STATISTICS PRESENTED IN THE ABSTRACT
 *-------------------------------------------------------------------------------
 * Number of strata
-use "datashort.dta", clear
+use "LPM_data_short.dta", clear
 count
-// 180
+// 175
 * Number of individuals
-use "datalong.dta", clear
+use "LPM_data_long.dta", clear
 count
-// 291,895
+// 336,673 NB. As some groups have zero HEDs this is lower than the number of drinkers
 
 * Observed risk of HED
-use "datashort.dta", clear
+use "LPM_data_short.dta", clear
 summarize prop [fweight = denom]
 // 0.34
 
 * Range in predicted proportion of HEDs across the strata
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 replace prop = 100*prop
 replace m1xbu = 100* m1xbu // null model predicted proportions
 replace m2xbu = 100* m2xbu // full model predicted proportions
-tabstat prop m1xbu m2xbu, stat(mean min p10 p25 p50 p75 p90 max) format(%2.0f) // comparing observed and predicted proportions   ??????? negative values possible for m2xbu
+tabstat prop m1xbu m2xbu, stat(mean min p10 p25 p50 p75 p90 max) format(%2.0f) // comparing observed and predicted proportions. Note negative values possible for m2xbu, suggesting logit model needed
 
 * Model 1 AUROC and VPC
-estimates use "m1.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_null.ster"
 estimates store m1
-estimates use "m2.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_full.ster"
 estimates store m2
 esttab m1 m2, wide b(%9.3f) t se order(_cons) stats(sigma2u sigma2e sigma2r vpc aurocx b aurocxbu J N) 
 // VPC 17.1% in null model and 1.9% in full model
 // AUC equal in both (0.70)
 
 * Proportion of the variation attributable to interaction effects
-estimates use "m1.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_null.ster"
 scalar m1sigma2u = e(sigma2u)
-estimates use "m2.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_full.ster"
 scalar m2sigma2u = e(sigma2u)
-display "Percentage of varation between strata attributable to interaction effects = " %2.0f 100*m2sigma2u/m1sigma2u "%" // 9%
+display "Percentage of varation between strata attributable to interaction effects = " %2.0f 100*m2sigma2u/m1sigma2u "%" // 10%
 
 * Interactions
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 tabulate m2u m2usig // table showing residual and if significant
-// 54 strata (30%) with significant interactions.
+// 57 strata with significant interactions.
 
 *-------------------------------------------------------------------------------
 * STATISTICS PRESENTED IN THE METHODS SECTION
 *-------------------------------------------------------------------------------
 * Number of individuals
-use "datalong.dta", clear
-count
-// 291.895
-* Table 1
-use "resultsshort.dta", clear
-/*label define parpre ///
-1 "Nulliparous" ///
-2 "Parous + no pre." ///
-3 "Parous + pre." ///
-, modify
-label values parpre parpre
-label define bmi ///
-1 "Normal" ///
-2 "Over." ///
-3 "Obese" ///
-, modify 
-label values bmi bmi */
-replace prop = 100*prop
-replace m1xbu = 100*m1xbu
-format %4.2f prop m1xbu
-list stratum age_3_cats SEX race_5_cats education_3_cats decade denom numer prop m1xbu, sepby(race) noobs
-
-* Number of individuals
-use "datalong.dta", clear
-count
+use "LPM_data_long.dta", clear
+count // 336,673
 * Number of HEDs
 egen total = total(y)
 summarize total
 * Percentage of HEDs
 summarize y
-display %2.1f 100*r(mean) "%"	33.8%
+display %2.1f 100*r(mean) "%"	// 33.9%* Table 1
+
+* Generate full table of observed proportions versus estimated proportions
+use "LPM_estimates_short.dta", clear
+replace prop = 100*prop
+replace m1xbu = 100*m1xbu
+format %4.2f prop m1xbu
+list stratum age_3_cats SEX race_5_cats education_3_cats decade denom numer prop m1xbu, sepby(race) noobs
 
 *-------------------------------------------------------------------------------
 * STATISTICS PRESENTED IN THE RESULTS SECTION
 *-------------------------------------------------------------------------------
 
 * Observed risk in median stratum
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 count
 replace prop = 100*prop
 replace m1xbu = 100*m1xbu
@@ -270,10 +283,10 @@ format %4.2f prop m1xbu m2xbu
 tabstat prop m1xbu m2xbu, stat(mean min p10 p25 p50 p75 p90 max) format(%2.0f)
 * Smallest strata
 sort denom
-list stratum denom // smalles stratum (with N<20) are 161, 71, 67. 155, 65
+list stratum denom
 
-* Figure 1 - Absolute risk map. Stratum-specific predicted absolute risks of preeclampsia with 95% confidence intervals (circle) obtained from model 1 of the multicategorical multilevel modelling of preeclampsia risk.
-use "resultsshort.dta", clear
+* Figure 1 - Absolute risk map. Stratum-specific predicted absolute risks of HED with 95% confidence intervals (circle) obtained from model 1 
+use "LPM_estimates_short.dta", clear
 replace prop = 100*prop
 replace m1xbu = 100*m1xbu
 replace m1xbuhi = 100*m1xbuhi
@@ -292,26 +305,28 @@ note("") ///
 legend(order(1 "Observed percentage" 2 "Predicted percentage")) ///
 scheme(s1mono) ///
 xsize(25) ysize(6)
-graph export "figure1.png", replace width(1000)
+graph export "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\plots\LPM_observed_vs_predicted_HEDs.png", replace width(1000)
 
 * Table 2 - Compares the estimates and 95% CCI for model 1 and 2, including VPC, PCV and AUC
-estimates use "m1.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_null.ster"
 estimates store m1
-estimates use "m2.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_full.ster"
 estimates store m2
 esttab m1 m2, wide b(%9.2f) ci order(_cons) stats(sigma2u sigma2e sigma2r vpc auroc J N) // displays raw point estimates (co-efficients) and confidence intervals.  The fixed effects are analogous to standard regression coefficients and are estimated directly.
 esttab m1 m2, wide b(%9.3f) ci order(_cons) stats(sigma2u sigma2e sigma2r vpc auroc J N)
 * PCV
-estimates use "m1.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_null.ster"
 scalar m1sigma2u = e(sigma2u)
-estimates use "m2.ster"
+estimates use "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\models\LPM_full.ster"
 scalar m2sigma2u = e(sigma2u)
-display "PCV = " %3.1f 100*(-(m2sigma2u - m1sigma2u)/m1sigma2u) "%" // The degree to which the between-stratum variance reduces as we move from model 1 to 2 can be expressed by the PCV. 
-// The PCV is interpreted as the proportion of the outcome variation between strata, which is attributable to the main effects of the covariates.	90.6%
-display "1 - PCV = " %3.1f 100*(1 - -(m2sigma2u - m1sigma2u)/m1sigma2u) "%" // 1 − PCV measures the proportion of outcome variation between strata attributable to the interaction of effects.	9.4%
+display "PCV = " %3.1f 100*(-(m2sigma2u - m1sigma2u)/m1sigma2u) "%" 
+// The degree to which the between-stratum variance reduces as we move from model 1 to 2 can be expressed by the PCV. 
+// The PCV is interpreted as the proportion of the outcome variation between strata, which is attributable to the main effects of the covariates.	90.0%
+display "1 - PCV = " %3.1f 100*(1 - -(m2sigma2u - m1sigma2u)/m1sigma2u) "%" 
+// 1 − PCV measures the proportion of outcome variation between strata attributable to the interaction of effects.	10.0%
 
 * Table 3 - Overall estimates table (Values are on the additive percentage point scale obtained from model 2)
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 foreach var of varlist m2xbu m2xbulo m2xbuhi m2xb m2xblo m2xbhi m2u m2ulo m2uhi {
 replace `var' = 100*`var'
 format %5.2f `var'
@@ -319,7 +334,7 @@ format %5.2f `var'
 list stratum m2xbu m2xbulo m2xbuhi m2xb m2xblo m2xbhi m2u m2ulo m2uhi
 
 * Figure 2
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 replace prop = 100*prop
 replace m2xb = 100*m2xb
 replace m2xbu = 100*m2xbu
@@ -337,23 +352,23 @@ note("") ///
 legend(order(1 "Main effects" 2 "Main and interaction effects")) ///
 scheme(s1mono) ///
 xsize(25) ysize(6)
-graph export "figure2.png", replace width(1000)
+graph export "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\plots\LPM_HEDs_additive_&multiplicative_effects.png", replace width(1000)
 
 *-------------------------------------------------------------------------------
 * STATISTICS PRESENTED IN THE DISCUSSION SECTION
 *-------------------------------------------------------------------------------
 * Intermediate models
-// The VPC in model 1 indicates that about 30% of individual variation to suffer from PE was at the stratum level. The PCV in model 2 shows that 90.6% of the initial between-stratum differences were due to the main effects of the variables defining the strata. The remaining 9.4% was therefore due to interaction effects...
+// The VPC in model 1 indicates that about 30% of individual variation to suffer from PE was at the stratum level. The PCV in model 2 shows that 90% of the initial between-stratum differences were due to the main effects of the variables defining the strata. The remaining 10% was therefore due to interaction effects...
 
 // Undertake below as necessary
-/* use "datalong.dta", clear
+/* use "LPM_data_long.dta", clear
 mixed y parpre2 parpre3 || stratum:, reml
 scalar m2Asigma2u = exp(_b[lns1_1_1:_cons])^2
 estimates use "m1.ster"
 scalar m1sigma2u = e(sigma2u)
 display "PCV = " %3.1f 100*(-(m2Asigma2u - m1sigma2u)/m1sigma2u) "%" // Parity combined with previous PE (parapre) explained 24.8% of the between-stratum variability 
 
-use "datalong.dta", clear
+use "LPM_data_long.dta", clear
 mixed y hyper2|| stratum:, reml 
 scalar m2Asigma2u_hyper = exp(_b[lns1_1_1:_cons])^2
 estimates use "m1.ster"
@@ -365,7 +380,7 @@ mixed y multiple2|| stratum:, reml // multiple pregnancy explained 7.2%
 mixed y bmi2 bmi3|| stratum:, reml // BMI did not explain the between-stratum variation*/
 
 * Identify clusters which exhibit lots or little shrinkage
-use "resultsshort.dta", clear
+use "LPM_estimates_short.dta", clear
 replace m1xbu = 100*m1xbu
 replace prop = 100*prop
 format %3.0f m1xbu prop
@@ -392,9 +407,4 @@ legend(order(7 "Stratum ID" 8 "Stratum size" 9 "Shrinkage factor") col(1) positi
 scheme(s1mono) ///
 aspectratio(1) ///
 xsize(40) ysize(40)
-
-* MLE-robustness check
-use "datalong.dta", clear
-mixed y female younger_adult older_adult Black Asian Other Hispanic med high second_decade || stratum:, mle vce(robust)
-
-********************************************************************************
+graph export "C:\Users\cmp21seb\Documents\SIMAH\SIMAH_workplace\nhis\intersectionality\plots\LPM_HEDs_shrinkage.png", replace width(1000)

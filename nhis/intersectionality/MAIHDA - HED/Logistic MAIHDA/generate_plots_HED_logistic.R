@@ -17,12 +17,9 @@ options(scipen=10)
 # Set default theme for plots:
 theme_set(theme_bw(base_size = 12))
 
+plot_data <- read_rds("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/Estimated_probs_HED.RDS")
 
-## ----------------------------------------------------------------------------------------------
-plot_data <- read_rds("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/HED/Results_table_HED_probability.RDS")
-
-
-## ----------------------------------------------------------------------------------------------
+# Generate columns as want them named & ordered in the graph
 plot_data <- plot_data %>% mutate(
   race = case_when(
     race_5_cats == "Non-Hispanic Asian" ~ "Asian",
@@ -36,37 +33,37 @@ plot_data <- plot_data %>% mutate(
     education_3_cats == "4+ years college" ~ "high edu."),
   education=factor(education,levels=c("low edu.", "medium edu.", "high edu.")))
 
-
-## ----------------------------------------------------------------------------------------------
+# Plots of residuals - separate plots for men and women
 male_residuals_HED <- plot_data %>%
   filter(SEX=="Male") %>%
-  ggplot(aes(x=age_3_cats, y=residuals, colour=decade)) +
+  ggplot(aes(x=decade, y=residuals, colour=education)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = residuals - (1.96*residuals_se),
                     ymax = residuals + (1.96*residuals_se)),
                 position=position_dodge(width=0.8)) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
+  facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
   geom_hline(yintercept=0, linetype="dashed", color = "red") +
   ggtitle("Males: Residuals")
 male_residuals_HED
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/male_residuals_HED.png", dpi=300, width=33, height=19, units="cm")
 
 female_residuals_HED <- plot_data %>%
   filter(SEX=="Female") %>%
-  ggplot(aes(x=age_3_cats, y=residuals, colour=decade)) +
+  ggplot(aes(x=decade, y=residuals, colour=education)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = residuals - (1.96*residuals_se),
                     ymax = residuals + (1.96*residuals_se)),
                 position=position_dodge(width=0.8)) +
-  facet_grid(cols=vars(education),rows=vars(race)) +
+  facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
   geom_hline(yintercept=0, linetype="dashed", color = "red") +
   ggtitle("Females: Residuals")
 female_residuals_HED
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/female_residuals_HED.png", dpi=300, width=33, height=19, units="cm")
 
-
-## ----------------------------------------------------------------------------------------------
-plot_data %>% 
+# Count number of intersections with CIs that don't include 0
+residuals_table <- plot_data %>% 
   mutate(
     ymin = residuals - (1.96*residuals_se),
     ymax = residuals + (1.96*residuals_se),
@@ -75,37 +72,38 @@ plot_data %>%
                           ymin < 0 & ymax > 0 ~ "expected")
   ) %>%
   filter(sig_resid!="expected") %>%
-  select(intersections, SEX, decade, race, age_3_cats, education, ymin, ymax, sig_resid) 
+  dplyr::select(intersections, SEX, decade, race, age_3_cats, education, ymin, ymax, sig_resid) 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/residuals_HEDs.png", dpi=300, width=33, height=19, units="cm")
 
-
-## ----------------------------------------------------------------------------------------------
-# Plot males
+# Plots of predicted % of HEDs - seperate for males and females
 male_HED_probability <- plot_data %>%
   filter(SEX=="Male") %>%
-  ggplot(aes(x=decade, y=total_probability, colour=race)) +
+  ggplot(aes(x=decade, y=total_probability, colour=education)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = CI_lower,
                     ymax = CI_upper),
                     position=position_dodge(width=0.8)) +
   ylim(0, 100) +
-  facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
+  facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
   ggtitle("Men")+
   labs(y= "Estimated percentage of HEDs")
 male_HED_probability
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/estimated_HEDs_males.png", dpi=300, width=33, height=19, units="cm")
 
 # Plot females
 female_HED_probability <- plot_data %>%
   filter(SEX=="Female") %>%
-  ggplot(aes(x=decade, y=total_probability, colour=race)) +
+  ggplot(aes(x=decade, y=total_probability, colour=education)) +
   geom_point(position=position_dodge(width=0.8)) +
   geom_errorbar(aes(ymin = CI_lower,
                     ymax = CI_upper),
                     position=position_dodge(width=0.8)) +
   ylim(0, 100) +
-  facet_grid(cols=vars(education),rows=vars(age_3_cats)) +
+  facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
   theme(axis.title.x = element_blank(), legend.position = "bottom") +
   ggtitle("Women")+
   labs(y= "Estimated percentage of HEDs")
 female_HED_probability
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/estimated_HEDs_females.png", dpi=300, width=33, height=19, units="cm")
 
