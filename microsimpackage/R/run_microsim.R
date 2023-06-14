@@ -80,9 +80,20 @@ if(updatingalcohol==1 & y>=2000){
   # allocate every year even when transitions are only every two years?
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
 
+  basepop <- update_former_drinker(basepop)
+  print(summary(basepop$formerdrinker))
+  basepop$microsim.init.alc.gpd <- basepop$newgpd
+  basepop$newgpd <- NULL
+
+  if(policy==1 & year_policy>maxyear & y==minyear){
+    print("policy is not within model time frame")
+  }
+
   if(policy==1 & y ==year_policy){
   basepop$microsim.init.alc.gpd <- basepop$microsim.init.alc.gpd - (basepop$microsim.init.alc.gpd*percentreduction)
+  basepop <- basepop(update_alcohol_cat)
   }
+
 }
 
 # simulate mortality from specific diseases

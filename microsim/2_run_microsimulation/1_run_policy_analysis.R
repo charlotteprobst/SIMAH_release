@@ -29,19 +29,12 @@ alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.R
 
 output_type <- "mortality"
 
-# random number seed - sample random number 
-seed <- as.numeric(sample(1:100, 1))
-
-# sample number - set to 1 when just running 1 simulation 
-samplenum <- 1
-
 # set lhs to the first element of the lhs list- for testing 
+# set lhs to the best calibrated settings
 lhs <- lhs[[1]]
 
-# set minyear and maxyear 
-minyear <- 2000
-maxyear <- 2010
-
+for(i in 1:length(percentreductions)){
+percentreduction <- percentreductions[i]
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
                        death_counts,
@@ -49,9 +42,15 @@ Output <- run_microsim(1,1,basepop,brfss,
                        migration_counts,
                        updatingalcohol, alcohol_transitions,
                        base_counts, diseases, lhs, liverinteraction,
-                       policy, percentreduction, year_policy, inflation_factor,
+                       policy, i, year_policy, inflation_factor,
                        update_base_rate,
-                       2000, 2005, output_type)
+                       2000, 2002, output_type)
+# save each output as something_i to distinguish different effects 
+# save the percent reduction associated with each model run 
+}
+
+# save it for further analysis 
+
 
 alcohol_type <- "categorical"
 

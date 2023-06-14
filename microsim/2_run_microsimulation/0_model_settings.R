@@ -52,10 +52,13 @@ liverinteraction <- 0
 policy <- 0
 
 # year to introduce policy
-year_policy <- 2010
+# depends on policy to be implemented
+# 2014, 2015, 2016 (no policy change happened in SIMAH states)
+year_policy <- 2015
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
-percentreduction <- 0
+# upper and lower and PE for policy estimate 
+percentreductions <- c(0.09, 0.10, 0.11)
 
 ####################EDIT ONLY ABOVE HERE ##################################################
 
