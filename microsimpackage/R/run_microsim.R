@@ -25,8 +25,7 @@ lhs <- as.numeric(lhs)
 names(lhs) <- names
 for(y in minyear:maxyear){
 print(y)
-# save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+
 # add and remove migrants
 if(y>=2001){
   basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
@@ -81,7 +80,7 @@ if(updatingalcohol==1 & y>=2000){
   basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
 
   basepop <- update_former_drinker(basepop)
-  print(summary(basepop$formerdrinker))
+  # print(summary(basepop$formerdrinker))
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
 
@@ -90,11 +89,15 @@ if(updatingalcohol==1 & y>=2000){
   }
 
   if(policy==1 & y ==year_policy){
+  # apply policy effect according to percent reduction and then update alcohol categories
   basepop$microsim.init.alc.gpd <- basepop$microsim.init.alc.gpd - (basepop$microsim.init.alc.gpd*percentreduction)
-  basepop <- basepop(update_alcohol_cat)
+  basepop <- update_alcohol_cat(basepop)
   }
 
 }
+
+  # save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 # simulate mortality from specific diseases
 if("HLVDC" %in% diseases==TRUE){
@@ -229,7 +232,7 @@ if(output=="mortality"){
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   # add former drinkers and lifetime abstainers to this summary TODO
-  SummaryAlc <- list(CatSummary)
+  Summary <- list(CatSummary, MeanSummary)
 }
 return(Summary)
 }

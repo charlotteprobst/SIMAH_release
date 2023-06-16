@@ -13,12 +13,14 @@ update_base_rate <- function(rates, lhs, y){
     multiplier_women <- as.numeric(lhs["BASERATEFACTOR_WOMEN"])
     data <- data %>%
       mutate(sex = substr(cat, 1,1),
-        !!paste0("rate_", i):= ifelse(update==1 & sex=="m",
+             educ = substr(cat,7,10),
+        !!paste0("rate_", i):= ifelse(update==1 & sex=="m" & educ=="LEHS"|educ=="Some",
                                       !!as.name(paste0("rate_",i)) + (!!as.name(paste0("rate_",i))*multiplier_men),
-                                      ifelse(update==1 & sex=="f",
+                                      ifelse(update==1 & sex=="f" & educ=="LEHS" | educ=="Some",
                                              !!as.name(paste0("rate_",i)) + (!!as.name(paste0("rate_",i))*multiplier_women),
-                                      !!as.name(paste0("rate_", i))))) %>%
-      dplyr::select(-sex)
+                                      !!as.name(paste0("rate_", i)))),
+        ) %>%
+      dplyr::select(-c(sex,educ))
 
   }
   return(data)

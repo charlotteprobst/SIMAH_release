@@ -39,7 +39,7 @@ diseases <- c("LVDC", "AUD", "IJ")
 model <- "SIMAH"
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
-output_type <- "mortality"
+output_type <- "alcohol"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
@@ -58,7 +58,10 @@ year_policy <- 2015
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
 # upper and lower and PE for policy estimate 
-percentreductions <- c(0.09, 0.10, 0.11)
+# Kilian et al. 2023: Alcohol control policy review	
+# Relative change in alcohol use for 100% tax increase: 
+# -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
+percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
 
 ####################EDIT ONLY ABOVE HERE ##################################################
 
@@ -112,11 +115,16 @@ rm(list)
 
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
-numsamples <- 15
+numsamples <- 500
 
 # whether to just use the point estimate - for now this is set to 1
 PE <- 0
 lhs <- sample_lhs(numsamples, PE)
+
+for(i in 1:length(lhs)){
+  lhs[[i]]$samplenum <- i
+}
+write.csv(do.call(rbind,lhs), "SIMAH_workplace/microsim/2_output_data/lhsSamples.csv")
 
 update_base_rate <- 1
 
