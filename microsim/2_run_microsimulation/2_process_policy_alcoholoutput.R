@@ -55,7 +55,13 @@ MeanAlcohol <- outputs %>% group_by(samplenum, year, microsim.init.sex, microsim
   left_join(., tojoin) %>% 
   filter(samplenum<=4) %>% 
   mutate(percentreduction = paste0(percentreduction*100, "%"),
-         percentreduction = factor(percentreduction, levels=c("0%","7.1%","10.8%","14.5%")))
+         percentreduction = factor(percentreduction, levels=c("0%","7.1%","10.8%","14.5%"))) %>% 
+  rename(sex=microsim.init.sex, education=microsim.init.education)
+
+
+write.csv(MeanAlcohol, "SIMAH_workplace/microsim/2_output_data/policy_experiments/processed_alcoholchange_data.csv",
+          row.names=F)
+
 
 ggplot(data=MeanAlcohol, aes(x=year, y=mean, colour=as.factor(percentreduction))) + 
   geom_line(linewidth=1) +
