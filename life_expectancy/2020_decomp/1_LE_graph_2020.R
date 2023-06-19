@@ -19,7 +19,7 @@ LE_CPS_detail <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decom
 
 # Graph results by sex and SES or by sex, ses, and race
 k.run <- "detail" # "ses" or "detail"
-k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
 # for race and SES graphs
 if(k.run == "detail") {
@@ -55,7 +55,7 @@ color.vec <- c("#90be6d", "#f9c74f", "#f94144")
 
 
 # Plot on life expectancy by SES over time
-le_graph <- ggplot(data = dle_results, aes(x = Year, y = Life_expectancy, colour = SES)) + 
+le_graph <- ggplot(data = dle_results[dle_results$Race != "Other",], aes(x = Year, y = Life_expectancy, colour = SES)) + 
    facet_grid(rows = vars(Sex), cols = vars(Race)) +
    ylab("Life expectancy at age 18") +
    theme_light()+
@@ -78,7 +78,6 @@ le_graph
 ggsave(paste0("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/LE_", k.run, k.pop_type, ".jpg"), 
        dpi=600, width=20, height=15, units="cm")
 
-
 ## Display results for weights
 dle_results_weight <- dle_results_weight %>% 
    select(sex, edclass,	race, end_year, LE2, weight) %>% 
@@ -88,7 +87,8 @@ names(dle_results_weight) <- c("Sex", "SES", "Race", "Year",
 ggplot(data = dle_results_weight, 
        aes(x = SES, y = Life_expectancy, colour = SES, group = SES)) + 
    geom_boxplot(aes(fill=SES)) +
-   facet_grid(rows = vars(Sex), cols = vars(Race), scales = "free")
+   facet_grid(rows = vars(Sex), cols = vars(Race)) +
+   scale_y_continuous(breaks=seq(65,100, 5))
 
 dle_ranges <- dle_results_weight %>% group_by(Sex, SES, Race, Year) %>%
    summarise(low = min(Life_expectancy),
@@ -122,12 +122,3 @@ write.csv(LE_detail_combined,
           paste0("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/", 
                  "LifeExpectancy_combined_", k.run, "_1920.csv"), 
           row.names = F)   
-
-
-
-le_graph + geom_linerange(data = dle_results, aes(ymin=low,ymax=high), 
-                          color="red", size = 2) 
-
-ggsave("SIMAH_workplace/life_expectancy/3_graphs/2020_decomp/1_LE_by_sex_SES_race_2020_uncertainty.jpg", dpi=600, width=20, height=13, units="cm")
-
-

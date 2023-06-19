@@ -170,9 +170,9 @@ save Mort_`i'_edit.dta, replace
 
 }
 
-append using Mort_2005_edit Mort_2006_edit Mort_2007_edit Mort_2008_edit Mort_2009_edit Mort_2010_edit Mort_2011_edit Mort_2012_edit Mort_2013_edit Mort_2014_edit Mort_2015_edit Mort_2016_edit Mort_2017_edit Mort_2018_edit Mort_2019_edit Mort_2020_edit
+append using Mort_2005_edit Mort_2006_edit Mort_2007_edit Mort_2008_edit Mort_2009_edit Mort_2010_edit Mort_2011_edit Mort_2012_edit Mort_2013_edit Mort_2014_edit Mort_2015_edit Mort_2016_edit Mort_2017_edit Mort_2018_edit Mort_2019_edit
 
-save Mort_0521_edit, replace
+save Mort_0520_edit, replace
 
 
 append using Mort_0004_edit.dta
@@ -208,7 +208,7 @@ replace edclass = 99 if edclass==.
 label def edlab 1 "LEHS" 2 "SomeC" 3 "4+yrs" 99 "missing"
 label val edclass edlab
 
-save "${dir}/mortality/3_out data/mort_0021_complete.dta", replace
+save "${dir}/mortality/3_out data/mort_0020_complete.dta", replace
 
 /*
 local datafiles: dir "`workdir'" files "*.dta"
@@ -218,7 +218,7 @@ foreach datafile of local datafiles {
 }
 */
 
-forval i = 2000(1)2021 {
+forval i = 2000(1)2020 {
 	erase Mort_`i'_edit.dta
 	erase Mort`i'.dta
 
