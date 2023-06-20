@@ -34,7 +34,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 # alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
 alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.RDS"))
 
-output_type <- "alcohol"
+output_type <- "mortality"
 
 # set lhs to the first element of the lhs list- for testing 
 # set lhs to the best calibrated settings
@@ -42,10 +42,16 @@ lhs <- read.csv("SIMAH_workplace/microsim/2_output_data/SIMAH_calibration/best_l
 
 registerDoParallel(6)
 
+seeds <- 1:10
+
+samplestorun <- expand.grid(percentreduction=percentreductions,
+                            replication = seeds)
+
 Output <- foreach(i=1:length(percentreductions), .inorder=TRUE, .combine=rbind) %dopar% {
-  percentreduction <- percentreductions[i]
+  percentreduction <- samplestorun$percentreduction[i]
+  seed <- samplestorun$replication[i]
   year_policy <- 2015
-  run_microsim(1,i,basepop,brfss,
+  run_microsim(seed,i,basepop,brfss,
                death_counts,
                updatingeducation, education_setup,
                migration_counts,
