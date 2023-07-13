@@ -19,7 +19,7 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
-#ONLY OBJECTIVE ASCERTAIMENT
+###sensitivity analysis 1: ONLY OBJECTIVE ASCERTAIMENT
 
 ####MALE MODELS
 
@@ -58,6 +58,10 @@ predict(linear_male, 100, transf=exp)
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
+
+#for sensitivity analysis 4: no NHIS
+
+
 
 ##QUADRATIC REGRESSION
 
@@ -261,3 +265,61 @@ fitstats(linear_female2, quad_female2, rcs_female2)
 
 predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp)
 
+###sensitivity 4: excluding NHIS data
+
+####MALE MODELS
+
+male4 <- dataset %>%
+  filter(analysis_id==0 & dose != 0.00 & sex ==1 & cohort_id != 57)
+
+#erase extreme value - Burke 2007
+male4 <- male4[-c(15),]
+
+dim(table(male4$cohort_id))
+
+##LINEAR REGRESSION
+
+linear_male4 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male4,
+                       random = ~ 1 | cohort_id/line_id, method = "REML")
+summary(linear_male4)
+
+#graph
+ms <- seq(0,150,length=150)
+pred_lin_male4 <- predict(linear_male4, cbind(ms))
+regplot(linear_male4, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade=FALSE,
+        ylim = c(0.4, 2), pred = pred_lin_male4, xvals = ms)
+lines(exp(pred_lin_male$pred), lwd = "4", col = "blue")
+lines(exp(pred_lin_male$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_lin_male$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Sensitivity Analysis 4", "Main Analysis"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue", "red"))
+title("a) Men", adj = 0, line = 2)
+
+####FEMALE MODELS
+
+female4 <- dataset %>%
+  filter(analysis_id==0 & dose != 0.00 & sex ==0 & cohort_id != 57)
+
+#erase extreme value - Burke 2007
+female4 <- female4[-c(12),]
+dim(table(female4$results_id))
+
+##RESTRICTED CUBIC SPLINE
+
+knotsf4 <- quantile(female4$dose, c(.05, .35, .65, .95))
+
+rcs_female4 <- rma.mv(yi= lnor ~ rcs(dose, knotsf4)+0, V=se^2, data=female4, 
+                      random = ~ 1 | cohort_id/line_id, method = "REML")
+summary(rcs_female4)
+
+pred_rcs_female4 <- predict(rcs_female4, newmods=rcspline.eval(fs, knotsf4, inclx=TRUE))
+regplot(rcs_female4, mod="rcs(dose, knotsf4)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade=FALSE,
+        ylim = c(0, 2), pred = pred_rcs_female4, xvals = fs)
+lines(exp(pred_rcs_female$pred), lwd = "4", col = "red")
+lines(exp(pred_rcs_female$ci.lb), lwd = "3", lty = "dotted", col = "red")
+lines(exp(pred_rcs_female$ci.ub), lwd = "3", lty = "dotted", col = "red")
+legend("topleft",inset =0.1, legend=c("Sensitivity Analysis 4", "Main Analysis"), lty=1:1, lwd=3:3, cex=1, col=c("black", "red", "red"))
+title("b) Women", adj = 0, line = 2)
+
+predict(rcs_female4, newmods= rcspline.eval(14, knotsf4, inclx=TRUE), transf=exp)
