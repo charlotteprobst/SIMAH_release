@@ -17,7 +17,7 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
-                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 ###sensitivity analysis 1: ONLY OBJECTIVE ASCERTAIMENT
 
@@ -270,10 +270,7 @@ predict(rcs_female2, newmods= rcspline.eval(17, knotsf2, inclx=TRUE), transf=exp
 ####MALE MODELS
 
 male4 <- dataset %>%
-  filter(analysis_id==0 & dose != 0.00 & sex ==1 & cohort_id != 57)
-
-#erase extreme value - Burke 2007
-male4 <- male4[-c(15),]
+  filter(analysis_id==0 & dose != 0.00 & sex ==1 & mortality != 1)
 
 dim(table(male4$cohort_id))
 
@@ -282,6 +279,8 @@ dim(table(male4$cohort_id))
 linear_male4 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male4,
                        random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear_male4)
+
+predict(linear_male4, 120, transf=exp)
 
 #graph
 ms <- seq(0,150,length=150)
@@ -298,11 +297,7 @@ title("a) Men", adj = 0, line = 2)
 ####FEMALE MODELS
 
 female4 <- dataset %>%
-  filter(analysis_id==0 & dose != 0.00 & sex ==0 & cohort_id != 57)
-
-#erase extreme value - Burke 2007
-female4 <- female4[-c(12),]
-dim(table(female4$results_id))
+  filter(analysis_id==0 & dose != 0.00 & sex ==0 & mortality != 1)
 
 ##RESTRICTED CUBIC SPLINE
 
@@ -322,4 +317,4 @@ lines(exp(pred_rcs_female$ci.ub), lwd = "3", lty = "dotted", col = "red")
 legend("topleft",inset =0.1, legend=c("Sensitivity Analysis 4", "Main Analysis"), lty=1:1, lwd=3:3, cex=1, col=c("black", "red", "red"))
 title("b) Women", adj = 0, line = 2)
 
-predict(rcs_female4, newmods= rcspline.eval(14, knotsf4, inclx=TRUE), transf=exp)
+predict(rcs_female4, newmods= rcspline.eval(16, knotsf4, inclx=TRUE), transf=exp)
