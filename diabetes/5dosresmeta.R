@@ -11,7 +11,7 @@ dataset_dos <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xl
 ####MALE
 
 maled <- dataset_dos %>%
-  filter(sex ==1)
+  filter(sex ==1 & id != 112)
 maled <- maled[-c(19),]
 #first_author != "Okamura" & first_author != "Park"
 #LINEAR DOSE-RESPONSE
