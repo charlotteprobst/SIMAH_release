@@ -17,7 +17,7 @@ dataset <- read_excel("C:/Users/laura/Documents/CAMH/DIABETES/analysis/SIMAH_wor
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric",
-                                    "numeric", "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 ####US SPECIFIC - MALE MODELS
 
@@ -122,7 +122,9 @@ regplot(quad_female_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Rela
 ##RESTRICTED CUBIC SPLINE
 
 knotsfus <- quantile(female_us$dose, c(.10, .50, .90))
+#.10, .50, .90
 #.05, .35, .65, .95
+
 rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, digits = 8, 
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female_us)
@@ -205,3 +207,7 @@ DIST_2		<- function(alc_1){ pmax((alc_1 - knots_T[1])/kd, 0)^3 + ((knots_T[2] - 
 ( pmax((x - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((x - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((x - 14)/11.88053, 0)^3))  / (43.74 - 14)  )
 
 x <- 20
+
+#function = beta1*x + beta2*DIST_2[x]
+
+30*-0.02561281 + 0.04322303*( pmax((30 - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((30 - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((30 - 14)/11.88053, 0)^3))  / (43.74 - 14)  )
