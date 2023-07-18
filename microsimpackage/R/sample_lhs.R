@@ -33,6 +33,24 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
         c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
         c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
+      
+      DM <- list(
+        c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
+        c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
+        c("qnorm", 0.04322303 , 0.01065573), #DM2 WOMEN SD 0.01065573
+        c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
+        c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
+      
+      ISTR <- list( #formula NOT correct
+        c("qnorm", 0.6898937, 0.1141980), #ISTR MEN SD 0.1141980 
+        c("qnorm", 1.466406, 0.3544172), #ISTR WOMEN SD 0.3544172
+        c("qnorm", 0.30748, 0.20)), #ISTR FORMER DRINKERS SD 0.20
+
+      HYPHD <- list(
+        c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
+        c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
+        c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
+      
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
         c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
@@ -40,14 +58,17 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "ALL")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "ISTR", "HYPHD", "ALL")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
+  names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
+  names(prior$ISTR) <- c("B_ISTR_MEN", "B_ISTR_WOMEN","ISTR_FORMERDRINKER")
+  names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
-
+  
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
   prior <- unlist(prior, recursive=FALSE) # convert the lists of priors into vectors
   names(prior) <- gsub("^.*\\.","", names(prior)) # remove duplicated disease names (generated during the listing and unlisting process)
