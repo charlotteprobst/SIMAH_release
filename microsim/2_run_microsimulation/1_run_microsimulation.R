@@ -50,7 +50,7 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor,diseases)
 }
 summary[[2]]
 write.csv(summary[[1]], "SIMAH_workplace/microsim/2_output_data/AlcCats_newTP-calibratedmean.csv")
