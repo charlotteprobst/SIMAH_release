@@ -118,7 +118,7 @@ rm(list)
 numsamples <- 500
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 0
+PE <- 1
 lhs <- sample_lhs(numsamples, PE)
 
 for(i in 1:length(lhs)){
