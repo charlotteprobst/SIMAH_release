@@ -41,6 +41,15 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
         c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
       
+      IHD <- list(
+        c("qnorm", 0, 0), #IHD1 SD 0.00
+        c("qnorm", -0.051293294, 0.122015927), #IHD2 SD 0.122015927
+        c("qnorm", 0.039220713, 0.128415981), #IHD3 SD 0.128415981
+        c("qnorm", 0.067658648, 0.131539114), #IHD4 SD 0.131539114
+        c("qnorm", 0.139761942, 0.145289088), #IHD5 SD 0.145289088
+        c("qnorm", 0.371563556, 0.145289088), #IHD FORMER DRINKERS MEN SD 0.150731717
+        c("qnorm", 0.371563556, 0.150731717)), #DM FORMER DRINKERS WOMEN SD 0.034375
+      
       ISTR <- list( #formula NOT correct
         c("qnorm", 0.6898937, 0.1141980), #ISTR MEN SD 0.1141980 
         c("qnorm", 1.466406, 0.3544172), #ISTR WOMEN SD 0.3544172
@@ -58,13 +67,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "ISTR", "HYPHD", "ALL")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "ALL")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
+  names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER_MEN", "IHD_FORMERDRINKER_WOMEN")
   names(prior$ISTR) <- c("B_ISTR_MEN", "B_ISTR_WOMEN","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")

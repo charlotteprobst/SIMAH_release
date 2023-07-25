@@ -119,6 +119,9 @@ if("IJ" %in% diseases==TRUE){
 if("DM" %in% diseases==TRUE){
   basepop <- DM(basepop, lhs)
 }
+if("IHD" %in% diseases==TRUE){
+  basepop <- IHD(basepop, lhs)
+}
 if("ISTR" %in% diseases==TRUE){
   basepop <- ISTR(basepop, lhs)
 }
