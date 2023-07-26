@@ -47,13 +47,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.039220713, 0.128415981), #IHD3 SD 0.128415981
         c("qnorm", 0.067658648, 0.131539114), #IHD4 SD 0.131539114
         c("qnorm", 0.139761942, 0.145289088), #IHD5 SD 0.145289088
-        c("qnorm", 0.371563556, 0.145289088), #IHD FORMER DRINKERS MEN SD 0.150731717
-        c("qnorm", 0.371563556, 0.150731717)), #DM FORMER DRINKERS WOMEN SD 0.034375
-      
-      ISTR <- list( #formula NOT correct
-        c("qnorm", 0.6898937, 0.1141980), #ISTR MEN SD 0.1141980 
-        c("qnorm", 1.466406, 0.3544172), #ISTR WOMEN SD 0.3544172
-        c("qnorm", 0.30748, 0.20)), #ISTR FORMER DRINKERS SD 0.20
+        c("qnorm", 0.371563556, 0.150731717)), #IHD FORMER DRINKERS SD 0.150731717
+
+      ISTR <- list( 
+        c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389 
+        c("qnorm", -0.083381609, 0.02775583), #ISTR2 SD 0.02775583
+        c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521 
+        c("qnorm", 0.131028262, 0.05792282), #ISTR4 SD 0.05792282
+        c("qnorm", 0.00, 0.00)), #ISTR FORMER DRINKERS SD 0.00
 
       HYPHD <- list(
         c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
@@ -74,8 +75,8 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
-  names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER_MEN", "IHD_FORMERDRINKER_WOMEN")
-  names(prior$ISTR) <- c("B_ISTR_MEN", "B_ISTR_WOMEN","ISTR_FORMERDRINKER")
+  names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
+  names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
   

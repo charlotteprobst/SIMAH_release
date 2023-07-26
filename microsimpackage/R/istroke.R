@@ -13,18 +13,15 @@ ISTR <- function(data,lhs){
                                  "55-64","65-74","75-79")),
            cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
     dplyr::select(-ageCAT)
-  B_ISTR_MEN <- as.numeric(lhs["B_ISTR_MEN"])
-  B_ISTR_WOMEN <- as.numeric(lhs["B_ISTR_WOMEN"])
+  B_ISTR1 <- as.numeric(lhs["B_ISTR1"])
+  B_ISTR2 <- as.numeric(lhs["B_ISTR2"])
+  B_ISTR3 <- as.numeric(lhs["B_ISTR3"])
+  B_ISTR4 <- as.numeric(lhs["B_ISTR4"])
   ISTR_FORMERDRINKER <- as.numeric(lhs["ISTR_FORMERDRINKER"])
   data <- data %>%
-    mutate(RR_ISTR = ifelse(microsim.init.alc.gpd<=1 & microsim.init.sex=="m",
-                          1-microsim.init.alc.gpd*(1-exp(B_ISTR_MEN*((1+0.0028572082519531)/100))),
-                          ifelse(microsim.init.alc.gpd>1 & microsim.init.sex=="m",
-                                 exp(0 + B_ISTR_MEN*((microsim.init.alc.gpd+0.0028572082519531)/100)),
-                                 ifelse(microsim.init.alc.gpd<=1 & microsim.init.sex=="f",
-                                        1-microsim.init.alc.gpd*(1-exp(B_ISTR_WOMEN*((1+0.0028572082519531)/100))),
-                                        ifelse(microsim.init.alc.gpd>1 & microsim.init.sex=="f",
-                                               exp(0 + B_ISTR_WOMEN*((microsim.init.alc.gpd+0.0028572082519531)/100)), NA)))),
+    mutate(RR_ISTR = ifelse(microsim.init.alc.gpd<= 1.3, exp(B_ISTR1), 
+                            ifelse(microsim.init.alc.gpd<=24, exp(B_ISTR2), 
+                                   ifelse(microsim.init.alc.gpd<=48, exp(B_ISTR3), exp(B_ISTR4)))),
             RR_ISTR = ifelse(formerdrinker==1, exp(ISTR_FORMERDRINKER), RR_ISTR))
   return(data)
 }

@@ -18,16 +18,13 @@ IHD <- function(data,lhs){
   B_IHD3 <- as.numeric(lhs["B_IHD3"])
   B_IHD4 <- as.numeric(lhs["B_IHD4"])
   B_IHD5 <- as.numeric(lhs["B_IHD5"])
-  IHD_FORMERDRINKER_MEN <- as.numeric(lhs["IHD_FORMERDRINKER_MEN"])
-  IHD_FORMERDRINKER_WOMEN <- as.numeric(lhs["IHD_FORMERDRINKER_WOMEN"])
-  data <- data %>%
+  IHD_FORMERDRINKER <- as.numeric(lhs["IHD_FORMERDRINKER"])
+    data <- data %>%
     mutate(RR_IHD = ifelse(microsim.init.alc.gpd<= 1.3, exp(B_IHD1), 
                                    ifelse(microsim.init.alc.gpd<=24.99, exp(B_IHD2), 
                                           ifelse(microsim.init.alc.gpd<=44.99, exp(B_IHD3), 
                                                  ifelse(microsim.init.alc.gpd<=64.99, exp(B_IHD4), exp(B_IHD5) )))),
-          RR_IHD = ifelse(formerdrinker==1 & microsim.init.sex=="m",
-                          exp(IHD_FORMERDRINKER_MEN),
-                          ifelse(formerdrinker==1 & microsim.init.sex=="f",
-                                 exp(IHD_FORMERDRINKER_WOMEN), RR_IHD)))
+          RR_IHD = ifelse(formerdrinker==1,
+                          exp(IHD_FORMERDRINKER), RR_IHD))
   return(data)
 }
