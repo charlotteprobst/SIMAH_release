@@ -9,6 +9,7 @@ library(dplyr)
 library(sjPlot)
 library(merTools)
 library(ggplot2)
+library(merMod)
 
 # Bias toward non-scientific notation
 options(scipen=10)
@@ -72,6 +73,7 @@ performance::icc(MAIHDA_decade)
 # Run the full model
 MAIHDA_main_effects <- lmer(capped_daily_grams_log ~ 1 + SEX + age_3_cats + race_5_cats + education_3_cats + decade + (1 | intersections),
                        data = data_intersections_MAIHDA,
+                       REML=FALSE,
                        control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 performance::icc(MAIHDA_main_effects)
 
@@ -94,7 +96,7 @@ tab_model(MAIHDA_null, MAIHDA_main_effects, digits=3, digits.re=3, file = "C:/Us
 
 #calculate reduction in strata-level variance
 percent_reduction_in_strata_variance <- (VPC_null-VPC_full$ICC_unadjusted)/VPC_null*100
-percent_multiplicative_variance <- (1 - reduction_in_strata_variance)*100
+percent_multiplicative_variance <- (1 - percent_reduction_in_strata_variance)*100
 
 # The question, now, is whether that remaining multiplicative variance is significant. If it isn’t, it would make sense to simplify the model to a single level model, since there is no significant additional variance at level 2. 
 # To judge this, we need to run the same model as a single level model, using the lm function
@@ -135,5 +137,15 @@ estimates_table_grams_lmer <- estimates_table_grams_lmer %>%
 ## Save the estimates
 saveRDS(estimates_table_grams_lmer,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/supplementary analysis/estiamtes_grams_lmer.rds" )
 
-# Obtain confidence intervals around the estimates (not working)
-ci <- confint(MAIHDA_main_effects, newdata = data_intersections_MAIHDA, level=0.95, method="boot")
+# NB. The confidence intervals generated below are much much wider than those generated with R2MLWin (even though the estimates are similar)
+# Generate estimates for each intersectional group (full model) using the predictInterval function
+int_fit <- predictInterval(MAIHDA_main_effects, data_intersections_MAIHDA) # the predicted expected values and SEs
+data_intersections_MAIHDA$estimated_grams_2 <- exp(int_fit$fit)
+data_intersections_MAIHDA$estimated_lower_CI <- exp(int_fit$lwr)
+data_intersections_MAIHDA$estimated_upper_CI <- exp(int_fit$upr)
+  
+estimated_grams_lmer_predictInterval <- data_intersections_MAIHDA %>% 
+  dplyr::select(intersections, count, estimated_grams_2, estimated_lower_CI, estimated_upper_CI) %>% 
+  distinct(intersections, .keep_all = TRUE)
+
+estimates_table_both <- inner_join(estimates_table_grams_lmer, estimated_grams_lmer_predictInterval)

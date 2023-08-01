@@ -9,6 +9,9 @@ library(haven)
 library(ggplot2)
 library(forcats)
 library(patchwork)
+library(R2MLwiN)
+library(stringr)
+library(scales)
 
 ## Bias toward non-scientific notation
 options(scipen=10)
@@ -72,22 +75,47 @@ interactions <- interactions %>%
   filter(significance_and_direction!="no") %>%
   select(intersections, sex, decade, race, age_3_cats, education, residual_lower_CI, residual_upper_CI, significance_and_direction)
 
-saveRDS(interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/intersections_with_sig_interactions.RDS")
-# 49 intersections with significant interactions
+interactions %>% 
+  group_by(significance_and_direction) %>%
+  count()
 
+saveRDS(interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/intersections_with_sig_interactions.RDS")
+# 50 intersections with significant interactions
+
+
+## Create a caterpillar plot of the level 2 residuals
+VarCompResidMCMC <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/grams_MCMC_full.RDS")
+residuals<-VarCompResidMCMC@residual$lev_2_resi_est_Intercept 
+residualsCI<-1.96*sqrt(VarCompResidMCMC@residual$lev_2_resi_variance_Intercept) 
+residualsRank<-rank(residuals) 
+rankno<-order(residualsRank) 
+caterpillar(y=residuals[rankno],x=1:180,qtlow=(residuals-residualsCI)[rankno], 
+            qtup=(residuals+residualsCI)[rankno],xlab='Intersectional groups (n=180)',ylab='Residual') +
+  title("Model residuals") +
+  abline(h=0, col="red")
 
 ## 2. Plots of estimated means and standard errors (post back-transformation)
+data <- data %>%
+  mutate(decade = recode(decade, "2000-2009" = "2000- 2009", "2010-2018" = "2010- 2018"))
 
 # Plot males
 male_plot <- data %>%
   filter(sex=="Male") %>%
   ggplot(aes(x=decade, y=back_transformed_estimate, colour=education)) +
-  geom_point(position=position_dodge(width=0.8)) +
+  geom_point(position=position_dodge(width=0.9), size=2) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
-                    position=position_dodge(width=0.8)) +
+                    position=position_dodge(width=0.9), linewidth=0.8) +
                 facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
-  theme(axis.title.x = element_blank(), legend.position = "bottom", axis.text=element_text(size=6))+
+  theme(axis.title.x = element_blank(), legend.position = "bottom", 
+        axis.text=element_text(size=16),
+        strip.text.x = element_text(size = 16),
+        strip.text.y = element_text(size = 16),
+        legend.text=element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.title.y =element_text(size=16, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        plot.title = element_text(size=22))+
+  scale_x_discrete(labels = label_wrap(width = 7))+ 
   ggtitle("Men")+
   labs(y= "Estimated grams per day", colour = "Educational attainment") 
 male_plot
@@ -96,12 +124,20 @@ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality
 female_plot <- data %>%
   filter(sex=="Female") %>%
   ggplot(aes(x=decade, y=back_transformed_estimate, colour=education)) +
-  geom_point(position=position_dodge(width=0.8)) +
+  geom_point(position=position_dodge(width=0.9), size=2) +
   geom_errorbar(aes(ymin = back_transformed_CI_lower,
                     ymax = back_transformed_CI_upper),
-                    position=position_dodge(width=0.8)) +
+                    position=position_dodge(width=0.9), linewidth=0.8) +
                 facet_grid(cols=vars(race),rows=vars(age_3_cats)) +
-  theme(axis.title.x = element_blank(), legend.position = "bottom", axis.text=element_text(size=6))+
+  theme(axis.title.x = element_blank(), legend.position = "bottom", 
+        axis.text=element_text(size=16),
+        strip.text.x = element_text(size = 16),
+        strip.text.y = element_text(size = 16),
+        legend.text=element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.title.y =element_text(size=16, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        plot.title = element_text(size=22))+
+  scale_x_discrete(labels = label_wrap(width = 7))+ 
   ggtitle("Women") +
   labs(y= "Estimated grams per day", colour = "Educational attainment")
 female_plot

@@ -8,11 +8,7 @@ library(tidyr)
 library(dplyr)
 library(ipumsr)     # load in data extracted from IPUMS website
 library(labelled)
-library(haven)
 library(mice)
-library(clipr)
-library(forecast)
-library(MASS)
 
 # Clear environment
 rm(list = ls())

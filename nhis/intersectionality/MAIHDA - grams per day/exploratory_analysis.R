@@ -226,8 +226,8 @@ nhis_alc_clean %>%
   group_by(SEX, AGE) %>%
   summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
   ggplot(aes(x=AGE, y= mean_alc_daily_g, color = SEX)) + geom_point() +
-  scale_x_continuous(breaks=seq(0,85,5)) +
-  scale_y_continuous(breaks=seq(0,12,1)) +
+  scale_x_continuous(breaks=seq(0,95,5)) +
+  scale_y_continuous(breaks=seq(0,20,1)) +
   geom_line() +
   ggtitle("mean daily grams of alcohol for drinkers, by age")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_age_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
