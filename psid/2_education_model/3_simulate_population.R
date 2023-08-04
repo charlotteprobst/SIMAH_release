@@ -74,6 +74,18 @@ totals <- output %>% filter(age==18 | age==21 | age==24 | age==26) %>%
          percent3yr = sum3YR/sumLHS,
          percentcollege = sumCollege/sumLHS)
 
+# extract info 
+overall <- totals %>% dplyr::select(period, sex, racefinal, incomecat, sumLHS, sumHS, sum1YR, sum2YR,
+                                    sum3YR, sumCollege) %>% 
+  group_by(period, racefinal,sex, incomecat) %>% 
+  # filter(racefinal=="black") %>% filter(incomecat=="Lowest") %>% 
+  summarise(percentHSgrad = sum(sumHS)/sum(sumLHS),
+            percentstartcollege = sum(sum1YR)/sum(sumLHS),
+    percentcollegegrad = sum(sumCollege)/sum(sumLHS)) %>% 
+  filter(incomecat=="Lowest") %>% filter(racefinal=="Black")
+
+overall
+
 # extract info for table 3
 HS <- totals %>% select(sex, period, racefinal, incomecat, `sumHS`, `sumLHS`) %>% 
   mutate(percent=`sumHS`/`sumLHS`) %>% select(-c(`sumHS`, `sumLHS`)) %>% 
