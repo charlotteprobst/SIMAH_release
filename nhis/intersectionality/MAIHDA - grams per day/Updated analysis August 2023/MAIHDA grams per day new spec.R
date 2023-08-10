@@ -19,7 +19,10 @@ library("R2MLwiN")
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 source("functions/recode_race_ethnicity.R")
 
-nhis_alc_clean <- nhis_alc_clean %>% select(YEAR, NHISPID, SEX, ALCSTAT1, education_3_cats, age_3_cats, HISPYN, RACENEW, race_5_cats, alc_daily_g_capped_200)
+nhis_alc_clean <- nhis_alc_clean %>% dplyr::select(YEAR, NHISPID, SEX, ALCSTAT1, 
+                                                   education_3_cats, age_3_cats, 
+                                                   HISPYN, RACENEW, race_5_cats, 
+                                                   alc_daily_g_capped_200, ALC5UPYR)
 
 # recode race ethnicity
 nhis_alc_clean <- recode_race_ethnicity_all(nhis_alc_clean)
@@ -43,7 +46,7 @@ review <- inner_join(review_groups, review_grams)
 # Keep 7 most populous race only and drop redundant race/ethnicity variables
 nhis_new_spec <- nhis_alc_clean %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
                                             race_ethnicity==7|race_ethnicity==12|race_ethnicity==3) %>%
-                                            select(-HISPYN, -RACENEW, -race_5_cats)
+                                            dplyr::select(-HISPYN, -RACENEW, -race_5_cats)
 
 # Check group sizes by intersections based on 7 race categories
 full_sample_intersections <- nhis_new_spec %>% 
@@ -61,9 +64,9 @@ nhis_new_spec <- nhis_new_spec %>% filter(race_ethnicity!=12)
 # Convert race and ethnicity from numeric to categorical variable
 nhis_new_spec$race_6_cats <- factor(nhis_new_spec$race_ethnicity,
                                        levels = c(1,8,2,4,7,3),
-                                       labels = c("Non-hispanic, White only", "Hispanic, White only", 
-                                                  "Non-hispanic, Black/African American only", "Non-hispanic, Asian only", 
-                                                  "Non-hispanic, Multiple race", "American Indian/Alaska Native only"))
+                                       labels = c("White", "Hispanic White", 
+                                                  "Black", "Asian", 
+                                                  "Multiple race", "AI/AN"))
 
 # Check group sizes by intersections based on 6 race categories
 full_sample_intersections <- nhis_new_spec %>% 
