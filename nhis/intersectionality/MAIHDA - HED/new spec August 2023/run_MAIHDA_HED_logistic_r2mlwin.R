@@ -155,6 +155,9 @@ VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_HED_null, VPC_full_HED))
 saveRDS(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/MCMC_grams_HED.Rmd")
 
+
+##### GENERATE MODEL PREDICTIONS
+
 # Estimate log odds (and SEs) using predict function
 data$yhat <- predict(full_HED, data)
 # the predicted expected value (in this case the log odds of being a HED)
@@ -171,6 +174,7 @@ processed_intersections_HED_MAIHDA$residuals <- full_HED@residual$lev_2_resi_est
 # Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
 processed_intersections_HED_MAIHDA$residuals_se <- sqrt(full_HED@residual$lev_2_resi_variance_Intercept) # standard error around residuals
 
+# ?? what below is actually doing
 # Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
 processed_intersections_HED_MAIHDA <- processed_intersections_HED_MAIHDA %>% 
   mutate(total_log_odds = yhat + residuals)
