@@ -14,7 +14,7 @@ library(scales)
 # Bias toward non-scientific notation
 options(scipen=10)
 
-# rename race categories
+# rename education categories
 full_sample_intersections <- full_sample_intersections %>%
   mutate(
     education_3_cats = case_when(

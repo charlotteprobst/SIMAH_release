@@ -24,6 +24,11 @@ model_data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/in
                                                         thinning = 50,
                                                         resi.store=TRUE))))                                           
 
+
+# save the model output
+saveRDS(full_HED_direct, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/full_HED_direct_100_its.rds")
+
+
 # Extract data from relevant slots of s4 object
 
 # data frame
@@ -139,4 +144,4 @@ mdata_results <- mdata_prepped %>%
   distinct(intersections, .keep_all=TRUE)
 
 # save results
-saveRDS(mdata_results, "mdata_results.rds")
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/mdata_results_100_its.rds")
