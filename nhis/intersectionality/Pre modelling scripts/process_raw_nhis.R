@@ -74,17 +74,13 @@ nhis_subset_age <- recode_age(nhis_subset_converted_NA)
 nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
                                                  levels = c(1,2,3),
                                                  labels = c("18-24", "25-69", "70+"))
-nhis_subset_age$age_3_cats_uneven_splits <- factor(nhis_subset_age$age_3_cats_uneven_splits,
-                                                 levels = c(1,2,3),
-                                                 labels = c("18-20", "21-69", "70+"))
 nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
                                                    levels = c(1,2,3,4),
                                                    labels = c("18-20", "21-24", "25-59","60+"))
-nhis_subset_age$age_4_cats <- factor(nhis_subset_age$age_4_cats,
-                                                 levels = c(1,2,3,4),
-                                                 labels = c("18-20", "21-23", "24-69", "70+"))
 
-nhis_subset_race <- recode_race_ethnicity(nhis_subset_age) 
+nhis_subset_race <- recode_race_ethnicity(nhis_subset_age)
+nhis_subset_race <- recode_race_ethnicity_all(nhis_subset_race)
+
 nhis_subset_race$race_5_cats <- factor(nhis_subset_race$race_5_cats,
                     levels = c(1,2,3,4,5),
                     labels = c("Non-Hispanic White", "Non-Hispanic Black/African American", "Non-Hispanic Asian", "Non-Hispanic Other", "Hispanic"))
@@ -138,8 +134,6 @@ sample_adults_by_sex_race_age <- nhis_subset_recoded %>%
   mutate(percent = n/sum(n)*100) %>%
   group_by(SEX) %>%
   arrange(desc(percent), .by_group = TRUE)
-
-saveRDS(sample_adults_by_sex_race_age, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/sample_adults_demographics.RDS")
 
 ## Review missing data
 
@@ -272,62 +266,10 @@ nhis_subset_recoded %>%
     arrange(perc_missing_ALC_amt)
 
 ## Drop individuals missing essential data (education & alc status)
-
 edu_variables <- c("education_3_cats", "education_4_cats", "education_5_cats")
 nhis_subset_dropped_edu_na <- remove_na(nhis_subset_recoded, all_of(edu_variables))
 
 nhis_subset_dropped_alcstat_na <- remove_na(nhis_subset_dropped_edu_na, "ALCSTAT1")
-
-## Generate intersectional groups 
-data_intersections <- nhis_subset_dropped_alcstat_na %>% 
-  group_by(SEX, race_5_cats, education_3_cats, decade, age_3_cats) %>% 
-  mutate(intersections = cur_group_id())%>%
-  group_by(intersections) %>%
-  mutate(count=n()) 
-
-# Create reference table of intersectional groups
-unique_intersections <- data_intersections %>%
-  distinct(intersections, .keep_all = TRUE) %>% 
-  dplyr::select(intersections, count, SEX, race_5_cats, education_3_cats, decade, age_3_cats) %>% 
-  arrange(count)
-
-# % of intersectional groups with more than 20 people in the group
-sum(unique_intersections$count >= 20)/nrow(unique_intersections)  
-
-unique_intersections <- unique_intersections %>%
-  mutate(SEX = dplyr::recode(SEX, "1" = "Male", "2" = "Female")) %>%
-  mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_5_cats, education_3_cats, decade)))
-
-## Review drinking
-
-# Drinking status - Total
-drinking_status <- data_intersections %>%
-  group_by(ALCSTAT1) %>%
-  count() %>%
-  ungroup() %>%
-  mutate(percent = n/sum(n)*100) %>%
-  round(digits=1)
-
-saveRDS(drinking_status,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/sampleadults_drinkingstatus.RDS")
-
-# Drinking status - By intersections
-drinking_status_1 <- data_intersections %>%
-  group_by(intersections) %>%
-  count(ALCSTAT1) %>%
-  mutate(percent = n/sum(n)*100) %>%
-  pivot_wider(names_from = ALCSTAT1, values_from = c(n, percent)) %>%
-  round(digits=1)%>%
-  rename(
-    n_abstainers = n_1,
-    n_former_drinkers = n_2,
-    n_current_drinkers = n_3,
-    percent_abstainers = percent_1,
-    percent_former_drinkers = percent_2,
-    percent_current_drinkers = percent_3
-  )
-
-drinking_status_1 <- merge(unique_intersections,drinking_status_1,by="intersections")
-saveRDS(drinking_status_1,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/sampleadults_drinkingstatus_by_intersection.RDS")
 
 ## Drop individuals who drink, but who are missing information on consumption patterns
 drinkers <- subset(nhis_subset_dropped_alcstat_na, ALCSTAT1==3)
@@ -340,7 +282,7 @@ nhis_subset_dropped_alc_na <- rbind(drinkers_dropped_na, non_drinkers)
 #(Expanded Quantity/Frequency (QF) Approach & assuming standard drink size)
 nhis_subset_grams_alc <- assign_grams_alcohol(nhis_subset_dropped_alc_na)
 
-# Create more detailed sub-categories of alcohol use based on average alcohol consumption (grams):
+# Create sub-categories of alcohol use based on average alcohol consumption (grams):
 nhis_subset_alc_cats <- recode_alc_cats(nhis_subset_grams_alc)
 
 nhis_subset_alc_cats$alc_4_cats <- factor(nhis_subset_alc_cats$alc_4_cats,
@@ -397,7 +339,6 @@ consistent_drinkers_n <- data_with_inconsistancies %>%
   filter(ALCSTAT1=="Current drinker" & inconsistent_alc==0) %>%
   nrow()
 
-# Calculate percent of drinkers with inconsistent data
 inconsistent_drinkers_n/(inconsistent_drinkers_n + consistent_drinkers_n)*100 # 0.8%
 
 # Drop people with inconsistent alcohol data
@@ -407,13 +348,6 @@ nhis_alc_clean <- data_with_inconsistancies %>% filter(inconsistent_alc==0)
 nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
 
-# Review distributions of alc daily grams
-ggplot(nhis_alc_clean, aes(x=alc_daily_g), y) + 
-  geom_histogram(bins=400) + 
-  xlim(0,201) + 
-  ylim(0,30000) + 
-ggtitle("Distribution of daily grams alcohol, not capped, all sample adults")
-
 ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + 
   geom_histogram(bins=400) + 
   xlim(0,201) + 
@@ -422,24 +356,22 @@ ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) +
   ylab("Frequency") +
 ggtitle("Distribution of daily grams alcohol, capped, all sample adults")
 
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>%
-  ggplot(aes(x=alc_daily_g), y) + 
-  geom_histogram(bins=200) + 
-  xlim(0,201) + 
-  ylim(0,40000) + 
-ggtitle("Distribution of daily grams alcohol amongst drinkers, not capped")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/raw_grams_distribution_drinkers.png", dpi=300, width=33, height=19, units="cm")
+## TRANSFORM ALC DAILY GRAMS
 
-# capped
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>%
-  ggplot(aes(x=alc_daily_g_capped_200), y) + 
-  geom_histogram(bins=200) + 
-  xlim(0,201) + 
-  ylim(0,40000) + 
-  ggtitle("Distribution of daily grams alcohol amongst drinkers, capped at 200g")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/raw_grams_distribution_drinkers_capped.png", dpi=300, width=33, height=19, units="cm")
+# Consider data transformation for alc daily grams
+nhis_alc_clean <- nhis_alc_clean %>% 
+  mutate(new_grams = alc_daily_g_capped_200 + 0.02)# add half of the smallest grams value (for drinkers) to zero values
+# Check recommended lambda with boxcox
+b <- MASS::boxcox(lm(nhis_alc_clean$new_grams ~ 1))
+lambda <- b$x[which.max(b$y)] # -0.06
+lambda2 <- forecast::BoxCox.lambda(nhis_alc_clean$new_grams)  # -0.07
+# As both suggested lambda are close to 0, log transformation is appropriate
+nhis_alc_clean$capped_daily_grams_log <- log(nhis_alc_clean$new_grams)
+# Distribution plot 
+ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=200) + 
+  ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
+  xlab("Daily grams of alcohol, post transformation") +
+  ylab("Frequency")
 
 ## SAVE CLEANED DATA
 
