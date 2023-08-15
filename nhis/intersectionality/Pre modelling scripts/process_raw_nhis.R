@@ -54,12 +54,12 @@ nhis_subset <- data %>%
 nhis_subset <- nhis_subset %>% zap_formats() %>% zap_labels()
  
 # Save the subset data
-saveRDS(nhis_subset, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
+saveRDS(nhis_subset, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
 
 ######### START FROM HERE IF PREVIOUSLY DOWNLOADED AND SAVED RAW IPUMS DATA
 
 # Read in the subset data
-nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/2_nhis_subset.RDS")
+nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
 
 # Look at feasibility of sample weights
 sum(nhis_subset$SAMPWEIGHT) # v large sample if using weights
@@ -77,6 +77,9 @@ nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
 nhis_subset_age$age_3_cats_uneven_splits <- factor(nhis_subset_age$age_3_cats_uneven_splits,
                                                  levels = c(1,2,3),
                                                  labels = c("18-20", "21-69", "70+"))
+nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
+                                                   levels = c(1,2,3,4),
+                                                   labels = c("18-20", "21-24", "25-59","60+"))
 nhis_subset_age$age_4_cats <- factor(nhis_subset_age$age_4_cats,
                                                  levels = c(1,2,3,4),
                                                  labels = c("18-20", "21-23", "24-69", "70+"))
@@ -107,7 +110,7 @@ nhis_subset_education$education_5_cats <- factor(nhis_subset_education$education
                                     levels = c(1,2,3,4,5),
                                     labels = c("no high school (<= grade 8)", "Some high school (grades 9-11)", "Finished high school (grade 12)", "Some college", "4+ years college"))
 
-nhis_subset_cohort <- rename(nhis_subset_education, birth_year = BIRTHYR)
+nhis_subset_cohort <- dplyr::rename(nhis_subset_education, birth_year = BIRTHYR)
 sum(is.na(nhis_subset_cohort$birth_year)) # 77,046 individuals missing birth year, therefore generate a birth year estimate for those missing birth year
 nhis_subset_cohort <- nhis_subset_cohort %>% 
   mutate(birth_year_est = ifelse(is.na(birth_year), YEAR-AGE, birth_year))
@@ -292,7 +295,7 @@ unique_intersections <- data_intersections %>%
 sum(unique_intersections$count >= 20)/nrow(unique_intersections)  
 
 unique_intersections <- unique_intersections %>%
-  mutate(SEX = recode(SEX, "1" = "Male", "2" = "Female")) %>%
+  mutate(SEX = dplyr::recode(SEX, "1" = "Male", "2" = "Female")) %>%
   mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_5_cats, education_3_cats, decade)))
 
 ## Review drinking

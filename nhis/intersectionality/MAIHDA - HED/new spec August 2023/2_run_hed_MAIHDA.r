@@ -11,17 +11,20 @@ library(R2MLwiN)
 library(boot)
 library(memisc)
 
-# Read in the processed data ready for modelling
+##### RUN THE MAIHDA MODELS WITH FULL SAMPLE
 
-# Full sample
+# Read in the data
 model_data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/hed_data_full_sample.RDS")
-
-##### RUN THE MAIHDA MODELS
 
 # Prep data for use with Mlwin
 model_data <- model_data %>%
   mutate(cons=1) %>% 
   arrange(intersections, NHISPID)
+
+# Generate reference table with intersectional names
+intersections_reference <- model_data %>%
+  mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_6_cats, education_3_cats))) %>%
+  distinct(intersections, intersectional_names)
 
 # null model
 (null_HED <- runMLwiN(logit(HED) ~ 1 + (1|intersections), 
@@ -185,6 +188,9 @@ mdata_prepped <- mdata_prepped %>% mutate(
 mdata_results <- mdata_prepped %>%
   dplyr::select(-"iteration", -"p",  -"pA", -contains(c("b_", "u_" ))) %>%
   distinct(intersections, .keep_all=TRUE)
+
+# Merge with intersectional names reference table
+mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
 saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/mdata_results.rds")
@@ -359,6 +365,9 @@ mdata_prepped_drinkers <- mdata_prepped_drinkers %>%
 mdata_results_drinkers <- mdata_prepped_drinkers %>%
   dplyr::select(-"iteration", -"p",  -"pA", -contains(c("b_", "u_" ))) %>%
   distinct(intersections, .keep_all=TRUE)
+
+# Merge with intersectional names reference table
+mdata_results_drinkers <- inner_join(mdata_results_drinkers, intersections_reference)
 
 # save results
 saveRDS(mdata_results_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/mdata_results_drinkers.rds")
