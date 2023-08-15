@@ -18,7 +18,7 @@ theme_set(theme_bw(base_size = 12))
 ##### Plots for full sample
 
 # Read in data
-plot_data_full_sample <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/mdata_results.rds")
+plot_data_full_sample <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_results_spec_1.rds")
 
 # Prep data for plotting
 plot_data_full_sample <- plot_data_full_sample %>%
@@ -51,7 +51,7 @@ male_HED_probability <- plot_data_full_sample %>%
   ggtitle("Men")+
   labs(y= "Estimated percentage of HEDs")
 male_HED_probability
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_males.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plot females
 female_HED_probability <- plot_data_full_sample %>%
@@ -69,7 +69,7 @@ female_HED_probability <- plot_data_full_sample %>%
   ggtitle("Women")+
   labs(y= "Estimated percentage of HEDs")
 female_HED_probability
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_females.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
 male_HED_add_vs_mul <- plot_data_full_sample %>%
@@ -86,7 +86,7 @@ male_HED_add_vs_mul <- plot_data_full_sample %>%
   labs(caption = "Light green: estimate based on additive effects only  
        Dark green: Estimate based on additive & interaction effects")
   male_HED_add_vs_mul
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_males_add_vs_mult.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_add_vs_mult_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
 female_HED_add_vs_mul <- plot_data_full_sample %>%
@@ -103,13 +103,13 @@ female_HED_add_vs_mul <- plot_data_full_sample %>%
   labs(caption = "Light green: estimate based on additive effects only  
        Dark green: Estimate based on additive & interaction effects")
 female_HED_add_vs_mul
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_females_add_vs_mult.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_add_vs_mult_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 
 ##### Plots for drinkers only
 
 # Read in data
-plot_data_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/mdata_results_drinkers.rds")
+plot_data_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_results_drinkers_spec_1.rds")
 
 # Prep data for plotting
 plot_data_drinkers <- plot_data_drinkers %>%
@@ -142,7 +142,7 @@ male_HED_probability_drinkers <- plot_data_drinkers %>%
   ggtitle("Men - drinkers only")+
   labs(y= "Estimated percentage of HEDs")
 male_HED_probability_drinkers
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_males_drinkers.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_drinkers_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plot females
 female_HED_probability_drinkers <- plot_data_drinkers %>%
@@ -160,7 +160,7 @@ female_HED_probability_drinkers <- plot_data_drinkers %>%
   ggtitle("Women - drinkers only")+
   labs(y= "Estimated percentage of HEDs")
 female_HED_probability_drinkers
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_females_drinkers.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_drinkers_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
 male_HED_add_vs_mul_drinkers <- plot_data_drinkers %>%
@@ -177,7 +177,7 @@ male_HED_add_vs_mul_drinkers <- plot_data_drinkers %>%
   labs(caption = "Light green: estimate based on additive effects only  
        Dark green: Estimate based on additive & interaction effects")
 male_HED_add_vs_mul_drinkers
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_males_add_vs_mult_drinkers.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_add_vs_mult_drinkers_spec_1.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
 female_HED_add_vs_mul_drinkers <- plot_data_drinkers %>%
@@ -194,4 +194,4 @@ female_HED_add_vs_mul_drinkers <- plot_data_drinkers %>%
   labs(caption = "Light green: estimate based on additive effects only  
        Dark green: Estimate based on additive & interaction effects")
 female_HED_add_vs_mul_drinkers
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/estimated_HEDs_females_add_vs_mult_drinkers.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_add_vs_mult_drinkers_spec_1.png", dpi=300, width=33, height=19, units="cm")
