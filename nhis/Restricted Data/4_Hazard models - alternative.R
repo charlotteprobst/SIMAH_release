@@ -130,34 +130,34 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     
     
     
-    # ## Alternative Fine-Gray from cmprsk package
-    # 
-    # # Fine-Gray joint effect model (cannot specify the interaction term as SES * lifestyle in  covs)
-    # cat("    Crr Joint effects model in progress", "\n")  
-    # if(data_name == "all"){
-    #   
-    #   covs <- data %>% select(bl_age, female, SES_lifestyle, married2, race4, srvy_yr22) %>%
-    #     dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
-    #     data.frame() %>%
-    #     select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997, 
-    #            -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer) 
-    #   
-    #   crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr, 
-    #                      cov1 = covs, failcode = 1, cencode = 0)
-    #   
-    # } else if(data_name %in% c("female", "male")){
-    #   
-    #   covs <- data %>% select(bl_age, "SES_lifestyle", "married2", "race4", "srvy_yr22") %>%
-    #     dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
-    #     data.frame() %>%
-    #     select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997, 
-    #            -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer) 
-    #   
-    #   crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr, 
-    #                      cov1 = covs, failcode = 1, cencode = 0)
-    # }
-    # cat("    Completed", "\n")
-    # 
+    ## Alternative Fine-Gray from cmprsk package
+
+    # Fine-Gray joint effect model (cannot specify the interaction term as SES * lifestyle in  covs)
+    cat("    Crr Joint effects model in progress", "\n")
+    if(data_name == "all"){
+
+      covs <- data %>% select(bl_age, female, SES_lifestyle, married2, race4, srvy_yr22) %>%
+        dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
+        data.frame() %>%
+        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997,
+               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer)
+
+      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr,
+                         cov1 = covs, failcode = 1, cencode = 0)
+
+    } else if(data_name %in% c("female", "male")){
+
+      covs <- data %>% select(bl_age, "SES_lifestyle", "married2", "race4", "srvy_yr22") %>%
+        dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
+        data.frame() %>%
+        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997,
+               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer)
+
+      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr,
+                         cov1 = covs, failcode = 1, cencode = 0)
+    }
+    cat("    Completed", "\n")
+    
     
     # Aalen Interaction model
     cat("    Aalen Interaction model in progress", "\n")
