@@ -36,3 +36,6 @@ alldata$newID <- as.numeric(alldata$newID)
 test <- alldata %>% group_by(newID,year) %>% tally()
 # #
 write.csv(alldata, "SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv", row.names=F)
+
+
+

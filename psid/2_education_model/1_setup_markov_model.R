@@ -1,3 +1,22 @@
+adjust_income_inflation <- function(data){
+  CPI <- read_excel("SIMAH_workplace/education_transitions/CPI_U_RS.xlsx")
+  CPI <- CPI[-c(1:2),]
+  names(CPI) <- c("year", "CPI")
+  CPI <- CPI %>% mutate_all(as.numeric) %>% filter(year>=1999) %>% filter(year<=2019)
+  CPI2019 <- subset(CPI, year==2019)$CPI
+  CPI$adjustor <- CPI2019 / CPI$CPI
+  names(CPI) <- c("year", "CPI", "adjustor")
+  CPI <- CPI %>% select(-c(CPI))
+  
+  data <- left_join(data, CPI)
+  
+  data$total_fam_income <- data$total_fam_income*data$adjustor
+  return(data)
+}
+
+
+
+
 setup_markov_model <- function(data,y){
   if(y==2009){
   data <- data %>% filter(year<=2009)

@@ -15,7 +15,7 @@ library(patchwork)
 
 # setwd("/home/cbuckley")
 setwd("~/Google Drive/SIMAH Sheffield/")
- setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
 
@@ -125,18 +125,18 @@ write.csv(summary, "SIMAH_workplace/education_transitions/Table3_percentage_summ
 
 totals_n <- totals %>% select(sex, racefinal, period, incomecat, sumLHS, sumHS, sum1YR, sum2YR, sum3YR, sumCollege) %>% 
   pivot_longer(cols=c(sumLHS:sumCollege), names_to="education") %>% ungroup() %>% 
-  mutate(education = ifelse(education=="sumLHS", "Less than High school diploma",
-                        ifelse(education=="sumHS","High school diploma",
-                            ifelse(education=="sum1YR", "One year of college",
-                                   ifelse(education=="sum2YR", "Two years of college",
-                                          ifelse(education=="sum3YR", "Three years of college",
-                                                 ifelse(education=="sumCollege", "College degree or more", NA)))))),
-         education= factor(education, levels=c("Less than High school diploma",
-                                               "High school diploma",
-                                               "One year of college",
-                                               "Two years of college",
-                                               "Three years of college",
-                                               "College degree or more")),
+  mutate(education = ifelse(education=="sumLHS", "Less than HS",
+                        ifelse(education=="sumHS","HS",
+                            ifelse(education=="sum1YR", "1Y College",
+                                   ifelse(education=="sum2YR", "2Y College",
+                                          ifelse(education=="sum3YR", "3Y College",
+                                                 ifelse(education=="sumCollege", "College+", NA)))))),
+         education= factor(education, levels=c("Less than HS",
+                                               "HS",
+                                               "1Y College",
+                                               "2Y College",
+                                               "3Y College",
+                                               "College+")),
          period = recode(period, "1"="Period 1 (1999-2009)", "2"="Period 2 (2011-2019)")) 
 summary(as.factor(totals_n$racefinal))
 totals_n$racefinal <- factor(totals_n$racefinal, levels=c("Native American","Others","Black","Hispanic","Asian/PI","White"))
@@ -167,17 +167,17 @@ plot_lowest_income <- ggplot(subset(totals_n,incomecat=="Lowest income cat."),
   geom_stratum() + theme(legend.position="none",
                          strip.background = element_rect(colour="black", fill="white"),
                          strip.text.y = element_blank(),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90)) +
+                         text = element_text(size=14),
+                         axis.text.x = element_text(angle=90, size=14)) +
                          facet_grid(cols=vars(period), rows=vars(sex)) + ylab("Population count") + 
   xlab("Educational attainment") +
   scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
+                   labels=(c("Less than HS",
+                             "HS",
+                             "1Y College",
+                             "2Y College",
+                             "3Y College",
+                             "College+"))) +
   scale_y_continuous(breaks = seq(0, 260000, by=50000), limits=c(0,260000),
                      labels= scales::comma
                      ) +
@@ -193,20 +193,20 @@ plot_highest_income <- ggplot(subset(totals_n,incomecat=="Highest income cat."),
   geom_flow(stat="alluvium", lode.guidance="frontback", colour="darkgray") + theme_bw() +
   geom_stratum() + theme(legend.position="right",
                          strip.background = element_rect(colour="black", fill="white"),
-                         text = element_text(size=10),
-                         axis.text.x = element_text(angle=90),
+                         text = element_text(size=14),
+                         axis.text.x = element_text(angle=90, size=14),
                          axis.text.y = element_blank(),
                          axis.title.y=element_blank(),
                          axis.ticks.y = element_blank()) + 
   facet_grid(cols=vars(period), rows=vars(sex)) +
   xlab("Educational attainment") +
   scale_x_discrete(breaks=unique(totals_n$education),
-                   labels=(c("Less than \nHS diploma",
-                             "HS diploma",
-                             "One year \nof college",
-                             "Two years \nof college",
-                             "Three years \nof college",
-                             "College grad. \nor more"))) +
+                   labels=(c("Less than HS",
+                             "HS",
+                             "1Y College",
+                             "2Y College",
+                             "3Y College",
+                             "College+"))) +
   scale_y_continuous(breaks = seq(0, 260000, by=50000), limits=c(0,260000),
                      labels=scales::comma) + 
           ggtitle("Highest income") 
@@ -214,7 +214,7 @@ plot_highest_income
 
 Figure_2_counts <- plot_lowest_income + plot_highest_income + plot_annotation(
   title = 'Educational attainment at age 26',
-  subtitle = 'Split by time parental income, time period, sex, and race and ethnicity',
+  subtitle = 'Split by parental income, time period, sex, and race and ethnicity',
   caption = 'Note: Based on 1,000,000 simulated individuals (starting population counts by group vary slightly)')
 
 plot(Figure_2_counts)
