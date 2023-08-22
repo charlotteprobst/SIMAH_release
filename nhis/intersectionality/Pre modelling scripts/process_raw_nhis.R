@@ -75,7 +75,7 @@ nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
                                                  levels = c(1,2,3),
                                                  labels = c("18-24", "25-69", "70+"))
 nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
-                                                   levels = c(1,2,3,4),
+                                                   levels = c(0,1,2,3),
                                                    labels = c("18-20", "21-24", "25-59","60+"))
 
 nhis_subset_race <- recode_race_ethnicity(nhis_subset_age)
@@ -167,7 +167,7 @@ missing_data_sex <- nhis_subset_recoded %>%
 
 # BY AGE
 missing_data_age <- nhis_subset_recoded %>% 
-  group_by(age_4_cats) %>%
+  group_by(age_3_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
             Educ_NA = sum(is.na(EDUCREC2)),
@@ -183,7 +183,7 @@ missing_data_age <- nhis_subset_recoded %>%
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100,
             perc_missing_birth_year = (birth_year_NA/total_pop)*100,
             perc_missing_race = (race_NA/total_pop*100)) %>% 
-  dplyr::select(age_4_cats, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_race, perc_missing_Alc_status) %>%
+  dplyr::select(age_3_cats, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_race, perc_missing_Alc_status) %>%
   unique()
 
 # BY RACE
