@@ -20,7 +20,7 @@ theme_set(theme_bw(base_size = 12))
 ##### Plots for full sample
 
 # Read in data
-plot_data_MAIN <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_results_MAIN.rds")
+plot_data_MAIN <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.rds")
 
 # Prep data for plotting
 plot_data_MAIN <- plot_data_MAIN %>%
@@ -37,85 +37,85 @@ plot_data_MAIN <- plot_data_MAIN %>%
          age=ifelse(grepl("21-24", intersectional_names), "21-24",
                     ifelse(grepl("25-59", intersectional_names), "25-59", "60+")))
 
-# Plots of predicted % of HEDs - separate for males and females
-male_HED_probability <- plot_data_MAIN %>%
+# Plots of predicted grams - separate for males and females
+male_grams <- plot_data_MAIN %>%
   filter(sex=="Male") %>%
-  ggplot(aes(x=education, y=pmn)) +
+  ggplot(aes(x=education, y=estmn)) +
   geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = plo,
-                    ymax = phi),
+  geom_errorbar(aes(ymin = estlo,
+                    ymax = esthi),
                     position=position_dodge(width=0.8)) +
-  ylim(0, 100) +
+  ylim(0, 5) +
   facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90),
         legend.position = "bottom") +
-  ggtitle("Percentage of men estimated to be HEDs by intersectional category")+
-  labs(y= "Percentage estimated to be HEDs")
-male_HED_probability
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_MAIN.png", dpi=300, width=33, height=19, units="cm")
+  ggtitle("Average daily alcohol consumption by intersectional category, Men")+
+  labs(y= "Estimated grams per day")
+male_grams
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/estimated_grams_males_MAIN.png", dpi=300, width=33, height=19, units="cm")
 
 # Plot females
-female_HED_probability <- plot_data_MAIN %>%
+female_grams <- plot_data_MAIN %>%
   filter(sex=="Female") %>%
-  ggplot(aes(x=education, y=pmn)) +
+  ggplot(aes(x=education, y=estmn)) +
   geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = plo,
-                    ymax = phi),
+  geom_errorbar(aes(ymin = estlo,
+                    ymax = esthi),
                 position=position_dodge(width=0.8)) +
-  ylim(0, 100) +
+  ylim(0, 5) +
   facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90),
         legend.position = "bottom") +
-  ggtitle("Percentage of women estimated to be HEDs by intersectional category")+
-  labs(y= "Percentage estimated to be HEDs")
-female_HED_probability
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_MAIN.png", dpi=300, width=33, height=19, units="cm")
+  ggtitle("Average daily alcohol consumption by intersectional category, Women")+
+  labs(y= "Estimated grams per day")
+female_grams
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/estimated_grams_females_MAIN.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
-male_HED_add_vs_mul <- plot_data_MAIN %>%
+male_grams_add_vs_mul <- plot_data_MAIN %>%
   filter(sex=="Male") %>%
-  ggplot(aes(x=race)) +
-  geom_point(aes(y=pAmn), colour = "grey") +
-  geom_errorbar(aes(ymin = pAlo,
-                    ymax = pAhi),
+  ggplot(aes(x=education)) +
+  geom_point(aes(y=estAmn), colour = "grey", alpha = 0.5) +
+  geom_errorbar(aes(ymin = estAlo,
+                    ymax = estAhi),
                 colour="grey") +
-  geom_point(aes(y=pmn), colour = "black") +
-  geom_errorbar(aes(ymin = plo,
-                    ymax = phi),
-                colour = "black") +
-  ylim(0, 75) +
-  facet_grid(cols=vars(education),rows=vars(age)) +
+  geom_point(aes(y=estmn), colour = "black") +
+  geom_errorbar(aes(ymin = estlo,
+                    ymax = esthi),
+                colour="black") +
+  ylim(0, 4) +
+  facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90))+
-  ggtitle("Percentage of men estimated to be HEDs by intersectional category")+
-  labs(y= "Percentage estimated to be HEDs") +
+  ggtitle("Average daily alcohol consumption by intersectional category, for Men")+
+  labs(y= "Estimated grams per day") +
   labs(caption = "Grey: estimate based on additive effects only  
 Black: Estimate based on additive & interaction effects")
-  male_HED_add_vs_mul
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_males_add_vs_mult_MAIN.png", dpi=300, width=33, height=19, units="cm")
+  male_grams_add_vs_mul
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/estimated_grams_males_add_vs_mult_MAIN.png", dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates
-female_HED_add_vs_mul <- plot_data_MAIN %>%
+female_grams_add_vs_mul <- plot_data_MAIN %>%
   filter(sex=="Female") %>%
-  ggplot(aes(x=race)) +
-  geom_point(aes(y=pAmn), colour = "grey") +
-  geom_errorbar(aes(ymin = pAlo,
-                    ymax = pAhi),
+  ggplot(aes(x=education)) +
+  geom_point(aes(y=estAmn), colour = "grey") +
+  geom_errorbar(aes(ymin = estAlo,
+                    ymax = estAhi),
                 colour="grey") +
-  geom_point(aes(y=pmn), colour = "black") +
-  geom_errorbar(aes(ymin = plo,
-                    ymax = phi),
+  geom_point(aes(y=estmn), colour = "black") +
+  geom_errorbar(aes(ymin = estlo,
+                    ymax = esthi),
                 colour = "black") +
-  ylim(0, 100) +
-  facet_grid(cols=vars(education),rows=vars(age)) +
+  ylim(0, 4) +
+  facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90))+
-  ggtitle("Percentage of women estimated to be HEDs by intersectional category")+
-  labs(y= "Percentage estimated to be HEDs") +
+  ggtitle("Average daily alcohol consumption by intersectional category, for Women")+
+  labs(y= "Estimated grams per day") +
   labs(caption = "Grey: estimate based on additive effects only  
 Black: Estimate based on additive & interaction effects")
-female_HED_add_vs_mul
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/HED/estimated_HEDs_females_add_vs_mult_MAIN.png", dpi=300, width=33, height=19, units="cm")
+female_grams_add_vs_mul
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/estimated_grams_females_add_vs_mult_MAIN.png", dpi=300, width=33, height=19, units="cm")
 
