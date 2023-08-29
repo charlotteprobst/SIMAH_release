@@ -4,7 +4,7 @@
 
 # ALTERNATIVE AGE CATS ANALYSIS
 # 6 race cats (White, Black, Hispanic White, AI/AN, Asian, Multiple race)
-# 3 age cats (18-24; 25-69; 70+)
+# 3 age cats (18-24; 25-59; 60+)
 # 2 gender cats 
 # 3 education cats
 # Controlling for survey year
@@ -29,6 +29,8 @@ library(fastDummies)
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+
+source("SIMAH_code/nhis/intersectionality/functions/recode_age.R")
 
 options(scipen=10)
 
@@ -59,7 +61,7 @@ data_1 <- data %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|
 
 # Check group sizes by intersections based on 7 race categories
 group_sizes <- data_1 %>% 
-  group_by(SEX, race_ethnicity, education_3_cats, age_3_cats) %>% 
+  group_by(SEX, race_ethnicity, education_3_cats, alt_age) %>% 
   mutate(intersections = cur_group_id())%>%
   group_by(intersections) %>%
   mutate(count=n()) %>% 
@@ -76,25 +78,24 @@ data_2$race_6_cats <- factor(data_2$race_ethnicity,
                                                "Black", "Asian", 
                                                "Multiple race", "AI/AN"))
 
-# Check group sizes by intersections based on 6 race categories
-group_sizes_2 <- data_2 %>% 
-  group_by(SEX, race_6_cats, education_3_cats, age_3_cats) %>% 
-  mutate(intersections = cur_group_id())%>%
-  group_by(intersections) %>%
-  mutate(count=n())%>% distinct(intersections, .keep_all = TRUE)
-sum(group_sizes_2$count <= 20) # 3 groups with n<=20
+# Generate alternative age cats
+data_3 <- recode_alt_age(data_2)
+data_3$alt_age <- factor(data_3$alt_age,
+                                   levels = c(1,2,3),
+                                   labels = c("18-24","25-59","60+"))
+
 
 # Generate a binary HED variable
-data_3 <- data_2 %>%
+data_4 <- data_3 %>%
   mutate(HED =
            case_when(ALC5UPYR >= 1 ~ 1,
                      ALC5UPYR == 0 ~ 0)) 
 
 # Generate intersections
-data_4 <- data_3 %>% 
-  group_by(SEX, race_6_cats, education_3_cats, age_3_cats) %>% 
+data_5 <- data_4 %>% 
+  group_by(SEX, race_6_cats, education_3_cats, alt_age) %>% 
   mutate(intersections = cur_group_id()) %>%
-  mutate(intersectional_names = as.character(paste(SEX, age_3_cats, race_6_cats, education_3_cats))) %>%
+  mutate(intersectional_names = as.character(paste(SEX, alt_age, race_6_cats, education_3_cats))) %>%
   group_by(intersections) %>%
   mutate(denominator=n()) %>%
   group_by(HED, intersections) %>%
@@ -104,12 +105,12 @@ data_4 <- data_3 %>%
   ungroup() 
 
 # Subset data to keep only the variables of interest
-data_5 <- data_4 %>%
+data_6 <- data_5 %>%
   dplyr::select(intersections, intersectional_names, NHISPID, YEAR, ALCSTAT1, HED, numerator, denominator, proportion, 
-                age_3_cats, SEX, race_6_cats, education_3_cats)
+                alt_age, SEX, race_6_cats, education_3_cats)
 
 # Generate a summary table showing the proportion of HEDs by intersection
-summary_table <- data_5 %>%
+summary_table <- data_6 %>%
   filter(HED==1) %>%
   dplyr::select(-c(ALCSTAT1)) %>%
   distinct(intersections, .keep_all = TRUE)
@@ -121,7 +122,7 @@ summary_table %>%
   distinct() # Nil	
 
 # Save
-saveRDS(data_5, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_MAIHDA_alt_age.rds")
+saveRDS(data_6, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_MAIHDA_alt_age.rds")
 
 ##### RUN THE MAIHDA MODELS WITH FULL SAMPLE
 
@@ -151,7 +152,7 @@ intersections_reference <- model_data %>%
 
 # full model
 (full_HED <- runMLwiN(logit(HED) ~ 1 + YEAR +
-                        SEX + age_3_cats + race_6_cats + education_3_cats +
+                        SEX + alt_age + race_6_cats + education_3_cats +
                              (1|intersections), 
                              D = "Binomial", data = model_data,
                              estoptions=list(EstM=1, resi.store=TRUE, resi.store.levs=c(1,2),
@@ -181,7 +182,7 @@ rownames(coefs_null) <- c("intercept_FE_1","Year 2001", "Year 2002", "Year 2003"
 coefs_full <- getSummary(full_HED)
 coefs_full <- as.data.frame(coefs_full[["coef"]])
 coefs_full <- round(coefs_full, 3) %>% dplyr::select(est,lwr,upr,p)
-rownames(coefs_full) <- c("intercept_FE_2","female","age 25-69", "age 70+",
+rownames(coefs_full) <- c("intercept_FE_2","female","age 25-59", "age 60+",
                                  "Hispanic", "Black", "Asian", "Multiple race", "AI/AN",
                                  "Some college", "4+ years college",
                           "Year 2001", "Year 2002", "Year 2003", "Year 2004",
@@ -191,7 +192,7 @@ rownames(coefs_full) <- c("intercept_FE_2","female","age 25-69", "age 70+",
                                  "strata_RE_2", "RP1_var_bcons_1")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/HED model coefficients and variance_alt_age.rds")
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/HED model coefficients and variance_alt_age.csv")
 
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
@@ -226,8 +227,8 @@ mb_prepped <- chains %>% dplyr::select(-c(deviance, RP2_var_Intercept, RP1_var_b
 mb_prepped <- dplyr::rename(mb_prepped,
                       b_cons = "FP_Intercept",
                       b_female = "FP_SEXFemale",
-                      b_adult = "FP_age_3_cats25-69",
-                      b_older_adult = "FP_age_3_cats70+",
+                      b_adult = "FP_alt_age25-59",
+                      b_older_adult = "FP_alt_age60+",
                       b_Black = "FP_race_6_catsBlack",
                       b_Asian = "FP_race_6_catsAsian",
                       b_AI_AN = "FP_race_6_catsAI/AN",
@@ -283,8 +284,8 @@ mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
 mdata_prepped <- mdata_prepped %>% mutate(
   p = 100*inv.logit(b_cons*Intercept
                     + b_female*SEXFemale
-                    + b_adult*`age_3_cats25-69`
-                    + b_older_adult*`age_3_cats70+`  
+                    + b_adult*`alt_age25-59`
+                    + b_older_adult*`alt_age60+`  
                     + b_Hispanic*`race_6_catsHispanic White`
                     + b_Asian*`race_6_catsAsian`
                     + b_AI_AN*`race_6_catsAI/AN`
@@ -313,12 +314,12 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + u)
 )
 
-# # Percentage pA based only on the fixed-part
+# Percentage pA based only on the fixed-part
 mdata_prepped <- mdata_prepped %>% mutate(
    pA = 100*inv.logit(b_cons*Intercept
                     + b_female*SEXFemale
-                    + b_adult*`age_3_cats25-69`
-                    + b_older_adult*`age_3_cats70+`  
+                    + b_adult*`alt_age25-59`
+                    + b_older_adult*`alt_age60+`  
                     + b_Hispanic*`race_6_catsHispanic White`
                     + b_Asian*`race_6_catsAsian`
                     + b_AI_AN*`race_6_catsAI/AN`

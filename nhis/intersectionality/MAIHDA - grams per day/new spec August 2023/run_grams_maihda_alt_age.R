@@ -1,6 +1,12 @@
-# MAIHDA of grams of alcohol per day - FULL SAMPLE
+# MAIHDA of grams of alcohol per day
 
-# Spec 1: Original age cats, new race cats.
+# ALTERNATIVE AGE CATS ANALYSIS
+# 6 race cats (White, Black, Hispanic White, AI/AN, Asian, Multiple race)
+# 3 age cats (18-24; 25-59; 60+)
+# 2 gender cats 
+# 3 education cats
+# Controlling for survey year
+# 108 intersectional groups total 
 
 ######################################################################## Set-up
 
@@ -19,6 +25,7 @@ library(coda)
 library(memisc)
 library("R2MLwiN")
 source("functions/recode_race_ethnicity.R")
+source("functions/recode_age.R")
 
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 
@@ -35,13 +42,10 @@ options(scipen=10)
 # Read in data (full sample):
 data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
 
-# Drop individuals age <21
-data_0 <- data %>% filter(age_diaz!="18-20")
-
 # Generate new race category variable
 
 # Keep 6 selected race and ethnicity groups
-data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
+data_1 <- data %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
                             race_ethnicity==7|race_ethnicity==3) 
 
 # Convert race and ethnicity from numeric to categorical variable
@@ -51,14 +55,20 @@ data_1$race_6_cats <- factor(data_1$race_ethnicity,
                                         "Black", "Asian", 
                                         "Multiple race", "AI/AN"))
 
+# Generate alternative age cats
+data_2 <- recode_alt_age(data_1)
+data_2$alt_age <- factor(data_2$alt_age,
+                         levels = c(1,2,3),
+                         labels = c("18-24","25-59","60+"))
+
 # Generate intersections
-data_2 <- data_1 %>% 
-  group_by(SEX, race_6_cats, education_3_cats, age_diaz) %>% 
+data_3 <- data_2 %>% 
+  group_by(SEX, race_6_cats, education_3_cats, alt_age) %>% 
   mutate(intersections = cur_group_id()) %>%
-  mutate(intersectional_names = as.character(paste(SEX, age_diaz, race_6_cats, education_3_cats)))
+  mutate(intersectional_names = as.character(paste(SEX, alt_age, race_6_cats, education_3_cats)))
   
 # Check intersectional group sizes
-temp <- data_2 %>% 
+temp <- data_3 %>% 
   group_by(intersections) %>%
   mutate(count=n())
 
@@ -66,24 +76,19 @@ group_sizes <- temp %>% distinct(intersections, .keep_all = TRUE)
 sum(group_sizes$count <= 20) # 2 groups with n<=20
 
 # Add a column of the observed mean grams per day for each intersection
-data_3 <- data_2 %>%
+data_4 <- data_3 %>%
   group_by(intersections) %>%
   mutate(mean_observed_grams = mean(alc_daily_g_capped_200))
 
 # Save
-saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
+saveRDS(data_4, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_alt_age.rds")
 
 #################################################################### MODELLING
 
-# Read in model data
-data_3 <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
-
 # Prep data for use with Mlwin
-model_data <- data_3 %>%
+model_data <- data_4 %>%
   mutate(cons=1) %>% 
   arrange(intersections, NHISPID)
-
-model_data$age_diaz <- droplevels(model_data$age_diaz)
 
 model_data$YEAR <- as.factor(model_data$YEAR)
 
@@ -103,7 +108,7 @@ intersections_reference <- model_data %>%
                                                                resi.store=TRUE))))
 # Full model
 (full_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
-                          SEX + age_diaz + race_6_cats + education_3_cats +
+                          SEX + alt_age + race_6_cats + education_3_cats +
                           (1 | intersections) + 
                           (1 | NHISPID), 
                         data = model_data, 
@@ -113,8 +118,8 @@ intersections_reference <- model_data %>%
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_MAIN.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_MAIN.rds")
+saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_alt_age.rds")
+saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_alt_age.rds")
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -123,8 +128,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_MAIN.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_MAIN.rds")
+null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_alt_age.rds")
+full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_alt_age.rds")
 
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
@@ -152,15 +157,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.csv")
+saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_alt_age.rds")
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_alt_age.csv")
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_MAIN.csv")
+write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_alt_age.csv")
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -192,8 +197,8 @@ mb_prepped <- chains %>% dplyr::select(-c(deviance, RP2_var_Intercept, RP1_var_I
 mb_prepped <- dplyr::rename(mb_prepped,
                             b_cons = "FP_Intercept",
                             b_female = "FP_SEXFemale",
-                            b_adult = "FP_age_diaz25-59",
-                            b_older_adult = "FP_age_diaz60+",
+                            b_adult = "FP_alt_age25-59",
+                            b_older_adult = "FP_alt_age60+",
                             b_Black = "FP_race_6_catsBlack",
                             b_Asian = "FP_race_6_catsAsian",
                             b_AI_AN = "FP_race_6_catsAI/AN",
@@ -250,8 +255,8 @@ mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
 mdata_prepped <- mdata_prepped %>% mutate(
   est = exp(b_cons*Intercept
                     + b_female*SEXFemale
-                    + b_adult*`age_diaz25-59`
-                    + b_older_adult*`age_diaz60+`  
+                    + b_adult*`alt_age25-59`
+                    + b_older_adult*`alt_age60+`  
                     + b_Hispanic*`race_6_catsHispanic White`
                     + b_Asian*`race_6_catsAsian`
                     + b_AI_AN*`race_6_catsAI/AN`
@@ -283,8 +288,8 @@ mdata_prepped <- mdata_prepped %>% mutate(
 mdata_prepped <- mdata_prepped %>% mutate(
   estA = exp(b_cons*Intercept
                            + b_female*SEXFemale
-                           + b_adult*`age_diaz25-59`
-                           + b_older_adult*`age_diaz60+`  
+                           + b_adult*`alt_age25-59`
+                           + b_older_adult*`alt_age60+`  
                            + b_Hispanic*`race_6_catsHispanic White`
                            + b_Asian*`race_6_catsAsian`
                            + b_AI_AN*`race_6_catsAI/AN`
@@ -340,12 +345,12 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.csv")
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_alt_age.rds")
+write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_alt_age.csv")
 
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.rds")
+mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_alt_age.rds")
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
@@ -354,7 +359,7 @@ mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>%
   dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_MAIN.csv")
+write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_alt_age.csv")
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -364,13 +369,13 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 
   dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_MAIN.csv")
+write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_alt_age.csv")
 
 ##### Explore face validity of estimates
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
- ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_MAIN.png", 
+ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_alt_age.png", 
        dpi=300, width=33, height=19, units="cm")
 # Interpretation: Positive correlation but generally estimates are lower than observed. 
  
@@ -379,5 +384,5 @@ temp$rank_observed_grams <-rank(temp$mean_observed_grams)
 temp$rank_estimated_grams <-rank(temp$estmn)
 ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() + 
 ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_MAIN.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_alt_age.png", 
        dpi=300, width=33, height=19, units="cm")
