@@ -3,6 +3,8 @@
 # Setup
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 DataDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/1_input_data/"
+library(tidyverse)
+library(ggplot2)
 
 source("SIMAH_code/microsimpackage/R/load_death_counts.R")
 
@@ -38,5 +40,45 @@ death_counts_2000 <- death_counts_2000 %>% mutate(Race = ifelse(grepl("WHI",cat)
                                                         ifelse(grepl("70-74", cat), "70-74",
                                                         ifelse(grepl("75-79", cat), "75-79", NA)))))))))))))
                                                                                     
-# Export into excel
+# Export into excel for conditional formatting
 write.csv(death_counts_2000, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_2000.csv")
+
+######## Descriptive stats by subgroup
+
+# Based on following interpretation (values TBC)
+# count <0.5	 	        Very rare
+# count >0.5 & <1	      Need to inflate
+# count >10 & <=100     Some risk of cumsum >1
+# count >100	          High risk of cumsum >1
+
+# By disease and sex
+ggplot(death_counts_2000, aes(LVDCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("LVDC mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/LVDCmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(HLVDCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("HLVDC mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/HLVDCmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(DMmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("DM mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/DMmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(IHDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("IHD mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IHDmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(ISTRmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("ISTR mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/ISTRmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(HYPHDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("HYPHD mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/HYPHDmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(AUDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("AUD mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/AUDmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(UIJmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("UIJ mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/UIJmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(MVACCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("MVACC mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/MVACCmort_sex.png",  dpi=300, width = 12, height = 7)
+
+ggplot(death_counts_2000, aes(IJmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("IJ mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IJmort_sex.png",  dpi=300, width = 12, height = 7)
+
