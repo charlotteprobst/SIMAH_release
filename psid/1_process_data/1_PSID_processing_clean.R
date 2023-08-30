@@ -3,10 +3,14 @@ library(foreign)
 library(dplyr)
 library(tidyr)
 library(readxl)
-setwd("~/Google Drive/SIMAH Sheffield")
+setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
 # read in the data 
-data <- read_excel("SIMAH_workplace/PSID/J315522/J315522.xlsx")
+data <- read_excel("SIMAH_workplace/PSID/Full_2021/J323360.xlsx")
+data_2 <- read_excel("SIMAH_workplace/PSID/Full_2021/M323360.xlsx")
+
+
+# Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
 
 data$familyID <- data$ER30001
@@ -21,11 +25,7 @@ data$IDfather = ifelse(data$ER32017==0, NA,
                        ifelse(data$ER32017>=800 & data$ER32017<=999, NA,
                   (data$ER32017*1000) + data$ER30002))
 
-# test <- data %>% 
-#   filter(uniqueID %in% IDS) %>% 
-#   dplyr::select(ER30001, ER30002, uniqueID, ER32010, ER32017, 
-#                 IDmother, IDfather)
-
+# Process sex data
 data$sex <- data$ER32000
 data$sex <- recode(as.factor(data$sex), "1"="male", "2"="female")
 
