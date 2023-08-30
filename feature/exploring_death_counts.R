@@ -27,6 +27,7 @@ death_counts_2000 <- death_counts_2000 %>% mutate(Race = ifelse(grepl("WHI",cat)
                                                   Education = ifelse(grepl("SomeC", cat), "Some college",
                                                               ifelse(grepl("College", cat),"College",
                                                               ifelse(grepl("LEHS", cat), "LEHS",NA))),
+                                                  Education = fct_relevel(Education, "LEHS", "Some college", "College"),
                                                   Age = ifelse(grepl("18-24", cat), "18-24",
                                                         ifelse(grepl("25-29", cat), "25-29",
                                                         ifelse(grepl("30-34", cat), "30-24",
@@ -45,40 +46,95 @@ write.csv(death_counts_2000, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/
 
 ######## Descriptive stats by subgroup
 
+# NB. inflation factor of 100 and population size of 1,000,000
+
 # Based on following interpretation (values TBC)
 # count <0.5	 	        Very rare
 # count >0.5 & <1	      Need to inflate
 # count >10 & <=100     Some risk of cumsum >1
 # count >100	          High risk of cumsum >1
 
-# By disease and sex
-ggplot(death_counts_2000, aes(LVDCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("LVDC mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/LVDCmort_sex.png",  dpi=300, width = 12, height = 7)
 
-ggplot(death_counts_2000, aes(HLVDCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("HLVDC mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/HLVDCmort_sex.png",  dpi=300, width = 12, height = 7)
+### All diseases, one plot
+other_diseases <- data_longer %>% filter(name!="RESTmort")
+ggplot(other_diseases, aes(value)) + geom_histogram() + facet_wrap("name") + ggtitle("Mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/all_diseases.png",  dpi=300, width = 12, height = 7)
 
-ggplot(death_counts_2000, aes(DMmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("DM mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/DMmort_sex.png",  dpi=300, width = 12, height = 7)
+### Disease specific:
 
-ggplot(death_counts_2000, aes(IHDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("IHD mortality counts")
+data_longer <- pivot_longer(death_counts_2000, cols=LVDCmort:RESTmort)
+
+### IHD
+IHD <- data_longer %>% filter(name=="IHDmort")
+
+IHD <- IHD %>% mutate(Value_range = case_when(value<0.5 ~ "Value < 0.5",
+                                              value>=0.5 & value<1  ~ "Value >=0.5 & <1",
+                                              value>=1 & value<10 ~ "Value >=1, <10",
+                                              value>=10 & value <100 ~ "Value >=10, <100",
+                                              value>=100 ~ "Value >=100"),
+                      Interpretation = case_when(value<0.5 ~ "Very rare - may not need to model",
+                                                 value>=0.5 & value<1  ~ "Needs inflation",
+                                                 value>=1 & value<10 ~ "Unlikely to be problematic",
+                                                 value>=10 & value <100 ~ "Risk of cumsum >1",
+                                                 value>=100 ~ "High risk of cumsum >1"))
+
+IHD_problematic_counts <- IHD %>% filter(Interpretation == "Needs inflation"|
+                                           Interpretation ==  "Risk of cumsum >1"|
+                                           Interpretation ==  "High risk of cumsum >1")
+write.csv(IHD_problematic_counts, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/Summary tables/IHD_problematic_counts.csv")
+
+IHD_summary <- IHD %>% group_by(Interpretation) %>% count() %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+write.csv(IHD_summary, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/Summary tables/IHD_summary.csv")
+
+# IHD by age
+data_longer %>% filter(name=="IHDmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Age") + ggtitle("IHD mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IHDmort_age.png",  dpi=300, width = 12, height = 7)
+
+# IHD by sex
+data_longer %>% filter(name=="IHDmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Sex") + ggtitle("IHD mortality counts")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IHDmort_sex.png",  dpi=300, width = 12, height = 7)
 
-ggplot(death_counts_2000, aes(ISTRmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("ISTR mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/ISTRmort_sex.png",  dpi=300, width = 12, height = 7)
+# IHD by SES
+data_longer %>% filter(name=="IHDmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Education") + ggtitle("IHD mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IHDmort_education.png",  dpi=300, width = 12, height = 7)
 
-ggplot(death_counts_2000, aes(HYPHDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("HYPHD mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/HYPHDmort_sex.png",  dpi=300, width = 12, height = 7)
 
-ggplot(death_counts_2000, aes(AUDmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("AUD mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/AUDmort_sex.png",  dpi=300, width = 12, height = 7)
+# DM
+DM <- data_longer %>% filter(name=="DMmort")
 
-ggplot(death_counts_2000, aes(UIJmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("UIJ mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/UIJmort_sex.png",  dpi=300, width = 12, height = 7)
+DM <- DM %>% mutate(Value_range = case_when(value<0.5 ~ "Value < 0.5",
+                                              value>=0.5 & value<1  ~ "Value >=0.5 & <1",
+                                              value>=1 & value<10 ~ "Value >=1, <10",
+                                              value>=10 & value <100 ~ "Value >=10, <100",
+                                              value>=100 ~ "Value >=100"),
+                      Interpretation = case_when(value<0.5 ~ "Very rare - may not need to model",
+                                                 value>=0.5 & value<1  ~ "Needs inflation",
+                                                 value>=1 & value<10 ~ "Unlikely to be problematic",
+                                                 value>=10 & value <100 ~ "Risk of cumsum >1",
+                                                 value>=100 ~ "High risk of cumsum >1"))
 
-ggplot(death_counts_2000, aes(MVACCmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("MVACC mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/MVACCmort_sex.png",  dpi=300, width = 12, height = 7)
+DM_problematic_counts <- DM %>% filter(Interpretation == "Needs inflation"|
+                                           Interpretation ==  "Risk of cumsum >1"|
+                                           Interpretation ==  "High risk of cumsum >1")
+write.csv(DM_problematic_counts, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/Summary tables/DM_problematic_counts.csv")
 
-ggplot(death_counts_2000, aes(IJmort)) + geom_histogram() + facet_wrap("Sex") + ggtitle("IJ mortality counts")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/IJmort_sex.png",  dpi=300, width = 12, height = 7)
+DM_summary <- DM %>% group_by(Interpretation) %>% count() %>% ungroup() %>% mutate(percent=n/sum(n)*100)
+write.csv(DM_summary, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/Summary tables/DM_summary.csv")
 
+# DM by age
+data_longer %>% filter(name=="DMmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Age") + ggtitle("DM mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/DMmort_age.png",  dpi=300, width = 12, height = 7)
+
+# DM by sex
+data_longer %>% filter(name=="DMmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Sex") + ggtitle("DM mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/DMmort_sex.png",  dpi=300, width = 12, height = 7)
+
+# DM by SES
+data_longer %>% filter(name=="DMmort") %>% ggplot(aes(value)) + 
+  geom_histogram() + facet_wrap("Education") + ggtitle("DM mortality counts")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_exploration/DMmort_education.png",  dpi=300, width = 12, height = 7)
