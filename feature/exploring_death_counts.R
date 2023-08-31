@@ -29,20 +29,37 @@ death_counts_2000 <- death_counts_2000 %>% mutate(Race = ifelse(grepl("WHI",cat)
                                                               ifelse(grepl("LEHS", cat), "LEHS",NA))),
                                                   Education = fct_relevel(Education, "LEHS", "Some college", "College"),
                                                   Age = ifelse(grepl("18-24", cat), "18-24",
-                                                        ifelse(grepl("25-29", cat), "25-29",
-                                                        ifelse(grepl("30-34", cat), "30-24",
-                                                        ifelse(grepl("35-39", cat), "35-39",
-                                                        ifelse(grepl("40-44", cat), "40-44",
-                                                        ifelse(grepl("45-49", cat), "45-49",
-                                                        ifelse(grepl("50-54", cat), "50-54",
-                                                        ifelse(grepl("55-59", cat), "55-59",
-                                                        ifelse(grepl("60-64", cat), "60-64",
-                                                        ifelse(grepl("65-69", cat), "65-69",
-                                                        ifelse(grepl("70-74", cat), "70-74",
+                                                        ifelse(grepl("25-29", cat), "25-34",
+                                                        ifelse(grepl("30-34", cat), "25-34",
+                                                        ifelse(grepl("35-39", cat), "35-44",
+                                                        ifelse(grepl("40-44", cat), "35-44",
+                                                        ifelse(grepl("45-49", cat), "45-59",
+                                                        ifelse(grepl("50-54", cat), "45-54",
+                                                        ifelse(grepl("55-59", cat), "55-64",
+                                                        ifelse(grepl("60-64", cat), "55-64",
+                                                        ifelse(grepl("65-69", cat), "65-74",
+                                                        ifelse(grepl("70-74", cat), "65-74",
                                                         ifelse(grepl("75-79", cat), "75-79", NA)))))))))))))
+
+death_counts_grouped <- death_counts_2000 %>% group_by(Sex, Education, Age) %>% 
+  mutate(LVDC = sum(LVDCmort),
+         HLVDC = sum(HLVDCmort),
+         DM = sum(DMmort),
+         IHD = sum(IHDmort),
+         ISTR = sum(ISTRmort),
+         HYPHD = sum(HYPHDmort),
+         AUD = sum(AUDmort),
+         UIJ = sum(UIJmort),
+         MVACC = sum(MVACCmort),
+         IJ = sum(IJmort))
+
+death_counts_summary <- death_counts_grouped %>% dplyr::select(year, Age, Sex, Education, 
+                                                               LVDC, HLVDC, DM, IHD,
+                                                               ISTR, HYPHD, AUD, UIJ, 
+                                                               MVACC, IJ)
                                                                                     
 # Export into excel for conditional formatting
-write.csv(death_counts_2000, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_2000.csv")
+write.csv(death_counts_summary, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/death_counts_2000_summary.csv")
 
 ######## Descriptive stats by subgroup
 
