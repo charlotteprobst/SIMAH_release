@@ -3,16 +3,15 @@ library(foreign)
 library(dplyr)
 library(tidyr)
 library(readxl)
-setwd("C:/Users/cmp21seb/Documents/SIMAH")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-data <- read_excel("SIMAH_workplace/PSID/Full_2021/J323360.xlsx")
-data_2 <- read_excel("SIMAH_workplace/PSID/Full_2021/M323360.xlsx")
-
+data <- read_excel("SIMAH_workplace/PSID/Full_2021/extract_v2/J323498.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
 
+# Recode static variables
 data$familyID <- data$ER30001
 data$ID <- data$ER30002
 data$uniqueID <- (data$familyID*1000) + data$ID
@@ -29,7 +28,7 @@ data$IDfather = ifelse(data$ER32017==0, NA,
 data$sex <- data$ER32000
 data$sex <- recode(as.factor(data$sex), "1"="male", "2"="female")
 
-# process educational attainment data
+# Process educational attainment data
 education <- process_education(data)
 
 # process age data 
@@ -38,7 +37,7 @@ age <- process_age(data)
 # process relationship to householder data
 relationship <- process_relationship(data)
 
-# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf")
+# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf") ??
 
 # process sampling weights 
 sampleweights <- process_sample_weights(data)
@@ -46,7 +45,7 @@ sampleweights <- process_sample_weights(data)
 # process race and ethnicity 
 race <- process_race(data)
 
-# remove individuals with same uniqueID for person and mother - 2 people
+# remove individuals with same uniqueID for person and mother - 0 people
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
                          match = ifelse(is.na(match),0,match)) %>% 
   filter(match==0)
@@ -55,7 +54,7 @@ race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
 race <- left_join(race, relationship)
 
 # recode race based on householder - race is reported for head and "wife" of householder  
-race <- recode_race(race, T)
+race <- recode_race(race, T)   ###  what does this T mean?
 
 race <- individual_race(race, T)
 
@@ -149,15 +148,15 @@ alldata <- alldata %>%
   fill(weight, .direction=c("downup")) %>% 
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
 
-# remove nonresponders 
-nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>% 
-  mutate(familyID = ER30001,
-         ID = ER30002,
-         uniqueID = familyID*1000 + ID,
-         year_nonresponse = ER32007) %>% 
-  dplyr::select(uniqueID, familyID, year_nonresponse)
+# remove nonresponders ?
+# nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>%
+#   mutate(familyID = ER30001,
+#          ID = ER30002,
+#          uniqueID = familyID*1000 + ID,
+#          year_nonresponse = ER32007) %>%
+#   dplyr::select(uniqueID, familyID, year_nonresponse)
+# 
+# alldata <- left_join(alldata, nonresponse) %>%
+#   mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
 
-alldata <- left_join(alldata, nonresponse) %>%
-  mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
-
-write.csv(alldata, "SIMAH_workplace/PSID/alldata_new_1999_2019.csv", row.names=F)
+write.csv(alldata, "SIMAH_workplace/PSID/alldata_new_1999_2021.csv", row.names=F)

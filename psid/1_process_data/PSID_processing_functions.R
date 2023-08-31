@@ -1,15 +1,15 @@
-# SIMAH project 2022 - functions to process data from the SIMAH project 
+# PSID processing functions
 
 process_education <- function(data){
   varnames <- c("ER30010", "ER30052","ER30076", "ER30100", "ER30126", "ER30147","ER30169", "ER30197", "ER30226", "ER30255",
                      "ER30296", "ER30326", "ER30356", "ER30384",  "ER30413",  "ER30443", "ER30478", "ER30513", "ER30549",
                      "ER30584", "ER30620", "ER30657", "ER30703", "ER30748", "ER30820",  "ER33115", "ER33215", "ER33315", "ER33415",
-                     "ER33516","ER33616","ER33716","ER33817","ER33917","ER34020","ER34119","ER34230","ER34349","ER34548", "ER34752")
+                     "ER33516","ER33616","ER33716","ER33817","ER33917","ER34020","ER34119","ER34230","ER34349","ER34548", "ER34752", "ER34952")
   
   newdata <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, all_of(varnames))
-  years <- c(1968, 1970:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  names(newdata)[5:44] <- years
-  newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="education") %>% 
+  years <- c(1968, 1970:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(newdata)[5:45] <- years
+  newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="education") %>% 
     mutate(education = ifelse(education==0, NA,
                               ifelse(education==99, NA, 
                                      ifelse(education==98, NA, education))),
@@ -47,11 +47,11 @@ varnames <-   c("ER30004", "ER30023", "ER30046", "ER30070", "ER30094", "ER30120"
                 "ER30249", "ER30286", "ER30316", "ER30346", "ER30376", "ER30402", "ER30432", "ER30466", "ER30501", "ER30538",
                 "ER30573", "ER30609", "ER30645", "ER30692", "ER30736", "ER30809", "ER33104", "ER33204", "ER33304", "ER33404",
                 "ER33504", "ER33604", "ER33704", "ER33804", "ER33904", "ER34004", "ER34104", "ER34204", "ER34305", "ER34504",
-                "ER34704")
+                "ER34704", "ER34904")
 newdata <- data %>% dplyr::select(uniqueID, all_of(c(varnames)))
-years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-names(newdata)[2:42] <- years
-newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="age") %>% 
+years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+names(newdata)[2:43] <- years
+newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="age") %>% 
   mutate(age = ifelse(age==0, NA, 
                       ifelse(age==999, NA, age)),
          year = as.numeric(year),
@@ -68,11 +68,11 @@ varnames <- c("ER30003", "ER30022", "ER30045", "ER30069", "ER30093", "ER30119", 
               "ER30219", "ER30248", "ER30285", "ER30315", "ER30345", "ER30375", "ER30401", "ER30431", "ER30465",
               "ER30500", "ER30537", "ER30572", "ER30608", "ER30644", "ER30691", "ER30735", "ER30808", "ER33103",
               "ER33203", "ER33303", "ER33403","ER33503","ER33603","ER33703","ER33803","ER33903","ER34003","ER34103",
-                       "ER34203","ER34303","ER34503", "ER34703")
+                       "ER34203","ER34303","ER34503", "ER34703", "ER34903")
 newdata <- data %>% dplyr::select(uniqueID, ER30001, all_of(c(varnames)))
-years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-names(newdata)[3:43] <- years
-newdata <- newdata %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="relationship") %>% 
+years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+names(newdata)[3:44] <- years
+newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="relationship") %>% 
   mutate(relationship = ifelse(relationship==10 | relationship==1, "head",
                                            ifelse(relationship==20 | 
                                                     relationship==22 | relationship==2, 
@@ -102,25 +102,25 @@ return(newdata)
 process_sample_weights <- function(data){
   
 # varnames <- c("ER33430", "ER33546", "ER33637", "ER33740", "ER33848", "ER33950",
-#               "ER34045", "ER34154", "ER34268", "ER34413", "ER34650", "ER34863")
+#               "ER34045", "ER34154", "ER34268", "ER34413", "ER34650", "ER34863", "ER35064")
 # newdata <- data %>% select(uniqueID, c(varnames))
-# years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-# names(newdata)[2:13] <- years
-# newdata <- newdata %>% pivot_longer(cols='1997':'2019', names_to="year", values_to="sampleweight") %>% 
+# years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+# names(newdata)[2:14] <- years
+# newdata <- newdata %>% pivot_longer(cols='1997':'2021', names_to="year", values_to="sampleweight") %>% 
 #   mutate(year = as.numeric(year))
 
 familyweights <- c("ER16518","ER20394","ER24179","ER28078","ER41069","ER47012","ER52436",
-                   "ER58257","ER65492","ER71570","ER77631")
+                   "ER58257","ER65492","ER71570","ER77631", "ER81958")
 data$familyID <- data$ER30001
 data$ID <- data$ER30002
 data$uniqueID <- (data$familyID*1000) + data$ID
 
 weights <- data %>% dplyr::select(uniqueID, all_of(familyweights))
 
-years <- c(1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+years <- c(1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
 
-names(weights)[2:12] <- years
-weights <- weights %>% pivot_longer(cols='1999':'2019', names_to="year", values_to="weight") %>% 
+names(weights)[2:13] <- years
+weights <- weights %>% pivot_longer(cols='1999':'2021', names_to="year", values_to="weight") %>% 
   mutate(year=as.integer(year))
 
 return(weights)
@@ -129,14 +129,15 @@ return(weights)
 process_race <- function(data){
   
 race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096","V5662","V6209","V6802",
-            "V7447","V8099","V8723","V9408","V11055","V11938","V13565","V14612","V16086",
-            "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
-            "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897")
+          "V7447","V8099","V8723","V9408","V11055","V11938","V13565","V14612","V16086",
+          "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
+          "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897",
+          "ER81144")
 
 racevars <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, all_of(race))
-years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-names(racevars)[6:46] <- years
-racevars <- racevars %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="racehead") %>% 
+years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+names(racevars)[6:47] <- years
+racevars <- racevars %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="racehead") %>% 
   mutate(racehead = ifelse(racehead==1, "white",
                            ifelse(racehead==2, "black",
                                   ifelse(racehead==9, NA,
@@ -154,17 +155,17 @@ racevars <- racevars %>% pivot_longer(cols='1968':'2019', names_to="year", value
 # 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other 8=other, 9=NA
 # 1990 - 2003 
 # 1 = white, 2=black, 3=other, 4=other, 5=hispanic, 6=other, 7=other, 9=NA
-# 2004 - 2017
+# 2004 - 2021
 # 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other, 0=NA, 9=NA
 
 # now get the race of wife variable
 wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
           "ER3883","ER6753","ER8999","ER11760","ER15836","ER19897","ER23334","ER27297",
-          "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752")
+          "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752", "ER81017")
 wiferace <- data %>% dplyr::select(uniqueID, all_of(wife))
-years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-names(wiferace)[2:25] <- years
-wiferace <- wiferace %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="racewife") %>% 
+years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+names(wiferace)[2:26] <- years
+wiferace <- wiferace %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="racewife") %>% 
   mutate(racewife = ifelse(racewife==1, "white",
                            ifelse(racewife==2, "black",
                                   ifelse(racewife==9, NA,
@@ -178,11 +179,11 @@ wiferace <- wiferace %>% pivot_longer(cols='1985':'2019', names_to="year", value
 # now get hispanic info for the head and wife
 hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
                "V21419","V23275","ER3941","ER6811","ER9057","ER27392","ER40564",
-               "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896")
-years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+               "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896", "ER81143")
+years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
 hispanic <- data %>% dplyr::select(uniqueID, all_of(hispanic1))
-names(hispanic)[2:21] <- years
-hispanic <- hispanic %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="hispanichead") %>% 
+names(hispanic)[2:22] <- years
+hispanic <- hispanic %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanichead") %>% 
   mutate(hispanichead = ifelse(hispanichead==9, NA,
                                ifelse(hispanichead==0, "nothispanic",
                                       "hispanic")))
@@ -192,16 +193,16 @@ hispanic2 <- c("V12292","V13499","V14546","V16020",
                "V17417","V18748","V20048","V21354",
                "V23211","ER3880","ER6750","ER8996",
                "ER27296","ER40471","ER46448","ER51809",
-               "ER57548","ER64670","ER70743","ER76751")
+               "ER57548","ER64670","ER70743","ER76751", "ER81016")
 hispanicwife <- data %>% dplyr::select(uniqueID, all_of(hispanic2))
-names(hispanicwife)[2:21] <- years
-hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2019', names_to="year", values_to="hispanicwife") %>% 
+names(hispanicwife)[2:22] <- years
+hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanicwife") %>% 
   mutate(hispanicwife = ifelse(hispanicwife==9, NA,
                                ifelse(hispanicwife==0, "nothispanic",
                                       "hispanic")))
 # combine all race variables together
 alldata <- expand.grid(uniqueID = unique(data$uniqueID), 
-                       year =  as.character(c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)))
+                       year =  as.character(c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)))
 raceall <- left_join(alldata, racevars)
 raceall <- left_join(raceall, wiferace)
 raceall <- left_join(raceall, hispanic)
@@ -338,10 +339,10 @@ process_parent_ed <- function(data){
   headfathered <- 	c("V318", "V793", "V1484", "V2196", "V2822", "V3240", "V3662", "V4138", "V4681", "V5601", "V6150", "V6747", "V7380",
                      "V8032", "V8656", "V9342", "V10989", "V11922", "V13549", "V14596", "V16070", "V17467", "V18798", "V20098",
                      "V21404", "V23260", "ER3924", "ER6794", "ER9040", "ER11816", "ER15894", "ER19955", "ER23392",  "ER27356",
-                     "ER40531", "ER46508", "ER51869", "ER57622", "ER64773", "ER70845",  "ER76860")
+                     "ER40531", "ER46508", "ER51869", "ER57622", "ER64773", "ER70845",  "ER76860", "ER80980")
   headfather <- data %>% dplyr::select(uniqueID, all_of(headfathered))
-  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  names(headfather)[2:42] <- years
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(headfather)[2:43] <- years
   headfather <- headfather %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="head_fathered") %>% 
     # mutate(head_fathered = ifelse(head_fathered<=4, "LEHS",
     #                               ifelse(head_fathered>4 & head_fathered<=6, "SomeC",
@@ -352,11 +353,11 @@ process_parent_ed <- function(data){
   headmothered <- 	c("V3634", "V4139", "V4682", "V5602", "V6151", "V6748", "V7381",  "V8033", "V8657", "V9343", "V10990", "V11923",
                      "V13550", "V14597", "V16071", "V17468", "V18799", "V20099", "V21405", "V23261", "ER3926", "ER6796", "ER9042",
                      "ER11824", "ER15903", "ER19964", "ER23401", "ER27366", "ER40541", "ER46518", "ER51879", "ER57632", "ER64783",
-                     "ER70855", "ER76870")
+                     "ER70855", "ER76870", "ER81117")
   
   headmother <- data %>% dplyr::select(uniqueID, all_of(headmothered))
-  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  names(headmother)[2:36] <- years
+  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(headmother)[2:37] <- years
   headmother <- headmother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="head_mothered") %>% 
     # mutate(head_mothered = ifelse(head_mothered<=4, "LEHS",
     #                               ifelse(head_mothered>4 & head_mothered<=6, "SomeC",
@@ -366,13 +367,14 @@ process_parent_ed <- function(data){
   spousefathered <- 	c("V3608","V4108","V4753","V5572","V6121","V6718","V7351","V8003","V8627",
                        "V9313","V10960","V12277","V13485","V14532","V16006","V17403","V18734","V20034",
                        "V21340","V23197","ER3864","ER6734","ER8980","ER11735","ER15809","ER19870","ER23307",
-                       "ER27267", "ER40442", "ER46414", "ER51775", "ER57512", "ER64634", "ER70707","ER76715")
+                       "ER27267", "ER40442", "ER46414", "ER51775", "ER57512", "ER64634", "ER70707","ER76715",
+                       "ER80980")
   
   spousefather <- data %>% dplyr::select(uniqueID, all_of(spousefathered))
   
-  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  names(spousefather)[2:36] <- years
-  spousefather <- spousefather %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="spouse_fathered") %>% 
+  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(spousefather)[2:37] <- years
+  spousefather <- spousefather %>% pivot_longer(cols='1974':'2021', names_to="year", values_to="spouse_fathered") %>% 
     # mutate(spouse_fathered = ifelse(spouse_fathered<=4, "LEHS",
     #                                 ifelse(spouse_fathered>4 & spouse_fathered<=6, "SomeC",
     #                                        ifelse(spouse_fathered> 6 & spouse_fathered<=8, "College", NA)))) %>% 
@@ -382,12 +384,13 @@ process_parent_ed <- function(data){
   spousemothered <- 	c("V3609","V4109","V4754","V5573","V6122","V6719","V7352","V8004","V8628",
                        "V9314","V10961","V12278","V13486","V14533","V16007","V17404","V18735","V20035",
                        "V21341","V23198","ER3866","ER6736","ER8982","ER11743","ER15818","ER19879","ER23316",
-                       "ER27277", "ER40452", "ER46424", "ER51785", "ER57522", "ER64644", "ER70717","ER76725")
+                       "ER27277", "ER40452", "ER46424", "ER51785", "ER57522", "ER64644", "ER70717","ER76725",
+                       "ER80990")
   
   spousemother <- data %>% dplyr::select(uniqueID, all_of(spousemothered))
   
-  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  names(spousemother)[2:36] <- years
+  years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(spousemother)[2:37] <- years
   spousemother <- spousemother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="spouse_mothered") %>% 
     # mutate(spouse_mothered = ifelse(spouse_mothered<=4, "LEHS",
     #                                 ifelse(spouse_mothered>4 & spouse_mothered<=6, "SomeC",
@@ -454,17 +457,18 @@ code_education_parent <- function(data){
 process_kessler <- function(data){
   ###Using Kesslers scale (K6) total score variable (0-24)
   ###Kessler scale aggregates scores across 6 variables- Sadness, Nervousness, Restlessness, Hopelessness,Effortlessness and Worthlessness)
-  varlist<-c("ER19833A", "ER23268", "ER40402", "ER46375", "ER51736", "ER57482", "ER64604", "ER70680", "ER76688")
-  years <- c(2001, 2003, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  varlist<-c("ER19833A", "ER23268", "ER40402", "ER46375", "ER51736", "ER57482", "ER64604", "ER70680", "ER76688", "ER80952")
+  years <- c(2001, 2003, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   kessler <- data %>% dplyr::select(uniqueID, all_of(varlist))
-  names(kessler)[2:10] <- years
-  kessler <- kessler %>% pivot_longer(cols='2001':'2019', names_to="year", values_to="kessler_score") %>% 
+  names(kessler)[2:11] <- years
+  kessler <- kessler %>% pivot_longer(cols='2001':'2021', names_to="year", values_to="kessler_score") %>% 
     group_by(uniqueID) %>% fill(kessler_score, .direction=c("downup"))
   kessler$kessler_score <- ifelse(kessler$kessler_score==99|kessler$kessler_score==98, NA, kessler$kessler_score)
   kessler$year <- as.numeric(kessler$year)
   return(kessler)
 }
 
+## recode_PSID_vars does not currently seem to be called upon in the 1_PSID_processing_clean script.
 recode_PSID_vars <- function(data, varlist, variable, years){
   newdata <- data %>%
     mutate(origINTNO = ER30001,
@@ -473,7 +477,7 @@ recode_PSID_vars <- function(data, varlist, variable, years){
            sex = recode(as.factor(ER32000), "1"="male", "2"="female")) %>%
     dplyr::select(uniqueID, sex, all_of(varlist))
   names(newdata)[3:length(newdata)] <- years
-  newdata <- newdata %>% pivot_longer(cols=as.character(min(years)):'2019', names_to="year", values_to=variable) %>%
+  newdata <- newdata %>% pivot_longer(cols=as.character(min(years)):'2021', names_to="year", values_to=variable) %>%
     mutate(year=as.numeric(as.character(year)))
   return(newdata)
 }
@@ -483,8 +487,8 @@ process_employment <- function(data){
           "ER30441", "ER30474", "ER30509", "ER30545", "ER30580","ER30616", "ER30653",
           "ER30699", "ER30744", "ER30816", "ER33111", "ER33211", "ER33311", "ER33411",
           "ER33512", "ER33612", "ER33712", "ER33813", "ER33913", "ER34016", "ER34116",
-          "ER34216", "ER34317", "ER34516", "ER34716")
-  years<-c(1979:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+          "ER34216", "ER34317", "ER34516", "ER34716", "ER34916")
+  years<-c(1979:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   employment <- recode_PSID_vars(data=data, varlist, "employment_stat", years)
   employment$employment_stat <- ifelse(employment$employment_stat==1, 1,
                                        ifelse(employment$employment_stat>1, 0, NA))
@@ -497,8 +501,8 @@ process_income <- function(data){
                "V8065", "V8689", "V9375", "V11022", "V12371", "V13623", "V14670",
                "V16144", "V17533", "V18875", "V20175", "V21481", "V23322", "ER4153",
                "ER6993", "ER9244", "ER12079", "ER16462", "ER20456", "ER24099", "ER28037",
-               "ER41027", "ER46935", "ER52343", "ER58152", "ER65349", "ER71426", "ER77448")
-  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+               "ER41027", "ER46935", "ER52343", "ER58152", "ER65349", "ER71426", "ER77448", "ER81775")
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   income <- recode_PSID_vars(data=data, varlist, "total_fam_income", years)
   return(income)
 }
@@ -509,8 +513,8 @@ process_homeowner <- function(data){
                "V10437", "V11618", "V13023", "V14126", "V15140", "V16641", "V18072",
                "V19372", "V20672", "V22427", "ER2032", "ER5031", "ER7031", "ER10035",
                "ER13040", "ER17043", "ER21042", "ER25028", "ER36028", "ER42029", "ER47329",
-               "ER53029", "ER60030", "ER66030", "ER72030")
-  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+               "ER53029", "ER60030", "ER66030", "ER72030", "ER78031")
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   homeowner <- recode_PSID_vars(data=data, varlist, "homeowner", years)
   homeowner$homeowner <- ifelse(homeowner$homeowner==1, "owns",
                                 ifelse(homeowner$homeowner==5, "rents",
@@ -520,44 +524,44 @@ process_homeowner <- function(data){
 
 process_alcohol <- function(data){
   
-  years<-c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  years<-c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   # variables for "ever drink" for household head
-  varlist <- c("ER27105", "ER38316", "ER44289", "ER49627", "ER55375", "ER62497", "ER68562", "ER74570")
+  varlist <- c("ER27105", "ER38316", "ER44289", "ER49627", "ER55375", "ER62497", "ER68562", "ER74570", "ER80721")
   everdrinkalcoholhd <- recode_PSID_vars(data=data, varlist, "everdrinkhd", years)
   everdrinkalcoholhd$everdrinkhd <- ifelse(everdrinkalcoholhd$everdrinkhd==9|everdrinkalcoholhd$everdrinkhd==8, NA, everdrinkalcoholhd$everdrinkhd)
 
   # variables for "ever drink" for spouse
-  varlist<-c("ER27228", "ER39413", "ER45386", "ER50745", "ER56491", "ER63613", "ER69689", "ER75697")
+  varlist<-c("ER27228", "ER39413", "ER45386", "ER50745", "ER56491", "ER63613", "ER69689", "ER75697", "ER80919")
   everdrinkalcoholspouse <- recode_PSID_vars(data=data, varlist, "everdrinkspouse", years)
   everdrinkalcoholspouse$everdrinkspouse <- ifelse(everdrinkalcoholspouse$everdrinkspouse==9|everdrinkalcoholspouse$everdrinkspouse==8, NA, everdrinkalcoholspouse$everdrinkspouse)
 
   # variables for "drinking frequency" for household head
-  varlist<-c("ER27106", "ER38317", "ER44290", "ER49628", "ER55376", "ER62498", "ER68563", "ER74571")
+  varlist<-c("ER27106", "ER38317", "ER44290", "ER49628", "ER55376", "ER62498", "ER68563", "ER74571", "ER80722")
   frequencydrinkhd <- recode_PSID_vars(data=data, varlist, "frequencydrinkhd", years)
   frequencydrinkhd$frequencydrinkhd <- ifelse(frequencydrinkhd$frequencydrinkhd==9|frequencydrinkhd$frequencydrinkhd==8, NA, frequencydrinkhd$frequencydrinkhd)
 
   # variables for "drinking frequency" for spouse
-  varlist<-c("ER27229", "ER39414", "ER45387", "ER50746", "ER56492", "ER63614", "ER69690", "ER75698")
+  varlist<-c("ER27229", "ER39414", "ER45387", "ER50746", "ER56492", "ER63614", "ER69690", "ER75698", "ER80920")
   frequencydrinkspouse <- recode_PSID_vars(data=data, varlist, "frequencydrinkspouse", years)
   frequencydrinkspouse$frequencydrinkspouse <- ifelse(frequencydrinkspouse$frequencydrinkspouse==9|frequencydrinkspouse$frequencydrinkspouse==8, NA, frequencydrinkspouse$frequencydrinkspouse)
 
   # variables for "drinking quantity" for household head
-  varlist<-c("ER27107", "ER38318", "ER44291", "ER49629", "ER55377", "ER62499", "ER68564", "ER74572")
+  varlist<-c("ER27107", "ER38318", "ER44291", "ER49629", "ER55377", "ER62499", "ER68564", "ER74572", "ER80723")
   drinksperdayhd <- recode_PSID_vars(data=data, varlist, "drinksperdayhd", years)
   drinksperdayhd$drinksperdayhd <- ifelse(drinksperdayhd$drinksperdayhd==99|drinksperdayhd$drinksperdayhd==98, NA, drinksperdayhd$drinksperdayhd)
 
   # variables for "drinking quantity" for spouse
-  varlist<-c("ER27230", "ER39415", "ER45388", "ER50747", "ER56493", "ER63615", "ER69691", "ER75699")
+  varlist<-c("ER27230", "ER39415", "ER45388", "ER50747", "ER56493", "ER63615", "ER69691", "ER75699", "ER80919")
   drinksperdayspouse <- recode_PSID_vars(data=data, varlist, "drinksperdayspouse", years)
   drinksperdayspouse$drinksperdayspouse <- ifelse(drinksperdayspouse$drinksperdayspouse==99|drinksperdayspouse$drinksperdayspouse==98, NA, drinksperdayspouse$drinksperdayspouse)
 
   # variables for "binge drinking" for household head (no. of days had five drinks in year)
-  varlist<-c("ER27108", "ER38319", "ER44292", "ER49630", "ER55378", "ER62500", "ER68565", "ER74573")
+  varlist<-c("ER27108", "ER38319", "ER44292", "ER49630", "ER55378", "ER62500", "ER68565", "ER74573", "ER80724")
   bingedrinkhd <- recode_PSID_vars(data=data, varlist, "bingedrinkhd", years)
   bingedrinkhd$bingedrinkhd <- ifelse(bingedrinkhd$bingedrinkhd==999|bingedrinkhd$bingedrinkhd==998, NA, bingedrinkhd$bingedrinkhd)
 
   # variables for "binge drinking" for spouse (no. of days had four drinks in year)
-  varlist<-c("ER27231", "ER39416", "ER45389", "ER50748", "ER56494", "ER63616", "ER69692", "ER75700")
+  varlist<-c("ER27231", "ER39416", "ER45389", "ER50748", "ER56494", "ER63616", "ER69692", "ER75700", "ER80922")
   bingedrinkspouse <- recode_PSID_vars(data=data, varlist, "bingedrinkspouse", years)
   bingedrinkspouse$bingedrinkspouse <- ifelse(bingedrinkspouse$bingedrinkspouse==999|bingedrinkspouse$bingedrinkspouse==998, NA, bingedrinkspouse$bingedrinkspouse)
 
@@ -618,6 +622,7 @@ recode_alcohol <- function(data){
   
 }
 
+## TAS for 2021 not yet available
 
 process_TAS_race <- function(data){
   varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
