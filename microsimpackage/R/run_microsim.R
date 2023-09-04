@@ -128,6 +128,12 @@ if("ISTR" %in% diseases==TRUE){
 if("HYPHD" %in% diseases==TRUE){
   basepop <- HYPHD(basepop, lhs)
 }
+if("MVACC" %in% diseases==TRUE){
+  basepop <- MVACC(basepop, lhs)
+}
+if("UIJ" %in% diseases==TRUE){
+  basepop <- UIJ(basepop, lhs)
+}
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)

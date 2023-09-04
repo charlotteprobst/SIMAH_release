@@ -61,6 +61,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
         c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
       
+      MVACC <- list( 
+        c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
+        c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
+      
+      UIJ <- list( 
+        c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
+        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
+      
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
         c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
@@ -68,7 +76,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "ALL")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
@@ -78,6 +86,8 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
+  names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
+  names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
   
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
