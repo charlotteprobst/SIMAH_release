@@ -13,6 +13,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
+                         age_categories,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -148,9 +149,14 @@ summary_list <- list()
 for (disease in diseases) {
     # Generate and add the summary to the list with automatic naming
     summary_list[[paste0(disease)]] <- basepop %>%
+      mutate(ageCAT = cut(microsim.init.age,
+                          breaks=c(0,24,34,44,54,64,74,79),
+                          labels=c("18-24","25-34","35-44", "45-54",
+                                   "55-64","65-74","75-79")),
+             inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2])) %>%
       group_by(cat) %>%
-      summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))))
-}
+      summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
+    }
 
 DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
   mutate(year=y)
@@ -166,8 +172,14 @@ for (disease in diseases) {
   # Filter individuals with mortality equal to 1 for the current disease
   toremove <- basepop %>%
     filter(!!sym(paste0('mort_', disease)) == 1) %>%
+    group_by(cat) %>%
     add_tally() %>%
-    mutate(toremove = round(n / inflation_factor)) %>%
+    mutate(ageCAT = cut(microsim.init.age,
+                        breaks=c(0,24,34,44,54,64,74,79),
+                        labels=c("18-24","25-34","35-44", "45-54",
+                                 "55-64","65-74","75-79")),
+      inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2]),
+      toremove = round(n / inflation_factor)) %>%
     dplyr::sample_n(size = unique(toremove), replace = FALSE)
   # Get the IDs to be removed
   ids <- toremove$microsim.init.id
@@ -185,11 +197,6 @@ for (disease in diseases) {
 
 basepop <- basepop %>% dplyr::select(-c(cat, prob))
 
-# if policy flag switched on - simulate a reduction in alcohol consumption
-# if(policy==1){
-# basepop <- reduce_consumption(basepop, percentreduction)
-# }
-
 #delete anyone over 79
 ###then age everyone by 1 year and update age category
 basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
@@ -203,7 +210,6 @@ basepop <- subset(basepop, microsim.init.age<=79)
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
-  # add samplenum and seed as an output for this function TODO
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor) %>%
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){

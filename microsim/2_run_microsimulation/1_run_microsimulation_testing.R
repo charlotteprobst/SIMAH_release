@@ -15,6 +15,7 @@ options(dplyr.summarise.inform = FALSE)
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -40,7 +41,7 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2019
+maxyear <- 2002
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
@@ -50,8 +51,9 @@ Output <- run_microsim(1,1,basepop,brfss,
                        updatingalcohol, alcohol_transitions,
                        base_counts, diseases, lhs, liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
+                       age_categories,
                        update_base_rate,
-                       2000, 2019, output_type)
+                       2000, 2002, output_type)
 
 alcohol_type <- "categorical"
 
@@ -67,6 +69,7 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 }
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output_calibration(Output, SelectedState, DataDirectory, inflation_factor, diseases)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor, diseases)
 }
 summary[[1]]
 

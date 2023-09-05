@@ -39,7 +39,7 @@ diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
 model <- "SIMAH"
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
-output_type <- "alcohol"
+output_type <- "mortality"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
@@ -130,8 +130,10 @@ update_base_rate <- 1
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
-inflation_factor <- 200
+# define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
+inflation_factors <- c(1, 50)
+age_categories <- c("65-74", "75-79")
 
 if(length(diseases)>=1){
-  base_counts <- setup_base_counts(death_counts,diseases, inflation_factor)
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_categories)
 }
