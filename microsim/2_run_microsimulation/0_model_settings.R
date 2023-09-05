@@ -22,7 +22,7 @@ migrationdeaths <- 1
 updatingeducation <- 1
 
 # switch on and off alcohol updates
-updatingalcohol <- 1
+updatingalcohol <- 0
 
 # switch between modelling mortality and morbidity (mortality = 1)
 mortality <- 1
@@ -33,7 +33,8 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
+# diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
+diseases <- "LVDC"
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"

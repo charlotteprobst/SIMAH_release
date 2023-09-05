@@ -6,20 +6,14 @@
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 gc()
 suppressPackageStartupMessages(library("dplyr"))
+library(devtools)
+library(roxygen2)
 library(dplyr)
-library(knitr)
-library(ipfp)
-library(tidyr)
-library(janitor)
-library(stringr)
-library(reshape2)
-library(pbapply)
-library(ggplot2)
-library(gridExtra)
-library(readr)
-library(readxl)
-library(parallel)
-library(foreach)
+library(tidyverse)
+library(fitdistrplus)
+library(lhs)
+library(truncnorm)
+library(data.table)
 library(doParallel)
 options(scipen=999)
 # set seed for reproducibility - IMPORTANT - DO NOT CHANGE
@@ -28,9 +22,15 @@ set.seed(42)
 
 ####EDIT ONLY BELOW HERE ### 
 ###set working directory to the main "Microsimulation" folder in your directory 
+# WorkingDirectory <- "U:/SIMAH/"
+WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
+
+# load in microsim R package
 setwd(paste(WorkingDirectory))
+
+install("SIMAH_code/microsimpackage", dep=T)
 
 ####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
 States <- c("California","Colorado","Florida","Indiana",
@@ -38,59 +38,18 @@ States <- c("California","Colorado","Florida","Indiana",
             "Missouri","New York", "Oregon", "Pennsylvania",
             "Tennessee","Texas","USA")
 
-for(s in States){
-SelectedState <- s
-print(s)
+# for(s in States){
+SelectedState <- "USA"
 
-####Size of population 
-PopulationSize <- 1000000
-
-# what proportion of the population does this represent - change to ifelse with all pop sizes when other states added 
-WholePopSize <- read.csv("SIMAH_workplace/microsim/1_input_data/fullpopcounts.csv") %>% 
-  filter(STATE==SelectedState)
-
-proportion <- PopulationSize/WholePopSize$total
-proportion <- ifelse(proportion>1,1,proportion)
-
-#####first read in and process all the necessary data files 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/load_files.R")
-# load in the education transitions data
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/education_transitions.R")
-
-# load in the alcohol transitions data 
-source("SIMAH_code/microsim/2_run_microsimulation/1_preprocessing_scripts/alcohol_transitions.R")
-
-# load all functions for running the microsimulation - death rates, migration, transition education
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/apply_death_rates.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/outward_migration.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/inward_migration.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/education_setup.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/transition_ed.R")
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/transition_alcohol.R")
-
-# load the function for running the simulation
-source("SIMAH_code/microsim/2_run_microsimulation/1_functions/simulation.R")
-
-# switch on and off migration and deaths
-migrationdeaths <- 1
-
-# switch on and off education updates
-updatingeducation <- 1
-
-# switch on and off alcohol updates
-updatingalcohol <- 0
-
-Rates <- readRDS(paste("SIMAH_workplace/microsim/1_input_data/migration_rates/final_rates",SelectedState,".RDS",sep=""))
-Rates$agecat <- as.character(Rates$agecat)
+source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
+lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 
 # save samples 
 saveRDS(transitionsList, paste("SIMAH_workplace/microsim/2_output_data/transitionsList", SelectedState,".RDS",sep=""))
-# length(transitionsList)
-
-# transitionsList <- transitionsList[1:2]
+saveRDS(estimates, paste("SIMAH_workplace/microsim/2_output_data/sampled_markov", SelectedState, ".RDS"))
 
 registerDoParallel(30)
 # registerDoSNOW(c1)
@@ -99,17 +58,27 @@ options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 Output <- list()
-Output <- foreach(i=1:length(transitionsList), .inorder=FALSE,
-                     .packages=c("dplyr","tidyr","foreach")) %dopar% {
-                       samplenum <- i
-                       seed <- Sys.time()
-                       print(i)
-                       run_microsim(seed,samplenum,basepop, outwardmigrants, inwardmigrants, deathrates, apply_death_rates,
-                       updatingeducation, education_setup, transitionroles,
-                       calculate_migration_rates, outward_migration, inward_migration, 
-                       brfss,Rates,AlctransitionProbability,
-                       transitionsList[[i]], PopPerYear, 2000, 2018)
-                       }
+
+sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
+
+baseorig <- basepop
+
+Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% {
+  print(i)
+  samplenum <- as.numeric(sampleseeds$samplenum[i])
+  seed <- as.numeric(sampleseeds$seed[i])
+  basepop <- baseorig
+  run_microsim(seed,samplenum,basepop,brfss,
+               death_counts,
+               updatingeducation, transitionsList[[samplenum]],
+               migration_counts,
+               updatingalcohol, alcohol_transitions,
+               base_counts, diseases, lhs, liverinteraction,
+               policy=0, percentreduction=0.1, year_policy, inflation_factor,
+               age_categories,
+               update_base_rate,
+               minyear=2000, maxyear=2001, output="demographics")
+}
                        
         
 # get target data 
@@ -170,6 +139,5 @@ ggplot(data=bestrate, aes(x=year, y=microsimpercent, colour=as.factor(samplenum)
   ylab("percentage in category")
 ggsave(paste("SIMAH_workplace/microsim/2_output_data/plots/education_states_bestrate",SelectedState, ".png",sep=""),
        dpi=300, width=33, height=19, units="cm")
-}
 
 

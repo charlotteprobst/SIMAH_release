@@ -11,7 +11,7 @@ run_microsim(
   brfss,
   death_counts,
   updatingeducation,
-  education_setup,
+  education_transitions,
   migration_counts,
   updatingalcohol,
   alcohol_transitions,

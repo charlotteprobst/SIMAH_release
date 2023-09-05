@@ -1,12 +1,12 @@
 #' Set up education data for simulation
 #'
-#' @param basepop, y takes the simulated population in each year
+#'This function sets up the education transition parameters for the simulation
+#' @param
 #' @keywords education
 #' @export
 #' @examples
-#' education_setup()
-
-education_setup <- function(basepop,y){
+#' setup_education
+setup_education <- function(basepop,y){
   basepop$agecat <- ifelse(basepop$microsim.init.age==18, "18",
                            ifelse(basepop$microsim.init.age==19, "19",
                                   ifelse(basepop$microsim.init.age==20, "20",
@@ -23,7 +23,7 @@ education_setup <- function(basepop,y){
                             ifelse(basepop$microsim.init.race=="WHI","white",
                                    ifelse(basepop$microsim.init.race=="OTH", "other",
                                           ifelse(basepop$microsim.init.race=="SPA","hispanic",NA))))
-  basepop$cat <- paste(basepop$year, basepop$microsim.init.age, basepop$microsim.init.sex,
+  basepop$cat <- paste(basepop$year, basepop$agecat, basepop$microsim.init.sex,
                        basepop$racecat,
                        "STATEFROM", basepop$state, sep="_")
   basepop$racecat <- NULL

@@ -8,7 +8,7 @@
 #' run_microsim
 run_microsim <- function(seed,samplenum,basepop,brfss,
                          death_counts,
-                         updatingeducation, education_setup,
+                         updatingeducation, education_transitions,
                          migration_counts,
                          updatingalcohol, alcohol_transitions,
                          base_counts, diseases, lhs, liverinteraction,
@@ -47,7 +47,7 @@ if(updatingeducation==1 & y>=2000){
   print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
-  totransition <- education_setup(totransition,y)
+  totransition <- setup_education(totransition,y)
   totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
   totransition$microsimnewED <- totransition$newED
   totransition$microsim.init.education <- ifelse(totransition$microsimnewED=="LEHS","LEHS",
@@ -214,8 +214,9 @@ if(output=="mortality"){
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
-  SummaryPop <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+  Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
+                                                  seed=as.factor(seed),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
                                                   microsim.init.race=as.factor(microsim.init.race),
                                                   microsim.init.education=as.factor(microsim.init.education),
@@ -224,7 +225,7 @@ if(output=="mortality"){
                                                   #                        "50+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
+    group_by(year, samplenum, seed, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
              .drop=FALSE) %>% tally()
 }else if(output=="alcohol"){
   CatSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
