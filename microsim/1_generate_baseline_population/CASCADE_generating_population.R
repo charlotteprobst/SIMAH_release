@@ -48,17 +48,12 @@ source("SIMAH_code/microsim/1_generate_baseline_population/scripts/CASCADE_proce
 microsim <- microsim %>% 
   mutate(microsim.init.sex= ifelse(microsim.init.sex=="M",1,0),
          drinksperday = microsim.init.alc.gpd/14,
-         microsim.init.drinks.per.month = drinksperday*30,
          microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
-<<<<<<< Updated upstream
-         microsim.init.annual.frequency = alcdays*12,
-         microsim.init.heavy.episodic.drinking = NA) %>% 
-=======
+         microsim.init.heavy.episodic.drinking = NA,
          microsim.init.annual.frequency = microsim.init.drink.frequency*12,
          microsim.roles.employment.status = ifelse(microsim.roles.employment.status=="employed",1,0),
          microsim.roles.parenthood.status = ifelse(microsim.roles.parenthood.status=="employed",1,0),
          microsim.roles.marital.status = ifelse(microsim.roles.marital.status=="married",1,0)) %>% 
->>>>>>> Stashed changes
   dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.race,
                 microsim.roles.employment.status, microsim.roles.parenthood.status,
                 microsim.roles.marital.status, microsim.init.education,
@@ -70,3 +65,4 @@ microsim <- microsim %>%
 
 write.csv(microsim, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "basepopCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)
 microsim %>% group_by(microsim.init.sex) %>% filter(microsim.init.drinkingstatus==1) %>% summarise(mean(microsim.init.alc.gpd))
+microsim %>% group_by(microsim.init.sex) %>% summarise(mean(microsim.init.drinkingstatus))
