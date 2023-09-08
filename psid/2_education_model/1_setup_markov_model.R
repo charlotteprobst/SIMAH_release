@@ -77,7 +77,6 @@ setup_markov_model <- function(data,y){
     return(data)
 }
 
-
 setup_markov_model_formodel <- function(data){
   data$educNUM <- ifelse(data$education<=12, 1,
                                 ifelse(data$education==13, 2,

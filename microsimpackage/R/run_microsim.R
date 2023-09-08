@@ -11,6 +11,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingeducation, education_transitions,
                          migration_counts,
                          updatingalcohol, alcohol_transitions,
+                         catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
                          age_categories,
@@ -62,6 +63,7 @@ if(updatingeducation==1 & y>=2000){
 
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
+  print("updating alcohol")
   print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
@@ -101,6 +103,8 @@ if(updatingalcohol==1 & y>=2000){
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 # simulate mortality from specific diseases
+print("simulating disease mortality")
+disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
 }
@@ -254,4 +258,3 @@ if(output=="mortality"){
 }
 return(Summary)
 }
-
