@@ -6,8 +6,8 @@ library(tidyr)
 setwd("~/Google Drive/SIMAH Sheffield")
 
 # read in the data 
-data <- read.dbf("SIMAH_workplace/education_transitions/J312239/J312239.dbf")
-source("SIMAH_code/education_transitions/1_data_processing/PSID_processing_functions.R")
+data <- read.dbf("SIMAH_workplace/PSID/J315519/J315519.dbf")
+source("SIMAH_code/psid/1_process_data/PSID_processing_functions.R")
 
 data$familyID <- data$ER30001
 data$ID <- data$ER30002
@@ -29,6 +29,8 @@ age <- process_age(data)
 
 # process relationship to householder data
 relationship <- process_relationship(data)
+
+# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf")
 
 # process sampling weights 
 sampleweights <- process_sample_weights(data)
@@ -84,7 +86,7 @@ alldata <- left_join(alldata, age)
 # now subset by the population that we need for the transition probabilities
 # aged 34 and under and containing sample weights and after year 1999
 
-alldata <- alldata %>% filter(age <= 34) %>% filter(year>=1999) %>% drop_na(sampleweight)
+alldata <- alldata %>% filter(age <= 34 & age>=18) %>% filter(year>=1999) %>% drop_na(sampleweight)
 
 # remove nonresponders 
 nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>% 
@@ -93,22 +95,56 @@ nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.d
          uniqueID = familyID*1000 + ID,
          year_nonresponse = ER32007)
   
-alldata <- left_join(alldata, nonresponse) %>% 
-  mutate(toremove = ifelse(year_nonresponse==year, 1,0)) %>% filter(toremove==0) %>% 
-  filter(sampleweight!=0)
+# alldata <- left_join(alldata, nonresponse) %>% 
+#   mutate(toremove = ifelse(year_nonresponse>=year, 1,0)) %>% filter(toremove==0) %>% 
+#   filter(sampleweight!=0)
 
 library(naniar)
+
+# alldata <- alldata %>% filter(year>=1999) %>% 
+#   filter(age>=18 & age<=34) %>% filter(sampleweight!=0)
+
+length(unique(alldata$uniqueID))
+
+missinged <- alldata[is.na(alldata$education),]
+length(unique(missinged$uniqueID))
+
+missingrace <- alldata[is.na(alldata$individualrace),]
+length(unique(missingrace$uniqueID))
+
+missingparent <- alldata[is.na(alldata$onecollegeplus),]
+length(unique(missingparent$uniqueID))
+
 
 missing_summary <- alldata %>% group_by(year) %>% 
   miss_var_summary() 
 
-alldata <- alldata %>% drop_na()
+length(unique(alldata$uniqueID))
+
+alldata <- alldata %>% drop_na(individualrace, education_cat, onecollegeplus)
+
+length(unique(alldata$uniqueID))
 
 library(splitstackshape)
-alldata <- alldata %>% group_by(uniqueID) %>% mutate(sampleweight = mean(sampleweight))
+alldata <- alldata %>% group_by(uniqueID) %>% mutate(sampleweight = mean(weight)) %>% filter(sampleweight!=0)
+
+alldata <- alldata %>% filter(age>=18 & age<=34)
+
+length(unique(alldata$uniqueID))
+
+alldata$timeperiod <- ifelse(alldata$year<=2009, 1,
+                             ifelse(alldata$year>=2009, 0, NA))
+
+alldata %>% group_by(timeperiod) %>% summarise(n=length(unique(uniqueID)))
+
+alldata %>% group_by(timeperiod) %>% summarise(meanage = mean(age))
+
+alldata %>% group_by(timeperiod, year, individualrace) %>% tally() %>% ungroup() %>% 
+  group_by(timeperiod, year) %>% 
+  mutate(n/sum(n))
 
 alldata <- expandRows(alldata, "sampleweight")
 
 write.csv(alldata, "SIMAH_workplace/education_transitions/new_PSID_processed_weighted.csv")
 
-
+length(unique(alldata$uniqueID))

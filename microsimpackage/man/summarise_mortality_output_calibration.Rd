@@ -7,15 +7,16 @@
 summarise_mortality_output_calibration(
   Output,
   SelectedState,
+  WorkingDirectory,
   inflation_factor,
-  agestyear
+  diseases
 )
 }
 \description{
 Compares mortality consumption by subgroup to brfss data
 }
 \examples{
-summarise_mortality_output
+summarise_mortality_output_calibration
 }
 \keyword{mortality}
 \keyword{postprocessing}
