@@ -12,14 +12,16 @@ library(data.table)
 library(dplyr)
 library(Hmisc)
 library(writexl)
-
+library(readr)
 # --------------------------------------------------------------------------------------
 
 rm(list = ls())
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
+setwd("~/Google Drive/SIMAH Sheffield/SIMAH_workplace/")
+
 DATE <- 20230109
 
-dat <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
+dat <- data.table(read_rds("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
 
 # --------------------------------------------------------------------------------------
 
@@ -103,6 +105,10 @@ drinkCAT <- merge(drinkCAT, HIGH, by = c("YEAR", "sex_recode", "education_summar
 
 ggplot(data = drinkCAT, aes(x = YEAR, y = LA, color = as.factor(sex_recode))) +
   geom_point() + geom_line() + geom_pointrange(aes(ymin = LA.lb, ymax = LA.ub)) +
+write.csv(drinkCAT, "drinking_by_SES/BRFSS_mean_alc_cats.csv", row.names=F)
+
+ggplot(data = drinkCAT, aes(x = YEAR, y = ANY, color = as.factor(sex_recode))) +
+  geom_point() + geom_line() + geom_pointrange(aes(ymin = ANY.lb, ymax = ANY.ub)) +
   facet_grid(rows = vars(factor(education_summary, levels = c("LEHS", "SomeC", "College"))), scale = "free") +
   scale_y_continuous(labels = scales::percent, name = "Prevalence past-year alcohol use (weighted)") +
   theme_bw() + theme(legend.position="bottom", legend.title=element_blank(), strip.background = element_rect(fill="white")) 
@@ -140,6 +146,7 @@ GPD <- dat %>% filter(gramsperday_upshifted > 0) %>% group_by(YEAR, sex_recode, 
                summarise(GPD.mean = wtd.mean(gramsperday_upshifted, final_sample_weight),
                          GPD.lb = wtd.lb(gramsperday_upshifted, final_sample_weight),
                          GPD.ub = wtd.ub(gramsperday_upshifted, final_sample_weight)) %>% as.data.table
+write.csv(GPD, "drinking_by_SES/BRFSS_mean_GPD.csv", row.names=F)
 
 ggplot(data = GPD, aes(x = YEAR, y = GPD.mean, color = as.factor(sex_recode))) +
   geom_point() + geom_line() + geom_pointrange(aes(ymin = GPD.lb, ymax = GPD.ub)) +
