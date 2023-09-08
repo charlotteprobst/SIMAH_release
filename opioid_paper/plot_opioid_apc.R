@@ -8,7 +8,7 @@ library(dplyr)
 library(tidyr)
 library(RColorBrewer)
 
-DATE <- "02Nov2022"
+DATE <- "01Sep2023"
 
 data1 <- read_dta("temp2000-20poi-age-aggregate-population.dta") %>% 
   zap_labels() %>% zap_formats() %>% 
@@ -21,21 +21,23 @@ data1 <- read_dta("temp2000-20poi-age-aggregate-population.dta") %>%
          age_gp = cut(age, breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,84,100),
                       labels=c("18","25","30","35","40","45","50","55","60","65",
                                "70","75","80","85"))) %>% 
+  dplyr::select(alc_only:alc_opioid, age_gp, year, birth_gp, race, sex, pop) %>% 
   pivot_longer(alc_only:alc_opioid) %>% 
+  distinct() %>% 
   group_by(age_gp,year,birth_gp, race, sex,name) %>% 
-  summarise(value = sum(value),
+  reframe(value = sum(value),
             pop = sum(pop),
             rate = (value/ pop) * 100000,
             birth_gp = as.numeric(as.character(birth_gp)),
             age_gp = as.numeric(as.character(age_gp))) %>% 
   mutate(         name = recode(name, "alc_only"="Alcohol only","opioid_only"="Opioid only",
                                 "alc_opioid"="Alcohol and Opioid"),
-                  name = factor(name, levels=c("Alcohol only","Alcohol and Opioid","Opioid only")),
+                  name = factor(name, levels=c("Alcohol only","Opioid only","Alcohol and Opioid")),
                   sex = ifelse(sex==1,"Men","Women"),
                   race = recode(race,
                                 "1"="White","2"="Black","3"="Hispanic","4"="Others"),
                   race = factor(race, levels=c("White","Black","Hispanic","Others"))
-                  )
+                  ) %>% distinct()
 
 overall <- data1 %>% group_by(sex, race, year, name) %>% 
   summarise(value = sum(value),
@@ -44,40 +46,20 @@ overall <- data1 %>% group_by(sex, race, year, name) %>%
 
 plot1 <- ggplot(overall, aes(x=year, y=rate, colour=as.factor(sex))) + 
   facet_grid(cols=vars(race),
-             rows=vars(name), scales="free") + geom_line(size=1) + 
+             rows=vars(name), scales="free") + geom_line(size=1.5) + 
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
-        strip.background = element_rect(fill="white")) + 
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=20),
+        axis.text = element_text(size=12),
+        panel.spacing = unit(2, "lines")) + 
   ylab("Mortality rate per 100,000 population") + xlab("Year") +
   # scale_colour_manual(values=mycolors) + 
   scale_colour_brewer(palette="Set1")
 
 plot1
-ggsave(paste0("Fig1_overall_trend", DATE, ".png"), plot1, dpi=300, width=33, height=19, units="cm")
-
-
-agebycohort <- data1 %>% group_by(age_gp, birth_gp, name, sex) %>% 
-  summarise(value = sum(value),
-            pop = sum(pop),
-            rate = (value/pop)*100000)
-nb.cols <- 15
-
-mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
-
-plot1 <- ggplot(agebycohort, aes(x=age_gp, y=rate, colour=as.factor(birth_gp))) + 
-  facet_grid(cols=vars(sex),
-             rows=vars(name), scales="free") + geom_line(size=1) + 
-  theme_bw() + ylim(0,NA) +
-  theme(legend.title=element_blank(),
-        legend.position="right",
-        strip.background = element_rect(fill="white")) + 
-  ylab("Mortality rate per 100,000 population") + xlab("Age") +
-  scale_colour_manual(values=mycolors)
-plot1
-ggsave(paste0("AgebyCohort_Sex", DATE, ".png"), plot1, dpi=300, width=33, height=19, units="cm")
-
-#plot results from APC models - IRRs
+ggsave(paste0("Fig1_overall_trend", DATE, ".png"), plot1, dpi=500, width=29.7, height=21, units="cm")
 
 IRR <- read_dta("APC-results-by-gender-race.dta") %>% 
   zap_labels() %>% zap_formats() %>% 
@@ -99,22 +81,24 @@ IRR <- read_dta("APC-results-by-gender-race.dta") %>%
          category = ifelse(category=="<=19","1930",
                            ifelse(category==">=19","1996",category)),
          category = as.numeric(category),
-         substance = factor(substance, levels=c("Alcohol only","Alcohol and Opioid","Opioid only")))
+         substance = factor(substance, levels=c("Alcohol only","Opioid only","Alcohol and Opioid")),
+         apc = factor(apc, levels=c("Age","Period","Cohort")))
 unique(IRR$category)
 # plot total effects first 
 total <- IRR %>% filter(race=="all")
-
-age <- total %>% filter(apc=="Period") %>% filter(substance=="Alcohol and Opioid") %>% filter(sex=="Women")
 
 summary(IRR$category)
 
 plot <- ggplot(total, aes(x=category, y=IRR, colour=sex, fill=sex)) + 
   facet_grid(cols=vars(apc),
-             rows=vars(substance), scales="free") + geom_line(size=1) + 
+             rows=vars(substance), scales="free") + geom_line(size=1.5) + 
   theme_bw() + ylim(0,4.1) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
-        strip.background = element_rect(fill="white")) + 
+        strip.background = element_rect(fill="white"),
+        text = element_text(size=20),
+        axis.text = element_text(size=12),
+        panel.spacing = unit(2, "lines")) + 
   ylab("IRR") + xlab("") + 
   geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
@@ -122,81 +106,66 @@ plot <- ggplot(total, aes(x=category, y=IRR, colour=sex, fill=sex)) +
   geom_hline(yintercept=1, linetype="dashed")
 plot
 
-ggsave(paste0("Fig2_APC_sex", DATE, ".png"), plot, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("Fig2_APC_sex", DATE, ".png"), plot, dpi=300, width=29.7, height=21, units="cm")
        
 race <- IRR %>% filter(race!="all") %>% 
   mutate(upper_CI = ifelse(upper_CI>30, NA, upper_CI),
          race = factor(race, levels=c("White","Black","Hispanic")))
 summary <- race %>% filter(substance=="Alcohol only") %>% filter(apc=="Period") %>% filter(sex=="Women")
 
-alcoholonly <- ggplot(subset(race,substance=="Alcohol only"), aes(x=category, y=IRR, colour=race, fill=race)) + 
-  facet_grid(cols=vars(apc),
-             rows=vars(sex), scales="free") + geom_line(size=1) + 
-age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+age <- ggplot(subset(race,apc=="Age"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed") + ggtitle("Alcohol-only")
-alcoholonly
+  geom_hline(yintercept=1, linetype="dashed")
+age
 
-ggsave(paste0("Fig3_APC_alcoholonly", DATE, ".png"), alcoholonly, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("Fig3_APC_age", DATE, ".png"), age, dpi=300, width=33, height=19, units="cm")
 
-<<<<<<< Updated upstream
 summary <- race %>% filter(substance=="Alcohol and Opioid") %>% filter(apc=="Period") %>% filter(sex=="Women") %>% 
   mutate(IRR = round(IRR, digits=2),
          lower_CI = round(lower_CI, digits=2),
          upper_CI = round(upper_CI, digits=2))
 
-opioidonly <- ggplot(subset(race,substance=="Opioid only"), aes(x=category, y=IRR, colour=race, fill=race)) + 
-  facet_grid(cols=vars(apc),
-             rows=vars(sex), scales="free") + geom_line(size=1) + 
-=======
-period <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+period <- ggplot(subset(race,apc=="Period"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
->>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed") + ggtitle("Opioid-only")
-opioidonly
+  geom_hline(yintercept=1, linetype="dashed")
+period
 
-ggsave(paste0("Fig4_APC_opioidonly", DATE, ".png"), opioidonly, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("Fig4_APC_period", DATE, ".png"), period, dpi=300, width=33, height=19, units="cm")
 
-<<<<<<< Updated upstream
 
-alcandop <- ggplot(subset(race,substance=="Alcohol and Opioid"), aes(x=category, y=IRR, colour=race, fill=race)) + 
-  facet_grid(cols=vars(apc),
-             rows=vars(sex), scales="free") + geom_line(size=1) + 
-=======
-cohort <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=sex, fill=sex)) + 
-  facet_grid(cols=vars(race),
+cohort <- ggplot(subset(race,apc=="Cohort"), aes(x=category, y=IRR, colour=race, fill=race)) + 
+  facet_grid(cols=vars(sex),
              rows=vars(substance), scales="free") + geom_line(size=1) + 
->>>>>>> Stashed changes
   theme_bw() + ylim(0,NA) +
   theme(legend.title=element_blank(),
         legend.position="bottom",
         strip.background = element_rect(fill="white")) + 
   ylab("IRR") + xlab("") + 
-  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=sex), colour=NA, alpha=0.3) + 
+  geom_ribbon(aes(ymin=lower_CI, ymax=upper_CI, fill=race), colour=NA, alpha=0.3) + 
   scale_colour_brewer(palette="Set1") + 
   scale_fill_brewer(palette="Set1") + 
-  geom_hline(yintercept=1, linetype="dashed") + ggtitle("Alcohol and Opioid")
-alcandop
+  geom_hline(yintercept=1, linetype="dashed")
+cohort
 
-ggsave(paste0("Fig4_APC_alcandop", DATE, ".png"), alcandop, dpi=300, width=33, height=19, units="cm")
+ggsave(paste0("Fig4_APC_cohort", DATE, ".png"), cohort, dpi=300, width=33, height=19, units="cm")
 
 #plots for APC effects in raw data - currently not used
 
