@@ -64,15 +64,35 @@ alldata <- alldata %>%
          educ = as.factor(educ), race_new=as.factor(race_new),
          sex = as.factor(sex))
 
-# Table 1: Participant characteristics - STRATIFIED BY SEX
-tab1 <-CreateTableOne(vars= c("age","educ", "race_new", "total_fam_income"),
-                      factorVars = c("educ","race_new"),
-                      strata= c("year","sex"), addOverall = TRUE, data=alldata)
-table1_v1 <- print(tab1, noSpaces = TRUE, catDigits = 1, contDigits = 1, printToggle = FALSE, test=FALSE)  # Shows sample size and %
-# table1_v2 <- print(tab1, noSpaces = TRUE, catDigits = 1, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") 
+library(survey)
 
-table1 <- data.frame(table1_v1) %>% 
+svy <- svydesign(ids= ~1, weights=~sampleweight, data=alldata)
+
+# Table 1: Participant characteristics - STRATIFIED BY SEX
+tab1 <-svyCreateTableOne(vars= c("age","educ", "race_new", "total_fam_income"),
+                      factorVars = c("educ","race_new"),
+                      strata= c("year","sex"), addOverall = TRUE, data=svy)
+table1_v1 <- print(tab1, noSpaces = TRUE, catDigits = 1, contDigits = 1, printToggle = FALSE, test=FALSE, format="f") %>%
+  data.frame(.) %>% 
+  dplyr::select(Overall, X1999.male, X1999.female, X2009.male, X2009.female, X2019.male, X2019.female) 
+
+table1_v1[c(1,4:7,9:12),1:7] <- round(as.numeric(unlist(table1_v1[c(1,4:7,9:12),1:7]))*0.06299793,digits=0)
+
+table1_v2 <- print(tab1, noSpaces = TRUE, catDigits = 1, contDigits = 1, printToggle = FALSE, test=FALSE, format="p")  %>% 
+  data.frame(.) %>% 
+  dplyr::select(Overall, X1999.male, X1999.female, X2009.male, X2009.female, X2019.male, X2019.female)
+names(table1_v2) <- paste0("pct", names(table1_v2))
+
+table1 <- cbind(table1_v1, table1_v2) %>% 
+  mutate(Overall = paste0(Overall, " (", pctOverall, ")"),
+         X1999.male = paste0(X1999.male, " (", pctX1999.male, ")"),
+         X1999.female = paste0(X1999.female, " (", pctX1999.female, ")"),
+         X2009.male = paste0(X2009.male, " (", pctX2009.male, ")"),
+         X2009.female = paste0(X2009.female, " (", pctX2009.female, ")"),
+         X2019.male = paste0(X2019.male, " (", pctX2019.male, ")"),
+         X2019.female = paste0(X2019.female, " (", pctX2019.female, ")")) %>% 
   dplyr::select(Overall, X1999.male, X1999.female, X2009.male, X2009.female, X2019.male, X2019.female)
 
-write.csv(table1, "SIMAH_workplace/education_transitions/final_models/Table1_demographics.csv", row.names=T)
+
+write.csv(table1, "SIMAH_workplace/education_transitions/final_models/Table1_demographics_weighted.csv", row.names=T)
   

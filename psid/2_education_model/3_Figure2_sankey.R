@@ -7,6 +7,7 @@ library(ggalluvial)
 library(gridExtra)
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
+setwd("~/Google Drive/SIMAH Sheffield/")
 source('SIMAH_code/education_transitions/3_outputs/transition_ed.R')
 
 # for first time period 

@@ -15,7 +15,7 @@ library(patchwork)
 
 # setwd("/home/cbuckley")
 setwd("~/Google Drive/SIMAH Sheffield/")
-setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+# setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") # this file doesn't seem to be used anywhere?
 
@@ -88,12 +88,16 @@ overall
 
 # extract info for table 3
 HS <- totals %>% select(sex, period, racefinal, incomecat, `sumHS`, `sumLHS`) %>% 
-  mutate(percent=`sumHS`/`sumLHS`) %>% select(-c(`sumHS`, `sumLHS`)) %>% 
-  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="LHS->HS")
+  group_by(period) %>% 
+  summarise(sumHS = sum(sumHS),
+            sumLHS = sum(sumLHS),
+            percent = sumHS/sumLHS)
 
 one <- totals %>% select(sex, period, racefinal, incomecat, `sum1YR`, `sumLHS`) %>% 
-  mutate(percent=`sum1YR`/`sumLHS`) %>% select(-c(`sum1YR`, `sumLHS`)) %>% 
-  pivot_wider(names_from=racefinal, values_from=percent) %>% mutate(Transition="HS->C1")
+  group_by(period) %>% 
+  summarise(sum1YR = sum(sum1YR),
+            sumLHS = sum(sumLHS),
+            percent = sum1YR/sumLHS)
 
 two <- totals %>% select(sex, period, racefinal, incomecat, `sum2YR`, `sumLHS`) %>% 
   mutate(percent=`sum2YR`/`sumLHS`) %>% select(-c(`sum2YR`, `sumLHS`)) %>% 
