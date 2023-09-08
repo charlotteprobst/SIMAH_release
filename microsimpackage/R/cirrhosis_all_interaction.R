@@ -23,10 +23,10 @@ CirrhosisAllInteraction <- function(data,lhs){
   GPD <- log(1.0032)
   HighSchoolGPD <- log(1)
   SomeCGPD <- log(1.0023)
-  
-  FORMERDRINKER <- as.numeric(lhs["FORMERDRINKER"])
-  
-  data <- data %>%
+  FORMERDRINKER <- as.numeric(lhs["LIVER_FORMERDRINKER"])
+
+
+   data <- data %>%
     mutate(RR = ifelse(microsim.init.education=="LEHS",
                        exp(HighSchool + GPD*microsim.init.alc.gpd + HighSchoolGPD*microsim.init.alc.gpd),
                        ifelse(microsim.init.education=="SomeC",

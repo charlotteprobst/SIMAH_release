@@ -62,6 +62,7 @@ if(updatingeducation==1 & y>=2000){
 
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
+  print("updating alcohol")
   print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
@@ -101,6 +102,8 @@ if(updatingalcohol==1 & y>=2000){
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 # simulate mortality from specific diseases
+print("simulating disease mortality")
+disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
 basepop <- CirrhosisHepatitis(basepop,lhs)
 }
@@ -129,12 +132,6 @@ if("ISTR" %in% diseases==TRUE){
 if("HYPHD" %in% diseases==TRUE){
   basepop <- HYPHD(basepop, lhs)
 }
-if("MVACC" %in% diseases==TRUE){
-  basepop <- MVACC(basepop, lhs)
-}
-if("UIJ" %in% diseases==TRUE){
-  basepop <- UIJ(basepop, lhs)
-}
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)
@@ -155,9 +152,14 @@ summary_list <- list()
 for (disease in diseases) {
     # Generate and add the summary to the list with automatic naming
     summary_list[[paste0(disease)]] <- basepop %>%
+      mutate(ageCAT = cut(microsim.init.age,
+                          breaks=c(0,24,34,44,54,64,74,79),
+                          labels=c("18-24","25-34","35-44", "45-54",
+                                   "55-64","65-74","75-79")),
+             inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2])) %>%
       group_by(cat) %>%
-      summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))))
-}
+      summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
+    }
 
 DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
   mutate(year=y)
@@ -173,8 +175,14 @@ for (disease in diseases) {
   # Filter individuals with mortality equal to 1 for the current disease
   toremove <- basepop %>%
     filter(!!sym(paste0('mort_', disease)) == 1) %>%
+    group_by(cat) %>%
     add_tally() %>%
-    mutate(toremove = round(n / inflation_factor)) %>%
+    mutate(ageCAT = cut(microsim.init.age,
+                        breaks=c(0,24,34,44,54,64,74,79),
+                        labels=c("18-24","25-34","35-44", "45-54",
+                                 "55-64","65-74","75-79")),
+      inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2]),
+      toremove = round(n / inflation_factor)) %>%
     dplyr::sample_n(size = unique(toremove), replace = FALSE)
   # Get the IDs to be removed
   ids <- toremove$microsim.init.id
@@ -192,11 +200,6 @@ for (disease in diseases) {
 
 basepop <- basepop %>% dplyr::select(-c(cat, prob))
 
-# if policy flag switched on - simulate a reduction in alcohol consumption
-# if(policy==1){
-# basepop <- reduce_consumption(basepop, percentreduction)
-# }
-
 #delete anyone over 79
 ###then age everyone by 1 year and update age category
 basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
@@ -210,13 +213,13 @@ basepop <- subset(basepop, microsim.init.age<=79)
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
-  # add samplenum and seed as an output for this function TODO
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor) %>%
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
-  SummaryPop <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+  Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
+                                                  seed=as.factor(seed),
                                                   microsim.init.sex=as.factor(microsim.init.sex),
                                                   microsim.init.race=as.factor(microsim.init.race),
                                                   microsim.init.education=as.factor(microsim.init.education),
@@ -225,7 +228,7 @@ if(output=="mortality"){
                                                   #                        "50+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
+    group_by(year, samplenum, seed, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
              .drop=FALSE) %>% tally()
 }else if(output=="alcohol"){
   CatSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
@@ -254,4 +257,3 @@ if(output=="mortality"){
 }
 return(Summary)
 }
-
