@@ -10,23 +10,26 @@ library(tableone)   # create descriptives table
 library(knitr)      # create descriptives table
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"            # Location of data
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Output/"  # Location of tables and figures 
-models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"  # Location of saved MSM models
+# data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"            # Location of data
+# output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Output/"  # Location of tables and figures 
+# models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"  # Location of saved MSM models
 
+data    <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"  # Location of data
+models  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
+output <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Output/"
 # Load data / functions
-nesarc_all       <- readRDS(paste0(data, "nesarc_all.rds"))   # Contains those with missing data 
-nesarc           <- readRDS(paste0(data, "nesarc_clean.rds")) # Data with complete cases
-nesarc_expanded  <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
-nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) 
-source("0_Functions.R")
+nesarc_all       <- readRDS(paste0(data, "nesarc_all_new.rds"))   # Contains those with missing data 
+nesarc           <- readRDS(paste0(data, "nesarc_clean_new.rds")) # Data with complete cases
+nesarc_expanded  <- readRDS(paste0(data, "nesarc_clean_expanded_new.rds")) 
+nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded_new.rds")) 
+source("SIMAH_code/nesarc/Alcohol Use Transitions/0_Functions.R")
 
 
 # Load MSM Models (created in 'Model Selection' file)
-alc4_crude.msm <- readRDS(paste0(models, "msm3b_crude.RDS"))
-alc4.msm       <- readRDS(paste0(models, "msm3b.RDS"))
-hed_crude.msm  <- readRDS(paste0(models, "hed_crude.msm.RDS"))
-hed.msm        <- readRDS(paste0(models, "hed.msm.RDS"))
+alc4_crude.msm <- readRDS(paste0(models, "msm3b_crude_new.RDS"))
+alc4.msm       <- readRDS(paste0(models, "msm3b_new.RDS"))
+hed_crude.msm  <- readRDS(paste0(models, "hed_crude.msm_new.RDS"))
+hed.msm        <- readRDS(paste0(models, "hed.msm_new.RDS"))
 
 
 # 1) Descriptives ------------------------------------------------------------------------------------------
@@ -37,20 +40,20 @@ factor_vars <- c("female", "age7", "race.factor", "edu3", "alc4.factor", "hed.fa
 
 # Descriptives of expanded data
 CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc_expanded) %>%
-  print(noSpaces = TRUE, catDigits =0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%  
-  write.csv(paste0(output,"Table 1 - Descriptives of expanded data.csv")) 
+  print(noSpaces = TRUE, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%  
+  write.csv(paste0(output,"Table 1 - Descriptives of expanded data_new.csv")) 
 
 
 # Descriptives at basleine and follow-up of included participants 
 CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc) %>%
-  print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
-  write.csv(paste0(output,"Table S1 - Descriptives of original data.csv"))  
+  print(noSpaces = TRUE, contDigits = 1, printToggle = FALSE, test=FALSE) %>%
+  write.csv(paste0(output,"Table S1 - Descriptives of original data_new.csv"))  
 
 
 # Descriptives NESARC I and III (expanded data)
 CreateTableOne(vars= variables, factorVars = factor_vars, data=nesarc3_expanded) %>%
-  print(noSpaces = TRUE, catDigits = 0, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%
-  write.csv(paste0(output,"Table S5 - NESARC III Descriptives of expanded data.csv")) 
+  print(noSpaces = TRUE, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%
+  write.csv(paste0(output,"Table S5 - NESARC III Descriptives of expanded data_new.csv")) 
 
 
 
@@ -67,13 +70,13 @@ CreateTableOne(vars= variables, factorVars = factor_vars, data=nesarc3_expanded)
     
     # Print results
     predicted_TP(model=alc4.msm, year=1) %>% 
-      #write_csv(paste0(output, "Table 2a - AlcUse Annual TP.csv")) %>% 
+      write_csv(paste0(output, "Table 2a - AlcUse Annual TP_new.csv")) %>%
       kable()
     
     
     # Crude (unadjusted) model
     predicted_TP(model=alc4_crude.msm, year=1) %>% 
-      write_csv(paste0(output, "Table S4a - AlcUse Unadjusted Annual TP.csv")) %>%
+      write_csv(paste0(output, "Table S4a - AlcUse Unadjusted Annual TP_new.csv")) %>%
       kable()
 
 
@@ -139,7 +142,7 @@ edu  <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, edu)
 race <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, race)
 age  <- compare_pct(AlcUse_predicted_pop, AlcUse_observed_pop, age7)
     
-rbind(all, sex, edu, race, age) %>% write_csv(paste0(output, "Table S6 - AlcUse external validation.csv"))
+rbind(all, sex, edu, race, age) %>% write_csv(paste0(output, "Table S6 - AlcUse external validation_new.csv"))
 
 
 
@@ -173,7 +176,7 @@ rbind (TP_noCovs_init, TP_noCovs) %>%
     panel.border = element_rect(linetype = "solid", fill = NA)) + 
   scale_y_continuous(breaks=seq(0, 1, by= .2)) + 
   scale_x_continuous(breaks=seq(0, 10, by= 2))
-ggsave(paste0(output, "Figure 1a - TP of AlcUse over time.tiff"), dpi=600, width=12, height = 4)
+ggsave(paste0(output, "Figure 1a - TP of AlcUse over time_new.tiff"), dpi=600, width=12, height = 4)
 
 
 
@@ -234,7 +237,7 @@ rbind (TP_by_age_init, TP_by_age) %>%
     panel.border = element_rect(linetype = "solid", fill = NA)) + 
   scale_y_continuous(breaks=seq(0, 1, by= .2)) + 
   scale_x_continuous(breaks=seq(0, 10, by= 2))
-  ggsave(paste0(output, "Figure S2 - AlcUse TP over time, stratified by age.tiff"), dpi=600, width=8.5, height = 11, units="in")
+  ggsave(paste0(output, "Figure S2 - AlcUse TP over time, stratified by age_new.tiff"), dpi=600, width=8.5, height = 11, units="in")
 
   
   
@@ -351,7 +354,7 @@ HR_table(alc4.msm)  %>%
           "Category I->Non-drinker"   = "State 2 - State 1") %>%
   select(Variable, "Non-drinker->Category I", "Category I->Category II", "Category II->Category III", 
                     "Category III->Category II", "Category II->Category I", "Category I->Non-drinker") %>% 
-  write_csv(paste0(output, "Table 4 - AlcUse Hazard Ratios.csv")) %>% # save results for paper
+  write_csv(paste0(output, "Table 4 - AlcUse Hazard Ratios_new.csv")) %>% # save results for paper
   kableone()
 
 
