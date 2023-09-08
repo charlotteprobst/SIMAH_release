@@ -116,7 +116,18 @@ if("AUD" %in% diseases==TRUE){
 if("IJ" %in% diseases==TRUE){
   basepop <- SUICIDE(basepop, lhs)
 }
-
+if("DM" %in% diseases==TRUE){
+  basepop <- DM(basepop, lhs)
+}
+if("IHD" %in% diseases==TRUE){
+  basepop <- IHD(basepop, lhs)
+}
+if("ISTR" %in% diseases==TRUE){
+  basepop <- ISTR(basepop, lhs)
+}
+if("HYPHD" %in% diseases==TRUE){
+  basepop <- HYPHD(basepop, lhs)
+}
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)

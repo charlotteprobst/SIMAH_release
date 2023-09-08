@@ -14,7 +14,7 @@ options(dplyr.summarise.inform = FALSE)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -40,7 +40,7 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2010
+maxyear <- 2019
 
 Output <- list()
 Output <- run_microsim(1,1,basepop,brfss,
@@ -51,7 +51,7 @@ Output <- run_microsim(1,1,basepop,brfss,
                        base_counts, diseases, lhs, liverinteraction,
                        policy, percentreduction, year_policy, inflation_factor,
                        update_base_rate,
-                       2000, 2005, output_type)
+                       2000, 2019, output_type)
 
 alcohol_type <- "categorical"
 
@@ -68,7 +68,7 @@ summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataD
 }else if(output_type=="mortality"){
 summary <- summarise_mortality_output_calibration(Output, SelectedState, DataDirectory, inflation_factor, diseases)
 }
-summary[[2]]
+summary[[1]]
 
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,

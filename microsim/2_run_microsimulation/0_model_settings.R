@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC", "AUD", "IJ")
+diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -118,7 +118,7 @@ rm(list)
 numsamples <- 500
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 0
+PE <- 1
 lhs <- sample_lhs(numsamples, PE)
 
 for(i in 1:length(lhs)){
