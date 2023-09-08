@@ -127,7 +127,6 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
       across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ if_else(is.na(alc_daily_oz), NA_real_, .x)),
       across(c(coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), ~ replace_na(.x, 0)),
     
-    
     # Convert daily ounces to grams
     # alc_daily_g = alc_daily_oz * 28.3495,  
     # coolers_daily_g = coolers_daily_oz * 28.3495,
@@ -135,7 +134,7 @@ nesarc <- readRDS(paste0(data, "nesarc_raw.rds")) %>%
     # wine_daily_g = wine_daily_oz * 28.3495,
     # liquor_daily_g = liquor_daily_oz * 28.3495,
     
-    alc_daily_g = alc_daily_oz * 23.1561,
+    alc_daily_g = alc_daily_oz * 23.1561,  
     coolers_daily_g = coolers_daily_oz * 23.1561,
     beers_daily_g = beers_daily_oz * 23.1561,
     wine_daily_g = wine_daily_oz * 23.1561,
