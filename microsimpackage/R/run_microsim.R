@@ -8,12 +8,13 @@
 #' run_microsim
 run_microsim <- function(seed,samplenum,basepop,brfss,
                          death_counts,
-                         updatingeducation, education_setup,
+                         updatingeducation, education_transitions,
                          migration_counts,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factor,
+                         age_categories,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -47,7 +48,7 @@ if(updatingeducation==1 & y>=2000){
   print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
-  totransition <- education_setup(totransition,y)
+  totransition <- setup_education(totransition,y)
   totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
   totransition$microsimnewED <- totransition$newED
   totransition$microsim.init.education <- ifelse(totransition$microsimnewED=="LEHS","LEHS",

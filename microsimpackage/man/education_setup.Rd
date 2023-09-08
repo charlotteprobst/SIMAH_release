@@ -10,7 +10,7 @@ education_setup(basepop, y)
 \item{basepop, }{y takes the simulated population in each year}
 }
 \description{
-This function allows you to express your love of cats.
+Set up education data for simulation
 }
 \examples{
 education_setup()
