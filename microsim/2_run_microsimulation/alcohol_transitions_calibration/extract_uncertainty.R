@@ -6,6 +6,9 @@ library(readr)
 library(tidyr)
 library(MASS)
 
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# setwd(WorkingDirectory)
+
 # how many samples to take from the prior? 
 nsamples <- 10
 
@@ -15,7 +18,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibratio
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/extract_for_estimates.R")
 
-model <- readRDS("SIMAH_workplace/microsim/1_input_data/alc4_age7.msm.RDS")
+model <- readRDS("SIMAH_workplace/nesarc/Models/msm3b.RDS")
 
 # pmatrix.msm(model, covariates=list(female_wave1.factorWomen=1))
 data <- model$data$mf
@@ -26,6 +29,12 @@ Samples <- Sample_Probs(data, model, nsamples)
 estimates <- Samples[[2]]
 
 probs <- Samples[[1]]
+
+# exploring heterogeneity
+# var <- probs %>% group_by(StateFrom, StateTo, age, sex, race, educ) %>% 
+#   summarise(min = min(prob),
+#             max = max(prob),
+#             diff = abs(min-max))
 
 transitionsList <- list()
 for(i in 1:length(unique(estimates$SampleNum))){
@@ -56,3 +65,4 @@ for(i in 1:length(unique(estimates$SampleNum))){
 }
 
 rm(data, model, Samples, probs)
+saveRDS(transitionsList, "SIMAH_workplace/microsim/1_input_data/transitionslist_newTP.RDS")

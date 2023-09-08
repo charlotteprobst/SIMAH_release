@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC")
+diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC","UIJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -41,16 +41,27 @@ model <- "SIMAH"
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "alcohol"
 
+# whether we want SES interaction effects for liver cirrhosis 
+# note this is a temporary variable and may change to a more general SES interaction flag 
+liverinteraction <- 0
+
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
+# this is also a temporary variable for model testing
 # default value is 0
 policy <- 0
 
 # year to introduce policy
-year_policy <- 2010
+# depends on policy to be implemented
+# 2014, 2015, 2016 (no policy change happened in SIMAH states)
+year_policy <- 2015
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
-percentreduction <- 0
+# upper and lower and PE for policy estimate 
+# Kilian et al. 2023: Alcohol control policy review	
+# Relative change in alcohol use for 100% tax increase: 
+# -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
+percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
 
 ####################EDIT ONLY ABOVE HERE ##################################################
 
@@ -82,11 +93,11 @@ basepop <- cbind(microsim.init.id, basepop)
 # read in BRFSS data for migrants and 18-year-olds entering the model
 brfss <- load_brfss(model,SelectedState, DataDirectory)
 
-# read in death rates data
-death_rates <- load_death_rates(model, proportion, SelectedState, DataDirectory)
+# read in death counts data
+death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
 
-# read in migration in and out rates and project rates forwards to 2025 (in case needed)
-migration_rates <- load_migration_rates(SelectedState, DataDirectory)
+# read in migration in and out counts and project rates forwards to 2025 (in case needed)
+migration_counts <- load_migration_counts(SelectedState, DataDirectory)
 
 # load in the education transition rates
 list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
@@ -95,41 +106,32 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 # load in alcohol transition rates
+#### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
 list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)
 alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 
-# allocate baseline hepatitis B and C infections
-
-# # to baseline population 
-# basepop <- assign_baseline_hepatitis(basepop)
-# 
-# # and to new agents to enter ?? not sure if this makes sense to do 
-# brfss <- assign_baseline_hepatitis(brfss)
-# 
-# # load hepatitis incidence counts and drinking distributions for hepatitis B and C 
-# data <- load_hepatitis_data(SelectedState, proportion)
-# Hep <- data[[1]]
-# drinkingdistributions <- data[[2]]
-# rm(data)
-
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
-numsamples <- 1
+numsamples <- 500
 
-# whether to just use the point estimate
+# whether to just use the point estimate - for now this is set to 1
 PE <- 1
 lhs <- sample_lhs(numsamples, PE)
 
+for(i in 1:length(lhs)){
+  lhs[[i]]$samplenum <- i
+}
+write.csv(do.call(rbind,lhs), "SIMAH_workplace/microsim/2_output_data/lhsSamples.csv")
+
+update_base_rate <- 1
+
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
-inflation_factor <- 100
+inflation_factor <- 200
 
 if(length(diseases)>=1){
-  base_rates <- setup_base_rates(death_rates,diseases, inflation_factor)
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factor)
 }
-
-# load in categorical to continuous model 
-# catcontmodel <- read_rds(paste0(DataDirectory, "SSCatContModel.RDS"))

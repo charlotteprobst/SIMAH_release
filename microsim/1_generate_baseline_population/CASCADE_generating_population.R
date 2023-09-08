@@ -47,25 +47,22 @@ source("SIMAH_code/microsim/1_generate_baseline_population/scripts/CASCADE_proce
 }else if(microsimon==0){
 microsim <- microsim %>% 
   mutate(microsim.init.sex= ifelse(microsim.init.sex=="M",1,0),
-         microsim.roles.employment.status = ifelse(microsim.roles.employment.status=='employed',1,0),
+         drinksperday = microsim.init.alc.gpd/14,
+         microsim.init.drinks.per.month = microsim.init.alc.gpd*(1/14)*30,
+         microsim.init.heavy.episodic.drinking = NA,
+         microsim.init.annual.frequency = microsim.init.drink.frequency*12,
+         microsim.roles.employment.status = ifelse(microsim.roles.employment.status=="employed",1,0),
          microsim.roles.parenthood.status = ifelse(microsim.roles.parenthood.status=="employed",1,0),
-         microsim.init.drinks.per.month = (microsim.init.alc.gpd*30)/14,
-         # microsim.init.drinks.per.month = floor((microsim.init.alc.gpd*30)/14),
-         # microsim.init.drinks.per.month = quantityperoccasion*alcdays,
-         microsim.init.annual.frequency = alcdays*12,
-         microsim.init.drink.frequency = alcdays,
-         microsim.init.heavy.episodic.drinking = 0,
-         microsim.init.drink.frequency = ifelse(microsim.init.alc.gpd==0, 0, microsim.init.drink.frequency),
-         microsim.init.annual.frequency = ifelse(microsim.init.alc.gpd==0, 0, microsim.init.annual.frequency),
-         microsim.init.income = 0) %>% 
+         microsim.roles.marital.status = ifelse(microsim.roles.marital.status=="married",1,0)) %>% 
   dplyr::select(microsim.init.id, microsim.init.sex, microsim.init.age, microsim.init.race,
                 microsim.roles.employment.status, microsim.roles.parenthood.status,
                 microsim.roles.marital.status, microsim.init.education,
                 microsim.init.income, microsim.init.drinkingstatus,
-                microsim.init.drink.frequency,
                 microsim.init.heavy.episodic.drinking, microsim.init.alc.gpd,
-                microsim.init.annual.frequency, microsim.init.drinks.per.month,
+                microsim.init.annual.frequency, microsim.init.drink.frequency, microsim.init.drinks.per.month,
                 microsim.init.BMI, formerdrinker)
 }
 
 write.csv(microsim, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "basepopCASCADE", sep="", PopulationSize, ".csv"), row.names=FALSE)
+microsim %>% group_by(microsim.init.sex) %>% filter(microsim.init.drinkingstatus==1) %>% summarise(mean(microsim.init.alc.gpd))
+microsim %>% group_by(microsim.init.sex) %>% summarise(mean(microsim.init.drinkingstatus))

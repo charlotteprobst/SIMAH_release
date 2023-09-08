@@ -10,7 +10,7 @@ percentpop <- ifelse(percentpop>1, 1, percentpop)
 
 # if one of the big states or USA - use 30% of the constraints (otherwise CPU overload)
 if(SelectedState=="USA" | SelectedState=="California" | SelectedState=="Texas"){
-cons <- cons*0.3
+cons <- cons*0.1
 }
 
 ##reading in and processing individual level data
@@ -100,9 +100,9 @@ microsim <- data.frame(microsim.init.id=1:nrow(ints_df),
                        microsim.init.sex=ints_df$SEX, 
                        microsim.init.age=ints_df$age_var, 
                        microsim.init.race=ints_df$RACE, 
-                       microsim.roles.employment.status = ints_df$employment,
+                       microsim.roles.employment.status = ints_df$EMPLOYED,
                        microsim.roles.parenthood.status = ints_df$EMPLOYED,
-                       microsim.roles.marital.status = ints_df$marital_status,
+                       microsim.roles.marital.status = ints_df$MARRIED,
                        microsim.init.education=ints_df$EDUCATION, 
                        microsim.init.BMI=ints_df$BMI, 
                        microsim.init.income=ints_df$household_income, 
@@ -110,15 +110,38 @@ microsim <- data.frame(microsim.init.id=1:nrow(ints_df),
                        microsim.init.alc.gpd=ints_df$gramsperday, 
                        quantityperoccasion = ints_df$quantity_per_occasion,
                        agecat=ints_df$agecat, 
-                       alcdays=ints_df$frequency,
+                       microsim.init.drink.frequency=ints_df$frequency,
                        formerdrinker = ints_df$formerdrinker)
 
 rm(list=setdiff(ls(), c("microsim", "cons", c(tokeep))))
 
 ####sample to get desired population size 
-if(percentpop<1){
-microsim <- sample_n(microsim, PopulationSize, replace=F)
-}
+# if(percentpop<1){
+#   newmicrosim <- microsim %>% mutate(orderntile = ntile(microsim.init.alc.gpd,nrow(.)))
+#   newmicrosim <- newmicrosim %>% group_by(microsim.init.sex) %>% 
+#     arrange(orderntile, .by_group=T)
+# 
+#   length <- round(nrow(newmicrosim)/PopulationSize)
+#   probs <- round(c(1-(1/length),1/length),digits=4)
+#   samples <- sample(c(0,1), size=nrow(newmicrosim), prob=probs, replace=T)
+#   sum(samples)
+# 
+#   newmicrosim$sample <- samples
+#   sample <- newmicrosim %>% ungroup() %>% filter(sample==1) %>% sample_n(PopulationSize)
+#   microsim <- sample
+#   
+#   microsim %>% group_by(microsim.init.sex) %>% summarise(mean(microsim.init.drinkingstatus))
+# 
+# 
+# }
+newmicrosim <- microsim %>% ungroup()
+microsim <- sample_n(newmicrosim, PopulationSize, replace=F)
+
+microsim %>% group_by(microsim.init.sex) %>% summarise(mean(microsim.init.drinkingstatus))
+microsim %>% group_by(microsim.init.sex) %>% filter(microsim.init.drinkingstatus==1) %>% 
+  summarise(mean(microsim.init.alc.gpd)) 
+microsim %>% group_by(microsim.init.sex) %>% filter(microsim.init.drinkingstatus==1) %>% 
+  summarise(mean(microsim.init.drink.frequency))
 
 #  script to sample age to ensure the correct age distribution when wide cats used
 # source("SIMAH_code/microsim/1_generate_baseline_population/scripts/samplingages.R")

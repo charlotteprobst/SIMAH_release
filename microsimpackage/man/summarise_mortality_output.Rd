@@ -8,7 +8,8 @@ summarise_mortality_output(
   Output,
   SelectedState,
   WorkingDirectory,
-  inflation_factor
+  inflation_factor,
+  diseases
 )
 }
 \description{

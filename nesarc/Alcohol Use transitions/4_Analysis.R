@@ -10,13 +10,13 @@ library(tableone)   # create descriptives table
 library(knitr)      # create descriptives table
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
-output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions Manuscript/Output/"                     # Location of tables and figures 
-models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
+data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"            # Location of data
+output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Output/"  # Location of tables and figures 
+models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"  # Location of saved MSM models
 
 # Load data / functions
-nesarc_all       <- readRDS(paste0(data, "nesarc_all.rds")) # Contains those with missing data 
-nesarc           <- readRDS(paste0(data, "nesarc_clean.rds")) 
+nesarc_all       <- readRDS(paste0(data, "nesarc_all.rds"))   # Contains those with missing data 
+nesarc           <- readRDS(paste0(data, "nesarc_clean.rds")) # Data with complete cases
 nesarc_expanded  <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
 nesarc3_expanded <- readRDS(paste0(data, "nesarc3_clean_expanded.rds")) 
 source("0_Functions.R")

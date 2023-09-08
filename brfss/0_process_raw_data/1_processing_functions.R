@@ -176,7 +176,7 @@ recode_income <- function(data){
                                                             ifelse(INCOME==6, "35001-50000",
                                                                    ifelse(INCOME==7, "50000-100000",
                                                                           NA))))))))
-    }else if(data$YEAR[1]>=1994){
+    }else if(data$YEAR[1]>=1994 & data$YEAR[1]<=2020){
   data <- data %>% mutate(
     INCOME2 = ifelse(YEAR==1995, INCOME95, INCOME2),
     household_income = ifelse(INCOME2==1, "0-9999",
@@ -187,7 +187,21 @@ recode_income <- function(data){
                                                     ifelse(INCOME2==6, "35000-49999",
                                                            ifelse(INCOME2==7, "50000-74999",
                                                                   ifelse(INCOME2==8, "75000+", NA)))))))))
-  }
+    }else if(data$YEAR[1]>=2021){
+      data <- data %>% 
+        mutate(
+          household_income = ifelse(INCOME3==1, "0-9999",
+                                    ifelse(INCOME3==2, "10000-14999",
+                                           ifelse(INCOME3==3, "15000-19999",
+                                                  ifelse(INCOME3==4, "20000-24999",
+                                                         ifelse(INCOME3==5, "25000-34999",
+                                                                ifelse(INCOME3==6, "35000-49999",
+                                                                       ifelse(INCOME3==7, "50000-74999",
+                                                                              ifelse(INCOME3==8, "75000-99999", 
+                                                                                     ifelse(INCOME3==9, "100000-149000",
+                                                                                            ifelse(INCOME3==10, "150000-199999", 
+                                                                                                   ifelse(INCOME3==11, "200000+", NA))))))))))))
+    }
 return(data)
 }
 
@@ -351,6 +365,7 @@ recode_alc_frequency <- function(data){
                                                            ifelse(alc_frequency==999,NA, alc_frequency)))))))
     }else if(data$YEAR[1]>=2011){
       data <- data %>% mutate(
+      raw_frequency = alc_frequency,
       alc_frequency = ifelse(alc_frequency<110, (alc_frequency-100)*52/12,
                                     ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                            ifelse(alc_frequency==777, NA,
@@ -417,8 +432,9 @@ recode_alc_quantity <- function(data){
                              ifelse(YEAR>=2001 & YEAR<=2004, AVEDRNK,
                                     ifelse(YEAR>=2005 & YEAR<=2018, AVEDRNK2,
                                            ifelse(YEAR>=2019, AVEDRNK3, NA)))),
+           raw_quantity_per_occasion = quantity_per_occasion,
            quantity_per_occasion = ifelse(quantity_per_occasion==88, 0,
-                                 ifelse(quantity_per_occasion==77, NA,
+                                 ifelse(quantity_per_occasion>=77, NA,
                                         ifelse(quantity_per_occasion==99, NA, 
                                                ifelse(drinkingstatus==0, 0, quantity_per_occasion)))))
   }

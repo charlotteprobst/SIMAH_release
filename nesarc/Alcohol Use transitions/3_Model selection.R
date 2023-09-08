@@ -7,8 +7,8 @@ library(tidyverse)  # data management
 library(msm)        # model transition probabilities
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
-models  <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
+data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
+models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"          # Location of saved MSM models
 
 
 # Load data / functions

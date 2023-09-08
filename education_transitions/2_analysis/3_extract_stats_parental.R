@@ -12,12 +12,10 @@ data <- data[[1]]
 
 source("SIMAH_code/education_transitions/2_analysis/1_setup_markov_model.R")
 
-modelst1_baseline <- read_rds("SIMAH_workplace/education_transitions/final_models/t1_baseline.RDS")
-modelst2_baseline <- read_rds("SIMAH_workplace/education_transitions/final_models/t2_baseline.RDS")
-modelst1_parent <- read_rds("SIMAH_workplace/education_transitions/final_models/t1_parent_base.RDS")
-modelst2_parent <- read_rds("SIMAH_workplace/education_transitions/final_models/t2_parent_base.RDS")
-modelst1_interaction <- read_rds("SIMAH_workplace/education_transitions/final_models/t1_parent.RDS")
-modelst2_interaction <- read_rds("SIMAH_workplace/education_transitions/final_models/t2_parent.RDS")
+modelst1_baseline <- read_rds("SIMAH_workplace/education_transitions/final_models/t1_baseline_parent.RDS")
+modelst2_baseline <- read_rds("SIMAH_workplace/education_transitions/final_models/t2_baseline_parent.RDS")
+modelst1_parent <- read_rds("SIMAH_workplace/education_transitions/final_models/t1_interaction.RDS")
+modelst2_parent <- read_rds("SIMAH_workplace/education_transitions/final_models/t2_interaction.RDS")
 
 data1 <- data %>% filter(year<=2009)
 data2 <- data %>% filter(year>=2011)
@@ -37,14 +35,6 @@ coefst2parent <- lapply(modelst2_parent, extract_coefficients, type="parent", ti
                           data=data1)
 coefst2parent <- bind_imputations(coefst2parent)
 
-coefst1interaction <- lapply(modelst1_interaction, extract_coefficients, type="parent", timeperiod="1999-2009",
-                        data=data1)
-coefst1interaction <- bind_imputations(coefst1interaction)
-
-coefst2interaction <- lapply(modelst2_interaction, extract_coefficients, type="parent", timeperiod="2011-2019",
-                        data=data1)
-coefst2interaction <- bind_imputations(coefst2interaction)
-
 coefs <- rbind(coefst1baseline, coefst2baseline,
                coefst1parent, coefst2parent) %>% 
   dplyr::select(Variable, Transition, model, time, Estimate, NewLower, NewUpper) %>% 
@@ -52,25 +42,23 @@ coefs <- rbind(coefst1baseline, coefst2baseline,
   mutate(Variable = recode(Variable, "sex1"="Women","racefinal2black"="Black",
                            "racefinal2Asian/PI"="Asian/PI","racefinal2hispanic"="Hispanic",
                            "racefinal2Native"="Native American","racefinal2other"="Others",
-                           "oneCollegeplus"="One parent college +"),
+                           "oneCollegeplus"="One parent college +",
+                           "racefinal2black:oneCollegeplus"="Black*One parent college +",
+                           "racefinal2hispanic:oneCollegeplus"="Hispanic*One parent college +",
+                           "racefinal2other:oneCollegeplus"="Others*One parent college +"),
          Variable = factor(Variable,
-                           levels=c("Women","Black","Hispanic","Asian/PI","Native American","Others","One parent college +")),
+                           levels=c("Women","Black","Hispanic","Asian/PI","Native American","Others","One parent college +",
+                                    "Black*One parent college +", "Hispanic*One parent college +",
+                                    "Others*One parent college +")),
          time = factor(time, levels=c("1999-2009","2011-2019")),
-         model = recode(model, "baseline"="Baseline","parent" = "Parental education"))
+         model = recode(model, "baseline"="Baseline","parent" = "Interaction"))
 # %>% 
 #   mutate(Stat = paste0(Estimate, " (", Lower, "-", Upper, ")")) %>% 
 #   dplyr::select(time, model, Variable, Transition, Stat) %>% 
 #   pivot_wider(names_from=Transition, values_from=Stat) %>% 
 #   dplyr::select(-`NA`)
 
-ggplot(data=coefs, aes(x=Estimate, y=Variable, colour=time)) + geom_point(position=position_dodge(width=-0.5), size=1) + 
-  geom_errorbar(aes(xmin=Lower, xmax=Upper), position=position_dodge(width=-0.5)) + 
-  facet_grid(cols=vars(Transition), rows=vars(model)) + geom_vline(xintercept=1, colour="black",linetype="dashed") +
-  scale_y_discrete(limits=rev) + theme_bw() + 
-  scale_colour_manual(values=c("grey70","black")) + theme(legend.title=element_blank(),
-                                                          strip.background = element_rect(fill="white"),
-                                                          text = element_text(size=18)) + 
-  xlab("Hazard Ratio (+/- 95% CI") + ylab("")
+coefs <- coefs %>% drop_na()
 
 ggplot(data=coefs, aes(x=Estimate, y=Variable, colour=model)) + geom_point(position=position_dodge(width=-0.5), size=1) + 
   geom_errorbar(aes(xmin=Lower, xmax=Upper), position=position_dodge(width=-0.5)) + 
@@ -78,37 +66,8 @@ ggplot(data=coefs, aes(x=Estimate, y=Variable, colour=model)) + geom_point(posit
   scale_y_discrete(limits=rev) + theme_bw() + 
   scale_colour_manual(values=c("grey70","black")) + theme(legend.title=element_blank(),
                                                           strip.background = element_rect(fill="white"),
-                                                          text = element_text(size=18),
-                                                          legend.position = "bottom") + 
-  xlab("Hazard Ratio (+/- 95% CI)") + ylab("")
-
-
-# plotting interaction effects 
-coefsinteraction <- rbind(coefst1interaction, coefst2interaction) %>% 
-  dplyr::select(Variable, Transition, model, time, Estimate, NewLower, NewUpper) %>% 
-  rename(Upper=NewUpper, Lower=NewLower) %>% 
-  mutate(Variable = recode(Variable, "sex1"="Women","racefinal2black"="Black",
-                           "racefinal2Asian/PI"="Asian/PI","racefinal2hispanic"="Hispanic",
-                           "racefinal2Native"="Native American","racefinal2other"="Others",
-                           "oneCollegeplus"="One parent college",
-                           "racefinal2black:oneCollegeplus"="Black*One parent college",
-                           "racefinal2hispanic:oneCollegeplus"="Hispanic*One parent college",
-                           "racefinal2Native:oneCollegeplus"="Native American*One parent college",
-                           "racefinal2Asian/PI:oneCollegeplus"="Asian/PI*One parent college",
-                           "racefinal2other:oneCollegeplus"="Others*One parent college"),
-         Variable = factor(Variable,
-                           levels=c("Women","Black","Hispanic","Asian/PI","Native American","Others","One parent college",
-                                    "Black*One parent college","Hispanic*One parent college",
-                                    "Native American*One parent college","Asian/PI*One parent college",
-                                    "Others*One parent college")),
-         time = factor(time, levels=c("1999-2009","2011-2019")),
-         model = recode(model, "baseline"="Baseline","parent" = "Parental education"))
-
-ggplot(data=coefsinteraction, aes(x=Estimate, y=Variable, colour=time)) + geom_point(position=position_dodge(width=-0.5), size=1) + 
-  geom_errorbar(aes(xmin=Lower, xmax=Upper), position=position_dodge(width=-0.5)) + 
-  facet_grid(cols=vars(Transition)) + geom_vline(xintercept=1, colour="black",linetype="dashed") +
-  scale_y_discrete(limits=rev) + theme_bw() + 
-  scale_colour_manual(values=c("grey70","black")) + theme(legend.title=element_blank(),
-                                                          strip.background = element_rect(fill="white"),
                                                           text = element_text(size=18)) + 
-  xlab("Hazard Ratio (+/- 95% CI") + ylab("") + xlim(0,5)
+  xlab("Hazard Ratio (+/- 95% CI") + ylab("")
+
+ggsave("SIMAH_workplace/education_transitions/final_models/Figure1.png", dpi=300, width=33, height=19, units="cm")
+
