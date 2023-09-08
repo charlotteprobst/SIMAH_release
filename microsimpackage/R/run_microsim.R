@@ -13,7 +13,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
-                         policy=0, percentreduction=0.1, year_policy, inflation_factor,
+                         policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_categories,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
@@ -133,6 +133,13 @@ if("ISTR" %in% diseases==TRUE){
 if("HYPHD" %in% diseases==TRUE){
   basepop <- HYPHD(basepop, lhs)
 }
+if("MVACC" %in% diseases==TRUE){
+  basepop <- MVACC(basepop, lhs)
+}
+if("UIJ" %in% diseases==TRUE){
+  basepop <- UIJ(basepop, lhs)
+}
+
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)

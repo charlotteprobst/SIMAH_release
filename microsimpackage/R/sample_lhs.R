@@ -33,14 +33,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
         c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
         c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
-      
+
       DM <- list(
         c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
         c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
         c("qnorm", 0.04322303 , 0.01065573), #DM2 WOMEN SD 0.01065573
         c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
         c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
-      
+
       IHD <- list(
         c("qnorm", 0, 0), #IHD1 SD 0.00
         c("qnorm", -0.051293294, 0.122015927), #IHD2 SD 0.122015927
@@ -49,10 +49,10 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.139761942, 0.145289088), #IHD5 SD 0.145289088
         c("qnorm", 0.371563556, 0.150731717)), #IHD FORMER DRINKERS SD 0.150731717
 
-      ISTR <- list( 
-        c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389 
+      ISTR <- list(
+        c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389
         c("qnorm", -0.083381609, 0.02775583), #ISTR2 SD 0.02775583
-        c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521 
+        c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521
         c("qnorm", 0.131028262, 0.05792282), #ISTR4 SD 0.05792282
         c("qnorm", 0.00, 0.00)), #ISTR FORMER DRINKERS SD 0.00
 
@@ -60,7 +60,15 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
         c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
         c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
-      
+
+      MVACC <- list(
+        c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
+        c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
+
+      UIJ <- list(
+        c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
+        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
+
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
         c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
@@ -68,7 +76,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "ALL")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
@@ -78,8 +86,10 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
+  names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
+  names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
-  
+
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
   prior <- unlist(prior, recursive=FALSE) # convert the lists of priors into vectors
   names(prior) <- gsub("^.*\\.","", names(prior)) # remove duplicated disease names (generated during the listing and unlisting process)

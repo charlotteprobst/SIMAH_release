@@ -19,7 +19,7 @@ PopulationSize <- 1000000
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 1
+updatingeducation <- 0
 
 # switch on and off alcohol updates
 updatingalcohol <- 0
@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
+diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC","UIJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -62,7 +62,7 @@ year_policy <- 2015
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
 percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
-
+percentreduction <- 0.108
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -116,7 +116,7 @@ rm(list)
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
 
-numsamples <- 500
+n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
 PE <- 0
