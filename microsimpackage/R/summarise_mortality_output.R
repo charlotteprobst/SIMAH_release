@@ -5,6 +5,7 @@
 #' @export
 #' @examples
 #' summarise_mortality_output
+
 summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, inflation_factor, diseases){
 
 age2010 <- Output %>% filter(year=="2000") %>%
@@ -16,6 +17,7 @@ age2010 <- Output %>% filter(year=="2000") %>%
   mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(sex,
                                                                              agecat, education,
                                                                              percent)
+
 summary_list <- list()
 for (disease in diseases) {
   # Generate and add the summary to the list with automatic naming
