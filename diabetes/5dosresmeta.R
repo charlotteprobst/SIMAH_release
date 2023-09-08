@@ -11,9 +11,9 @@ dataset_dos <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/5dosresmeta.xl
 ####MALE
 
 maled <- dataset_dos %>%
-  filter(sex ==1 & first_author != "Okamura" & first_author != "Park")
+  filter(sex ==1 & id != 112)
 maled <- maled[-c(19),]
-
+#first_author != "Okamura" & first_author != "Park"
 #LINEAR DOSE-RESPONSE
 
 linear_maled <- dosresmeta(formula = logrr ~ dose, id = id, type = "ci", se=se,
@@ -23,9 +23,14 @@ predict(linear_maled, delta = 12, exp = TRUE)
 
 dosex_bin <- data.frame(dose=seq(0, 100, 1))
 with(predict(linear_maled, dosex_bin, order=TRUE, exp=TRUE), 
-     {plot(dose, pred, type="l", ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
+     {plot(dose, pred, type="l", col="black", las=1, lwd = "3", cex.lab=1, cex.axis=1.1, ylim=c(0, 2), ylab= "Relative risk", xlab="Alcohol intake, grams/day")
        lines(dose, ci.lb, lty=2)
        lines(dose, ci.ub, lty=2)})
+lines(exp(pred_lin_male$pred), lwd = "4", col = "blue")
+lines(exp(pred_lin_male$ci.lb), lwd = "3", lty = "dotted", col = "blue")
+lines(exp(pred_lin_male$ci.ub), lwd = "3", lty = "dotted", col = "blue")
+legend("topleft",inset =0.1, legend=c("Sensitivity Analysis 3", "Main Analysis"), lty=1:1, lwd=3:3, cex=1, col=c("black", "blue", "red"))
+title("a) Men", adj = 0, line = 2)
 
 #QUADRATIC DOSE-RESPONSE
 
@@ -114,19 +119,23 @@ summary(splfemaled)
 dosex_bins <- data.frame(dose=seq(0, 100, 1))
 xref <- 0
 with(predict(splfemaled, dosex_bins, xref, exp = TRUE),
-     {plot(get("rcs(dose, knotsfd)dose"), pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
+     {plot(get("rcs(dose, knotsfd)dose"), col="black", las=1, lwd = "3", cex.lab=1, cex.axis=1.1, pred, type= "l", ylim= c(0,2), ylab= "Relative risk", 
            xlab= "Alcohol consumption, grams/day")
        matlines(get("rcs(dose, knotsfd)dose"), cbind(ci.lb, ci.ub), col = 1, lty = "dashed")})
-
+lines(exp(pred_rcs_female$pred), lwd = "4", col = "red")
+lines(exp(pred_rcs_female$ci.lb), lwd = "3", lty = "dotted", col = "red")
+lines(exp(pred_rcs_female$ci.ub), lwd = "3", lty = "dotted", col = "red")
+legend("topleft",inset =0.1, legend=c("Sensitivity Analysis 3", "Main Analysis"), lty=1:1, lwd=3:3, cex=1, col=c("black", "red", "red"))
+title("b) Women", adj = 0, line = 2)
 waldtest(b=coef(splfemaled), Sigma=vcov(splfemaled), Terms=2:3)
 
-predict(splfemaled, newmods= rcspline.eval(45, knotsfd, inclx=TRUE), exp=TRUE)
+predict(splfemaled, newmods= rcspline.eval(16, knotsfd, inclx=TRUE), exp=TRUE)
 
-dataTab <- data.frame(dose = seq(0, 20, 1))
+dataTab <- data.frame(dose = seq(0, 30, 1))
 predSpl <- predict(splfemaled, dataTab, exp = TRUE)
 predSpl
 
-predict(splfemaled, 20, exp = TRUE)
+predict(splfemaled, 16, exp = TRUE)
 
 #####BOTH - not for publication
 

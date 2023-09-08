@@ -1,6 +1,6 @@
 # SIMAH June 2021
 # Calculating population totals from ACS for US and States 
-# Split by sex, age group, racee/ethnicity and education 
+# Split by sex, age group, race/ethnicity and education 
 
 #  SIMAH project 2022 
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
@@ -35,7 +35,6 @@ data <- remove_attributes(data, "labels")
 data <- remove_attributes(data, "lbl")
 data <- remove_attributes(data, "int+lbl")
 data <- zap_ipums_attributes(data)
-
 
 summaryUSA <- data %>% 
   filter(AGE>=18) %>% 
@@ -79,7 +78,6 @@ ggplot(totals, aes(x=year, y=TPop, colour=as.factor(sex))) +
   theme(legend.title=element_blank(), legend.position="bottom")
 
 ggsave("SIMAH_workplace/ACS/populationcounts_2010_2021.png", dpi=300, width=33, height=19, units="cm")
-
 
 # 
 # summaryStates <- data %>% group_by(YEAR, STATE, SEX, RACE, AGECAT, EDUC) %>% 
@@ -222,4 +220,8 @@ summaryUSA <- summaryUSA %>% dplyr::select(-pct_change, TPop) %>%
   mutate(TPop=round(TPop_new, digits=0)) %>% dplyr::select(-TPop_new)
 
 write.csv(joined, "2_calculate_population_totals/ACS_popcounts_2000_2020_indage_adjusted_90.csv", row.names=FALSE)
+
+ggplot(data=allages, aes(x=year, y=TPop, colour=sex)) + geom_line(size=1) + facet_grid(cols=vars(edclass), scales="free") +
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(2010, 2021)
+ggsave("SIMAH_workplace/ACS/popcounts_sex_edclass_with2020.png",dpi=300, width=33, height=19, units="cm")
 

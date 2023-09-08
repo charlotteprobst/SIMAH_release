@@ -1,0 +1,561 @@
+---
+title: "Run MAIHDA analysis"
+output: html_notebook
+---
+
+This script undertakes a multi-level analysis of individual heterogenity and discriminatory accuracy (MAIHDA)
+to estimate average alcohol consumption per intersectional group of sex/age/race/SES
+
+Setup
+```{r, warning=FALSE}
+# Load in data
+transformed_drinkers <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers.RDS")
+
+# Load necessary packages
+library("R2MLwiN")
+library(tidyr)
+library(dplyr)
+
+# Bias toward non-scientific notation
+options(scipen=10)
+```
+Split data by birth cohort
+```{r}
+silent <- transformed_drinkers %>% filter(birth_cohort == "silent")
+baby_boomers <- transformed_drinkers %>% filter(birth_cohort == "baby_boomers")
+gen_x <- transformed_drinkers %>% filter(birth_cohort == "gen_x")
+millenials <- transformed_drinkers %>% filter(birth_cohort == "millenials")
+gen_z <- transformed_drinkers %>% filter(birth_cohort == "gen_z")
+```
+
+Generate a constant for runmlwin
+```{r}
+transformed_drinkers <- transformed_drinkers %>%
+  mutate(cons=1)
+```
+
+# SILENT GENERATION
+
+Generate null model
+```{r}
+silent_null_model <- lm(transformed_grams_lambda_1 ~ AGE + SEX + race_5_cats + education_3_cats, data = silent)
+summary(silent_null_model)
+```
+Generate intersectional groups and create a reference table for them
+```{r}
+silent_intersections <- silent %>% 
+  group_by(SEX, race_5_cats, education_3_cats) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n(),
+         generation="silent")
+
+temp_1 <- silent_intersections %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp_2 <- temp_1 %>% 
+  mutate(intersectional_names = as.character(paste(sex, race_5_cats, education_3_cats)))
+
+silent_intersections_reference <- distinct(temp_2, intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, intersectional_names, count, generation)
+```
+
+Multilevel model, null
+```{r}
+# Sort by intersections (required for Mlwin package)
+silent_intersections <- silent_intersections %>% arrange(intersections)
+
+# Run the null two-level model
+F1_silent <- transformed_grams_lambda_1 ~ 1 + AGE + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_silent <- runMLwiN(Formula = F1_silent, data = silent_intersections, estoptions = list(EstM = 1)))
+```
+Interpretation:
+β0 = 1.1185
+between-intersection variance = 0.58547 (stored in the s4 object VarCompModel as RP2_var_intercept)
+between individual variance = 4.43965 (stored in the s4 object VarCompModel as RP1_var_intercept)
+(variance values are stored in the s4 object VarCompModel under RP)
+
+### Calculate the variance partition coefficient (VPC)
+```{r}
+# Calculate VPC = between-intersection variance / (between intersection variance + between individual variance)
+VPC_silent_null <- VarCompModel_silent["RP"][["RP2_var_Intercept"]]/(VarCompModel_silent["RP"][["RP1_var_Intercept"]] + VarCompModel_silent["RP"][["RP2_var_Intercept"]])
+
+rm(VarCompModel_silent)
+```
+~11.7% of variation at the intersectional level
+
+Run the main-effects two-level model & recalculate VPC
+```{r}
+F2_silent <- transformed_grams_lambda_1 ~ 1 + AGE + SEX + race_5_cats + education_3_cats + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel2_silent <- runMLwiN(Formula = F2_silent, data = silent_intersections, estoptions = list(EstM = 1)))
+
+VPC_silent_main_effects <- VarCompModel2_silent["RP"][["RP2_var_Intercept"]]/(VarCompModel2_silent["RP"][["RP1_var_Intercept"]] + VarCompModel2_silent["RP"][["RP2_var_Intercept"]])
+```
+0.01454916 variance remaining
+
+## Running the model using MCMC, storing residuals
+```{r}
+VarCompResid_silent <- runMLwiN(F2_silent, data = silent_intersections, estoptions = list(resi.store = TRUE, EstM = 1))
+```
+# Summary of model predicted effects
+```{r}
+# Estimate yhat (and SEs) using predict function
+silent_intersections$yhat <- predict(VarCompResid_silent) # the predicted expected value
+silent_intersections$yhat_se <- predict(VarCompResid_silent, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_silent <- distinct(silent_intersections, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_silent$residuals <- VarCompResid_silent@residual$lev_2_resi_est_Intercept
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_silent$residualsSE <- sqrt(VarCompResid_silent@residual$lev_2_resi_variance_Intercept) # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_silent <- processed_intersections_silent %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_silent <- processed_intersections_silent %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_silent <- processed_intersections_silent %>%
+  dplyr::select(intersections, count, birth_year, YEAR, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_silent <- inner_join(Results_table_silent, silent_intersections_reference, by = "intersections")
+
+saveRDS(Results_table_silent, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA results by cohort/MAIHDA_subset_results_silent.RDS")
+```
+
+# Baby bommers
+
+Generate null model
+```{r}
+baby_boomers_null_model <- lm(transformed_grams_lambda_1 ~ AGE + SEX + race_5_cats + education_3_cats, data = baby_boomers)
+summary(baby_boomers_null_model)
+```
+Generate intersectional groups and create a reference table for them
+```{r}
+baby_boomers_intersections <- baby_boomers %>% 
+  group_by(SEX, race_5_cats, education_3_cats) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n(),
+         generation="baby boomers")
+
+temp_1 <- baby_boomers_intersections %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp_2 <- temp_1 %>% 
+  mutate(intersectional_names = as.character(paste(sex, race_5_cats, education_3_cats)))
+
+baby_boomers_intersections_reference <- distinct(temp_2, intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, intersectional_names, count, generation)
+```
+
+Multilevel model, null
+```{r}
+# Sort by intersections (required for Mlwin package)
+baby_boomers_intersections <- baby_boomers_intersections %>% arrange(intersections)
+
+# Run the null two-level model
+F1_baby_boomers <- transformed_grams_lambda_1 ~ 1 + AGE + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_baby_boomers <- runMLwiN(Formula = F1_baby_boomers,
+                                       data = baby_boomers_intersections,
+                                       estoptions = list(resi.store = TRUE, EstM = 1)))
+```
+Calculate the variance partition coefficient (VPC)
+```{r}
+slotNames(VarCompModel_baby_boomers)
+
+print(VPC <- VarCompModel_baby_boomers["RP"][["RP2_var_Intercept"]]/(VarCompModel_baby_boomers["RP"][["RP1_var_Intercept"]] + VarCompModel_baby_boomers["RP"][["RP2_var_Intercept"]]))
+```
+~11.8% of variation at the intersectional level
+
+Run the main-effects two-level model & recalculate VPC
+```{r}
+F2_baby_boomers <- transformed_grams_lambda_1 ~ 1 + AGE + SEX + race_5_cats + education_3_cats + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel2_baby_boomers <- runMLwiN(Formula = F2_baby_boomers, 
+                                        data = baby_boomers_intersections,
+                                        estoptions = list(resi.store = TRUE, EstM = 1)))
+
+slotNames(VarCompModel2_baby_boomers)
+
+print(VPC <- VarCompModel2_baby_boomers["RP"][["RP2_var_Intercept"]]/(VarCompModel2_baby_boomers["RP"][["RP1_var_Intercept"]] + 
+  VarCompModel2_baby_boomers["RP"][["RP2_var_Intercept"]]))
+```
+~ 1.6% variance remaining
+
+## Running the model using MCMC, storing residuals
+```{r}
+VarCompResid_baby_boomers <- runMLwiN(F2_baby_boomers, data = baby_boomers_intersections, estoptions = list(resi.store = TRUE, EstM = 1))
+```
+# Store model results
+```{r}
+# Estimate yhat (and SEs) using predict function
+baby_boomers_intersections$yhat <- predict(VarCompResid_baby_boomers) # the predicted expected value
+baby_boomers_intersections$yhat_se <- predict(VarCompResid_baby_boomers, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_baby_boomers <- distinct(baby_boomers_intersections, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_baby_boomers$residuals <- VarCompResid_baby_boomers@residual$lev_2_resi_est_Intercept
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_baby_boomers$residualsSE <- sqrt(VarCompResid_baby_boomers@residual$lev_2_resi_variance_Intercept)# standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_baby_boomers <- processed_intersections_baby_boomers %>%
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_baby_boomers <- processed_intersections_baby_boomers %>%
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_baby_boomers <- processed_intersections_baby_boomers %>%
+   dplyr::select(intersections, count, birth_year, YEAR, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+ 
+Results_table_baby_boomers <- inner_join(Results_table_baby_boomers, baby_boomers_intersections_reference, by = "intersections")
+
+saveRDS(Results_table_baby_boomers, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA results by cohort/MAIHDA_subset_results_baby_boomers.RDS")
+```
+
+# gen_x
+
+Generate null model
+```{r}
+gen_x_null_model <- lm(transformed_grams_lambda_1 ~ AGE + SEX + race_5_cats + education_3_cats, data = gen_x)
+summary(gen_x_null_model)
+```
+Generate intersectional groups and create a reference table for them
+```{r}
+gen_x_intersections <- gen_x %>% 
+  group_by(SEX, race_5_cats, education_3_cats) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n(),
+         generation="gen_x")
+
+temp_1 <- gen_x_intersections %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp_2 <- temp_1 %>% 
+  mutate(intersectional_names = as.character(paste(sex, race_5_cats, education_3_cats)))
+
+gen_x_intersections_reference <- distinct(temp_2, intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, intersectional_names, count, generation)
+```
+
+Multilevel model, null
+```{r}
+# Sort by intersections (required for Mlwin package)
+gen_x_intersections <- gen_x_intersections %>% arrange(intersections)
+
+# Run the null two-level model
+F1_gen_x <- transformed_grams_lambda_1 ~ 1 + AGE + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_gen_x <- runMLwiN(Formula = F1_gen_x,
+                                       data = gen_x_intersections,
+                                       estoptions = list(resi.store = TRUE, EstM = 1)))
+```
+Calculate the variance partition coefficient (VPC)
+```{r}
+slotNames(VarCompModel_gen_x)
+
+print(VPC <- VarCompModel_gen_x["RP"][["RP2_var_Intercept"]]/(VarCompModel_gen_x["RP"][["RP1_var_Intercept"]] + VarCompModel_gen_x["RP"][["RP2_var_Intercept"]]))
+```
+0.1148625 of variation at the intersectional level
+
+Run the main-effects two-level model & recalculate VPC
+```{r}
+F2_gen_x <- transformed_grams_lambda_1 ~ 1 + AGE + SEX + race_5_cats + education_3_cats + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel2_gen_x <- runMLwiN(Formula = F2_gen_x, 
+                                        data = gen_x_intersections,
+                                        estoptions = list(resi.store = TRUE, EstM = 1)))
+
+slotNames(VarCompModel2_gen_x)
+
+print(VPC <- VarCompModel2_gen_x["RP"][["RP2_var_Intercept"]]/(VarCompModel2_gen_x["RP"][["RP1_var_Intercept"]] + 
+  VarCompModel2_gen_x["RP"][["RP2_var_Intercept"]]))
+```
+0.01414164 variance remaining
+
+## Running the model using MCMC, storing residuals
+```{r}
+VarCompResid_gen_x <- runMLwiN(F2_gen_x, data = gen_x_intersections, estoptions = list(resi.store = TRUE, EstM = 1))
+```
+# Store model results
+```{r}
+# Estimate yhat (and SEs) using predict function
+gen_x_intersections$yhat <- predict(VarCompResid_gen_x) # the predicted expected value
+gen_x_intersections$yhat_se <- predict(VarCompResid_gen_x, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_gen_x <- distinct(gen_x_intersections, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_gen_x$residuals <- VarCompResid_gen_x@residual$lev_2_resi_est_Intercept
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_gen_x$residualsSE <- sqrt(VarCompResid_gen_x@residual$lev_2_resi_variance_Intercept) # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_gen_x <- processed_intersections_gen_x %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_gen_x <- processed_intersections_gen_x %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_gen_x <- processed_intersections_gen_x %>%
+  dplyr::select(intersections, count, birth_year, YEAR, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_gen_x <- inner_join(Results_table_gen_x, gen_x_intersections_reference, by = "intersections")
+
+saveRDS(Results_table_gen_x, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA results by cohort/MAIHDA_subset_results_gen_x.RDS")
+```
+
+# Millenials
+
+Generate null model
+```{r}
+millenials_null_model <- lm(transformed_grams_lambda_1 ~ AGE + SEX + race_5_cats + education_3_cats, data = millenials)
+summary(millenials_null_model)
+```
+Generate intersectional groups and create a reference table for them
+```{r}
+millenials_intersections <- millenials %>% 
+  group_by(SEX, race_5_cats, education_3_cats) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n(),
+         generation="millenials")
+
+temp_1 <- millenials_intersections %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp_2 <- temp_1 %>% 
+  mutate(intersectional_names = as.character(paste(sex, race_5_cats, education_3_cats)))
+
+millenials_intersections_reference <- distinct(temp_2, intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, intersectional_names, count, generation)
+```
+
+Multilevel model, null
+```{r}
+# Sort by intersections (required for Mlwin package)
+millenials_intersections <- millenials_intersections %>% arrange(intersections)
+
+# Run the null two-level model
+F1_millenials <- transformed_grams_lambda_1 ~ 1 + AGE + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_millenials <- runMLwiN(Formula = F1_millenials,
+                                       data = millenials_intersections,
+                                       estoptions = list(resi.store = TRUE, EstM = 1)))
+```
+Calculate the variance partition coefficient (VPC)
+```{r}
+slotNames(VarCompModel_millenials)
+
+print(VPC <- VarCompModel_millenials["RP"][["RP2_var_Intercept"]]/(VarCompModel_millenials["RP"][["RP1_var_Intercept"]] + VarCompModel_millenials["RP"][["RP2_var_Intercept"]]))
+```
+0.09800555 of variation at the intersectional level
+
+Run the main-effects two-level model & recalculate VPC
+```{r}
+F2_millenials <- transformed_grams_lambda_1 ~ 1 + AGE + SEX + race_5_cats + education_3_cats + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel2_millenials <- runMLwiN(Formula = F2_millenials, 
+                                        data = millenials_intersections,
+                                        estoptions = list(resi.store = TRUE, EstM = 1)))
+
+slotNames(VarCompModel2_millenials)
+
+print(VPC <- VarCompModel2_millenials["RP"][["RP2_var_Intercept"]]/(VarCompModel2_millenials["RP"][["RP1_var_Intercept"]] + 
+  VarCompModel2_millenials["RP"][["RP2_var_Intercept"]]))
+```
+0.01310273 variance remaining
+
+## Running the model using MCMC, storing residuals
+```{r}
+VarCompResid_millenials <- runMLwiN(F2_millenials, data = millenials_intersections, estoptions = list(resi.store = TRUE, EstM = 1))
+```
+# Store model results
+```{r}
+# Estimate yhat (and SEs) using predict function
+millenials_intersections$yhat <- predict(VarCompResid_millenials) # the predicted expected value
+millenials_intersections$yhat_se <- predict(VarCompResid_millenials, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_millenials <- distinct(millenials_intersections, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_millenials$residuals <- VarCompResid_millenials@residual$lev_2_resi_est_Intercept
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_millenials$residualsSE <- sqrt(VarCompResid_millenials@residual$lev_2_resi_variance_Intercept) # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_millenials <- processed_intersections_millenials %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_millenials <- processed_intersections_millenials %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_millenials <- processed_intersections_millenials %>%
+  dplyr::select(intersections, count, birth_year, YEAR, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_millenials <- inner_join(Results_table_millenials, millenials_intersections_reference, by = "intersections")
+
+saveRDS(Results_table_millenials, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA results by cohort/MAIHDA_subset_results_millenials.RDS")
+```
+
+# gen_z
+
+Generate null model
+```{r}
+gen_z_null_model <- lm(transformed_grams_lambda_1 ~ AGE + SEX + race_5_cats + education_3_cats, data = gen_z)
+summary(gen_z_null_model)
+```
+Generate intersectional groups and create a reference table for them
+```{r}
+gen_z_intersections <- gen_z %>% 
+  group_by(SEX, race_5_cats, education_3_cats) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n(),
+         generation="gen_z")
+
+temp_1 <- gen_z_intersections %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp_2 <- temp_1 %>% 
+  mutate(intersectional_names = as.character(paste(sex, race_5_cats, education_3_cats)))
+
+gen_z_intersections_reference <- distinct(temp_2, intersections, .keep_all = TRUE) %>% 
+  dplyr::select(intersections, intersectional_names, count, generation)
+```
+
+Multilevel model, null
+```{r}
+# Sort by intersections (required for Mlwin package)
+gen_z_intersections <- gen_z_intersections %>% arrange(intersections)
+
+# Run the null two-level model
+F1_gen_z <- transformed_grams_lambda_1 ~ 1 + AGE + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_gen_z <- runMLwiN(Formula = F1_gen_z,
+                                       data = gen_z_intersections,
+                                       estoptions = list(resi.store = TRUE, EstM = 1)))
+```
+Calculate the variance partition coefficient (VPC)
+```{r}
+slotNames(VarCompModel_gen_z)
+
+print(VPC <- VarCompModel_gen_z["RP"][["RP2_var_Intercept"]]/(VarCompModel_gen_z["RP"][["RP1_var_Intercept"]] + VarCompModel_gen_z["RP"][["RP2_var_Intercept"]]))
+```
+0.04192942 of variation at the intersectional level
+
+Run the main-effects two-level model & recalculate VPC
+```{r}
+F2_gen_z <- transformed_grams_lambda_1 ~ 1 + AGE + SEX + race_5_cats + education_3_cats + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel2_gen_z <- runMLwiN(Formula = F2_gen_z, 
+                                        data = gen_z_intersections,
+                                        estoptions = list(resi.store = TRUE, EstM = 1)))
+
+slotNames(VarCompModel2_gen_z)
+
+print(VPC <- VarCompModel2_gen_z["RP"][["RP2_var_Intercept"]]/(VarCompModel2_gen_z["RP"][["RP1_var_Intercept"]] + 
+  VarCompModel2_gen_z["RP"][["RP2_var_Intercept"]]))
+```
+0.02202344 variance remaining
+
+## Running the model using MCMC, storing residuals
+```{r}
+VarCompResid_gen_z <- runMLwiN(F2_gen_z, data = gen_z_intersections, estoptions = list(resi.store = TRUE, EstM = 1))
+```
+
+# Store model results
+```{r}
+# Estimate yhat (and SEs) using predict function
+gen_z_intersections$yhat <- predict(VarCompResid_gen_z) # the predicted expected value
+gen_z_intersections$yhat_se <- predict(VarCompResid_gen_z, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_gen_z <- distinct(gen_z_intersections, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_gen_z$residuals <- VarCompResid_gen_z@residual$lev_2_resi_est_Intercept 
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_gen_z$residualsSE <- sqrt(VarCompResid_gen_z@residual$lev_2_resi_variance_Intercept) # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_gen_z <- processed_intersections_gen_z %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_gen_z <- processed_intersections_gen_z %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_gen_z <- processed_intersections_gen_z %>%
+  dplyr::select(intersections, count, birth_year, YEAR, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_gen_z <- inner_join(Results_table_gen_z, gen_z_intersections_reference, by = "intersections")
+
+saveRDS(Results_table_gen_z, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA results by cohort/MAIHDA_subset_results_gen_z.RDS")
+```
+
+# Generate combined reference table capturing intersections used across each year grouping
+```{r}
+reference_table <- rbind(silent_intersections_reference, baby_boomers_intersections_reference, gen_x_intersections_reference, millenials_intersections_reference, gen_z_intersections_reference)
+```
