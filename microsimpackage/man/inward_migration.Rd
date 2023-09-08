@@ -4,7 +4,7 @@
 \alias{inward_migration}
 \title{Adds new migrants in each year from existing data pool}
 \usage{
-inward_migration(basepop, migration_rates, y, brfss)
+inward_migration(basepop, migration_rates, y, brfss, model)
 }
 \description{
 Adds new migrants in each year from existing data pool

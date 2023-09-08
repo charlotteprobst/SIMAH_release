@@ -22,7 +22,8 @@ basepop$prob <- runif(nrow(basepop))
 basepop$chronicB <- ifelse(basepop$prob<basepop$HBV, 1,0)
 basepop$chronicC <- ifelse(basepop$prob<basepop$HCV, 1,0)
 
-summary(as.factor(basepop$chronicB))
+summary(as.factor(basepop$chronicB))/nrow(basepop)*100
+
 summary(as.factor(basepop$chronicC))
 
 basepop <- basepop %>% dplyr::select(-c(prob, HBV, HCV, hepcat))

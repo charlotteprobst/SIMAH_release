@@ -17,31 +17,34 @@ ddi <- read_ipums_ddi("SIMAH_workplace/CPS/cps_00005.xml")
 data <- read_ipums_micro(ddi)
 data <- zap_ipums_attributes(data)
 
-data <- data %>% 
-  mutate(edclass = ifelse(EDUC<=73, "LEHS",
+data <- data %>% filter(AGE>=18) %>% 
+  mutate(edclass = ifelse(EDUC==1, NA,
+                          ifelse(EDUC<=73, "LEHS",
                        ifelse(EDUC==999, NA,
-                       ifelse(EDUC>=110, "College", "SomeC"))),
-         race = ifelse(RACE=="100","White",
+                       ifelse(EDUC>=110, "College", "SomeC")))),
+         race = ifelse(RACE==100,"White",
                        ifelse(RACE==200, "Black",
-                              ifelse(RACE==801 | RACE==805 | RACE==806 | RACE==807 | RACE==810 | RACE==811 |
-                                       RACE==814 | RACE==816 | RACE==818, "Black",
-                              "Other"))),
+                              # ifelse(RACE==801 | RACE==805 | RACE==806 | RACE==807 | RACE==810 | RACE==811 |
+                              #          RACE==814 | RACE==816 | RACE==818, "Black",
+                              "Other")),
          race = ifelse(HISPAN==0, race, 
                        ifelse(HISPAN>=901, race, "Hispanic")),
          weight = ifelse(is.na(WTFINL), ASECWT, WTFINL),
+         # weight = ASECWT,
          age_gp = cut(AGE, 
-                      breaks=c(0,17,24,29,34,39,44,49,54,59,64,69,74,79,100),
-                      labels=c("0-17","18","25","30","35","40","45",
+                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,1000),
+                      labels=c("18","25","30","35","40","45",
                                "50","55","60","65","70","75","80")),
          age_gp=as.character(age_gp),
          flag = ifelse(HFLAG==0, 0, 1),
          flag = ifelse(is.na(flag), 1, flag)) %>% filter(flag==1)
 summary(as.factor(data$edclass))
 summary(as.factor(data$race))
+summary(as.factor(data$age_gp))
 
 summary <- data %>% filter(AGE>=18) %>% 
   group_by(YEAR, age_gp, SEX, race, edclass) %>% 
-  summarise(TPop = round(sum(weight),digits=0)) %>% 
+  summarise(TPop = round(sum(weight, na.rm=T),digits=0)) %>% 
   rename(year=YEAR, sex=SEX) %>% 
   mutate(age_gp=as.integer(age_gp)) %>% data.frame() %>% 
   mutate(type="CB_CPS") %>% filter(year<=2020) %>% filter(year>=2000)

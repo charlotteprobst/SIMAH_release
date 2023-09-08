@@ -4,7 +4,7 @@
 \alias{CirrhosisHepatitis}
 \title{Calculates RR of liver cirrhosis through hepatitis pathway}
 \usage{
-CirrhosisHepatitis(data, lhsSample)
+CirrhosisHepatitis(data, lhs)
 }
 \description{
 Calculates RR of liver cirrhosis through hepatitis pathway

@@ -21,6 +21,7 @@ load_alcohol_transitions <- function(SelectedState, basepop,brfss, WorkingDirect
 #   mutate(cat = paste(age_cat, sex, race, edu, From, sep="_")) %>%
 #   dplyr::select(cat, To, Probability) %>% group_by(cat) %>%
 #   mutate(cumsum = cumsum(Probability))
+  # add "filename" to function call - i.e. final_alc_transitions ######### TO DO
 AlctransitionProbability <- read_rds(paste0(WorkingDirectory, "final_alc_transitions", SelectedState, ".RDS"))
 # set up the grams per day categories for the baseline population and brfss donor populations
 basepop <- basepop %>%

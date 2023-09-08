@@ -5,96 +5,83 @@
 #' @export
 #' @examples
 #' summarise_mortality_output
-summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory){
 
-age2010 <- Output[[2]] %>% filter(year=="2000") %>%
+summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, inflation_factor, diseases){
+
+age2010 <- Output %>% filter(year=="2000") %>%
+  filter(samplenum==1) %>%
   ungroup() %>%
-  group_by(year, microsim.init.sex, microsim.init.education, agecat) %>%
-  summarise(totalpop = sum(totalpop)) %>% ungroup() %>%
-  group_by(year, microsim.init.sex, microsim.init.education) %>%
-  mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(microsim.init.sex, microsim.init.education,
-                                                                             agecat, percent)
-simulation <- Output[[1]] %>%
-  group_by(year, cause, microsim.init.sex, microsim.init.education, agecat) %>%
-  summarise(totaldeaths = sum(ndeaths))
+  group_by(year, sex, agecat, education) %>%
+  summarise(totalpop = sum(popcount)) %>% ungroup() %>%
+  group_by(year, sex) %>%
+  mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(sex,
+                                                                             agecat, education,
+                                                                             percent)
 
-totalpop <- Output[[2]] %>% ungroup() %>%
-  group_by(year, microsim.init.sex, microsim.init.education, agecat) %>%
-  summarise(totalpop=sum(totalpop))
+summary_list <- list()
+for (disease in diseases) {
+  # Generate and add the summary to the list with automatic naming
+  summary_list[[paste0(disease)]] <- Output %>%
+    group_by(samplenum, year, sex, agecat, education) %>%
+    left_join(.,age2010) %>%
+    summarise(!!paste0("observed_", disease) := round(sum(!!sym(paste0(disease)))/inflation_factor,digits=2),
+              !!paste0("simulated_",disease) := round(sum(!!sym(paste0("mort_", disease)))/inflation_factor,digits=2),
+              !!paste0("weightedrate_observed",disease) := round((!!sym(paste0("observed_", disease))/popcount*100000)*percent,digits=2),
+              !!paste0("weightedrate_simulated",disease) := round((!!sym(paste0("simulated_", disease))/popcount*100000)*percent,digits=2)) %>%
+    ungroup() %>%
+    group_by(samplenum, year, sex, education) %>%
+    summarise(!!paste0("observed_",disease) := round(sum(!!sym(paste0("weightedrate_observed", disease))),digits=2),
+              !!paste0("simulated_",disease) := round(sum(!!sym(paste0("weightedrate_simulated", disease))),digits=2))
 
-simulation <- left_join(simulation, totalpop) %>%
-  left_join(.,age2010) %>%
-  group_by(year, cause, microsim.init.sex, microsim.init.education, agecat) %>%
-  mutate(weightedrate = (totaldeaths / totalpop*100000)*percent) %>%
-  ungroup() %>%
-  group_by(year, cause, microsim.init.sex, microsim.init.education) %>%
-  summarise(mortalityrate=sum(weightedrate)) %>%
-  mutate(datatype="Simulation output",
-         year = as.numeric(as.character(year)),
-         microsim.init.sex=as.character(microsim.init.sex),
-         microsim.init.education = as.character(microsim.init.education),
-         cause = as.character(cause))
+}
 
-# now compare to target data
-deathrates <- read.csv(paste0(WorkingDirectory,"allethn_sumCOD_0019_final.csv")) %>%
-  mutate(microsim.init.sex=recode(sex, "1"="m","2"="f"),
-         agecat = recode(age_gp, "18"="18-24","25"="25-29",
-                         "30"="30-34","35"="35-39","40"="40-44",
-                         "45"="45-49","50"="50-54","55"="55-59",
-                         "60"="60-64","65"="65-69","70"="70-74","75"="75-79","80"="80+"),
-         microsim.init.race = recode(race, "White"="WHI","Black"="BLA","Hispanic"="SPA","Other"="OTH"),
-         microsim.init.education = recode(edclass, "4+yrs"="College")) %>%   filter(agecat!="80+") %>%
-  dplyr::select(year,microsim.init.sex, microsim.init.education, agecat, LVDCmort, DMmort,
-                IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort) %>%
-  pivot_longer(cols=c(LVDCmort:RESTmort),names_to="cause",values_to="totaldeaths") %>%
-  mutate(cause=gsub("mort","",cause))
+summary <- Output %>% dplyr::select(samplenum,year,sex,education) %>% distinct()
 
-popcounts <- read.csv(paste0(WorkingDirectory,"CPS_2000_2020_agegp.csv")) %>%
-  rename(microsim.init.sex=sex, microsim.init.race=race,
-         agecat = age_gp, microsim.init.education=edclass) %>%
-  mutate(agecat = as.character(agecat),
-    agecat = recode(agecat, "18"="18-24","25"="25-29","30"="30-34","35"="35-39",
-                    "40"="40-44","45"="45-49","50"="50-54","55"="55-59","60"="60-64",
-                    "65"="65-69","70"="70-74","75"="75-79","80"="80+"),
-    microsim.init.sex=ifelse(microsim.init.sex==1,"m","f"),
-    microsim.init.race = recode(microsim.init.race, "White"="WHI","Black"="BLA",
-                                "Hispanic"="SPA","Other"="OTH")) %>%
-  filter(agecat!="80+") %>% ungroup() %>%
-  group_by(year, agecat, microsim.init.sex, microsim.init.education) %>%
-  summarise(totalpop=sum(TPop))
+# now join together to make a diseases dataframe for that year
+for(disease in diseases){
+  summary <-
+    left_join(summary, summary_list[[paste0(disease)]], by=c("samplenum","year","sex","education"))
+}
 
-deathrates <- left_join(deathrates,popcounts)
+first <- paste0("observed_",diseases[1])
+last <- paste0("simulated_", tail(diseases, n=1))
 
-age2010 <- popcounts %>% filter(year=="2000") %>%
-  ungroup() %>%
-  group_by(year, microsim.init.sex, microsim.init.education, agecat) %>%
-  summarise(totalpop = sum(totalpop)) %>% ungroup() %>%
-  group_by(year, microsim.init.sex, microsim.init.education) %>%
-  mutate(percent = totalpop / sum(totalpop)) %>% ungroup() %>% dplyr::select(microsim.init.sex, microsim.init.education,
-                                                                             agecat, percent)
+summary <- summary %>%
+  mutate(sex = ifelse(sex=="f","Women","Men"),
+         education = factor(education, levels=c("LEHS","SomeC","College"))
+         ) %>%
+  pivot_longer(first:last) %>%
+  separate(name, into=c("type","cause"))
 
-deathrates <- left_join(deathrates, age2010) %>%
-  group_by(year, cause, microsim.init.sex, microsim.init.education, agecat) %>%
-  mutate(weightedrate = (totaldeaths / totalpop*100000)*percent) %>%
-  ungroup() %>%
-  group_by(year, cause, microsim.init.sex, microsim.init.education) %>%
-  summarise(mortalityrate=sum(weightedrate)) %>%
-  mutate(datatype="Observed output")
+scaleFUN <- function(x) sprintf("%.1f", x)
 
-compare <- rbind(simulation,deathrates)
-
-plot <- ggplot(data=subset(compare,microsim.init.sex=="f"), aes(x=year, y=mortalityrate, colour=datatype)) + geom_line(size=2) +
-  facet_grid(cols=vars(microsim.init.education),
+plot1 <- ggplot(data=subset(summary, sex=="Women"), aes(x=year, y=value, colour=type)) + geom_line(size=2) +
+  facet_grid(cols=vars(education),
              rows=vars(cause), scales="free") +
-  ylab("Mortality per 100,000") +
+  ylab("Age-st Mortality per 100,000") +
   xlab("") + theme_bw() + theme(legend.position = "bottom",
                                 legend.title=element_blank(),
                                 strip.background=element_rect(fill="white"),
                                 text = element_text(size=18)) +
+  ggtitle("Women") +
+  scale_y_continuous(labels=scaleFUN, limits=c(0,NA)) +
   # geom_ribbon(aes(ymin=lower_ci, ymax=upper_ci, colour=name, fill=name)) +
   scale_colour_manual(values=c("#93aebf","#132268"))
-plot
-list <- list(compare, plot)
+plot2 <- ggplot(data=subset(summary, sex=="Men"), aes(x=year, y=value, colour=type)) + geom_line(size=2) +
+  facet_grid(cols=vars(education),
+             rows=vars(cause), scales="free") +
+  ylab("Age-st Mortality per 100,000") +
+  xlab("") + theme_bw() + theme(legend.position = "bottom",
+                                legend.title=element_blank(),
+                                strip.background=element_rect(fill="white"),
+                                text = element_text(size=18)) +
+  ggtitle("Men") +
+  # geom_ribbon(aes(ymin=lower_ci, ymax=upper_ci, colour=name, fill=name)) +
+  scale_colour_manual(values=c("#93aebf","#132268")) +
+  scale_y_continuous(labels=scaleFUN, limits=c(0,NA))
+plot <- grid.arrange(plot1, plot2, ncol=2)
+
+list <- list(summary, plot)
 return(list)
 }
 
