@@ -16,6 +16,7 @@ setwd("~/Google Drive/SIMAH Sheffield")
 source("SIMAH_code/psid/2_education_model/1_setup_markov_model.R")
 
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
+data <- adjust_income_inflation(data)
 
 # do the first analysis on the split time periods 
 
@@ -26,20 +27,8 @@ datat2 <- setup_markov_model(data, y=2011)
 
 source("SIMAH_code/psid/2_education_model/0_extractTP_function.R")
 
-modelt1_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt1_income_int_6cat_16_new.RDS")
-modelt2_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt2_income_int_6cat_16_new.RDS")
-
-pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="white",
-                                                incomescaled=-0.514))
-pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="white",
-                                                incomescaled=0.543))
-pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="black",
-                                                incomescaled=-0.514))
-pmatrix.msm(modelt1_income_int, covariates=list(agescaled=-1.005, agesqscaled=-0.96,racefinal2="black",
-                                                incomescaled=0.543))
-
-
-
+modelt1_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt1_income_6cat_new.RDS")
+modelt2_income_int <- readRDS("SIMAH_workplace/education_transitions/final_models/modelt2_income_6cat_new.RDS")
 
 mappingt1 <- datat1 %>% ungroup() %>% select(age, agescaled, agesqscaled) %>% 
   distinct()
