@@ -58,7 +58,7 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
 
 alcohol_type <- "categorical"
 
-Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
+# Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)

@@ -221,7 +221,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
-  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor) %>%
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, age_categories, inflation_factors) %>%
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
