@@ -15,8 +15,10 @@ dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+
+setwd('C:/Users/laura/Documents/CAMH/DIABETES/analysis/results')
 
 ####MALE MODELS
 
@@ -58,12 +60,14 @@ regplot(linear_male, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relativ
         ylim = c(0, 2), pred = pred_lin_male, xvals = ms, main="Male - Linear Regression")
 
 #for figure 2
+tiff("men.tiff", width = 5, height = 4, units = 'in',res = 1000)
 regplot(linear_male, mod="dose", ylab="Relative risk", 
         transf=exp, digits=2L, xlab="Alcohol intake, grams/day", las=1, bty="l", xlim = c(0,100),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
         pred = pred_lin_male, xvals = ms)
 abline(h=1)
 title("a) Men", adj = 0, line = 2)
+dev.off()
 
 #test for linearity
 waldtest(b = coef(linear_male), Sigma = vcov(linear_male), Terms = 1:nrow(vcov(linear_male)))
@@ -157,12 +161,14 @@ regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day
 abline(v=knotsf, lty="dotted")
 
 #figure 2
+tiff("women.tiff", width = 5, height = 4, units = 'in',res = 1000)
 regplot(rcs_female, mod="rcs(dose, knotsf)dose", xlab="Alcohol intake, grams/day", ylab="Relative risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), pch=NA_integer_,shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", pred = pred_rcs_female, lwd = c(3.5,1.5),
         xvals = fs)
 abline(h=1)
 title("b) Women", adj = 0, line = 2)
+dev.off()
 
 #use var.comp function
 i2 <- var.comp(rcs_female)
