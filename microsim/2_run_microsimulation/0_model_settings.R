@@ -136,8 +136,13 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(10, 50)
+# c(special, default)
+# to do - invert the order of the inflation factors and the default
+# add an ifelse statement argument for if the age_categories vector is empty 
+inflation_factors <- c(10,50)
+# specify the age categories to get the special inflation factor 
 age_categories <- c("65-74", "75-79")
+
 
 if(length(diseases)>=1){
   base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_categories)
