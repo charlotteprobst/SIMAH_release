@@ -54,7 +54,7 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_categories,
                        update_base_rate,
-                       minyear=2000, maxyear=2019, output="demographics")
+                       minyear=2000, maxyear=2019, output="mortality")
 
 alcohol_type <- "categorical"
 

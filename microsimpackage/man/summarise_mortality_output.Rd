@@ -4,13 +4,7 @@
 \alias{summarise_mortality_output}
 \title{Compares mortality consumption by subgroup to brfss data}
 \usage{
-summarise_mortality_output(
-  Output,
-  SelectedState,
-  WorkingDirectory,
-  inflation_factor,
-  diseases
-)
+summarise_mortality_output(Output, SelectedState, WorkingDirectory, diseases)
 }
 \description{
 Compares mortality consumption by subgroup to brfss data

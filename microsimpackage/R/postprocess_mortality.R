@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, age_categories, inflation_factors){
+postprocess_mortality <- function(DiseaseSummary,diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
   death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%

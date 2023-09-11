@@ -19,7 +19,7 @@ PopulationSize <- 1000000
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 0
+updatingeducation <- 1
 
 # switch on and off alcohol updates
 updatingalcohol <- 0
@@ -136,7 +136,7 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(1, 50)
+inflation_factors <- c(10, 50)
 age_categories <- c("65-74", "75-79")
 
 if(length(diseases)>=1){
