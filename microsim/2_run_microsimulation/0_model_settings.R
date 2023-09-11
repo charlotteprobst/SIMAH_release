@@ -119,12 +119,10 @@ rm(list)
 n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 0
+PE <- 1
 lhs <- sample_lhs(n_samples, PE)
 
 samples <- do.call(rbind,lhs)
-
-write.csv(lhs, "SIMAH_workplace/microsim/2_output_data/factor_calibrate/lhs_samples.csv", row.names=F)
 
 for(i in 1:length(lhs)){
   lhs[[i]]$samplenum <- i
@@ -136,9 +134,15 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(10, 50)
+inflation_factors <- c(50, 10)
+
 age_categories <- c("65-74", "75-79")
 
+age_inflated <- list(
+    c("25-29","30-34","35-39","40-44","45-49","50-54","55-59","60-64"), 
+    c("65-74", "75-79"))
+
+
 if(length(diseases)>=1){
-  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_categories)
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)
 }
