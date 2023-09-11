@@ -44,20 +44,21 @@ minyear <- 2000
 maxyear <- 2002
 
 Output <- list()
-Output <- run_microsim(1,1,basepop,brfss,
+Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        death_counts,
-                       updatingeducation, education_setup,
+                       updatingeducation, education_transitions,
                        migration_counts,
                        updatingalcohol, alcohol_transitions,
+                       catcontmodel, Hep, drinkingdistributions,
                        base_counts, diseases, lhs, liverinteraction,
-                       policy, percentreduction, year_policy, inflation_factor,
+                       policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_categories,
                        update_base_rate,
-                       2000, 2002, output_type)
+                       minyear=2000, maxyear=2019, output="mortality")
 
 alcohol_type <- "categorical"
 
-Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
+# Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
 
 if(output_type=="demographics"){
 summary <- summarise_education_output(Output, SelectedState, DataDirectory)

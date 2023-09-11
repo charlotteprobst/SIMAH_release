@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD")
+diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC","UIJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -62,7 +62,7 @@ year_policy <- 2015
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
 percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
-
+percentreduction <- 0.108
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -116,7 +116,7 @@ rm(list)
 # load in model parameters - using latin hypercube sampling 
 # number of settings required 
 
-numsamples <- 500
+n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
 PE <- 0
@@ -136,7 +136,7 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(1, 50)
+inflation_factors <- c(10, 50)
 age_categories <- c("65-74", "75-79")
 
 if(length(diseases)>=1){

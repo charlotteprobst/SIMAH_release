@@ -4,8 +4,8 @@
 #' @keywords mortality postprocessing
 #' @export
 #' @examples
-#' summarise_mortality_output_agest
-summarise_mortality_output_agest <- function(Output, SelectedState, WorkingDirectory, inflation_factor, diseases){
+#' summarise_mortality_output_agesp
+summarise_mortality_output_agesp <- function(Output, SelectedState, WorkingDirectory, inflation_factors, diseases){
 
 summary_list <- list()
 for (disease in diseases) {

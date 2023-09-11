@@ -13,7 +13,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
-                         policy=0, percentreduction=0.1, year_policy, inflation_factor,
+                         policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_categories,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
@@ -63,7 +63,6 @@ if(updatingeducation==1 & y>=2000){
 
 # update alcohol use categories
 if(updatingalcohol==1 & y>=2000){
-  print("updating alcohol")
   print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
@@ -133,6 +132,13 @@ if("ISTR" %in% diseases==TRUE){
 if("HYPHD" %in% diseases==TRUE){
   basepop <- HYPHD(basepop, lhs)
 }
+if("MVACC" %in% diseases==TRUE){
+  basepop <- MVACC(basepop, lhs)
+}
+if("UIJ" %in% diseases==TRUE){
+  basepop <- UIJ(basepop, lhs)
+}
+
 # calculate base rates if year = 2000)
 if(y == 2000){
 rates <- calculate_base_rate(basepop,base_counts,diseases)
@@ -214,7 +220,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
 if(output=="mortality"){
-  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts, inflation_factor) %>%
+  Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
