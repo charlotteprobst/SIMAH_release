@@ -16,6 +16,8 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH/"
 WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
+
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -54,7 +56,7 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_categories,
                        update_base_rate,
-                       minyear=2000, maxyear=2019, output="mortality")
+                       minyear=2000, maxyear=2002, output="mortality")
 
 alcohol_type <- "categorical"
 
