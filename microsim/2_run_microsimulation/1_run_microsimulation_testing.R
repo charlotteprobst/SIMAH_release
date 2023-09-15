@@ -43,7 +43,7 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2002
+maxyear <- 2019
 
 Output <- list()
 Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
@@ -54,7 +54,7 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        catcontmodel, Hep, drinkingdistributions,
                        base_counts, diseases, lhs, liverinteraction,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                       age_categories,
+                       age_inflated,
                        update_base_rate,
                        minyear=2000, maxyear=2002, output="mortality")
 

@@ -14,7 +14,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                         age_categories,
+                         age_inflated,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -163,7 +163,8 @@ for (disease in diseases) {
                           breaks=c(0,24,34,44,54,64,74,79),
                           labels=c("18-24","25-34","35-44", "45-54",
                                    "55-64","65-74","75-79")),
-             inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2])) %>%
+             inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1], 
+                                       ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
       group_by(cat) %>%
       summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
     }
@@ -188,7 +189,8 @@ for (disease in diseases) {
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
-      inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2]),
+      inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1], 
+                                ifelse(agecat %in% age_inflated[[2]], inflation_factors[2], NA)),
       toremove = round(n / inflation_factor)) %>%
     dplyr::sample_n(size = unique(toremove), replace = FALSE)
   # Get the IDs to be removed

@@ -6,7 +6,7 @@
 #' @export
 #' @examples
 #' setup_base_counts
-setup_base_counts <- function(death_counts, diseases, inflation_factors, age_categories){
+setup_base_counts <- function(death_counts, diseases, inflation_factors, age_inflated){
 
 base_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
@@ -21,7 +21,8 @@ base_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
               ) %>%
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>% filter(year==2000) %>%
-    mutate(inflation_factor = ifelse(agecat %in% age_categories, inflation_factors[1], inflation_factors[2]),
+    mutate(inflation_factor = ifelse(agecat %in% age_inflated[[1]], inflation_factors[1], 
+                                     ifelse(agecat %in% age_inflated[[2]], inflation_factors[2], NA)),
       value = value*inflation_factor, #inflate mortality rate
            education = ifelse(education=="Some", "SomeC",
                               ifelse(education=="Coll","College",education)),
