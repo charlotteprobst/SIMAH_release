@@ -134,9 +134,8 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(50, 10)
 
-age_categories <- c("65-74", "75-79")
+inflation_factors <- c(100, 100)
 
 age_inflated <- list(
     c("25-29","30-34","35-39","40-44","45-49","50-54","55-59","60-64"), 

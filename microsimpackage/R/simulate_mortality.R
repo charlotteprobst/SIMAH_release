@@ -6,7 +6,7 @@
 #' @export
 #' @examples
 #' simulate_mortality
-simulate_mortality <- function(data, diseases){
+simulate_mortality <- function(data = basepop, diseases){
   data <- as.data.frame(data)
   for (i in 1:length(diseases)) {
     disease <- diseases[i]
@@ -21,6 +21,10 @@ simulate_mortality <- function(data, diseases){
       data <- data %>%
         mutate(!!risk_expr := !!RR_expr * !!rate_expr,
                !!risk_expr := !!risk_expr + !!prev_risk_expr) 
+  
+    }
+    if(any(data[,paste(risk_expr)]>1)){
+      print(paste("Warning:", risk_expr, "exceeds 1!"))
     }
   }
 
