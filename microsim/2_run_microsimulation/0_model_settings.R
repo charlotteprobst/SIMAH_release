@@ -141,7 +141,6 @@ age_inflated <- list(
     c("25-29","30-34","35-39","40-44","45-49","50-54","55-59","60-64"), 
     c("65-74", "75-79"))
 
-
 if(length(diseases)>=1){
   base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)
 }

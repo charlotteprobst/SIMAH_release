@@ -183,6 +183,8 @@ for (disease in diseases) {
   # Filter individuals with mortality equal to 1 for the current disease
   toremove <- basepop %>%
     filter(!!sym(paste0('mort_', disease)) == 1) %>%
+    dplyr::select(microsim.init.id, microsim.init.age, microsim.init.sex,
+                  microsim.init.education, cat, RR_HYPHD, risk_HYPHD,mort_HYPHD) %>%
     group_by(cat) %>%
     add_tally() %>%
     mutate(ageCAT = cut(microsim.init.age,
@@ -192,7 +194,8 @@ for (disease in diseases) {
       inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1], 
                                 ifelse(agecat %in% age_inflated[[2]], inflation_factors[2], NA)),
       toremove = round(n / inflation_factor)) %>%
-    dplyr::sample_n(size = unique(toremove), replace = FALSE)
+    # to do - make conditional on the original risk
+    dplyr::sample_n(size = unique(toremove), replace = FALSE, weight=RR_HYPHD)
   # Get the IDs to be removed
   ids <- toremove$microsim.init.id
   # Remove the individuals with the specified IDs
