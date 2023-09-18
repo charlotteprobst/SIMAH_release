@@ -16,7 +16,7 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH/"
 WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
+# WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 

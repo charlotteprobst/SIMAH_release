@@ -127,6 +127,7 @@ samples <- do.call(rbind,lhs)
 for(i in 1:length(lhs)){
   lhs[[i]]$samplenum <- i
 }
+
 write.csv(do.call(rbind,lhs), "SIMAH_workplace/microsim/2_output_data/lhsSamples.csv")
 
 update_base_rate <- 1
@@ -137,8 +138,9 @@ update_base_rate <- 1
 
 inflation_factors <- c(100, 100)
 
+# note age categories should be in 10 year categories - except 75-79
 age_inflated <- list(
-    c("25-29","30-34","35-39","40-44","45-49","50-54","55-59","60-64"), 
+    c("18-24","25-34","35-44","45-54","55-64"), 
     c("65-74", "75-79"))
 
 if(length(diseases)>=1){

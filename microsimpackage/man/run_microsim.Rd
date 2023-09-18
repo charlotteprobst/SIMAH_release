@@ -26,7 +26,7 @@ run_microsim(
   percentreduction = 0.1,
   year_policy,
   inflation_factors,
-  age_categories,
+  age_inflated,
   update_base_rate,
   minyear = 2000,
   maxyear = 2019,

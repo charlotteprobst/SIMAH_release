@@ -163,7 +163,7 @@ for (disease in diseases) {
                           breaks=c(0,24,34,44,54,64,74,79),
                           labels=c("18-24","25-34","35-44", "45-54",
                                    "55-64","65-74","75-79")),
-             inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1], 
+             inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
                                        ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
       group_by(cat) %>%
       summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
@@ -183,19 +183,19 @@ for (disease in diseases) {
   # Filter individuals with mortality equal to 1 for the current disease
   toremove <- basepop %>%
     filter(!!sym(paste0('mort_', disease)) == 1) %>%
-    dplyr::select(microsim.init.id, microsim.init.age, microsim.init.sex,
-                  microsim.init.education, cat, RR_HYPHD, risk_HYPHD,mort_HYPHD) %>%
+    # dplyr::select(microsim.init.id, microsim.init.age, microsim.init.sex,
+    #               microsim.init.education, cat, RR_HYPHD, risk_HYPHD,mort_HYPHD) %>%
     group_by(cat) %>%
     add_tally() %>%
     mutate(ageCAT = cut(microsim.init.age,
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
-      inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1], 
-                                ifelse(agecat %in% age_inflated[[2]], inflation_factors[2], NA)),
+      inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
+                                ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA)),
       toremove = round(n / inflation_factor)) %>%
-    # to do - make conditional on the original risk
-    dplyr::sample_n(size = unique(toremove), replace = FALSE, weight=RR_HYPHD)
+    # conditional on the original risk
+    dplyr::sample_n(size = unique(toremove), replace = FALSE, weight=!!sym(paste0('RR_', disease)))
   # Get the IDs to be removed
   ids <- toremove$microsim.init.id
   # Remove the individuals with the specified IDs
