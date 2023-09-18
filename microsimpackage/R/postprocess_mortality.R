@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflation_factor){
+postprocess_mortality <- function(DiseaseSummary,diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
   death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
@@ -21,18 +21,18 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflati
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>%
     mutate(
-      value = value*inflation_factor, #inflate mortality rate by 100 for HLVDC
       education = ifelse(education=="Some", "SomeC",
                          ifelse(education=="Coll","College",education)),
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
     dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
+
   Diseases <- left_join(Diseases, death_counts)
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",
                               ifelse(education=="Som","SomeC","College"))) %>%
-    rename(popcount = n, simulated = !!as.name(paste0('mort',quo_name(disease))), observed = !!as.name(paste0(quo_name(disease))))
+    rename(popcount = n)
   return(Diseases)
 
 

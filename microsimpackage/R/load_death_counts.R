@@ -61,13 +61,13 @@ deathcounts <- read.csv(paste0(DataDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %
                    IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
 
 }
-latest <- deathcounts %>% filter(year==2020)
-rep <- as.data.frame(sapply(latest, rep.int, times=10))
-rep$year <- rep(2021:2030, each=288)
-summary(rep$year)
-deathcounts <- rbind(deathcounts,rep)
-deathcounts <- deathcounts %>% mutate_at(vars(LVDCmort:RESTmort), as.numeric)
-rm(latest,rep)
+# latest <- deathcounts %>% filter(year==2020)
+# rep <- as.data.frame(sapply(latest, rep.int, times=10))
+# rep$year <- rep(2021:2030, each=288)
+# summary(rep$year)
+# deathcounts <- rbind(deathcounts,rep)
+# deathcounts <- deathcounts %>% mutate_at(vars(LVDCmort:RESTmort), as.numeric)
+# rm(latest,rep)
 }
   return(deathcounts)
 }

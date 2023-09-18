@@ -8,6 +8,8 @@ library(readxl)
 library(doParallel)
 library(foreach)
 library(parallel)
+library(readxl)
+
 
 # setwd("/home/cbuckley")
 setwd("~/Google Drive/SIMAH Sheffield")
@@ -17,6 +19,7 @@ source("SIMAH_code/psid/2_education_model/1_setup_markov_model.R")
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
 
+data <- adjust_income_inflation(data)
 # do the first analysis on the split time periods 
 
 # # setup the datasets for both time periods

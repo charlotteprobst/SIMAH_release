@@ -21,9 +21,12 @@ data <- remove_attributes(data, "label")
 data <- remove_attributes(data, "labels")
 data <- remove_attributes(data, "lbl")
 
+
 data$STATEFIP <- as.integer(data$STATEFIP)
 
-data <- data %>% 
+test <- data %>% group_by(YEAR, SEX, RACE, EDUC, STATEFIP) %>% sample_n(10, replace=T)
+
+new <- test %>% 
   mutate(SEX = ifelse(SEX==1, "M","F"),
          RACE = ifelse(RACE==1, "White",
                        ifelse(RACE==2,"Black",

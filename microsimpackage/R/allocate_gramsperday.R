@@ -52,9 +52,11 @@ prepdata <- prepdata %>% group_by(group) %>% do(samplegpd(.)) %>%
   # men <- men %>% dplyr::select(microsim.init.id, newgpd)
   # prepdata <- rbind(men, women)
   basepop <- left_join(basepop, prepdata)
-  basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
-                                          basepop$newgpd)
-  basepop$newgpd <- NULL
+  # basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
+  #                                         basepop$newgpd)
+  # basepop$newgpd <- NULL
+  basepop$newgpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
+                                                                               basepop$newgpd)
   return(basepop)
 }
 

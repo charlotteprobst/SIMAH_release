@@ -161,7 +161,7 @@ if (k.run == "detail" & k.pop_type == "ACS") {
   dMort_out <- dMort_out %>% 
     mutate_at(vars(race, sex, edclass), as.factor)
   names(dMort_out) <- gsub(pattern = "mort", replacement = "", x = names(dMort_out)) 
-  levels(dMort_out$edclass) <- list("High" = "College", "Middle" = "SomeC", "Low" = "LEHS")
+  levels(dMort_out$edclass) <- list("High" = "College", "Mid." = "SomeC", "Low" = "LEHS")
   levels(dMort_out$sex) <- list(Men = "1", Women = "2")
   dMort_out <- dMort_out %>% select(!c(group, age_gp)) %>% subset(year > 2018, race !="Other") %>%
     rename("Total" = "t",
@@ -174,7 +174,7 @@ if (k.run == "detail" & k.pop_type == "ACS") {
            "Motor vehicle accident" = "mvacc", 
            "Unintentional injury*" = "uij",   
            "Other injury" = "othj",   
-           "Alcohol use disorder" = "aud",
+           "AUD" = "aud",
            "Liver disease & cirrhosis" = "liver", 
            "Kidney disease" = "kidney",
            "Diabetes mellitus" = "dm",
@@ -182,7 +182,7 @@ if (k.run == "detail" & k.pop_type == "ACS") {
            "Cerebrovascular diseases" = "stroke", 
            "Diseases of the heart" = "heart", 
            "Cancer" = "cancer", 
-           "Chronic lower respiratory diseases" = "resp", 
+           "Chronic LRD" = "resp", 
            "Other NCDs" = "othncd",
            "Rest" = "rest",
            "Total population (ACS)" = "TPop",

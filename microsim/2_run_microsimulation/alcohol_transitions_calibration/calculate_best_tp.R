@@ -22,6 +22,7 @@
   
   names(outputs) <- 1:5000
   outputs <- outputs[-which(sapply(outputs, is.null))]
+  outputs <- outputs[1:100]
   
   # brfsstarget <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
   #   filter(YEAR>=2000) %>%
@@ -54,10 +55,10 @@
            year_cat = cut(year,
                           breaks=c(0,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020))) %>% 
     # rename(year=YEAR) %>% 
-    group_by(year_cat, microsim.init.sex, race_eth, education_summary, AlcCAT, .drop=FALSE) %>%
+    group_by(year, microsim.init.sex, education_summary, AlcCAT, .drop=FALSE) %>%
     summarise(n=sum(n)) %>% 
-    rename(sex=microsim.init.sex, education=education_summary, race=race_eth) %>%
-    group_by(year_cat, sex, race, education) %>%
+    rename(sex=microsim.init.sex, education=education_summary) %>%
+    group_by(year, sex, education) %>%
     mutate(targetpercent=n/sum(n),
            targetpercent = ifelse(is.na(targetpercent),0,targetpercent),
            sepercent = sqrt((targetpercent*(1-targetpercent))/sum(n)),
@@ -97,6 +98,40 @@
   implausibility <- do.call(rbind, implausibility) %>% 
     group_by(sex, education, race) %>% 
     mutate(rank = ntile(implausibility, 4000))
+  
+  summarise_output <- function(data){
+    data <- data %>% 
+      group_by(year, samplenum, microsim.init.sex, microsim.init.education, AlcCAT) %>% 
+      summarise(n=sum(n)) %>% 
+      # mutate(microsim.init.race = ifelse(microsim.init.race=="BLA","Black",ifelse(microsim.init.race=="WHI","White",ifelse(microsim.init.race=="SPA","Hispanic","Other")))) %>%
+      rename(sex = microsim.init.sex, education=microsim.init.education) %>% 
+      group_by(year, samplenum, sex, education) %>% 
+      mutate(simulatedpercent=n/sum(n),
+             year = as.numeric(as.character(year))) %>% 
+      dplyr::select(-n)
+    
+    data <- left_join(data, target, by=c("year","sex","education","AlcCAT"))
+    return(data)
+  }
+  
+  output <- lapply(outputs, summarise_output)
+  output <- do.call(rbind, output)
+  
+  output <- output %>% 
+    mutate(AlcCAT = factor(AlcCAT, levels=c("Non-drinker",
+                                            "Low risk","Medium risk","High risk")),
+           education = factor(education, levels=c("LEHS","SomeC","College")))
+  
+  ggplot(data=subset(output, sex=="m"), aes(x=year, y=simulatedpercent, colour=as.factor(samplenum))) +
+    geom_line() +
+    facet_grid(cols=vars(education), rows=vars(AlcCAT)) +
+    geom_line(aes(x=year, y=targetpercent), colour="black", linewidth=2) +
+    theme_bw() + 
+    theme(legend.position="none",
+          text = element_text(size=12)) + 
+    ylab("proportion")
+  getwd()
+  ggsave("SIMAH_workplace/microsim/exampleTP_calibration.png", dpi=300, width=33, height=19, units="cm")
   
   # calculate_ks <- function(data){
   #   data <- data %>% 
