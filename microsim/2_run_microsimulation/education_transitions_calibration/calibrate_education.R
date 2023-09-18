@@ -9,7 +9,6 @@ suppressPackageStartupMessages(library("dplyr"))
 library(devtools)
 library(roxygen2)
 library(dplyr)
-library(dplyr)
 library(readr)
 library(tidyr)
 library(purrr)
@@ -27,8 +26,8 @@ set.seed(42)
 ###set working directory to the main "Microsimulation" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -49,7 +48,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 1000
+nsamples <- 5
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 
 # save samples 

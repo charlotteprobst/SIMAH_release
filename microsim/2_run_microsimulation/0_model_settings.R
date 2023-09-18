@@ -119,7 +119,7 @@ rm(list)
 n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
-PE <- 0
+PE <- 1
 lhs <- sample_lhs(n_samples, PE)
 
 samples <- do.call(rbind,lhs)
