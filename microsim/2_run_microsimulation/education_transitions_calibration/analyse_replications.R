@@ -38,30 +38,38 @@ means <- means %>%
                                           levels=c("LEHS","SomeC","College")))
   
 
-scaleFUN <- function(x) sprintf("%.2f", x)
+scaleFUN <- function(x) sprintf("%.3f", x)
 
 # check for 2003, 2010 and 2016
-ggplot(data=subset(means, year==2016 & samplenum==3), aes(x=nsamples, y=prop, colour=microsim.init.sex)) + 
+ggplot(data=subset(means, year==2010 & samplenum==3), aes(x=nsamples, y=prop, colour=microsim.init.sex)) + 
   geom_line(linewidth=1) +
   facet_grid(cols=vars(microsim.init.race), rows=vars(microsim.init.education), scales="free") + 
   scale_y_continuous(labels=scales::percent) +
-  theme_bw() + ylab("Proportion") +
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        strip.background = element_rect(fill="white")) + ylim(0,NA)
-ggsave(paste0(DataDirectory, "/replication_plots_2016.png"), dpi=300, width=33, height=19, units="cm")
-
-means <- means %>% filter(year==2003 | year==2010 | year==2016)
-
-ggplot(data=subset(means, microsim.init.race=="Others" & microsim.init.education=="SomeC"), 
-       aes(x=nsamples, y=prop, colour=microsim.init.sex)) + 
-  geom_line(linewidth=1) +
-  facet_grid(cols=vars(samplenum), rows=vars(year), scales="free") + 
-  scale_y_continuous(labels=scales::percent) +
-  theme_bw() + ylab("Proportion") +
+  theme_bw() + ylab("Proportion") + 
+  xlab("N replications") + 
   theme(legend.position="bottom",
         legend.title=element_blank(),
         strip.background = element_rect(fill="white"))
+ggsave(paste0(DataDirectory, "/replication_plots_2010.png"), dpi=300, width=33, height=19, units="cm")
+
+means <- means %>% filter(year==2003 | year==2010 | year==2016)
+
+sub <- means %>% filter(year==2010) %>% filter(samplenum==1) %>% 
+  filter(microsim.init.race=="Others" | microsim.init.race=="Black") %>% 
+  filter(microsim.init.education=="SomeC") %>% 
+  filter(microsim)
+
+ggplot(data=sub, 
+       aes(x=nsamples, y=prop, colour=microsim.init.sex)) + 
+  geom_line(linewidth=1) +
+  facet_grid(cols=vars(microsim.init.education), rows=vars(microsim.init.race), scales="free") + 
+  theme_bw() + ylab("Proportion") +
+  theme(legend.position="bottom",
+        legend.title=element_blank(),
+        strip.background = element_rect(fill="white")) + 
+  geom_vline(xintercept=7, linetype='dashed') + geom_vline(xintercept=5, linetype="dashed") + 
+  scale_y_continuous(labels=scaleFUN)
+  
 
 ggsave(paste0(DataDirectory, "/replication_plots_zoom_others.png"), dpi=300, width=33, height=19, units="cm")
 
