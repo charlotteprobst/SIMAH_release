@@ -69,21 +69,23 @@ baseorig <- basepop
 
 rm(education_transitions)
 
-Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% {
+Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %do% {
   print(i)
   samplenum <- as.numeric(sampleseeds$samplenum[i])
   seed <- as.numeric(sampleseeds$seed[i])
   basepop <- baseorig
-  run_microsim(seed,samplenum,basepop,brfss,
-               death_counts,
-               updatingeducation, education_transitions=transitionsList[[samplenum]],
-               migration_counts,
-               updatingalcohol, alcohol_transitions,
-               base_counts, diseases, lhs, liverinteraction,
-               policy=0, percentreduction=0.1, year_policy, inflation_factor,
-               age_categories,
-               update_base_rate,
-               minyear=2000, maxyear=2019, output="demographics")
+  education_transitions <- transitionsList[[samplenum]]
+  run_microsim( seed,samplenum,basepop,brfss,
+                death_counts,
+                updatingeducation, education_transitions,
+                migration_counts,
+                updatingalcohol, alcohol_transitions,
+                catcontmodel, Hep, drinkingdistributions,
+                base_counts, diseases, lhs, liverinteraction,
+                policy=0, percentreduction=0.1, year_policy, inflation_factors,
+                age_categories,
+                update_base_rate,
+                minyear=2000, maxyear=2003, output="demographics")
 }
 
 # save the output 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_education.R
 \name{setup_education}
 \alias{setup_education}
-\title{Set up education data for simulation}
+\title{Setup education data for simulation}
 \usage{
 setup_education(basepop, y)
 }

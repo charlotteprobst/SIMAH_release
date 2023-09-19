@@ -124,8 +124,6 @@ lhs <- sample_lhs(n_samples, PE)
 
 samples <- do.call(rbind,lhs)
 
-write.csv(lhs, "SIMAH_workplace/microsim/2_output_data/factor_calibrate/lhs_samples.csv", row.names=F)
-
 for(i in 1:length(lhs)){
   lhs[[i]]$samplenum <- i
 }
