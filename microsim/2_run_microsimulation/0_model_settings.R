@@ -136,7 +136,7 @@ update_base_rate <- 1
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
 
-inflation_factors <- c(100, 100)
+inflation_factors <- c(50, 10)
 
 # note age categories should be in 10 year categories - except 75-79
 age_inflated <- list(
