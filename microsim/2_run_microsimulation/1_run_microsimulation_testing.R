@@ -47,7 +47,7 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2019
+maxyear <- 2003
 
 Output <- list()
 Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
@@ -60,7 +60,7 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_inflated,
                        update_base_rate,
-                       minyear=2000, maxyear=2010, output="mortality")
+                       minyear, maxyear, output="mortality")
 
 alcohol_type <- "categorical"
 
@@ -75,10 +75,11 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-# summary <- summarise_mortality_output_calibration(Output, SelectedState, DataDirectory, inflation_factor, diseases)
 summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, diseases, 2000)
 }
-summary[[1]]
+# data frame containing mortality outputs
+summary_mortality <- summary[[1]]
+# plots for mortality 
 summary[[2]]
 
 # save a copy of the plot

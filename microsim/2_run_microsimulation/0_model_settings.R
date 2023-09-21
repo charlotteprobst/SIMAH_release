@@ -62,7 +62,6 @@ year_policy <- 2015
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
 percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
-percentreduction <- 0.108
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
