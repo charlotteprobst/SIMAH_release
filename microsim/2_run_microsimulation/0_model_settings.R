@@ -62,7 +62,6 @@ year_policy <- 2015
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
 percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
-percentreduction <- 0.108
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -136,7 +135,7 @@ update_base_rate <- 1
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
 
-inflation_factors <- c(100, 100)
+inflation_factors <- c(50, 10)
 
 # note age categories should be in 10 year categories - except 75-79
 age_inflated <- list(
