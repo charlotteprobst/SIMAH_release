@@ -5,9 +5,9 @@
 #' @export
 #' @examples
 #' summarise_mortality_output
-summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, diseases){
+summarise_mortality_output <- function(Output, SelectedState, WorkingDirectory, diseases, agestyear){
 
-age2010 <- Output %>% filter(year=="2010") %>%
+age2010 <- Output %>% filter(year==agestyear) %>%
   filter(samplenum==1) %>%
   ungroup() %>%
   group_by(year, sex, agecat, education) %>%

@@ -62,7 +62,6 @@ year_policy <- 2015
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
 percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
-percentreduction <- 0.108
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
@@ -127,6 +126,7 @@ samples <- do.call(rbind,lhs)
 for(i in 1:length(lhs)){
   lhs[[i]]$samplenum <- i
 }
+
 write.csv(do.call(rbind,lhs), "SIMAH_workplace/microsim/2_output_data/lhsSamples.csv")
 
 update_base_rate <- 1
@@ -134,9 +134,14 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(10, 50)
-age_categories <- c("65-74", "75-79")
+
+inflation_factors <- c(50, 10)
+
+# note age categories should be in 10 year categories - except 75-79
+age_inflated <- list(
+    c("18-24","25-34","35-44","45-54","55-64"), 
+    c("65-74", "75-79"))
 
 if(length(diseases)>=1){
-  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_categories)
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)
 }

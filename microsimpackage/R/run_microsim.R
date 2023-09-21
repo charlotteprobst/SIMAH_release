@@ -14,7 +14,7 @@ run_microsim <- function(seed,samplenum,basepop,brfss,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                         age_categories,
+                         age_inflated,
                          update_base_rate,
                          minyear=2000, maxyear=2019, output="demographics"){
 set.seed(seed)
@@ -163,7 +163,8 @@ for (disease in diseases) {
                           breaks=c(0,24,34,44,54,64,74,79),
                           labels=c("18-24","25-34","35-44", "45-54",
                                    "55-64","65-74","75-79")),
-             inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2])) %>%
+             inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
+                                       ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
       group_by(cat) %>%
       summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
     }
@@ -179,30 +180,8 @@ for(disease in diseases){
 
 # now sample the correct proportion of those to be removed (due to inflated mortality rate)
 for (disease in diseases) {
-  # Filter individuals with mortality equal to 1 for the current disease
-  toremove <- basepop %>%
-    filter(!!sym(paste0('mort_', disease)) == 1) %>%
-    group_by(cat) %>%
-    add_tally() %>%
-    mutate(ageCAT = cut(microsim.init.age,
-                        breaks=c(0,24,34,44,54,64,74,79),
-                        labels=c("18-24","25-34","35-44", "45-54",
-                                 "55-64","65-74","75-79")),
-      inflation_factor = ifelse(ageCAT %in% age_categories, inflation_factors[1], inflation_factors[2]),
-      toremove = round(n / inflation_factor)) %>%
-    dplyr::sample_n(size = unique(toremove), replace = FALSE)
-  # Get the IDs to be removed
-  ids <- toremove$microsim.init.id
-  # Remove the individuals with the specified IDs
-  basepop <- basepop %>%
-    filter(!microsim.init.id %in% ids)
-
-  # Remove the unnecessary columns for the current disease
-  basepop <- basepop %>%
-    dplyr::select(-c(!!sym(paste0('mort_', disease)),
-                     !!sym(paste0("RR_", disease)),
-                     !!sym(paste0("risk_", disease)),
-                     !!sym(paste0("rate_", disease))))
+  # function that removes individuals due to their original RR for that disease
+  basepop <- remove_individuals(basepop, disease, age_inflated, inflation_factors)
 }
 
 basepop <- basepop %>% dplyr::select(-c(cat, prob))

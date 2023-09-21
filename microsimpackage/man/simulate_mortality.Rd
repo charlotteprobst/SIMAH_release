@@ -4,7 +4,7 @@
 \alias{simulate_mortality}
 \title{Assigns risk for specific causes and simulates mortality}
 \usage{
-simulate_mortality(data, diseases)
+simulate_mortality(data = basepop, diseases)
 }
 \description{
 This function simulates mortality

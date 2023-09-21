@@ -3,6 +3,10 @@ rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(devtools)
 library(roxygen2)
+library(gatbxr)
+# if having trouble with loading this package - run the below two lines
+# install.packages("remotes")
+# remotes::install_github("drizztxx/gatbxr")
 library(dplyr)
 library(tidyverse)
 library(fitdistrplus)
@@ -16,6 +20,8 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH/"
 WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
+
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -41,7 +47,7 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2002
+maxyear <- 2003
 
 Output <- list()
 Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
@@ -52,9 +58,9 @@ Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
                        catcontmodel, Hep, drinkingdistributions,
                        base_counts, diseases, lhs, liverinteraction,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                       age_categories,
+                       age_inflated,
                        update_base_rate,
-                       minyear=2000, maxyear=2019, output="mortality")
+                       minyear, maxyear, output="mortality")
 
 alcohol_type <- "categorical"
 
@@ -69,10 +75,12 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output_calibration(Output, SelectedState, DataDirectory, inflation_factor, diseases)
-summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, inflation_factor, diseases)
+summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, diseases, 2000)
 }
-summary[[1]]
+# data frame containing mortality outputs
+summary_mortality <- summary[[1]]
+# plots for mortality 
+summary[[2]]
 
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
