@@ -1,3 +1,5 @@
+#### Set up
+
 # Set wd
 setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
 
@@ -32,10 +34,10 @@ theme_set(theme_bw(base_size = 12))
 # Bias towards non scientific notation
 options(scipen = 100)
 
-# Read in data extracted from IPUMS:
+#### Initial read in of raw data from IPUMS website
+#(Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021). Available at: https://doi.org/10.18128/D070.V7.1):
 ddi <- read_ipums_ddi("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
 data <- read_ipums_micro(ddi)
-#(Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021). Available at: https://doi.org/10.18128/D070.V7.1):
 
 # Exclude those aged <18 as not asked about alcohol; exclude years 2019 and 2020 as missing critical info (No alc Qs in 2019; No ALC5UPYR in 2020; No EDUC & Income in 2019/20)
 nhis_subset <- data %>%
@@ -354,7 +356,8 @@ ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) +
   ylim(0,30000) + 
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
-ggtitle("Distribution of daily grams alcohol, capped, all sample adults")
+ggtitle("Raw distribution of daily grams alcohol, capped, all sample adults")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/assumptions/raw_distribution_daily_grams.png", dpi=300, width=33, height=19, units="cm")
 
 ## TRANSFORM ALC DAILY GRAMS
 
@@ -372,6 +375,7 @@ ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=2
   ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/assumptions/transformed_distribution_daily_grams.png", dpi=300, width=33, height=19, units="cm")
 
 ## SAVE CLEANED DATA
 

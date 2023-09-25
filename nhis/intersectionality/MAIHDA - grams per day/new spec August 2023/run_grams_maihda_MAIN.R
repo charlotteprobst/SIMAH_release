@@ -126,6 +126,26 @@ mcmc_trace(full_grams@chains)
 null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_MAIN.rds")
 full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_MAIN.rds")
 
+##### CHECK MODELLING ASSUMPTIONS
+
+## Null model
+# Histogram of residuals
+hist(residuals(null_grams))
+# Heteroskedasticity of residuals
+plot(fitted(null_grams), resid(null_grams))
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(residuals(null_grams))
+qqline(residuals(null_grams), col = "steelblue", lwd = 2)
+
+## Full model
+hist(residuals(full_grams))
+# Heteroskedasticity of residuals
+plot(fitted(full_grams), resid(full_grams))
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(residuals(full_grams))
+qqline(residuals(full_grams), col = "steelblue", lwd = 2)
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
 # comparing the null and full models
