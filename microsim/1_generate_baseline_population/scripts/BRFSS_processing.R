@@ -1,6 +1,6 @@
 #####BRFSS processing for micro-synthesis 
 brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
-  filter(age_var<=80) %>% filter(YEAR==2000) %>% 
+  filter(age_var<=79) %>% filter(YEAR==2000) %>% 
   mutate(RACE = recode(race_eth,"White"="WHI", 
                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
          SEX = recode(sex_recode,"Male"="M","Female"="F"),
@@ -9,15 +9,15 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_202
          agecat = cut(age_var,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
-         frequency = ifelse(frequency==0 & gramsperday>0, 1, frequency),
-         quantity_per_occasion = (gramsperday/14 * 30) / frequency,
-         quantity_per_occasion = ifelse(gramsperday==0, 0, quantity_per_occasion),
-         gramsperday = gramsperday,
+         frequency = ifelse(frequency_upshifted==0 & gramsperday_upshifted>0, 1, frequency_upshifted),
+         quantity_per_occasion = (gramsperday_upshifted/14 * 30) / frequency_upshifted,
+         quantity_per_occasion = ifelse(gramsperday_upshifted==0, 0, quantity_per_occasion),
+         gramsperday = gramsperday_upshifted,
          formerdrinker=ifelse(drinkingstatus_detailed=="Former drinker", 1,0))
 
 selected <- brfss %>% filter(State==SelectedState) %>% 
   dplyr::select(region, SEX, RACE, age_var, agecat, EDUCATION, household_income, BMI, drinkingstatus, drinkingstatus_detailed,
-                formerdrinker,gramsperday, frequency, quantity_per_occasion)
+                formerdrinker,gramsperday, frequency, quantity_per_occasion) %>% drop_na(agecat)
 
 # check that there is at least one BRFSS individual in each category in 2000 
 nrow(selected %>% group_by(RACE, SEX, EDUCATION, agecat) %>% tally())==144

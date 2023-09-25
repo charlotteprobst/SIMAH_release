@@ -1,7 +1,7 @@
 #script for IPF 
 
 # read in constraints 
-cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_final.csv") %>% 
+cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_2023.csv") %>% 
   filter(STATE==SelectedState) %>% 
   dplyr::select(-STATE)
 # select the appropriate state 

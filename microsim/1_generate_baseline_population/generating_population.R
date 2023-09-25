@@ -42,4 +42,4 @@ tokeep <- c("SelectedState", "PopulationSize", "WorkingDirectory", "microsim", "
 source("SIMAH_code/microsim/1_generate_baseline_population/scripts/basepop_IPF.R")
 
 source("SIMAH_code/microsim/1_generate_baseline_population/scripts/process_for_microsim.R")
-write.csv(microsim, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "basepop", sep="", PopulationSize, ".csv"), row.names=FALSE)
+write.csv(microsim, paste("SIMAH_workplace/microsim/1_input_data/agent_files/",SelectedState, "basepop_2023", sep="", PopulationSize, ".csv"), row.names=FALSE)
