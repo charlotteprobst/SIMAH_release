@@ -172,17 +172,17 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.csv")
+#saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.rds")
+#write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.csv")
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_MAIN.csv")
+# write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_MAIN.csv")
 
-##### Extract data from relevant slots of s4 object (based upon full model)
+##### Extract data from relevant slots of s4 model object (BASED ON FULL MODEL)
 
 # Add intersectional group sizes as important indicator of expected level of shrinkage
 model_data <- model_data %>% 
@@ -208,7 +208,6 @@ random_effects <- as.data.frame(random_effects)
 chains <- full_grams@chains
 chains <- as.data.frame(chains)
 mb_prepped <- chains %>% dplyr::select(-c(deviance, RP2_var_Intercept, RP1_var_Intercept))
-
 mb_prepped <- dplyr::rename(mb_prepped,
                             b_cons = "FP_Intercept",
                             b_female = "FP_SEXFemale",
@@ -242,14 +241,12 @@ mb_prepped <- dplyr::rename(mb_prepped,
 
 mb_prepped$iteration <- rep(c(1:100))
 
-
 ##### PREPARE intersections RANDOM EFFECTS CHAINS
 # Store the value of the random effect, for each intersectional group, for each iteration
 
 # extract the residual chains
 resi_chains_lev_2 <- full_grams@resi.chains$resi_lev2
 resi_chains_lev_2 <- as.data.frame(resi_chains_lev_2)
-
 # reformat
 mu_prepped <- resi_chains_lev_2
 mu_prepped$iteration <- 1:nrow(mu_prepped)
@@ -265,8 +262,9 @@ mdata_prepped <- dplyr::rename(mdata_prepped, intersections = name, u = value)
 mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
 
 
-##### CALCULATE VALUES OF INTEREST (est = estA + estI)
+##### CALCULATE VALUES OF INTEREST
 
+# Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
   est = exp(b_cons*Intercept
                     + b_female*SEXFemale
@@ -300,6 +298,7 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + u)
 )
 
+# Estimates including additive effects only:
 mdata_prepped <- mdata_prepped %>% mutate(
   estA = exp(b_cons*Intercept
                            + b_female*SEXFemale
