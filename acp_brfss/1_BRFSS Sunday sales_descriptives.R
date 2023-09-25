@@ -22,6 +22,30 @@ library(tidyverse)
 library(openxlsx)
 library(urbnmapr)
 library(ggpattern)
+library(data.table)
+library(Hmisc)
+
+# --------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# FUNCTIONS
+# ----------------------------------------------------------------
+
+wtd.lci <- function(x, w) {
+  n    <- length(x)
+  mean <- wtd.mean(x, w)
+  se   <- wtd.var(x, w)/sqrt(length(x))
+  lci   <- mean + (qt(0.025,n-1)*se)
+  return(lci)
+}
+
+wtd.uci <- function(x, w) {
+  n    <- length(x)
+  mean <- wtd.mean(x, w)
+  se   <- wtd.var(x, w)/sqrt(length(x))
+  uci   <- mean - (qt(0.025,n-1)*se)
+  return(uci)
+}
 
 # --------------------------------------------------------------------------------------
 
@@ -30,66 +54,18 @@ library(ggpattern)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230808
+DATE <- 20230922
 
-# BRFSS 
-datBRFSS <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
+# prepared/cleaned data
+data <- data.table(readRDS("acp_brfss/20230922_brfss_clean.RDS"))
 
-# POLICIES
-datAP <- read_csv("acp_brfss/data/20230808_ALCPOLICY_2019.csv")
-
-# UNEMPLOYMENT RATE
-datUNEMP <- read.xlsx("acp_brfss/data/20230706_state_unemployment.xlsx", sheet = 1, startRow = 7) %>%
-  select(c("X2", "X3", "rate")) %>% rename("State" = "X2", "YEAR" = "X3", "unemp.rate" = "rate") %>%
-  mutate(YEAR = as.numeric(YEAR))
-
-# MERGE DATA
-data <- merge(datBRFSS, datAP, by.x = c("State", "YEAR"), by.y = c("state", "year"), all.x = T)
-data <- merge(data, datUNEMP, by = c("State", "YEAR"), all.x = T, all.y = F)
-
-# --------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------
-# PREPARE DATA
-# ----------------------------------------------------------------
-
-# define sunday sales bans and filter for states
-data <- 
-  data %>% mutate(sunsalesban_di = ifelse(sunsalesban >= 0.5, 1, ifelse(sunsalesban < 0.5, 0, NA)),
-                  sunsalesban = factor(ifelse(sunsalesban == 0, "no ban", ifelse(sunsalesban == 0.5, "partial ban", 
-                                       ifelse(sunsalesban == 1, "full ban", NA))), levels = c("no ban", "partial ban", "full ban"))) %>%
-  filter(State != "USA", State != "DC") %>%
-  filter(YEAR < 2020)
-
-ggplot(data, aes(sunsalesban)) + geom_histogram(stat = "count")
-ggplot(data, aes(sunsalesban_di)) + geom_histogram(stat = "count")
-
-# --------------------------------------------------------------------------------------
-
-# select random subsample (for now)
-# pdat <- data %>% sample_frac(0.05)
-
-# define age groups and factor variables
-pdat <- data %>% 
-  mutate(sex_num = ifelse(sex_recode == "Male", 0, ifelse(sex_recode == "Female", 1, NA)),
-         age_gr = as.factor(ifelse(age_var < 35, "18-34", ifelse(age_var >= 35 & age_var < 50, "35-49", 
-                                   ifelse(age_var >= 50 & age_var < 65, "50-64", ifelse(age_var >= 65, "65+", NA))))),
-         education_summary = factor(education_summary, levels = c("College", "SomeC", "LEHS")),
-         White = ifelse(race_eth %like% "White", 1, 0), 
-         Black = ifelse(race_eth %like% "Black", 1, 0), 
-         Hisp = ifelse(race_eth %like% "Hisp", 1, 0),
-         ROth = ifelse(race_eth %like% "Other", 1, 0),
-         LEHS = ifelse(education_summary %like% "LEHS", 1, 0),
-         SomeC = ifelse(education_summary %like% "SomeC", 1, 0),
-         College = ifelse(education_summary %like% "College", 1, 0))
-  
 # ----------------------------------------------------------------
 # DESCRIPTIVES BRFSS
 # ----------------------------------------------------------------
 
 # ALCOHOL POLICY -> SHOW IN A MAP
 
-sub <- pdat %>% 
+out1 <- data %>% 
   group_by(State, YEAR, controlstate, drinkculture, sunsalesban, sunsalesban_di, DatePolicy) %>% summarise() %>%
   mutate(ControlState = ifelse(controlstate == 1, "yes", "no"),
          DrinkCulture = drinkculture) %>% group_by(State) %>% 
@@ -101,50 +77,44 @@ sub <- pdat %>%
   mutate(DatePolicy = ifelse(State %like% "Georgia|Kansas|Kentucky", NA, DatePolicy), # minor policy changes not impacting their overall Sunday sales ban (allowing local options/beer sales)
          SunSalesPolicy = factor(SunSalesPolicy, levels = c("Sunday sales were never banned", 
                                                             "Sunday sales ban was repealed",
-                                                            "Sunday sales were always banned")))
+                                                            "Sunday sales were always banned"))) %>% 
+  select(c("State", "ControlState", "DrinkCulture", "SunSalesPolicy", "DatePolicy"))
 
-# include grouping variable SunSalesPolicy into pdat 
-sub <- sub %>% select(c("State", "SunSalesPolicy"))
-pdat <- left_join(pdat, sub, by = c("State" = "State")) 
+# SOCIODEMOGRAPHICS WEIGHTED
 
-# select output for summary table
-out1 <- sub %>% select(c("State", "ControlState", "DrinkCulture", "SunSalesPolicy", "DatePolicy"))
-
-# SOCIODEMOGRAPHICS !! UNWEIGHTED
-
-out2 <- pdat %>% group_by(SunSalesPolicy) %>%
+out2 <- data %>% group_by(SunSalesPolicy) %>%
   
   # calculate statistics 
   summarise(n = n(),
-            sex.prev = mean(sex_num),
-            sex.lci = mean(sex_num) - (1.96*(sd(sex_num)/sqrt(length(sex_num)))),
-            sex.uci = mean(sex_num) + (1.96*(sd(sex_num)/sqrt(length(sex_num)))),
-            age.mean = mean(age_var),
-            age.sd = sd(age_var),
-            LEHS.prev = mean(LEHS),
-            LEHS.lci = mean(LEHS) - (1.96*(sd(LEHS)/sqrt(length(LEHS)))),
-            LEHS.uci = mean(LEHS) + (1.96*(sd(LEHS)/sqrt(length(LEHS)))),
-            SomeC.prev = mean(SomeC),
-            SomeC.lci = mean(SomeC) - (1.96*(sd(SomeC)/sqrt(length(SomeC)))),
-            SomeC.uci = mean(SomeC) + (1.96*(sd(SomeC)/sqrt(length(SomeC)))),
-            College.prev = mean(College),
-            College.lci = mean(College) - (1.96*(sd(College)/sqrt(length(College)))),
-            College.uci = mean(College) + (1.96*(sd(College)/sqrt(length(College)))),
-            ms.prev = mean(marital_status),
-            ms.lci = mean(marital_status) - (1.96*(sd(marital_status)/sqrt(length(marital_status)))),
-            ms.uci = mean(marital_status) - (1.96*(sd(marital_status)/sqrt(length(marital_status)))),
-            White.prev = mean(White),
-            White.lci = mean(White) - (1.96*(sd(White)/sqrt(length(White)))),
-            White.uci = mean(White) - (1.96*(sd(White)/sqrt(length(White)))),
-            Black.prev = mean(Black),
-            Black.lci = mean(Black) - (1.96*(sd(Black)/sqrt(length(Black)))),
-            Black.uci = mean(Black) - (1.96*(sd(Black)/sqrt(length(Black)))),
-            Hisp.prev = mean(Hisp),
-            Hisp.lci = mean(Hisp) - (1.96*(sd(Hisp)/sqrt(length(Hisp)))),
-            Hisp.uci = mean(Hisp) - (1.96*(sd(Hisp)/sqrt(length(Hisp)))),
-            ROth.prev = mean(ROth),
-            ROth.lci = mean(ROth) - (1.96*(sd(ROth)/sqrt(length(ROth)))),
-            ROth.uci = mean(ROth) - (1.96*(sd(ROth)/sqrt(length(ROth))))) %>% 
+            sex.prev = wtd.mean(sex_num, final_sample_weight),
+            sex.lci = wtd.lci(sex_num, final_sample_weight),
+            sex.uci = wtd.uci(sex_num, final_sample_weight),
+            age.mean = wtd.mean(age_var),
+            age.sd = sqrt(wtd.var(age_var, final_sample_weight)),
+            LEHS.prev = wtd.mean(LEHS, final_sample_weight),
+            LEHS.lci = wtd.lci(LEHS, final_sample_weight),
+            LEHS.uci = wtd.uci(LEHS, final_sample_weight),
+            SomeC.prev = wtd.mean(SomeC, final_sample_weight),
+            SomeC.lci = wtd.lci(SomeC, final_sample_weight),
+            SomeC.uci = wtd.uci(SomeC, final_sample_weight),
+            College.prev = wtd.mean(College, final_sample_weight),
+            College.lci = wtd.lci(College, final_sample_weight),
+            College.uci = wtd.uci(College, final_sample_weight),
+            ms.prev = wtd.mean(marital_status, final_sample_weight),
+            ms.lci = wtd.lci(marital_status, final_sample_weight),
+            ms.uci = wtd.uci(marital_status, final_sample_weight),
+            White.prev = wtd.mean(White, final_sample_weight),
+            White.lci = wtd.lci(White, final_sample_weight),
+            White.uci = wtd.uci(White, final_sample_weight),
+            Black.prev = wtd.mean(Black, final_sample_weight),
+            Black.lci = wtd.lci(Black, final_sample_weight),
+            Black.uci = wtd.uci(Black, final_sample_weight),
+            Hisp.prev = wtd.mean(Hisp, final_sample_weight),
+            Hisp.lci = wtd.lci(Hisp, final_sample_weight),
+            Hisp.uci = wtd.uci(Hisp, final_sample_weight),
+            ROth.prev = wtd.mean(ROth, final_sample_weight),
+            ROth.lci = wtd.lci(ROth, final_sample_weight),
+            ROth.uci = wtd.uci(ROth, final_sample_weight)) %>%
   
   # summary format for table
   mutate(N = as.character(n),
@@ -168,23 +138,23 @@ out2 <- pdat %>% group_by(SunSalesPolicy) %>%
 # ALCOHOL USE BY SALE POLICY AND OVER TIME
 
 # alcohol use prevalence full sample  
-out3a <- pdat %>% group_by(YEAR, SunSalesPolicy) %>%
-  summarise(alc.prev = mean(drinkingstatus),
-            alc.lbi = mean(drinkingstatus) - (1.96*(sd(drinkingstatus)/sqrt(length(drinkingstatus)))),
-            alc.ubi = mean(drinkingstatus) + (1.96*(sd(drinkingstatus)/sqrt(length(drinkingstatus)))))
+out3a <- data %>% group_by(YEAR, SunSalesPolicy) %>%
+  summarise(alc.prev = wtd.mean(drinkingstatus, final_sample_weight),
+            alc.lbi = wtd.lci(drinkingstatus, final_sample_weight),
+            alc.ubi = wtd.uci(drinkingstatus, final_sample_weight))
 
 # alcohol use past-year alcohol users
-out3b <- pdat %>% filter(gramsperday_raw > 0) %>%
-  mutate(alccat3 = ifelse(sex_recode == "Male" & gramsperday_raw <= 60, 0,
-                          ifelse(sex_recode == "Male" & gramsperday_raw > 60, 1,
-                                 ifelse(sex_recode == "Female" & gramsperday_raw <= 40, 0,
-                                        ifelse(sex_recode == "Female" & gramsperday_raw > 40, 1, NA))))) %>%
+out3b <- data %>% filter(gramsperday > 0) %>%
+  mutate(alccat3 = ifelse(sex_recode == "Men" & gramsperday <= 60, 0,
+                          ifelse(sex_recode == "Men" & gramsperday > 60, 1,
+                                 ifelse(sex_recode == "Women" & gramsperday <= 40, 0,
+                                        ifelse(sex_recode == "Women" & gramsperday > 40, 1, NA))))) %>%
   group_by(YEAR, SunSalesPolicy) %>%
-  summarise(gpd.mean = mean(gramsperday_raw),
-            gpd.sd = sd(gramsperday_raw),
-            alccat3.prev = mean(alccat3),
-            alccat3.lbi = mean(alccat3) - (1.96*(sd(alccat3)/sqrt(length(alccat3)))),
-            alccat3.ubi = mean(alccat3) + (1.96*(sd(alccat3)/sqrt(length(alccat3)))))
+  summarise(gpd.mean = wtd.mean(gramsperday, final_sample_weight),
+            gpd.sd = sqrt(wtd.var(gramsperday, final_sample_weight)),
+            alccat3.prev = wtd.mean(alccat3, final_sample_weight),
+            alccat3.lbi = wtd.lci(alccat3, final_sample_weight),
+            alccat3.ubi = wtd.uci(alccat3, final_sample_weight))
 
 out3 <- left_join(out3a, out3b) %>%
   
@@ -204,20 +174,23 @@ out3 <- left_join(out3a, out3b) %>%
 # ----------------------------------------------------------------
 
 col.fill <- c("#1D9A6C", "#FFE154")
+state.fill <- c("#2E2E2E", "#2E2E2E", "#1D9A6C")
 
 usa <- urbnmapr::states
 usa <- left_join(usa, out1, by = c('state_name' = 'State')) %>% filter(!is.na(SunSalesPolicy)) %>%
-  mutate(Minnesota = as.factor(ifelse(state_name %like% "Minnesota", 1, 0)))
+  mutate(Minnesota = as.factor(ifelse(state_name %like% "Minnesota", 1, 0)), 
+         PolicyChange = as.factor(ifelse(SunSalesPolicy == "Sunday sales ban was repealed", 1, 0)))
 
 ggplot() + 
   geom_polygon_pattern(data = usa, color = "white", size = 0.1,
-                       aes(x = long, y = lat, group = group, pattern = SunSalesPolicy, 
-                           pattern_fill = ControlState, pattern_colour = Minnesota), 
+                       aes(x = long, y = lat, group = group, pattern = PolicyChange, 
+                           pattern_colour = Minnesota, fill = SunSalesPolicy), 
                        pattern_density = 0.05, pattern_spacing = 0.01,
                        pattern_key_scale_factor = 0.6) + 
   coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
   scale_pattern_colour_manual(values = col.fill) + 
-  scale_pattern_discrete(choices = c("none", "stripe", "crosshatch")) + 
+  scale_pattern_discrete(choices = c("none", "stripe")) +
+  scale_fill_manual(values = state.fill) +
   ggthemes::theme_map() + theme(legend.position="none", 
                                 panel.background = element_rect(fill = "white", color = "white"))
 
@@ -227,6 +200,7 @@ ggplot() +
 
 ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_map_SunSalesPolicies.jpg"), dpi = 300, width = 8, height = 5)
 
+write.xlsx(out.missings, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_Missings.xlsx"), rowNames = FALSE)
 write.xlsx(out1, file = paste0("acp_brfss/outputs/", DATE, "_StateSummary.xlsx"), rowNames = FALSE)
 write.xlsx(out2, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_SampleDesc_output.xlsx"), rowNames = FALSE)
 write.xlsx(out3, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_AlcDesc_output.xlsx"), rowNames = FALSE)

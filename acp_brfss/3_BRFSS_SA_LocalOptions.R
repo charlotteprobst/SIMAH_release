@@ -35,7 +35,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230922
+DATE <- 20230925
 
 # BRFSS 
 data <- data.table(readRDS("acp_brfss/20230922_brfss_clean.RDS"))
@@ -46,8 +46,14 @@ data <- data.table(readRDS("acp_brfss/20230922_brfss_clean.RDS"))
 # PREPARE DATA
 # ----------------------------------------------------------------
 
+# identifiy States with local options
+
+select_states <- data %>% filter(is.na(sunsalesban_exloc)) %>% pull(State) %>% unique
+
 # define age groups and factor variables, z-standardize unemplyoment rate
 pdat <- data %>%
+  
+  filter(!State %in% select_states) %>% 
   
   # select random subsample (for now)
   #sample_frac(0.1) %>% 
@@ -56,8 +62,8 @@ pdat <- data %>%
   mutate_at(c("race_eth", "sex_recode", "education_summary", "marital_status", 
               "drinkingstatus", "controlstate", "drinkculture", "sunsalesban", "State"), as.factor) %>%
   mutate(education_summary = factor(education_summary, levels = c("College", "SomeC", "LEHS")),
-         sunsalesban_di = factor(ifelse(sunsalesban_di == 1, "ban", ifelse(sunsalesban_di == 0, "no ban", NA)),
-                                 levels = c("no ban", "ban")),
+         sunsalesban_exloc = factor(ifelse(sunsalesban_exloc == 1, "ban", ifelse(sunsalesban_exloc == 0, "no ban", NA)),
+                                    levels = c("no ban", "ban")),
          z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate))) # across the total sample
 
 # --------------------------------------------------------------------------------------
@@ -81,10 +87,10 @@ label_education <- c("low", "medium", "high")
 
 # MEN
 
-drinkstatus.m <- glmer(drinkingstatus ~ sunsalesban_di*education_summary + 
+drinkstatus.m <- glmer(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
                          race_eth + marital_status + age_gr + (1 | State),
-                        data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
+                       data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 summary(drinkstatus.m)
 broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
 
@@ -98,13 +104,13 @@ resAGG <- res %>% group_by(V1, V3) %>%
   summarise(alc.prev = mean(as.numeric(res)))
 
 #ggplot(data = resAGG, aes(x = V1, y = alc.prev)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
-  # OK => continue with one-level model without secular trend
+# no unique pattern across states
+# OK => continue with one-level model without secular trend
 
 # MARGINAL MEANS
 # https://strengejacke.github.io/ggeffects/articles/technical_differencepredictemmeans.html
 
-margins <- ggemmeans(drinkstatus.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(drinkstatus.m, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -122,7 +128,7 @@ IA.DS.M <-
 
 # WOMEN 
 
-drinkstatus.w <- glmer(drinkingstatus ~ sunsalesban_di*education_summary + 
+drinkstatus.w <- glmer(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
                          race_eth + marital_status + age_gr + (1 | State),
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
@@ -144,7 +150,7 @@ resAGG <- res %>% group_by(V1, V3) %>%
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(drinkstatus.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(drinkstatus.w, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -174,10 +180,16 @@ pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 # MEN
 # svyglm for survey weights plus margins but no random intercept -> probably best model! https://www.rdocumentation.org/packages/survey/versions/4.2-1/topics/svyglm
 
-gpd.m <- lme(gpd_log ~ sunsalesban_di*education_summary + 
+#gpd.m <- lme(gpd_log ~ sunsalesban_exloc*education_summary + 
+#               drinkculture + z.unemp.rate + controlstate + 
+#               race_eth + marital_status + age_gr, random = ~1|State, 
+#             data = pdat[pdat$sex_recode == "Men"])
+
+gpd.m <-  lme(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr, random = ~1|State, 
-             data = pdat[pdat$sex_recode == "Men"])
+               race_eth + marital_status + age_gr,  random = ~1|State, 
+             data = pdat[pdat$sex_recode == "Men"],
+             method = "ML") # due to convergence error set to ML
 summary(gpd.m)
 
 # CHECK SECULAR TREND
@@ -190,11 +202,11 @@ resAGG <- res %>% group_by(V1, V3) %>%
   summarise(gpd = mean(as.numeric(res)))
 
 #ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+# no unique pattern across states
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(gpd.m, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -212,7 +224,7 @@ IA.GPD.M <-
 
 # WOMEN
 
-gpd.w <- lme(gpd_log ~ sunsalesban_di*education_summary + 
+gpd.w <- lme(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
                race_eth + marital_status + age_gr, random = ~1|State, 
              data = pdat[pdat$sex_recode == "Women"])
@@ -228,10 +240,10 @@ resAGG <- res %>% group_by(V1, V3) %>%
   summarise(gpd = mean(as.numeric(res)))
 
 #ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+# no unique pattern across states
 # MARGINAL MEANS 
 
-margins <- ggemmeans(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(gpd.w, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -259,10 +271,10 @@ pdat <- pdat %>% filter(gramsperday > 0) %>%
 
 # MEN
 
-alccat.m <- glmer(alccat3 ~ sunsalesban_di*education_summary + 
-                         drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
-                       data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
+alccat.m <- glmer(alccat3 ~ sunsalesban_exloc*education_summary + 
+                    drinkculture + controlstate + z.unemp.rate +
+                    race_eth + marital_status + age_gr + (1 | State),
+                  data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 summary(alccat.m)
 broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
 
@@ -276,11 +288,11 @@ resAGG <- res %>% group_by(V1, V3) %>%
   summarise(gpd = mean(as.numeric(res)))
 
 #ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+# no unique pattern across states
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(alccat.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(alccat.m, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -298,7 +310,7 @@ IA.ALCCAT.M <-
 
 # WOMEN
 
-alccat.w <- glmer(alccat3 ~ sunsalesban_di*education_summary + 
+alccat.w <- glmer(alccat3 ~ sunsalesban_exloc*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
                     race_eth + marital_status + age_gr + (1 | State),
                   data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
@@ -315,11 +327,11 @@ resAGG <- res %>% group_by(V1, V3) %>%
   summarise(gpd = mean(as.numeric(res)))
 
 ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+# no unique pattern across states
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(alccat.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+margins <- ggemmeans(alccat.w, terms = c("education_summary", "sunsalesban_exloc")) %>% 
   mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
          group = factor(group, levels = c("ban", "no ban")))
 
@@ -343,7 +355,7 @@ ggarrange(IA.DS.M, IA.GPD.M, IA.ALCCAT.M, IA.DS.W, IA.GPD.W, IA.ALCCAT.W,
           labels = c("1A: MEN", "2A: MEN", "3A: MEN", "1B: WOMEN", "2B: WOMEN", "3B: WOMEN"),
           ncol = 3, nrow = 2)
 
-ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_BRFSS_INTERACT.jpg"), dpi = 300, width = 12, height = 8)
+ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_SA_LOCOPT_INTERACT.jpg"), dpi = 300, width = 12, height = 8)
 
 # ----------------------------------------------------------------
 # EXPORT: TABLE
@@ -378,4 +390,4 @@ out.alccat.w <- broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE
 out.alccat <- left_join(out.alccat.m, out.alccat.w, by = join_by(term), suffix = c(".men", ".women"))
 
 list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
-write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSSraw_output_glmer.xlsx"), rowNames = FALSE)
+write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_SA_LOCOPT_output_glmer.xlsx"), rowNames = FALSE)

@@ -22,7 +22,7 @@ library(data.table)
 # --------------------------------------------------------------------------------------
 
 # set date
-DATE <- 20230808
+DATE <- 20230922
 
 # define states
 state <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", 
@@ -58,6 +58,7 @@ ban <- ban %>% mutate(ban_repealed = ifelse(is.na(`Ban Repealed`), 0, 1),
 pdat <- copy(ban)
 pdat[,2:9] <- NA
 pdat$sunsalesban <- NA
+pdat$sunsalesban_exloc <- NA
 
 for (c in ban$Jurisdiction) {
   
@@ -71,7 +72,11 @@ for (c in ban$Jurisdiction) {
       pdat[pdat$Jurisdiction == c,][k,] <- ban %>% filter(Jurisdiction == c) %>% filter(row_number() == k) %>%
         mutate(sunsalesban = ifelse(ban_repealed == 1, 0, 
                                     ifelse(local_option == 1 | beer_excepted == 1, 0.5, 
-                                           ifelse(local_option == 0 & beer_excepted == 0, 1, NA))))
+                                           ifelse(local_option == 0 & beer_excepted == 0, 1, NA))),
+               sunsalesban_exloc = ifelse(ban_repealed == 1, 0, 
+                                          ifelse(beer_excepted == 1, 0.5, 
+                                                 ifelse(beer_excepted == 0 | local_option == 0, 1, 
+                                                        ifelse(local_option == 1, NA, NA)))))
       k <- k+1
     
     }
@@ -86,7 +91,10 @@ for (c in ban$Jurisdiction) {
       
       pdat[pdat$Jurisdiction == c,][k,] <- ban %>% filter(Jurisdiction == c) %>% filter(row_number() == k) %>%
         mutate(sunsalesban = ifelse(local_option == 1 | beer_excepted == 1, 0.5, 
-                                    ifelse(local_option == 0 & beer_excepted == 0, 1, NA)))
+                                    ifelse(local_option == 0 & beer_excepted == 0, 1, NA)),
+               sunsalesban_exloc = ifelse(local_option == 1, NA,
+                                          ifelse(beer_excepted == 1, 0.5, 
+                                                 ifelse(beer_excepted == 0 | local_option == 0, 1, NA))))
       k <- k+1
       
     }
@@ -103,6 +111,7 @@ for (c in ban$Jurisdiction) {
 # MERGE SUNDAY SALES BAN WITH ALL STATES FILE
 
 data$sunsalesban <- NA
+data$sunsalesban_exloc <- NA
 data$DatePolicy <- NA
 
 for (c in unique(data$state)) {
@@ -120,6 +129,12 @@ for (c in unique(data$state)) {
           pdat[pdat$Jurisdiction==c & pdat$start_year < max(pdat[pdat$Jurisdiction==c,]$start_year),]$sunsalesban 
         data[data$state == c & data$year >= change_year, ]$sunsalesban <- 
           pdat[pdat$Jurisdiction==c & pdat$start_year >= max(pdat[pdat$Jurisdiction==c,]$start_year),]$sunsalesban   
+        
+        data[data$state == c & data$year < change_year, ]$sunsalesban_exloc <- 
+          pdat[pdat$Jurisdiction==c & pdat$start_year < max(pdat[pdat$Jurisdiction==c,]$start_year),]$sunsalesban_exloc 
+        data[data$state == c & data$year >= change_year, ]$sunsalesban_exloc <- 
+          pdat[pdat$Jurisdiction==c & pdat$start_year >= max(pdat[pdat$Jurisdiction==c,]$start_year),]$sunsalesban_exloc   
+        
         data[data$state == c, ]$DatePolicy <- 
           unique(pdat[pdat$Jurisdiction==c & pdat$start_year >= max(pdat[pdat$Jurisdiction==c,]$start_year), ]$DatePolicy)
       }
@@ -128,6 +143,7 @@ for (c in unique(data$state)) {
       else if (length(pdat[pdat$Jurisdiction==c,]$start_year) == 1) {
         
         data[data$state == c,]$sunsalesban <- pdat[pdat$Jurisdiction==c,]$sunsalesban
+        data[data$state == c,]$sunsalesban_exloc <- pdat[pdat$Jurisdiction==c,]$sunsalesban_exloc
         data[data$state == c, ]$DatePolicy <- NA
       }
       
@@ -135,6 +151,7 @@ for (c in unique(data$state)) {
       else {
         
         data[data$state == c,]$sunsalesban <- NA
+        data[data$state == c,]$sunsalesban_exloc <- NA
         data[data$state == c, ]$DatePolicy <- NA
       }
   }
@@ -143,12 +160,14 @@ for (c in unique(data$state)) {
   else if (!c %in% unique(pdat$Jurisdiction)) {
     
     data[data$state == c,]$sunsalesban <- 0
+    data[data$state == c,]$sunsalesban_exloc <- 0
     data[data$state == c, ]$DatePolicy <- NA
   } 
     
   else {
     
     data[data$state == c,]$sunsalesban <- NA
+    data[data$state == c,]$sunsalesban_exloc <- NA
     data[data$state == c, ]$DatePolicy <- NA
     
   }
