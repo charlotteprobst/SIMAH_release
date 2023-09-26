@@ -129,23 +129,40 @@ full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/in
 ##### CHECK MODELLING ASSUMPTIONS
 
 ## Null model
-# Histogram of residuals
-hist(residuals(null_grams))
+## Level 1 residuals
+hist(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
-plot(fitted(null_grams), resid(null_grams))
+plot(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 abline(h = 0, lty = 2, col = "red")
 # QQ plot
-qqnorm(residuals(null_grams))
-qqline(residuals(null_grams), col = "steelblue", lwd = 2)
+qqnorm(null_grams["residual"][["lev_1_resi_est_Intercept"]])
+qqline(null_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+## Level 2 residuals
+hist(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+# Heteroskedasticity of residuals
+plot(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+qqline(null_grams["residual"][["lev_2_resi_est_Intercept"]], col = "steelblue", lwd = 2)
 
-## Full model
-hist(residuals(full_grams))
+### Full model
+## Level 1 residuals
+hist(full_grams["residual"][["lev_1_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
-plot(fitted(full_grams), resid(full_grams))
+plot(full_grams["residual"][["lev_1_resi_est_Intercept"]])
 abline(h = 0, lty = 2, col = "red")
 # QQ plot
-qqnorm(residuals(full_grams))
-qqline(residuals(full_grams), col = "steelblue", lwd = 2)
+qqnorm(full_grams["residual"][["lev_1_resi_est_Intercept"]])
+qqline(full_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+## Level 2 residuals
+hist(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+# Heteroskedasticity of residuals
+plot(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+qqline(full_grams["residual"][["lev_2_resi_est_Intercept"]], col = "steelblue", lwd = 2)
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
 # comparing the null and full models
@@ -245,6 +262,8 @@ mb_prepped$iteration <- rep(c(1:100))
 # Store the value of the random effect, for each intersectional group, for each iteration
 
 # extract the residual chains
+
+# level 2 (strata)
 resi_chains_lev_2 <- full_grams@resi.chains$resi_lev2
 resi_chains_lev_2 <- as.data.frame(resi_chains_lev_2)
 # reformat
@@ -252,6 +271,15 @@ mu_prepped <- resi_chains_lev_2
 mu_prepped$iteration <- 1:nrow(mu_prepped)
 mu_prepped <- pivot_longer(resi_chains_lev_2, u_0_1:u_0_108)
 mu_prepped$iteration <- rep(c(1:100), each = 108)
+
+# # level 1 (individual)
+# resi_chains_lev_1 <- full_grams@resi.chains$resi_lev1
+# resi_chains_lev_1 <- as.data.frame(resi_chains_lev_1)
+# # reformat
+# mu_prepped_lev_1 <- resi_chains_lev_1
+# mu_prepped_lev_1$iteration <- 1:nrow(mu_prepped)
+# mu_prepped_lev_1 <- pivot_longer(resi_chains_lev_1, u_0_1:u_0_108)
+# mu_prepped_lev_1$iteration <- rep(c(1:100), each = 108)
 
 
 ##### MERGE DATA, FIXED-PART PARAMETER AND RANDOM EFFECT CHAINS TOGETHER
