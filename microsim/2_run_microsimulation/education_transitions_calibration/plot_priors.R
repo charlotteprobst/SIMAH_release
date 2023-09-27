@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read.csv(paste0(DataDirectory, "/prior_ranges_1000.csv")) %>% 
+data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -36,27 +36,27 @@ data <- left_join(data,targets) %>%
 
 ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
-  geom_line() + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=2) + 
+  geom_line(linewidth=1) + 
+  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) + 
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
   ggtitle("Men, 18-24 non-inflated prior") + 
   xlab("Year")
 
-ggsave(paste0(DataDirectory, "/plot_prior_men.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_men_new.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
-  geom_line() + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=2) + 
+  geom_line(linewidth=1) + 
+  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) + 
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
   ggtitle("Women, 18-24 non-inflated prior") + 
   xlab("Year")
 
-ggsave(paste0(DataDirectory, "/plot_prior_women.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_women_new.png"), dpi=300, width=33, height=19, units="cm")
 
 # calculate implausibility 
 implausibility <- data %>% 
@@ -71,8 +71,8 @@ maxmean <- implausibility %>%
             meanimplausibility = mean(implausibility)) %>% 
   ungroup() %>% 
   mutate(
-            ntilemax = ntile(maximplausibility, 500),
-            ntilemean = ntile(meanimplausibility, 500)) 
+            ntilemax = ntile(maximplausibility, 1000),
+            ntilemean = ntile(meanimplausibility, 1000)) 
 
 max <- data %>% 
   filter(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum | 
@@ -80,22 +80,37 @@ max <- data %>%
   mutate(type=ifelse(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum, "max", "mean"),
          typesample = paste0(type, "_", samplenum))
 
+max <- max %>% 
+  filter(samplenum %in% subset(maxmean, ntilemax<=1)$samplenum | 
+           samplenum %in% subset(maxmean, ntilemean<=1)$samplenum)
+
 ggplot(data=subset(max, SEX=="Women" & AGECAT=="18-24"), 
-       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(typesample))) + 
+       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(EDUC))) + 
   geom_line(linewidth=1) + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) + 
-  facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
+  geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
+  facet_grid(cols=vars(typesample), rows=vars(RACE)) + 
   theme_bw() + 
-  theme(legend.position = "bottom") + 
-  ggtitle("Women, 18-24 non-inflated prior") + 
-  xlab("Year")
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  ggtitle("Women, 18-24") + 
+  xlab("Year") +
+  scale_y_continuous(labels=scales::percent) 
+
+ggsave(paste0(DataDirectory, "/max_mean_women.png"), dpi=300, width=33, height=19, units="cm")
+
 
 ggplot(data=subset(max, SEX=="Men" & AGECAT=="18-24"), 
-       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(typesample))) + 
+       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(EDUC))) + 
   geom_line(linewidth=1) + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) + 
-  facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
+  geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
+  facet_grid(cols=vars(typesample), rows=vars(RACE)) + 
   theme_bw() + 
-  theme(legend.position = "none") + 
-  ggtitle("Women, 18-24 non-inflated prior") + 
-  xlab("Year")
+  theme(legend.position = "bottom",
+        legend.title=element_blank()) + 
+  ggtitle("Men, 18-24") + 
+  xlab("Year") +
+  scale_y_continuous(labels=scales::percent)
+
+ggsave(paste0(DataDirectory, "/max_mean_men.png"), dpi=300, width=33, height=19, units="cm")
+
+

@@ -32,8 +32,8 @@ set.seed(42)
 ###set working directory to the main "Microsimulation" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -54,14 +54,15 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 1000
+nsamples <- 10
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 
 # save samples 
 saveRDS(transitionsList, paste("SIMAH_workplace/microsim/2_output_data/education_calibration/transitionsList", SelectedState,".RDS",sep=""))
 saveRDS(estimates, paste("SIMAH_workplace/microsim/2_output_data/education_calibration/sampled_markov", SelectedState, ".RDS"))
 
-registerDoParallel(20)
+# set to 1 if running on local machine 
+registerDoParallel(1)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -70,8 +71,7 @@ options(future.fork.multithreading.enable = FALSE)
 Output <- list()
 
 sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1)
-
-baseorig <- basepop
+sampleseeds <- sampleseeds %>% filter(samplenum<=2)
 
 rm(education_transitions)
 
@@ -91,7 +91,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% 
                 policy=0, percentreduction=0.1, year_policy, inflation_factors,
                 age_inflated,
                 update_base_rate,
-                minyear=2000, maxyear=2019, output="demographics")
+                minyear=2000, maxyear=2003, output="demographics")
 }
 
 # save the output 
