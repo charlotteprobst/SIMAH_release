@@ -19,10 +19,13 @@ rm(list = ls())
 # ----------------------------------------------------------------
 
 library(tidyverse)
+library(data.table)
 library(urbnmapr)
 library(ggpattern)
 library(survey)
 library(jtools)
+#install.packages('multicore',,'http://www.rforge.net/')
+#library(multicore)
 
 # --------------------------------------------------------------------------------------
 
@@ -97,7 +100,7 @@ nrow(pdat[pdat$gramsperday > 0,])
 # WEIGHTED STAT
 
 stat <- svyby(~sex_num + age_var + LEHS + SomeC + College + 
-                marital_status + White + Black + Hisp + ROth, ~SunSalesPolicy, svydat, svymean) 
+                marital_status + White + Black + Hisp + ROth, ~SunSalesPolicy, svydat, svymean, multicore=TRUE) 
 
 out2a <- stat %>% rename_all(~str_replace_all(.,"statistic.","")) %>%
   select(c("SunSalesPolicy", "sex_num", "age_var", "LEHS", "SomeC", "College", 
@@ -109,7 +112,7 @@ out2b <- confint(stat) %>% as.data.frame %>% rownames_to_column(var = "Var") %>%
   separate(Var, c("SunSalesPolicy", "variables"), ":") %>%
   pivot_wider(names_from = "SunSalesPolicy", values_from = c("2.5 %", "97.5 %")) 
 
-out2c <- svyby(~age_var, ~SunSalesPolicy, svydat, svysd, keep.var = F) %>%
+out2c <- svyby(~age_var, ~SunSalesPolicy, svydat, svysd, keep.var = F, multicore=TRUE) %>%
   pivot_wider(names_from = "SunSalesPolicy", values_from = "statistic") %>%
   rename("SE_Sunday sales were never banned" = "Sunday sales were never banned",
          "SE_Sunday sales ban was repealed" = "Sunday sales ban was repealed",
@@ -126,7 +129,7 @@ out2 <- left_join(out2a, out2b) %>% left_join(., out2c)
 
 # ANY ALCOHOL USE
 
-stat <- svyby(~drinkingstatus, ~SunSalesPolicy + YEAR, svydat, svymean) 
+stat <- svyby(~drinkingstatus, ~SunSalesPolicy + YEAR, svydat, svymean, multicore=TRUE) 
 
 out3a <- stat %>% 
   select(c("SunSalesPolicy", "YEAR", "drinkingstatus")) %>%
@@ -141,13 +144,13 @@ out3 <- left_join(out3a, out3b)
 
 # GRAMS PER DAY, past-month alcohol users
 
-stat <- svyby(~gramsperday, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svymean) 
+stat <- svyby(~gramsperday, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svymean, multicore=TRUE) 
 
 out4a <- stat %>% 
   select(c("SunSalesPolicy", "YEAR", "gramsperday")) %>%
   pivot_wider(names_from = "SunSalesPolicy", values_from = "gramsperday") 
 
-out4b <- svyby(~gramsperday, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svysd, keep.var = F) %>%
+out4b <- svyby(~gramsperday, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svysd, keep.var = F, multicore=TRUE) %>%
   mutate(SunSalesPolicy = paste0("SD_", SunSalesPolicy)) %>%
   pivot_wider(names_from = "SunSalesPolicy", values_from = "statistic") %>%
   mutate(YEAR = as.numeric(YEAR))
@@ -156,7 +159,7 @@ out4 <- left_join(out4a, out4b)
 
 # ANY HAZARDOUS USE, past-month alcohol users
 
-stat <- svyby(~alccat3, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svymean) 
+stat <- svyby(~alccat3, ~SunSalesPolicy + YEAR, subset(svydat, gramsperday > 0), svymean, multicore=TRUE) 
 
 out5a <- stat %>% 
   select(c("SunSalesPolicy", "YEAR", "alccat3")) %>%
