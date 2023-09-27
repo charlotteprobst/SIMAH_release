@@ -29,11 +29,11 @@ library(data.table)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230922
+DATE <- 20230925
 
 # BRFSS 
 #datBRFSS_alt <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
-datBRFSS <- data.table(readRDS("brfss/processed_data/full_brfss_noupshift.RDS"))
+datBRFSS <- data.table(readRDS("brfss/processed_data/ACP_brfss_full.RDS"))
 
 # POLICIES
 datAP <- read_csv("acp_brfss/data/20230922_ALCPOLICY_2019.csv")
@@ -59,7 +59,7 @@ data <-
                   sunsalesban = factor(ifelse(sunsalesban == 0, "no ban", ifelse(sunsalesban == 0.5, "partial ban", 
                                                                                  ifelse(sunsalesban == 1, "full ban", NA))), levels = c("no ban", "partial ban", "full ban")),
                   sunsalesban_exloc = ifelse(sunsalesban_exloc >= 0.5, 1, ifelse(sunsalesban_exloc < 0.5, 0, NA))) %>%
-  filter(YEAR < 2020, YEAR > 1999, State != "DC")
+  filter(YEAR < 2020, YEAR > 1999)
 
 ggplot(data, aes(sunsalesban)) + geom_histogram(stat = "count")
 ggplot(data, aes(sunsalesban_di)) + geom_histogram(stat = "count")
@@ -93,7 +93,8 @@ pdat <- data %>%
          !is.na(education_summary),
          !is.na(drinkingstatus),
          !is.na(alc_frequency),
-         !is.na(quantity_per_occasion))
+         !is.na(quantity_per_occasion),
+         !is.na(gramsperday))
 
 # define age groups and factor variables
 pdat <- pdat %>% 
@@ -120,7 +121,23 @@ pdat <- pdat %>% filter(!is.na(gramsperday)) %>%
 # --------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------
+# ADJUST WEIGHTS
+# ----------------------------------------------------------------
+
+pdat <- pdat %>% group_by(State) %>%
+  mutate(n_state = n()) %>%
+  group_by(State, YEAR) %>%
+  mutate(n_year = n(),
+         corr.weight = n_year/n_state,
+         final_sample_weight_adj = final_sample_weight*corr.weight) %>%
+  select(-n_state, -n_year, -corr.weight)
+  
+# --------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------
 # EXPORT
 # ----------------------------------------------------------------
 
 saveRDS(pdat, file = paste0("acp_brfss/", DATE, "_brfss_clean.RDS"))
+
+write.xlsx(out.missings, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_Missings.xlsx"), rowNames = FALSE)

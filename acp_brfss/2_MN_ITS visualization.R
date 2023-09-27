@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230810
+DATE <- 20230925
 
 # prepared data file 
 data <- read.csv("acp_brfss/data/20230712_AGEST_MORTALITY_MINNESOTA.csv")
@@ -159,8 +159,8 @@ FigWCOLLEGE <- ggplot(pdat) + geom_point(aes(x = QYEAR, y = WCOLLEGEobs), color 
 
 # COMBINE
 ggarrange(FigMLEHS, FigMSOMEC, FigMCOLLEGE, FigWLEHS, FigWSOMEC, FigWCOLLEGE,
-          labels = c("1A: MEN, LEHS", "2A: MEN, SomeC", "3A: MEN, College", 
-                     "1B: WOMEN, LEHS", "2B: WOMEN, SomeC", "3B: WOMEN, College"),
+          labels = c("1A: MEN, low", "2A: MEN, medium", "3A: MEN, high", 
+                     "1B: WOMEN, low", "2B: WOMEN, medium", "3B: WOMEN, high"),
           ncol = 3, nrow = 2)
 
 # --------------------------------------------------------------------------------------

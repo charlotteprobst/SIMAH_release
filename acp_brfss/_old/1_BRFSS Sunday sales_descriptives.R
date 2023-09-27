@@ -23,29 +23,8 @@ library(openxlsx)
 library(urbnmapr)
 library(ggpattern)
 library(data.table)
-library(Hmisc)
-
-# --------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------
-# FUNCTIONS
-# ----------------------------------------------------------------
-
-wtd.lci <- function(x, w) {
-  n    <- length(x)
-  mean <- wtd.mean(x, w)
-  se   <- wtd.var(x, w)/sqrt(length(x))
-  lci   <- mean + (qt(0.025,n-1)*se)
-  return(lci)
-}
-
-wtd.uci <- function(x, w) {
-  n    <- length(x)
-  mean <- wtd.mean(x, w)
-  se   <- wtd.var(x, w)/sqrt(length(x))
-  uci   <- mean - (qt(0.025,n-1)*se)
-  return(uci)
-}
+#library(Hmisc)
+library(survey)
 
 # --------------------------------------------------------------------------------------
 
@@ -54,10 +33,10 @@ wtd.uci <- function(x, w) {
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230922
+DATE <- 20230925
 
 # prepared/cleaned data
-data <- data.table(readRDS("acp_brfss/20230922_brfss_clean.RDS"))
+data <- data.table(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
 
 # ----------------------------------------------------------------
 # DESCRIPTIVES BRFSS
@@ -80,41 +59,52 @@ out1 <- data %>%
                                                             "Sunday sales were always banned"))) %>% 
   select(c("State", "ControlState", "DrinkCulture", "SunSalesPolicy", "DatePolicy"))
 
+sub <- out1 %>% select(State, SunSalesPolicy)
+data <- left_join(data, sub) %>%
+  sample_frac(0.001)
+
+# SCALE SAMPLE WEIGHT
+options(survey.lonely.psu = "adjust")
+svydat <- svydesign(ids = ~X_PSU, strata = ~interaction(X_STSTR, YEAR), weights = ~final_sample_weight_adj, nest = T, data = data)
+
 # SOCIODEMOGRAPHICS WEIGHTED
 
-out2 <- data %>% group_by(SunSalesPolicy) %>%
+svymean(~sex_num + age_var + LEHS + SomeC + College, svydat)
+confint(svymean(~sex_num + age_var + LEHS + SomeC + College, svydat))
+
+out2 <- svydat %>% #group_by(SunSalesPolicy) %>%
   
   # calculate statistics 
   summarise(n = n(),
-            sex.prev = wtd.mean(sex_num, final_sample_weight),
-            sex.lci = wtd.lci(sex_num, final_sample_weight),
-            sex.uci = wtd.uci(sex_num, final_sample_weight),
+            sex.prev = wtd.mean(sex_num, final_sample_weight_adj),
+            sex.lci = wtd.lci(sex_num, final_sample_weight_adj),
+            sex.uci = wtd.uci(sex_num, final_sample_weight_adj),
             age.mean = wtd.mean(age_var),
-            age.sd = sqrt(wtd.var(age_var, final_sample_weight)),
-            LEHS.prev = wtd.mean(LEHS, final_sample_weight),
-            LEHS.lci = wtd.lci(LEHS, final_sample_weight),
-            LEHS.uci = wtd.uci(LEHS, final_sample_weight),
-            SomeC.prev = wtd.mean(SomeC, final_sample_weight),
-            SomeC.lci = wtd.lci(SomeC, final_sample_weight),
-            SomeC.uci = wtd.uci(SomeC, final_sample_weight),
-            College.prev = wtd.mean(College, final_sample_weight),
-            College.lci = wtd.lci(College, final_sample_weight),
-            College.uci = wtd.uci(College, final_sample_weight),
-            ms.prev = wtd.mean(marital_status, final_sample_weight),
-            ms.lci = wtd.lci(marital_status, final_sample_weight),
-            ms.uci = wtd.uci(marital_status, final_sample_weight),
-            White.prev = wtd.mean(White, final_sample_weight),
-            White.lci = wtd.lci(White, final_sample_weight),
-            White.uci = wtd.uci(White, final_sample_weight),
-            Black.prev = wtd.mean(Black, final_sample_weight),
-            Black.lci = wtd.lci(Black, final_sample_weight),
-            Black.uci = wtd.uci(Black, final_sample_weight),
-            Hisp.prev = wtd.mean(Hisp, final_sample_weight),
-            Hisp.lci = wtd.lci(Hisp, final_sample_weight),
-            Hisp.uci = wtd.uci(Hisp, final_sample_weight),
-            ROth.prev = wtd.mean(ROth, final_sample_weight),
-            ROth.lci = wtd.lci(ROth, final_sample_weight),
-            ROth.uci = wtd.uci(ROth, final_sample_weight)) %>%
+            age.sd = sqrt(wtd.var(age_var, final_sample_weight_adj)),
+            LEHS.prev = wtd.mean(LEHS, final_sample_weight_adj),
+            LEHS.lci = wtd.lci(LEHS, final_sample_weight_adj),
+            LEHS.uci = wtd.uci(LEHS, final_sample_weight_adj),
+            SomeC.prev = wtd.mean(SomeC, final_sample_weight_adj),
+            SomeC.lci = wtd.lci(SomeC, final_sample_weight_adj),
+            SomeC.uci = wtd.uci(SomeC, final_sample_weight_adj),
+            College.prev = wtd.mean(College, final_sample_weight_adj),
+            College.lci = wtd.lci(College, final_sample_weight_adj),
+            College.uci = wtd.uci(College, final_sample_weight_adj),
+            ms.prev = wtd.mean(marital_status, final_sample_weight_adj),
+            ms.lci = wtd.lci(marital_status, final_sample_weight_adj),
+            ms.uci = wtd.uci(marital_status, final_sample_weight_adj),
+            White.prev = wtd.mean(White, final_sample_weight_adj),
+            White.lci = wtd.lci(White, final_sample_weight_adj),
+            White.uci = wtd.uci(White, final_sample_weight_adj),
+            Black.prev = wtd.mean(Black, final_sample_weight_adj),
+            Black.lci = wtd.lci(Black, final_sample_weight_adj),
+            Black.uci = wtd.uci(Black, final_sample_weight_adj),
+            Hisp.prev = wtd.mean(Hisp, final_sample_weight_adj),
+            Hisp.lci = wtd.lci(Hisp, final_sample_weight_adj),
+            Hisp.uci = wtd.uci(Hisp, final_sample_weight_adj),
+            ROth.prev = wtd.mean(ROth, final_sample_weight_adj),
+            ROth.lci = wtd.lci(ROth, final_sample_weight_adj),
+            ROth.uci = wtd.uci(ROth, final_sample_weight_adj)) %>%
   
   # summary format for table
   mutate(N = as.character(n),
@@ -138,13 +128,13 @@ out2 <- data %>% group_by(SunSalesPolicy) %>%
 # ALCOHOL USE BY SALE POLICY AND OVER TIME
 
 # alcohol use prevalence full sample  
-out3a <- data %>% group_by(YEAR, SunSalesPolicy) %>%
+out3a <- left_join(data, sub) %>% group_by(YEAR, SunSalesPolicy) %>%
   summarise(alc.prev = wtd.mean(drinkingstatus, final_sample_weight),
             alc.lbi = wtd.lci(drinkingstatus, final_sample_weight),
             alc.ubi = wtd.uci(drinkingstatus, final_sample_weight))
 
 # alcohol use past-year alcohol users
-out3b <- data %>% filter(gramsperday > 0) %>%
+out3b <- left_join(data, sub) %>% filter(gramsperday > 0) %>%
   mutate(alccat3 = ifelse(sex_recode == "Men" & gramsperday <= 60, 0,
                           ifelse(sex_recode == "Men" & gramsperday > 60, 1,
                                  ifelse(sex_recode == "Women" & gramsperday <= 40, 0,
@@ -200,7 +190,6 @@ ggplot() +
 
 ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_map_SunSalesPolicies.jpg"), dpi = 300, width = 8, height = 5)
 
-write.xlsx(out.missings, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_Missings.xlsx"), rowNames = FALSE)
 write.xlsx(out1, file = paste0("acp_brfss/outputs/", DATE, "_StateSummary.xlsx"), rowNames = FALSE)
 write.xlsx(out2, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_SampleDesc_output.xlsx"), rowNames = FALSE)
 write.xlsx(out3, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_AlcDesc_output.xlsx"), rowNames = FALSE)

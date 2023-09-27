@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 ## Project: SIMAH  
-## Title: Sunday sales ban and BRFSS
+## Title: Main analysis BRFSS Sunday sales ban
 ## State: all US states
 ## Author: Carolin Kilian
 ## Start Date: 07/05/2023
@@ -19,7 +19,6 @@ rm(list = ls())
 # ----------------------------------------------------------------
 
 library(tidyverse)
-library(data.table)
 library(dplyr)
 library(openxlsx)
 library(lme4)
@@ -35,10 +34,10 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230922
+DATE <- 20230925
 
 # BRFSS 
-data <- data.table(readRDS("acp_brfss/20230922_brfss_clean.RDS"))
+data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
 
 # --------------------------------------------------------------------------------------
 
@@ -112,7 +111,6 @@ margins <- ggemmeans(drinkstatus.m, terms = c("education_summary", "sunsalesban_
 IA.DS.M <- 
   ggplot(margins, aes(x, predicted, color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  # geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0) +
   scale_color_manual(values = col1) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   scale_x_discrete(label = label_education) + 
@@ -152,7 +150,6 @@ margins <- ggemmeans(drinkstatus.w, terms = c("education_summary", "sunsalesban_
 IA.DS.W <- 
   ggplot(margins, aes(x, predicted, color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  # geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0) +
   scale_color_manual(values = col1) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   scale_x_discrete(label = label_education) + 
@@ -202,7 +199,7 @@ margins <- ggemmeans(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>
 IA.GPD.M <- 
   ggplot(margins, aes(x, exp(predicted), color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  #  geom_errorbar(aes(ymin = exp(conf.low), ymax = exp(conf.high)), width = 0) +
+  scale_x_discrete(label = label_education) + 
   scale_color_manual(values = col1) +
   labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
 
@@ -239,7 +236,7 @@ margins <- ggemmeans(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>
 IA.GPD.W <- 
   ggplot(margins, aes(x, exp(predicted), color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  #  geom_errorbar(aes(ymin = exp(conf.low), ymax = exp(conf.high)), width = 0) +
+  scale_x_discrete(label = label_education) + 
   scale_color_manual(values = col1) +
   labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
 
@@ -288,7 +285,7 @@ margins <- ggemmeans(alccat.m, terms = c("education_summary", "sunsalesban_di"))
 IA.ALCCAT.M <- 
   ggplot(margins, aes(x, predicted, color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  # geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0) +
+  scale_x_discrete(label = label_education) + 
   scale_color_manual(values = col1) + scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
 
@@ -327,7 +324,7 @@ margins <- ggemmeans(alccat.w, terms = c("education_summary", "sunsalesban_di"))
 IA.ALCCAT.W <- 
   ggplot(margins, aes(x, predicted, color = group, group = group)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  # geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0) +
+  scale_x_discrete(label = label_education) + 
   scale_color_manual(values = col1) + scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
 
