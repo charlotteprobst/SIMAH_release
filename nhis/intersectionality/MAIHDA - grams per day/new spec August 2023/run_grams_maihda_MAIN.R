@@ -281,10 +281,9 @@ mu_prepped$iteration <- rep(c(1:100), each = 108)
 # mu_prepped_lev_1 <- pivot_longer(resi_chains_lev_1, u_0_1:u_0_108)
 # mu_prepped_lev_1$iteration <- rep(c(1:100), each = 108)
 
-
 ##### MERGE DATA, FIXED-PART PARAMETER AND RANDOM EFFECT CHAINS TOGETHER
-mdata_prepped <- inner_join(mb_prepped, mu_prepped, by = 'iteration')
-mdata_prepped$name <- str_sub(mdata_prepped$name, 5)
+mdata_prepped <- inner_join(mb_prepped, mu_prepped, by = 'iteration') 
+mdata_prepped$name <- str_sub(mdata_prepped$name, 5) # rename intersection u_0_1 to 1 etc.
 mdata_prepped$name <- as.numeric(mdata_prepped$name)
 mdata_prepped <- dplyr::rename(mdata_prepped, intersections = name, u = value)
 mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
