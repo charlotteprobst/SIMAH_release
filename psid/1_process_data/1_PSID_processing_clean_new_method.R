@@ -51,13 +51,15 @@ race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
 
 # recode race based on the race of their nearest family member (head or wife)
 race <- left_join(race, relationship)
-race <- recode_race(race, T)   
-race <- individual_race(race, T)
+race <- family_race_head(race)   # generate variables racefamily_raw and racefamily_head
+race <- individual_race_head(race) # assign individuals a race based on racefamily_head
 
 # recode race based on parents race if race of head or wife unknown
 race <- code_race_parents(race)
-race <- recode_race(race, F)
-race <- individual_race(race, F)
+
+# CONTINUE FROM HERE
+race <- family_race_parents(race) # generate variable racefamily_parents
+race <- individual_race_parents(race) # assign individuals a race based on racefamily_parents
 
 summary(as.factor(race$individualrace))
 
