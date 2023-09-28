@@ -87,10 +87,13 @@ model_data$age_diaz <- droplevels(model_data$age_diaz)
 
 model_data$YEAR <- as.factor(model_data$YEAR)
 
-# Generate reference table with intersectional names & mean observed grams
-intersections_reference <- model_data %>%
-  group_by(intersectional_names) %>% 
-  distinct(intersections, intersectional_names, mean_observed_grams)
+# Add a column with the number of people (n)
+model_data <- model_data %>%
+  group_by(intersections) %>% 
+  add_count()
+
+# Generate reference table with intersectional names, n, and mean observed grams
+intersections_reference <- model_data %>% distinct(intersections, intersectional_names, mean_observed_grams, n)
 
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
@@ -395,9 +398,9 @@ mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
 write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_MAIN.csv")
@@ -410,9 +413,14 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 
   dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_MAIN.csv")
+# write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_MAIN.csv")
 
 ##### Explore face validity of estimates
+
+# By intersection mean comparison
+mdata_mean_comparison <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn)
+
+# Compare the estimates for intersectional groups based on observed and estimated grams
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")

@@ -350,6 +350,17 @@ nhis_alc_clean <- data_with_inconsistancies %>% filter(inconsistent_alc==0)
 nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
 
+# Check face validity of estimate:
+mean(nhis_alc_clean$alc_daily_g) # 4.9
+median(nhis_alc_clean$alc_daily_g) # 0.3
+mean(nhis_alc_clean$alc_daily_g_capped_200) # 4.8
+median(nhis_alc_clean$alc_daily_g_capped_200) # 0.3
+
+# Check raw means by intersections (rough)
+raw_means_per_group <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_5_cats, education_3_cats) %>% 
+  summarise(mean = mean(alc_daily_g_capped_200)) # max 13 grams
+
 ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + 
   geom_histogram(bins=400) + 
   xlim(0,201) + 
