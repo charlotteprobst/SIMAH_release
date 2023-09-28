@@ -6,7 +6,7 @@ library(readxl)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-data <- read_excel("SIMAH_workplace/PSID/Full_2021/extract_v2/J323498.xlsx")
+data <- read_excel("SIMAH_workplace/PSID/Full_2021/extract_v3/J324498.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
@@ -24,7 +24,6 @@ data$IDfather = ifelse(data$ER32017==0, NA,
                        ifelse(data$ER32017>=800 & data$ER32017<=999, NA,
                   (data$ER32017*1000) + data$ER30002))
 
-# Process sex data
 data$sex <- data$ER32000
 data$sex <- recode(as.factor(data$sex), "1"="male", "2"="female")
 
@@ -59,7 +58,6 @@ race <- individual_race(race, T)
 race <- code_race_parents(race)
 race <- recode_race(race, F)
 race <- individual_race(race, F)
-
 
 summary(as.factor(race$individualrace))
 
@@ -111,33 +109,33 @@ income <- process_income(data)
 homeowner <- process_homeowner(data)
 
 # now combine all the data together and look at missingness
-alldata <- left_join(education, firsteth) %>% left_join(., age) %>% 
+maindata <- left_join(education, firsteth) %>% left_join(., age) %>% 
   left_join(., relationship) %>% left_join(.,alcohol) %>% 
   left_join(., kessler) %>% left_join(., sampleweights) %>% 
   left_join(., employment) %>% left_join(., income) %>% 
   left_join(.,homeowner) %>% left_join(., parented)
 
 # recode alcohol and kessler values 
-alldata <- recode_alcohol(alldata)
+maindata <- recode_alcohol(maindata)
 
 ##Creating categorized variables based on the Kessler Scale##
 ##Classification based on paper by Prochaska et al. 2012-Validity study of the K6 scale as ameasure of moderate mental distressbased on mental health treatment needand utilization
-alldata$distress_severe <- ifelse(alldata$kessler_score>=13, "Yes",
-                                 ifelse(alldata$kessler_score<13, "No", NA))
-alldata$distress_class <- ifelse(alldata$kessler_score<5, "Low or none",
-                                ifelse(alldata$kessler_score>=5 & alldata$kessler_score<13, "Moderate",
-                                       ifelse(alldata$kessler_score>=13, "Severe", NA)))  
-summary(as.factor(alldata$distress_severe))
-summary(as.factor(alldata$distress_class))
+maindata$distress_severe <- ifelse(maindata$kessler_score>=13, "Yes",
+                                 ifelse(maindata$kessler_score<13, "No", NA))
+maindata$distress_class <- ifelse(maindata$kessler_score<5, "Low or none",
+                                ifelse(maindata$kessler_score>=5 & maindata$kessler_score<13, "Moderate",
+                                       ifelse(maindata$kessler_score>=13, "Severe", NA)))  
+summary(as.factor(maindata$distress_severe))
+summary(as.factor(maindata$distress_class))
 
-alldata$age <- alldata$year - alldata$birthyear
+maindata$age <- maindata$year - maindata$birthyear
 
-alldata <- alldata %>% 
-  select(uniqueID, year, relationship, sex, age, education, education_cat, weight,
-         employment_stat,total_fam_income, homeowner,
-         mothers_ed_final, fathers_ed_final,
-         individualrace, kessler_score, distress_severe, distress_class,
-         frequency, drinkingstatus, quantity, AlcCAT, gpd, bingedrinkdays) %>% 
+maindata <- maindata %>% 
+  # select(uniqueID, year, relationship, sex, age, education, education_cat, weight,
+  #        employment_stat,total_fam_income, homeowner,
+  #        mothers_ed_final, fathers_ed_final,
+  #        individualrace, kessler_score, distress_severe, distress_class,
+  #        frequency, drinkingstatus, quantity, AlcCAT, gpd, bingedrinkdays) %>% 
   filter(year>=1999) %>% 
   group_by(uniqueID) %>% 
   fill(weight, .direction=c("downup")) %>% 
@@ -151,7 +149,74 @@ alldata <- alldata %>%
 #          year_nonresponse = ER32007) %>%
 #   dplyr::select(uniqueID, familyID, year_nonresponse)
 # 
-# alldata <- left_join(alldata, nonresponse) %>%
+# maindata <- left_join(maindata, nonresponse) %>%
 #   mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
 
-write.csv(alldata, "SIMAH_workplace/PSID/alldata_new_1999_2021.csv", row.names=F)
+write.csv(maindata, "SIMAH_workplace/PSID/maindata_1999_2021.csv", row.names=F)
+
+### Clean the TAS data
+
+# Process TAS race data
+race <- process_TAS_race(data)
+
+# Process TAS education data
+education <- process_TAS_education(data) %>% distinct()
+
+# Generate clean TAS datafile, merging the processed race and education data files
+TAS <- merge(education, race, by=c("uniqueID"))
+TAS$year <- as.integer(TAS$year)
+TAS$uniqueID <- as.integer(TAS$uniqueID)
+
+# save the TAS 
+write.csv(TAS, "SIMAH_workplace/PSID/TAS_2011_2019.csv", row.names=F)
+
+# Select all unique individuals from the TAS and their race
+TAS <- TAS %>% dplyr::select(uniqueID, TAS_race) %>% distinct()
+
+# join these with the main sample data 
+alldata <- left_join(maindata, TAS)
+
+# Fill individuals race data for each year (based on the year their race was recorded)
+alldata <- alldata %>% 
+  group_by(uniqueID) %>% 
+  fill(individualrace, .direction=c("downup")) %>% 
+  fill(TAS_race, .direction=c("downup")) %>% 
+  mutate(race_new = ifelse(is.na(TAS_race), individualrace, TAS_race))
+
+# Check the face validity by viewing the data for one individual only
+test <- alldata %>% filter(uniqueID==53042)
+
+# ensure that each person has a unique value for race and ethnicity over time
+race_eth_function <- function(data){
+  races <- unique(data$race_new)
+  # recode according to hierarchy - black, hispanic, native american, asian/pi, other
+  newrace <- ifelse("black" %in% races, "black",
+                    ifelse("hispanic" %in% races, "hispanic", 
+                           ifelse("Native" %in% races, "Native",
+                                  ifelse("Asian/PI" %in% races, "Asian/PI",
+                                         ifelse("other" %in% races, "other",
+                                                ifelse("white" %in% races, "white", NA))))))
+  data$race_new_unique <- newrace
+  return(data)
+}
+
+uniquerace <- alldata %>% dplyr::select(uniqueID, race_new) %>% 
+  distinct() %>% 
+  group_by(uniqueID) %>% 
+  do(race_eth_function(.))
+
+uniquerace <- uniquerace %>% dplyr::select(uniqueID, race_new_unique) %>% 
+  distinct()
+
+alldata <- left_join(alldata, uniquerace)
+
+# write new version of df containing TAS race and education 
+write.csv(alldata, "SIMAH_workplace/PSID/alldata_1999_2019.csv", row.names=F)
+
+
+
+
+
+
+
+
