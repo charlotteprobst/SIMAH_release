@@ -1,6 +1,6 @@
-Sample_Probs <- function(model, nsamples, TimePeriod){
+Sample_Probs <- function(model, nsamples, TimePeriod, inflation){
   estimates <- model$estimates.t
-  covmat <- data.frame(model$covmat)
+  covmat <- data.frame(model$covmat)*inflation
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   sex <- c(0,1)
@@ -29,10 +29,11 @@ Sample_Probs <- function(model, nsamples, TimePeriod){
   allsamples <- do.call(rbind,allsamples)
   allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo),
                                       sex = ifelse(sex==1,"female","male"),
-                                      time = TimePeriod) %>% 
-    dplyr::select(SampleNum, StateFrom, StateTo, time, age, sex, race, prob)
+                                      time = TimePeriod,
+                                      inflation = inflation) %>% 
+    dplyr::select(SampleNum, inflation, StateFrom, StateTo, time, age, sex, race, prob)
   SampleNum <- 1:nrow(samples)
-  samples <- data.frame(cbind(SampleNum, TimePeriod, samples))
+  samples <- data.frame(cbind(SampleNum, inflation, TimePeriod, samples))
   list <- list(allsamples, samples)
   return(list)
 }

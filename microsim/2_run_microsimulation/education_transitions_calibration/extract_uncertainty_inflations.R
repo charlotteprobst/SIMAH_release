@@ -18,21 +18,45 @@ model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_m
 model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2.RDS")
 model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3.RDS")
 
-Samples1 <- Sample_Probs(model1, nsamples, "1999-2006", 1)
-Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1)
-Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1)
+# loop through different versions of inflation
+from <- 0
+to <- 100
+by <- round((to-from)/n_inflations)
 
-estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
+steps <- seq(from, to, by)
+steps[1] <- 1
 
-probs <- rbind(Samples1[[1]], Samples2[[1]], Samples3[[1]])
+estimates <- list()
+probs <- list()
+Samples1 <- list()
+Samples2 <- list()
+Samples3 <- list()
+
+for(i in 1:length(steps)){
+Samples1[[i]] <- Sample_Probs(model1, nsamples, "1999-2006", steps[i])
+Samples2[[i]] <- Sample_Probs(model2, nsamples, "2007-2013", steps[i])
+Samples3[[i]] <- Sample_Probs(model3, nsamples, "2014-2019", steps[i])
+
+estimates[[i]] <- rbind(Samples1[[i]][[2]], Samples2[[i]][[2]], Samples3[[i]][[2]])
+
+probs[[i]] <- rbind(Samples1[[i]][[1]], Samples2[[i]][[1]], Samples3[[i]][[1]])
+}
+
+estimates <- do.call(rbind,estimates)
+probs <- do.call(rbind,probs)
+
+estimatesinflations <- estimates %>% dplyr::select(SampleNum, inflation) %>% distinct()
 
 transitionsList <- list()
-for(i in 1:length(unique(estimates$SampleNum))){
-  transitionsList[[paste(i)]] <- probs %>% filter(SampleNum==i) %>% 
+for(i in 1:nrow(estimatesinflations)){
+  sample <- estimatesinflations$SampleNum[i]
+  inflationsample <- estimatesinflations$inflation[i]
+  transitionsList[[paste(i)]] <- probs %>% filter(SampleNum==sample) %>% 
+    filter(inflation==inflationsample) %>% 
     mutate(sex = ifelse(sex=="male", "m","f"),
            cat = paste(time,age, sex, race, "STATEFROM", StateFrom, sep="_")) %>% 
     group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>% 
-    dplyr::select(cat, StateTo, cumsum)
+    dplyr::select(cat, inflation, StateTo, cumsum)
 }
 
 rm(model1, model2, model3, Samples1, Samples2, Samples3, probs)
