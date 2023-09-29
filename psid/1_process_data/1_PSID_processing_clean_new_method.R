@@ -61,7 +61,7 @@ race <- family_race_head_wife(race)
 
 # Review number of individuals with racefamily data
 summary(as.factor(race$racefamily_both_known))# Total NA = 152,115 out of 200,592
-summary(as.factor(race$racefamily_one_known)) # Total NA = 95,306
+summary(as.factor(race$racefamily_one_known)) # Total NA = 46,181
 
 race <- individual_race_head(race) #3. assign individuals a race based on racefamily_head
 
