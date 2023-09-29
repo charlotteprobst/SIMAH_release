@@ -32,8 +32,8 @@ set.seed(42)
 ###set working directory to the main "Microsimulation" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -54,10 +54,10 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 2
+nsamples <- 200
 
 # number of different versions of the inflation to run
-n_inflations <- 2
+n_inflations <- 10
 
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty_inflations.R")
 
@@ -66,7 +66,7 @@ saveRDS(transitionsList, paste("SIMAH_workplace/microsim/2_output_data/education
 saveRDS(estimates, paste("SIMAH_workplace/microsim/2_output_data/education_calibration/sampled_markov", SelectedState, ".RDS"))
 
 # set to 1 if running on local machine 
-registerDoParallel(1)
+registerDoParallel(15)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -78,7 +78,7 @@ sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1)
 
 rm(education_transitions)
 
-Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %do% {
+Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %dopar% {
   print(i)
   samplenum <- as.numeric(sampleseeds$samplenum[i])
   seed <- as.numeric(sampleseeds$seed[i])
@@ -94,11 +94,17 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %do% {
                 policy=0, percentreduction=0.1, year_policy, inflation_factors,
                 age_inflated,
                 update_base_rate,
-                minyear=2000, maxyear=2002, output="demographics")
+                minyear=2000, maxyear=2019, output="demographics")
 }
 
+for(i in 1:length(Output)){
+  Output[[i]]$inflation <- unique(transitionsList[[i]]$inflation)
+}
+
+Output <- do.call(rbind,Output)
+
 # save the output 
-write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_uninflated.csv", row.names=F)
+write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_inflations.csv", row.names=F)
 
 # plot the data compared to target
 # data <- Output %>% 
