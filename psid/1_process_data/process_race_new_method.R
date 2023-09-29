@@ -161,13 +161,19 @@ family_race_head_wife <- function(data){
       head=="other" | wife=="other" ~ "other",
       head=="white" | wife=="white" ~ "white"))
   combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily_both_known) 
-  
-   # Generate a new variable "race_family_one_known", when either the head or wife have data, but not both
+
+  # Generate a new variable "race_family_one_known", when at least one either the head or wife have data
   data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
   data <- left_join(data, combos)
   data <- data %>% mutate(
     racefamily_one_known = case_when(
+      head==wife ~ head,
+      head=="hispanic"|wife=="hispanic" ~ "hispanic",
+      head=="black" | wife=="black" ~ "black",
+      head=="Native" | wife=="Native" ~ "Native",
+      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
+      head=="other" | wife=="other" ~ "other",
+      head=="white" | wife=="white" ~ "white",
       combo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
       combo=="blackNA" | combo=="NAblack" ~ "black",
       combo=="NativeNA" | combo=="NANative" ~ "Native",
@@ -175,7 +181,8 @@ family_race_head_wife <- function(data){
       combo=="otherNA" | combo=="NAother" ~ "other",
       combo=="whiteNA" | combo=="NAwhite" ~ "white",
       combo=="NANA" ~ NA)
-    )
+    ) %>%
+    dplyr::select(-c("head", "wife"))
     return(data)
 }
 
@@ -186,16 +193,12 @@ family_race_head_wife <- function(data){
 
 # Allocate race based on the head or wife
 individual_race_head <- function(data){
-    data <- data %>% mutate(individualrace = ifelse(relationship=="head", raceethhead,
-                                                    ifelse(relationship=="wife", raceethwife,
-                                                           ifelse(relationship=="childofhead",raceethhead,
-                                                                  ifelse(relationship=="parentofhead", raceethhead,
-                                                                         ifelse(relationship=="childofpartner", raceethwife,
-                                                                                ifelse(relationship=="grandchild", racefamily_head, 
-                                                                                       ifelse(relationship=="parentofwife",raceethwife,
-                                                                                              ifelse(relationship=="brotherofhead", raceethhead,
-                                                                                                     ifelse(relationship=="brotherofwife", raceethwife,
-                                                                                                            NA)))))))))) %>% 
+    data <- data %>% mutate(
+                      individualrace = case_when(
+                        relationship=="born after this year or nonresponse" | relationship == NA ~ racefamily_one_known,
+                        relationship=="head" | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" ~ raceethhead,
+                        relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
+                        relationship=="grandchild" ~ racefamily_one_known)) %>%
       group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
 return(data)
 }
