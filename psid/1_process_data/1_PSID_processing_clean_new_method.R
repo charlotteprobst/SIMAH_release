@@ -40,26 +40,32 @@ relationship <- process_relationship(data)
 
 # process sampling weights 
 sampleweights <- process_sample_weights(data)
-
-# process race and ethnicity 
-race <- process_race(data)
+ 
+# process race and ethnicity
+race <- process_race(data) #1.
 
 # remove individuals with the same uniqueID for person and mother - 0 people
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
                          match = ifelse(is.na(match),0,match)) %>% 
   filter(match==0)
 
+# Summarise number of individuals missing race and ethnicity data...
+# See other script
+
 # recode race based on the race of their nearest family member (head or wife)
 race <- left_join(race, relationship)
-race <- family_race_head(race)   # generate variables racefamily_raw and racefamily_head
-race <- individual_race_head(race) # assign individuals a race based on racefamily_head
+race <- family_race_head(race)   #2. generate variables racefamily_raw and racefamily_head
+
+# Review number of individuals with racefamily_raw data
+summary(as.factor(race$racefamily_raw))
+# Total NA = 152,115 out of 200,592
+
+race <- individual_race_head(race) #3. assign individuals a race based on racefamily_head
 
 # recode race based on parents race if race of head or wife unknown
-race <- code_race_parents(race)
-
-# CONTINUE FROM HERE
-race <- family_race_parents(race) # generate variable racefamily_parents
-race <- individual_race_parents(race) # assign individuals a race based on racefamily_parents
+race <- code_race_parents(race) #4.
+race <- family_race_parents(race) #5. generate variable racefamily_parents
+race <- individual_race_parents(race) #6. assign individuals a race based on racefamily_parents
 
 summary(as.factor(race$individualrace))
 
@@ -68,6 +74,7 @@ race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) %>%
   fill(individualrace, .direction=c("downup"))
 
 summary(as.factor(race$individualrace))
+# Total NA now 23,635 out of 200,592
 
 # now get a definitive race for each individual - see if there are any discrepancies
 tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>% 
@@ -75,7 +82,7 @@ tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>%
   ungroup() %>% group_by(uniqueID) %>% tally() %>% 
   mutate(flag=ifelse(n>1,1,0))
 
-IDS <- unique(subset(tally, flag==1)$uniqueID)
+IDS <- unique(subset(tally, flag==1)$uniqueID) 
 
 # just take each individuals first observation of race and ethnicity
 firsteth <- race %>% 
