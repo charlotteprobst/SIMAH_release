@@ -151,28 +151,18 @@ family_race_head <- function(data){
   # generate a new variable called "racefamily"
   # Whichever family member (head or wife) has the highest priority rated Race, with the following order:
   # Hispanic > Black > Native > Asian/PI > Other > White
-  combos$racefamily_raw <- ifelse(combos$head==combos$wife, combos$head,
-                              ifelse(combos$head=="hispanic", "hispanic",
-                                     ifelse(combos$wife=="hispanic", "hispanic",
-                                            ifelse(combos$head=="black" & combos$wife!="hispanic","black", # If using an ifelse statement ? don't need the & ! part
-                                                   ifelse(combos$wife=="black" & combos$head!="hispanic","black",
-                                                          ifelse(combos$head=="Native" & combos$wife!="hispanic" & combos$wife!="black", "Native",
-                                                                 ifelse(combos$wife=="Native" & combos$head!="hispanic" & combos$head!="black","Native",
-                                                                        ifelse(combos$head=="Asian/PI" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                                 combos$wife!="Native","Asian/PI",
-                                                                               ifelse(combos$wife=="Asian/PI" & combos$head!="hispanic" & combos$head!="black" &
-                                                                                        combos$head!="Native","Asian/PI",
-                                                                                      ifelse(combos$head=="other" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                                               combos$wife!="Native" & combos$wife!="Asian/PI","other",
-                                                                                             ifelse(combos$wife=="other" & combos$head!="hispanic" & combos$head!="black" & 
-                                                                                                      combos$head!="Native" & combos$head!="Asian/PI","other",
-                                                                                                    ifelse(combos$head=="white", combos$wife,
-                                                                                                           ifelse(combos$wife=="white",combos$head, NA
-                                                                                                           )))))))))))))
-
+  combos <- combos %>% mutate(
+    racefamily = case_when(
+      head==wife ~ head,
+      head=="hispanic"|wife=="hispanic" ~ "hispanic",
+      head=="black" | wife=="black" ~ "black",
+      head=="Native" | wife=="Native" ~ "Native",
+      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
+      head=="other" | wife=="other" ~ "other",
+      head=="white" | wife=="white" ~ "white"))
   
   combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily_raw) 
+  combos <- combos %>% dplyr::select(combo, racefamily) 
    # Generate a racefamily1 variable: taking the raceeth of whichever of the head or wife does not have missing data
   data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
   data <- left_join(data, combos)
@@ -247,26 +237,17 @@ family_race_parents <- function(data) {
   names(combos) <- c("head","wife")
   combos$head <- as.character(combos$head)
   combos$wife <- as.character(combos$wife)
-  combos$racefamily_raw <- ifelse(combos$head==combos$wife, combos$head,
-                              ifelse(combos$head=="hispanic", "hispanic",
-                                     ifelse(combos$wife=="hispanic", "hispanic",
-                                            ifelse(combos$head=="black" & combos$wife!="hispanic","black",
-                                                   ifelse(combos$wife=="black" & combos$head!="hispanic","black",
-                                                          ifelse(combos$head=="Native" & combos$wife!="hispanic" & combos$wife!="black", "Native",
-                                                                 ifelse(combos$wife=="Native" & combos$head!="hispanic" & combos$head!="black","Native",
-                                                                        ifelse(combos$head=="Asian/PI" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                                 combos$wife!="Native","Asian/PI",
-                                                                               ifelse(combos$wife=="Asian/PI" & combos$head!="hispanic" & combos$head!="black" &
-                                                                                        combos$head!="Native","Asian/PI",
-                                                                                      ifelse(combos$head=="other" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                                               combos$wife!="Native" & combos$wife!="Asian/PI","other",
-                                                                                             ifelse(combos$wife=="other" & combos$head!="hispanic" & combos$head!="black" & 
-                                                                                                      combos$head!="Native" & combos$head!="Asian/PI","other",
-                                                                                                    ifelse(combos$head=="white", combos$wife,
-                                                                                                           ifelse(combos$wife=="white",combos$head, NA
-                                                                                                           )))))))))))))
+  combos <- combos %>% mutate(
+    racefamily = case_when(
+      head==wife ~ head,
+      head=="hispanic"|wife=="hispanic" ~ "hispanic",
+      head=="black" | wife=="black" ~ "black",
+      head=="Native" | wife=="Native" ~ "Native",
+      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
+      head=="other" | wife=="other" ~ "other",
+      head=="white" | wife=="white" ~ "white"))
   combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily_raw)
+  combos <- combos %>% dplyr::select(combo, racefamily)
   # Generate a family race based on the parents race data
   data$combo <- paste(data$mothersrace, data$fathersrace, sep="")
   data <- left_join(data, combos)
@@ -284,7 +265,7 @@ family_race_parents <- function(data) {
                                                                                                                   ifelse(data$combo=="NAAsian/PI","Asian/PI",
                                                                                                                          ifelse(data$combo=="NANative", "Native",
                                                                                                                                 ifelse(data$combo=="NAother","other",
-                                                                                                                                       data$racefamily_raw)))))))
+                                                                                                                                       data$racefamily)))))))
                                                                                )))))))
   return(data)
 }

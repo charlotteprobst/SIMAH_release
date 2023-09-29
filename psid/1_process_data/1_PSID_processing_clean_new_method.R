@@ -54,10 +54,10 @@ race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
 
 # recode race based on the race of their nearest family member (head or wife)
 race <- left_join(race, relationship)
-race <- family_race_head(race)   #2. generate variables racefamily_raw and racefamily_head
+race <- family_race_head(race)   #2. generate variables racefamily and racefamily_head
 
-# Review number of individuals with racefamily_raw data
-summary(as.factor(race$racefamily_raw))
+# Review number of individuals with racefamily data
+summary(as.factor(race$racefamily))
 # Total NA = 152,115 out of 200,592
 
 race <- individual_race_head(race) #3. assign individuals a race based on racefamily_head
