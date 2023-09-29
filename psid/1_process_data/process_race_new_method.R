@@ -139,7 +139,7 @@ process_race <- function(data){
 
 ###### FUNCTION 2: FAMILY_RACE_HEAD
 
-family_race_head <- function(data){
+family_race_head_wife <- function(data){
   # generate a grid with all possible combinations of head and wife raceeth
   head <- c("black","white","hispanic","other","Native","Asian/PI")
   wife <- c("black","white","hispanic","other","Native","Asian/PI")
@@ -148,11 +148,11 @@ family_race_head <- function(data){
   names(combos) <- c("head","wife") 
   combos$head <- as.character(combos$head)
   combos$wife <- as.character(combos$wife)
-  # generate a new variable called "racefamily"
-  # Whichever family member (head or wife) has the highest priority rated Race, with the following order:
+  # Generate a new variable, "racefamily_both_known", when both the head and wife have race data available
+  # Assign family race based on the highest priority rated Race, with the following order:
   # Hispanic > Black > Native > Asian/PI > Other > White
   combos <- combos %>% mutate(
-    racefamily = case_when(
+    racefamily_both_known = case_when(
       head==wife ~ head,
       head=="hispanic"|wife=="hispanic" ~ "hispanic",
       head=="black" | wife=="black" ~ "black",
@@ -160,28 +160,22 @@ family_race_head <- function(data){
       head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
       head=="other" | wife=="other" ~ "other",
       head=="white" | wife=="white" ~ "white"))
-  
   combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily) 
-   # Generate a racefamily1 variable: taking the raceeth of whichever of the head or wife does not have missing data
+  combos <- combos %>% dplyr::select(combo, racefamily_both_known) 
+  
+   # Generate a new variable "race_family_one_known", when either the head or wife have data, but not both
   data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
   data <- left_join(data, combos)
-  data$racefamily_head <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
-                               ifelse(data$combo=="blackNA","black",
-                                      ifelse(data$combo=="hispanicNA","hispanic",
-                                             ifelse(data$combo=="NAhispanic","hispanic",
-                                                    ifelse(data$combo=="NativeNA","Native",
-                                                           ifelse(data$combo=="otherNA","other",
-                                                                  ifelse(data$combo=="whiteNA","white",
-                                                                         ifelse(data$combo=="NANA",NA,
-                                                                                ifelse(data$combo=="NAwhite","white",
-                                                                                       ifelse(data$combo=="NAblack","black",
-                                                                                              ifelse(data$combo=="NAhispanic","hispanic",
-                                                                                                     ifelse(data$combo=="NAAsian/PI","Asian/PI",
-                                                                                                            ifelse(data$combo=="NANative", "Native",
-                                                                                                                   ifelse(data$combo=="NAother","other",
-                                                                                                                          data$racefamily)))))))
-                                                                  )))))))
+  data <- data %>% mutate(
+    racefamily_one_known = case_when(
+      combo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
+      combo=="blackNA" | combo=="NAblack" ~ "black",
+      combo=="NativeNA" | combo=="NANative" ~ "Native",
+      combo=="Asian/PINA" | combo=="NAAsian/PI" ~ "Asian/PI",
+      combo=="otherNA" | combo=="NAother" ~ "other",
+      combo=="whiteNA" | combo=="NAwhite" ~ "white",
+      combo=="NANA" ~ NA)
+    )
     return(data)
 }
 
