@@ -38,11 +38,6 @@ CMed_race3_prep <- function(data) {
   fitM3 <- glm(M3.bmi ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, data = mydata, family="binomial")
   fitM4 <- glm(M4.phy ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, data = mydata, family="binomial")
   
-  # fitM1 <- svyglm(M1.alc ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, design = mydata_svy, family="binomial")  # 1 is the ref for mediators
-  # fitM2 <- svyglm(M2.smk ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, design = mydata_svy, family="binomial")
-  # fitM3 <- svyglm(M3.bmi ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, design = mydata_svy, family="binomial")
-  # fitM4 <- svyglm(M4.phy ~ ATemp + bl_age + married.factor + edu.factor + srvy_yr, design = mydata_svy, family="binomial")
-  
   cat("Step 1 complete (fit model for each mediator)", "\n")  # progress indicator
   
   
@@ -95,11 +90,10 @@ CMed_race3_prep <- function(data) {
   
   # M1: alcohol
   newMyData$ATemp <- newMyData$A.race
-  # newMyData_svy <- newMyData %>% as_survey_design(id = new_psu, strata = new_stratum, weights = new_weight, nest = TRUE)
+  
   temp <- as.vector(predict(fitM1,type = "response", newdata=newMyData))
   tempDir1 <- ifelse(as.numeric(newMyData$M1.alc)-1, temp, 1-temp)  # M1.alc=1 (non-drinker) =TRUE is the reference group
-  #tempDir1 <- ifelse(as.numeric(newMyData$M1.alc), temp, 1-temp)
-  
+
   newMyData$ATemp <- newMyData$race_M1.alc
   temp <- as.vector(predict(fitM1,type = "response", newdata=newMyData))
   tempIndir1 <- ifelse(as.numeric(newMyData$M1.alc)-1, temp, 1-temp) 

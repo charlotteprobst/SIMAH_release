@@ -48,7 +48,6 @@ cox_int_results <- cox_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>%
 
 
 library(gmodels)
-# Build a crosstable between admit and rank
 CrossTable(nhis18_85$alcohol5v2.factor, nhis18_85$smk.factor, expected = T, prop.r = T, prop.c = T, prop.chisq = T, sresid = T)
 
 
@@ -64,25 +63,6 @@ m1_results %>% mutate_at(c("estimate", "std.error", "statistic", "conf.low", "co
   rename(OR = estimate)
 
 
-
-aalen_int <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(ethnicity)*const(alcohol5v2) + const(female) + const(married.factor) + 
-                     const(edu.factor) + const(srvy_yr), data = nhis18_85)
-
-aalen_int_results <- as.data.frame(cbind(aalen_int$gamma, diag(aalen_int$robvar.gamma))) %>%
-  mutate (variable = rownames(.),
-          var = V2,
-          p.value_Deaths = round(2*pnorm(-abs(estimate / sqrt(var))),3),
-          p.value_Deaths = ifelse(p.value_Deaths <.001, "<.001", p.value_Deaths),
-          lower.ci = round((estimate - (1.96 * sqrt(var)))*100000, 1),
-          upper.ci = round((estimate + (1.96 * sqrt(var)))*100000, 1),
-          estimate_100000py = round(estimate*100000, 1),
-          Deaths_CI_100000py = paste0("(",lower.ci,", ", upper.ci, ")")) %>%
-  select (variable, estimate_100000py, Deaths_CI_100000py, p.value_Deaths) %>%
-  filter(str_detect(variable, "SES|lifestyle")) %>%
-  mutate(variable = str_remove(variable, fixed("const(SES)")),
-         variable = str_remove(variable, fixed("const(lifestyle)"))) %>%
-  add_row(variable = "INTERACTION MODELS", .before=1)%>%
-  remove_rownames()
 
 # OBJECTIVE 2: Causal Mediation
 
@@ -154,12 +134,12 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.race) + const(ra
                 const(married.factor) + const(edu.factor) + const(srvy_yr),  
                 data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)
 
-saveRDS(CMed_m, file.path(output, "CMed_m.rds"))  # Save model results     
+saveRDS(CMed_m, file.path(output, "CMed_m_cox.rds"))  # Save model results     
 
 # Load model and view results
-CMed_model <- readRDS(file.path(output, "CMed_m.rds"))  # load model (if needed)
-Black <- c(1, 3, 5, 7, 9, 13, 17, 21, 25)             # List the coefficients of interest 
-Hispanic <- c(2, 4, 6, 8, 10, 16, 20, 24, 28)  
+CMed_model <- readRDS(file.path(output, "CMed_m_cox.rds"))  # load model (if needed)
+Black <- c(1, 3, 5, 7, 9)             # List the coefficients of interest 
+Hispanic <- c(2, 4, 6, 8, 10)   
 format_CMed (CMed_model, Black) %>% kable()    # print formatted results
 format_CMed (CMed_model, Hispanic) %>% kable() 
 

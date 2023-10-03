@@ -27,28 +27,9 @@ nhis18_85 <- readRDS(file.path(data, "nhis18_85.rds"))
 nhis18_male <- readRDS(file.path(data, "nhis18_male.rds")) 
 nhis18_female <- readRDS(file.path(data, "nhis18_female.rds"))
 
-nhis18_85_svy <- nhis18_85 %>% as_survey_design(id = new_psu, strata = new_stratum, weights = new_weight, nest = TRUE)
-
-# check the interaction effect between the exposure (ethnicity) and mediator (alcohol)
-cox_int <- svycoxph(Surv(bl_age, end_age, allcause_death) ~ ethnicity.factor * alcohol5v2.factor + female + married.factor + edu.factor + srvy_yr, design = nhis18_85_svy)
-
-cox_int_results <- cox_int %>% tidy(exponentiate = TRUE, conf.int = TRUE) %>% 
-  mutate(variable = term,
-         HR = round(estimate, 2),
-         conf.low = round(conf.low, 2),
-         conf.high = round(conf.high, 2),
-         p.value_HR = round(p.value, 3),
-         p.value_HR = ifelse(p.value_HR <.001, "<.001", p.value_HR),
-         CI = paste0("(",conf.low,", ", conf.high, ")")) %>%
-  select(variable, HR, CI, p.value_HR) %>%
-  #filter(str_detect(variable, "SES|lifestyle")) %>%
-  # mutate(variable = str_remove(variable, fixed("SES")),   # keep the name in order to calculate RERI
-  #        variable = str_remove(variable, fixed("lifestyle"))) %>%
-  add_row(variable = "INTERACTION MODELS", .before=1)
 
 
 library(gmodels)
-# Build a crosstable between admit and rank
 CrossTable(nhis18_85$alcohol5v2.factor, nhis18_85$smk.factor, expected = T, prop.r = T, prop.c = T, prop.chisq = T, sresid = T)
 
 
@@ -64,6 +45,8 @@ m1_results %>% mutate_at(c("estimate", "std.error", "statistic", "conf.low", "co
   rename(OR = estimate)
 
 
+
+# check the interaction effect between the exposure (ethnicity) and mediator (alcohol)
 
 aalen_int <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(ethnicity)*const(alcohol5v2) + const(female) + const(married.factor) + 
                      const(edu.factor) + const(srvy_yr), data = nhis18_85)
@@ -146,7 +129,7 @@ CMed_women <- rbind(CMed_women_black, CMed_women_hispanic)
 # Run Analyses, MEN ----------------------------------------------------------------------------------------------------------------
 
 # Load data
-expandedData <- readRDS(file.path(output, "expandedData_male.rds"))
+expandedData <- readRDS(file.path(output, "expandedData_male_weighted.rds"))
 
 
 # Run Model
@@ -154,10 +137,10 @@ CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.race) + const(ra
                 const(married.factor) + const(edu.factor) + const(srvy_yr),  
                 data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)
 
-saveRDS(CMed_m, file.path(output, "CMed_m.rds"))  # Save model results     
+saveRDS(CMed_m, file.path(output, "CMed_m_weighted.rds"))  # Save model results     
 
 # Load model and view results
-CMed_model <- readRDS(file.path(output, "CMed_m.rds"))  # load model (if needed)
+CMed_model <- readRDS(file.path(output, "CMed_m_weighted.rds"))  # load model (if needed)
 Black <- c(1, 3, 5, 7, 9)             # List the coefficients of interest 
 Hispanic <- c(2, 4, 6, 8, 10)  
 format_CMed (CMed_model, Black) %>% kable()    # print formatted results
