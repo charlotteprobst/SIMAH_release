@@ -25,7 +25,6 @@ CMed_race3_prep <- function(data) {
   # NOTE: For technical reasons, the mediators should be coded as integers starting with 1
   
   
-  
   ### Step 1: Fit a model for each mediator, , conditioning on exposure and all confounders *******************************************************
   # ***********************************************************************************************************************************************
   
