@@ -130,9 +130,9 @@ expandedData <- readRDS(file.path(output, "expandedData_male.rds"))
 
 
 # Run Model
-CMed_m <- aalen(Surv(bl_age, end_age, allcause_death) ~ const(A.race) + const(race_M1.alc) + const(race_M2.smk) + const(race_M3.bmi) + const(race_M4.phy) +
-                const(married.factor) + const(edu.factor) + const(srvy_yr),  
-                data=expandedData, weights=expandedData$weightM, clusters=expandedData$ID, robust=0)
+CMed_m <- coxph(Surv(bl_age, end_age, allcause_death) ~ A.race + race_M1.alc + race_M2.smk + race_M3.bmi + race_M4.phy +
+                  married.factor + edu.factor + srvy_yr,  # adjust for survey year as continuous variable 
+                data=expandedData, weights=expandedData$weightM, id=expandedData$ID)  
 
 saveRDS(CMed_m, file.path(output, "CMed_m_cox.rds"))  # Save model results     
 
