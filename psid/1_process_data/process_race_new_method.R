@@ -29,8 +29,8 @@ process_race <- function(data){
              year>=1985 & racehead==3 ~ "Native",
              # Asian/PI
              racehead==4 & year>=1985 | racehead==5 & year>=2005 ~ "Asian/PI", # recoding of 5 as Asian here is a new addition
-             # Other
-             racehead==7 | racehead==8 ~ "Other",
+             # other
+             racehead==7 | racehead==8 ~ "other",
              # NA
              racehead==9 | racehead==0 ~ "NA"))
              
@@ -46,7 +46,7 @@ process_race <- function(data){
   #                                 1985-2021 = 4,
   #                                  AND 2005-2021 = 5)
   # NA/DK/Refused always coded as 9/0
-  # Other coded as 7/8
+  # other coded as 7/8
   
 # Race of wife
   wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
@@ -68,8 +68,8 @@ process_race <- function(data){
                year>=1985 & racewife==3 ~ "Native",
                # Asian/PI
                racewife==4 & year>=1985 | racewife==5 & year>=2005 ~ "Asian/PI",
-               # Other
-               racewife==7| racewife==8 ~ "Other",
+               # other
+               racewife==7| racewife==8 ~ "other",
                # NA
                racewife==9| racewife==0 ~ "NA"))
   
@@ -122,7 +122,7 @@ process_race <- function(data){
 # Pre 1985: Take hispanic variable based on race data only (as no Hispanic ethnicity Q available)
 # 1985 onward: If Hispanic recorded within Hispanic ethnicity variable, ignore race and code as hispanic
 #              If Hispanic question is no, give race category (of which hispanic is an option)
-# Gives resulting categories: NH White, NH Black, NH Asian, NH Other, Hispanic (i.e. Hispanic White, Hispanic Other, Hispanic Black etc. all included within Hispanic)
+# Gives resulting categories: NH White, NH Black, NH Asian, NH other, Hispanic (i.e. Hispanic White, Hispanic other, Hispanic Black etc. all included within Hispanic)
 # NB. This method means that if either one of the hispanic ethnicity or race variables are recorded as Hispanic that will be the individuals primary catgeorisation.  
   
   raceall <- raceall %>% 
@@ -137,9 +137,9 @@ process_race <- function(data){
   return(raceall)
 }
 
-###### FUNCTION 2: FAMILY_RACE_HEAD
+###### FUNCTION 2: GENERATE_FAMILY_RACE (previously "recode_race(type=T)")
 
-family_race_head_wife <- function(data){
+generate_family_race <- function(data){
   # generate a grid with all possible combinations of head and wife raceeth
   head <- c("black","white","hispanic","other","Native","Asian/PI")
   wife <- c("black","white","hispanic","other","Native","Asian/PI")
@@ -149,8 +149,8 @@ family_race_head_wife <- function(data){
   combos$head <- as.character(combos$head)
   combos$wife <- as.character(combos$wife)
   # Generate a new variable, "racefamily_both_known", when both the head and wife have race data available
-  # Assign family race based on the highest priority rated Race, with the following order:
-  # Hispanic > Black > Native > Asian/PI > Other > White
+  # Assign racefamily_both_known based on the highest priority rated Race, with the following order:
+  # Hispanic > Black > Native > Asian/PI > other > White
   combos <- combos %>% mutate(
     racefamily_both_known = case_when(
       head==wife ~ head,
@@ -186,24 +186,25 @@ family_race_head_wife <- function(data){
     return(data)
 }
 
-###### FUNCTION 3:INDIVIDUAL_RACE_HEAD
+###### FUNCTION 3:ASSIGN_INDIVIDUAL_FAMILY_RACE (previously "individual_race(type = T)")
 
 ## Assign each individual their raceeth.  As the race question is only asked of the head and of their spouse directly, individuals may have their raceeth information imputed based on their nearest family member. 
 # For example, the parent and child of the head is given the same race as the head.
 
 # Allocate race based on the head or wife
-individual_race_head <- function(data){
+assign_individual_family_race <- function(data){
     data <- data %>% mutate(
                       individualrace = case_when(
-                        relationship=="born after this year or nonresponse" | relationship == NA ~ racefamily_one_known,
                         relationship=="head" | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" ~ raceethhead,
                         relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
-                        relationship=="grandchild" ~ racefamily_one_known)) %>%
-      group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
-return(data)
+                        relationship=="grandchild" ~ racefamily_one_known,
+                        relationship=="born after this year or nonresponse" | is.na(relationship) | relationship=="Immigrant/Latino" | relationship=="nonrelative" | relationship=="cohabitor" ~ racefamily_one_known)) %>%
+dplyr::group_by(uniqueID) %>% 
+    tidyr::fill(individualrace, .direction=c("downup")) 
+      return(data)
 }
 
-###### FUNCTION 4: CODE_RACE_PARENTS
+###### FUNCTION 4: PROCESS_RACE_PARENTS
 
 # All individuals have a unique ID and a IDmother (their mothers unique ID number).
 # Most indiviudals have their parents in the dataset due to the survey design, and their parents will have info on their race/ethnicity
@@ -211,7 +212,7 @@ return(data)
 # We therefore generate a look up table for mothers and fathers, renaming the mothers UniqueID as IDmother
 # in order to match them with their children, and add a column to each of their children, stating their mother's race 
 
-code_race_parents <- function(df){
+process_race_parents <- function(df){
   mother <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
     rename(IDmother = uniqueID,
            mothersrace = individualrace) %>% ungroup() %>% fill(mothersrace, .direction=c("downup")) %>%
@@ -226,54 +227,40 @@ code_race_parents <- function(df){
 }
 
 
-###### FUNCTION 5: FAMILY_RACE_PARENTS
-family_race_parents <- function(data) {
-  head <- c("black","white","hispanic","other","Native","Asian/PI")
-  wife <- c("black","white","hispanic","other","Native","Asian/PI")
-  combos <- expand.grid(head,wife)
-  names(combos) <- c("head","wife")
-  combos$head <- as.character(combos$head)
-  combos$wife <- as.character(combos$wife)
-  combos <- combos %>% mutate(
-    racefamily = case_when(
-      head==wife ~ head,
-      head=="hispanic"|wife=="hispanic" ~ "hispanic",
-      head=="black" | wife=="black" ~ "black",
-      head=="Native" | wife=="Native" ~ "Native",
-      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
-      head=="other" | wife=="other" ~ "other",
-      head=="white" | wife=="white" ~ "white"))
-  combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily)
-  # Generate a family race based on the parents race data
-  data$combo <- paste(data$mothersrace, data$fathersrace, sep="")
-  data <- left_join(data, combos)
-  data$racefamily_parents <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
-                                            ifelse(data$combo=="blackNA","black",
-                                                   ifelse(data$combo=="hispanicNA","hispanic",
-                                                          ifelse(data$combo=="NAhispanic","hispanic",
-                                                                 ifelse(data$combo=="NativeNA","Native",
-                                                                        ifelse(data$combo=="otherNA","other",
-                                                                               ifelse(data$combo=="whiteNA","white",
-                                                                                      ifelse(data$combo=="NANA",NA,
-                                                                                             ifelse(data$combo=="NAwhite","white",
-                                                                                                    ifelse(data$combo=="NAblack","black",
-                                                                                                           ifelse(data$combo=="NAhispanic","hispanic",
-                                                                                                                  ifelse(data$combo=="NAAsian/PI","Asian/PI",
-                                                                                                                         ifelse(data$combo=="NANative", "Native",
-                                                                                                                                ifelse(data$combo=="NAother","other",
-                                                                                                                                       data$racefamily)))))))
-                                                                               )))))))
+###### FUNCTION 5: GENERATE_RACE_PARENTS (previously recode_race(type=F)")
+# Generate a new variable, "racefamily_parents", based on the parents race data
+
+generate_race_parents <- function(data) {
+  data$parentscombo <- paste(data$mothersrace, data$fathersrace, sep="")
+ # data <- left_join(data, combos)
+  ## from here Hispanic, black, native, asian, other, white
+  data %>% mutate(
+  race_parents = case_when(
+    mothersrace==fathersrace ~ fathersrace,
+    fathersrace=="hispanic"|mothersrace=="hispanic" ~ "hispanic",
+    fathersrace=="black" | mothersrace=="black" ~ "black",
+    fathersrace=="Native" | mothersrace=="Native" ~ "Native",
+    fathersrace=="Asian/PI" | mothersrace=="Asian/PI" ~ "Asian/PI",
+    fathersrace=="other" | mothersrace=="other" ~ "other",
+    fathersrace=="white" | mothersrace=="white" ~ "white",
+     parentscombo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
+     parentscombo=="blackNA" | combo=="NAblack" ~ "black",
+     parentscombo=="NativeNA" | combo=="NANative" ~ "Native",
+     parentscombo=="Asian/PINA" | combo=="NAAsian/PI"  ~ "Asian/PI",
+     parentscombo=="otherNA" | combo=="NAother" ~ "other",
+     parentscombo=="whiteNA" | combo=="NAwhite" ~ "white",
+     parentscombo=="NANA" ~ NA)
+    ) %>% 
   return(data)
 }
 
 # FUNCTION 6: INDIVIDUAL RACE PARENTS
 
 # If race not reported, or unknown for head and wife, allocate race based on the parents
-individual_race_parents <- function(data){    
+assign_individual_race_parents <- function(data){    
   toallocate <- data[is.na(data$individualrace),]
   toallocate <- toallocate %>% 
-    mutate(individualrace = racefamily_parents)
+    mutate(individualrace = race_parents)
   data <- data %>% drop_na(individualrace)
   data <- rbind(data, toallocate) %>% 
     group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))

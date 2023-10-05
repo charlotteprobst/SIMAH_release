@@ -54,7 +54,7 @@ race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
 race <- left_join(race, relationship)
 
 # recode race based on householder - race is reported for head and "wife" of householder  
-race <- recode_race(race, T)   ###  what does this T mean?
+race <- recode_race(race, T)   
 
 race <- individual_race(race, T)
 

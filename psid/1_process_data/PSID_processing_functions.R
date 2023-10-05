@@ -126,214 +126,214 @@ weights <- weights %>% pivot_longer(cols='1999':'2021', names_to="year", values_
 return(weights)
 }
 
-process_race <- function(data){
-  
-race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096","V5662","V6209","V6802",
-          "V7447","V8099","V8723","V9408","V11055","V11938","V13565","V14612","V16086",
-          "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
-          "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897",
-          "ER81144")
-
-racevars <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, all_of(race))
-years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-names(racevars)[6:47] <- years
-racevars <- racevars %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="racehead") %>% 
-  mutate(racehead = ifelse(racehead==1, "white",
-                           ifelse(racehead==2, "black",
-                                  ifelse(racehead==9, NA,
-                                         ifelse(racehead==3 & year<=1984, "hispanic",
-                                                ifelse(racehead==9, NA,
-                                                       ifelse(racehead==0, NA,
-                                                              ifelse(racehead==5 & year>=1990 & year<=2003, "hispanic",
-                                                                     ifelse(racehead==3 & year>=1985, "Native",
-                                                                            ifelse(racehead==4 & year>=1985, "Asian/PI",
-                                                                                   "other"))))))))))
-# recode values and fill for each person any missing years 
-# 1968 - 1984 
-# 1 = white, 2=black, 3=hispanic, 7 = other, 9=NA 
-# 1984 - 1989
-# 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other 8=other, 9=NA
-# 1990 - 2003 
-# 1 = white, 2=black, 3=other, 4=other, 5=hispanic, 6=other, 7=other, 9=NA
-# 2004 - 2021
-# 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other, 0=NA, 9=NA
-
-# now get the race of wife variable
-wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
-          "ER3883","ER6753","ER8999","ER11760","ER15836","ER19897","ER23334","ER27297",
-          "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752", "ER81017")
-wiferace <- data %>% dplyr::select(uniqueID, all_of(wife))
-years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-names(wiferace)[2:26] <- years
-wiferace <- wiferace %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="racewife") %>% 
-  mutate(racewife = ifelse(racewife==1, "white",
-                           ifelse(racewife==2, "black",
-                                  ifelse(racewife==9, NA,
-                                         ifelse(racewife==9, NA,
-                                                ifelse(racewife==0, NA,
-                                                       ifelse(racewife==5 & year>=1990 & year<=2003, "hispanic",
-                                                              ifelse(racewife==3 & year>=1985, "Native",
-                                                                     ifelse(racewife==4 & year>=1985, "Asian/PI",
-                                                                            "other")))))))))
-
-# now get hispanic info for the head and wife
-hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
-               "V21419","V23275","ER3941","ER6811","ER9057","ER27392","ER40564",
-               "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896", "ER81143")
-years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-hispanic <- data %>% dplyr::select(uniqueID, all_of(hispanic1))
-names(hispanic)[2:22] <- years
-hispanic <- hispanic %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanichead") %>% 
-  mutate(hispanichead = ifelse(hispanichead==9, NA,
-                               ifelse(hispanichead==0, "nothispanic",
-                                      "hispanic")))
-
-# hispanic wife 
-hispanic2 <- c("V12292","V13499","V14546","V16020",
-               "V17417","V18748","V20048","V21354",
-               "V23211","ER3880","ER6750","ER8996",
-               "ER27296","ER40471","ER46448","ER51809",
-               "ER57548","ER64670","ER70743","ER76751", "ER81016")
-hispanicwife <- data %>% dplyr::select(uniqueID, all_of(hispanic2))
-names(hispanicwife)[2:22] <- years
-hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanicwife") %>% 
-  mutate(hispanicwife = ifelse(hispanicwife==9, NA,
-                               ifelse(hispanicwife==0, "nothispanic",
-                                      "hispanic")))
-# combine all race variables together
-alldata <- expand.grid(uniqueID = unique(data$uniqueID), 
-                       year =  as.character(c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)))
-raceall <- left_join(alldata, racevars)
-raceall <- left_join(raceall, wiferace)
-raceall <- left_join(raceall, hispanic)
-raceall <- left_join(raceall, hispanicwife)
-raceall$year <- as.numeric(raceall$year)
-
-raceall <- raceall %>% 
-  mutate(raceethhead = ifelse(year<=1984, racehead,
-                              ifelse(year>1984 & hispanichead=="hispanic","hispanic",
-                                     ifelse(year>1984 & hispanichead!="hispanic",racehead,NA))),
-         raceethwife = ifelse(year<=1984, racewife,
-                              ifelse(year>1984 & hispanicwife=="hispanic","hispanic",
-                                     ifelse(year>1984 & hispanicwife!="hispanic",racewife,NA)))) %>% 
-  dplyr::select(uniqueID, familyID, IDmother, IDfather, year, sex, raceethhead, raceethwife)
-
-return(raceall)
-}
-
-individual_race <- function(data, type){
-  if(type==T){
-  data <- data %>% mutate(individualrace = ifelse(relationship=="head", raceethhead,
-                                   ifelse(relationship=="wife", raceethwife,
-                                          ifelse(relationship=="childofhead",raceethhead,
-                                                 ifelse(relationship=="parentofhead", raceethhead,
-                                                        ifelse(relationship=="childofpartner", raceethwife,
-                                                               ifelse(relationship=="grandchild", racefamily1,
-                                                                      ifelse(relationship=="parentofwife",raceethwife,
-                                                                             ifelse(relationship=="brotherofhead", raceethhead,
-                                                                                    ifelse(relationship=="brotherofwife", raceethwife,
-                                                                                           NA)))))))))) %>% 
-    group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
-  }else if(type==F){
-    toallocate <- data[is.na(data$individualrace),]
-    toallocate <- toallocate %>% 
-      mutate(individualrace = racefamily2)
-    data <- data %>% drop_na(individualrace)
-    data <- rbind(data, toallocate) %>% 
-      group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
-  }
-  return(data)
-}
-
-recode_race <- function(data, type){
-  head <- c("black","white","hispanic","other","Native","Asian/PI")
-  wife <- c("black","white","hispanic","other","Native","Asian/PI")
-  combos <- expand.grid(head,wife)
-  names(combos) <- c("head","wife")
-  combos$head <- as.character(combos$head)
-  combos$wife <- as.character(combos$wife)
-  combos$racefamily <- ifelse(combos$head==combos$wife, combos$head,
-                           ifelse(combos$head=="hispanic", "hispanic",
-                                  ifelse(combos$wife=="hispanic", "hispanic",
-                                         ifelse(combos$head=="black" & combos$wife!="hispanic","black",
-                                                ifelse(combos$wife=="black" & combos$head!="hispanic","black",
-                                                       ifelse(combos$head=="Native" & combos$wife!="hispanic" & combos$wife!="black", "Native",
-                                                              ifelse(combos$wife=="Native" & combos$head!="hispanic" & combos$head!="black","Native",
-                                                                     ifelse(combos$head=="Asian/PI" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                              combos$wife!="Native","Asian/PI",
-                                                                            ifelse(combos$wife=="Asian/PI" & combos$head!="hispanic" & combos$head!="black" &
-                                                                                     combos$head!="Native","Asian/PI",
-                                                                                   ifelse(combos$head=="other" & combos$wife!="hispanic" & combos$wife!="black" & 
-                                                                                            combos$wife!="Native" & combos$wife!="Asian/PI","other",
-                                                                                          ifelse(combos$wife=="other" & combos$head!="hispanic" & combos$head!="black" & 
-                                                                                                   combos$head!="Native" & combos$head!="Asian/PI","other",
-                                                                                                 ifelse(combos$head=="white", combos$wife,
-                                                                                                        ifelse(combos$wife=="white",combos$head, NA
-                                                                                                        )))))))))))))
-  combos$combo <- paste(combos$head,combos$wife,sep="")
-  combos <- combos %>% dplyr::select(combo, racefamily)
-  if(type==T){
-    data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
-    data <- left_join(data, combos)
-    data$racefamily1 <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
-                              ifelse(data$combo=="blackNA","black",
-                                     ifelse(data$combo=="hispanicNA","hispanic",
-                                            ifelse(data$combo=="NAhispanic","hispanic",
-                                                   ifelse(data$combo=="NativeNA","Native",
-                                                          ifelse(data$combo=="otherNA","other",
-                                                                 ifelse(data$combo=="whiteNA","white",
-                                                                        ifelse(data$combo=="NANA",NA,
-                                                                               ifelse(data$combo=="NAwhite","white",
-                                                                                      ifelse(data$combo=="NAblack","black",
-                                                                                             ifelse(data$combo=="NAhispanic","hispanic",
-                                                                                                    ifelse(data$combo=="NAAsian/PI","Asian/PI",
-                                                                                                           ifelse(data$combo=="NANative", "Native",
-                                                                                                                  ifelse(data$combo=="NAother","other",
-                                                                                                                         data$racefamily)))))))
-                                                                 )))))))
-    # data <- data %>% 
-    #   group_by(familyID) %>% 
-    #   fill(racefamily1, .direction=c("downup"))
-  }
-  if(type==F){
-  data$combo <- paste(data$mothersrace, data$fathersrace, sep="")
-  data <- left_join(data, combos)
-  data$racefamily2 <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
-                         ifelse(data$combo=="blackNA","black",
-                                ifelse(data$combo=="hispanicNA","hispanic",
-                                       ifelse(data$combo=="NAhispanic","hispanic",
-                                              ifelse(data$combo=="NativeNA","Native",
-                                                     ifelse(data$combo=="otherNA","other",
-                                                            ifelse(data$combo=="whiteNA","white",
-                                                                   ifelse(data$combo=="NANA",NA,
-                                                                          ifelse(data$combo=="NAwhite","white",
-                                                                                 ifelse(data$combo=="NAblack","black",
-                                                                                        ifelse(data$combo=="NAhispanic","hispanic",
-                                                                                               ifelse(data$combo=="NAAsian/PI","Asian/PI",
-                                                                                                      ifelse(data$combo=="NANative", "Native",
-                                                                                                             ifelse(data$combo=="NAother","other",
-                                                                                                                    data$racefamily)))))))
-                                                            )))))))
-  # data <- data %>% 
-  #   group_by(familyID) %>% 
-  #   fill(racefamily2, .direction=c("downup"))
-  }
-  return(data)
-}
-
-code_race_parents <- function(df){
-  mother <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
-    rename(IDmother = uniqueID,
-           mothersrace = individualrace) %>% ungroup() %>% fill(mothersrace, .direction=c("downup")) %>%
-    group_by(IDmother) %>% distinct() 
-  df <- left_join(df, mother)
-  father <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
-    rename(IDfather = uniqueID,
-           fathersrace = individualrace) %>% fill(fathersrace, .direction=c("downup")) %>%
-    group_by(IDfather) %>% distinct()
-  df <- left_join(df, father)
-  return(df)
-}
+# process_race <- function(data){
+#   
+# race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096","V5662","V6209","V6802",
+#           "V7447","V8099","V8723","V9408","V11055","V11938","V13565","V14612","V16086",
+#           "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
+#           "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897",
+#           "ER81144")
+# 
+# racevars <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, all_of(race))
+# years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+# names(racevars)[6:47] <- years
+# racevars <- racevars %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="racehead") %>% 
+#   mutate(racehead = ifelse(racehead==1, "white",
+#                            ifelse(racehead==2, "black",
+#                                   ifelse(racehead==9, NA,
+#                                          ifelse(racehead==3 & year<=1984, "hispanic",
+#                                                 ifelse(racehead==9, NA,
+#                                                        ifelse(racehead==0, NA,
+#                                                               ifelse(racehead==5 & year>=1990 & year<=2003, "hispanic",
+#                                                                      ifelse(racehead==3 & year>=1985, "Native",
+#                                                                             ifelse(racehead==4 & year>=1985, "Asian/PI",
+#                                                                                    "other"))))))))))
+# # recode values and fill for each person any missing years 
+# # 1968 - 1984 
+# # 1 = white, 2=black, 3=hispanic, 7 = other, 9=NA 
+# # 1984 - 1989
+# # 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other 8=other, 9=NA
+# # 1990 - 2003 
+# # 1 = white, 2=black, 3=other, 4=other, 5=hispanic, 6=other, 7=other, 9=NA
+# # 2004 - 2021
+# # 1 = white, 2=black, 3=other, 4=other, 5=other, 7=other, 0=NA, 9=NA
+# 
+# # now get the race of wife variable
+# wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
+#           "ER3883","ER6753","ER8999","ER11760","ER15836","ER19897","ER23334","ER27297",
+#           "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752", "ER81017")
+# wiferace <- data %>% dplyr::select(uniqueID, all_of(wife))
+# years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+# names(wiferace)[2:26] <- years
+# wiferace <- wiferace %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="racewife") %>% 
+#   mutate(racewife = ifelse(racewife==1, "white",
+#                            ifelse(racewife==2, "black",
+#                                   ifelse(racewife==9, NA,
+#                                          ifelse(racewife==9, NA,
+#                                                 ifelse(racewife==0, NA,
+#                                                        ifelse(racewife==5 & year>=1990 & year<=2003, "hispanic",
+#                                                               ifelse(racewife==3 & year>=1985, "Native",
+#                                                                      ifelse(racewife==4 & year>=1985, "Asian/PI",
+#                                                                             "other")))))))))
+# 
+# # now get hispanic info for the head and wife
+# hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
+#                "V21419","V23275","ER3941","ER6811","ER9057","ER27392","ER40564",
+#                "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896", "ER81143")
+# years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+# hispanic <- data %>% dplyr::select(uniqueID, all_of(hispanic1))
+# names(hispanic)[2:22] <- years
+# hispanic <- hispanic %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanichead") %>% 
+#   mutate(hispanichead = ifelse(hispanichead==9, NA,
+#                                ifelse(hispanichead==0, "nothispanic",
+#                                       "hispanic")))
+# 
+# # hispanic wife 
+# hispanic2 <- c("V12292","V13499","V14546","V16020",
+#                "V17417","V18748","V20048","V21354",
+#                "V23211","ER3880","ER6750","ER8996",
+#                "ER27296","ER40471","ER46448","ER51809",
+#                "ER57548","ER64670","ER70743","ER76751", "ER81016")
+# hispanicwife <- data %>% dplyr::select(uniqueID, all_of(hispanic2))
+# names(hispanicwife)[2:22] <- years
+# hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanicwife") %>% 
+#   mutate(hispanicwife = ifelse(hispanicwife==9, NA,
+#                                ifelse(hispanicwife==0, "nothispanic",
+#                                       "hispanic")))
+# # combine all race variables together
+# alldata <- expand.grid(uniqueID = unique(data$uniqueID), 
+#                        year =  as.character(c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)))
+# raceall <- left_join(alldata, racevars)
+# raceall <- left_join(raceall, wiferace)
+# raceall <- left_join(raceall, hispanic)
+# raceall <- left_join(raceall, hispanicwife)
+# raceall$year <- as.numeric(raceall$year)
+# 
+# raceall <- raceall %>% 
+#   mutate(raceethhead = ifelse(year<=1984, racehead,
+#                               ifelse(year>1984 & hispanichead=="hispanic","hispanic",
+#                                      ifelse(year>1984 & hispanichead!="hispanic",racehead,NA))),
+#          raceethwife = ifelse(year<=1984, racewife,
+#                               ifelse(year>1984 & hispanicwife=="hispanic","hispanic",
+#                                      ifelse(year>1984 & hispanicwife!="hispanic",racewife,NA)))) %>% 
+#   dplyr::select(uniqueID, familyID, IDmother, IDfather, year, sex, raceethhead, raceethwife)
+# 
+# return(raceall)
+# }
+# 
+# individual_race <- function(data, type){
+#   if(type==T){
+#   data <- data %>% mutate(individualrace = ifelse(relationship=="head", raceethhead,
+#                                    ifelse(relationship=="wife", raceethwife,
+#                                           ifelse(relationship=="childofhead",raceethhead,
+#                                                  ifelse(relationship=="parentofhead", raceethhead,
+#                                                         ifelse(relationship=="childofpartner", raceethwife,
+#                                                                ifelse(relationship=="grandchild", racefamily1,
+#                                                                       ifelse(relationship=="parentofwife",raceethwife,
+#                                                                              ifelse(relationship=="brotherofhead", raceethhead,
+#                                                                                     ifelse(relationship=="brotherofwife", raceethwife,
+#                                                                                            NA)))))))))) %>% 
+#     group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
+#   }else if(type==F){
+#     toallocate <- data[is.na(data$individualrace),]
+#     toallocate <- toallocate %>% 
+#       mutate(individualrace = racefamily2)
+#     data <- data %>% drop_na(individualrace)
+#     data <- rbind(data, toallocate) %>% 
+#       group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
+#   }
+#   return(data)
+# }
+# 
+# recode_race <- function(data, type){
+#   head <- c("black","white","hispanic","other","Native","Asian/PI")
+#   wife <- c("black","white","hispanic","other","Native","Asian/PI")
+#   combos <- expand.grid(head,wife)
+#   names(combos) <- c("head","wife")
+#   combos$head <- as.character(combos$head)
+#   combos$wife <- as.character(combos$wife)
+#   combos$racefamily <- ifelse(combos$head==combos$wife, combos$head,
+#                            ifelse(combos$head=="hispanic", "hispanic",
+#                                   ifelse(combos$wife=="hispanic", "hispanic",
+#                                          ifelse(combos$head=="black" & combos$wife!="hispanic","black",
+#                                                 ifelse(combos$wife=="black" & combos$head!="hispanic","black",
+#                                                        ifelse(combos$head=="Native" & combos$wife!="hispanic" & combos$wife!="black", "Native",
+#                                                               ifelse(combos$wife=="Native" & combos$head!="hispanic" & combos$head!="black","Native",
+#                                                                      ifelse(combos$head=="Asian/PI" & combos$wife!="hispanic" & combos$wife!="black" & 
+#                                                                               combos$wife!="Native","Asian/PI",
+#                                                                             ifelse(combos$wife=="Asian/PI" & combos$head!="hispanic" & combos$head!="black" &
+#                                                                                      combos$head!="Native","Asian/PI",
+#                                                                                    ifelse(combos$head=="other" & combos$wife!="hispanic" & combos$wife!="black" & 
+#                                                                                             combos$wife!="Native" & combos$wife!="Asian/PI","other",
+#                                                                                           ifelse(combos$wife=="other" & combos$head!="hispanic" & combos$head!="black" & 
+#                                                                                                    combos$head!="Native" & combos$head!="Asian/PI","other",
+#                                                                                                  ifelse(combos$head=="white", combos$wife,
+#                                                                                                         ifelse(combos$wife=="white",combos$head, NA
+#                                                                                                         )))))))))))))
+#   combos$combo <- paste(combos$head,combos$wife,sep="")
+#   combos <- combos %>% dplyr::select(combo, racefamily)
+#   if(type==T){
+#     data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
+#     data <- left_join(data, combos)
+#     data$racefamily1 <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
+#                               ifelse(data$combo=="blackNA","black",
+#                                      ifelse(data$combo=="hispanicNA","hispanic",
+#                                             ifelse(data$combo=="NAhispanic","hispanic",
+#                                                    ifelse(data$combo=="NativeNA","Native",
+#                                                           ifelse(data$combo=="otherNA","other",
+#                                                                  ifelse(data$combo=="whiteNA","white",
+#                                                                         ifelse(data$combo=="NANA",NA,
+#                                                                                ifelse(data$combo=="NAwhite","white",
+#                                                                                       ifelse(data$combo=="NAblack","black",
+#                                                                                              ifelse(data$combo=="NAhispanic","hispanic",
+#                                                                                                     ifelse(data$combo=="NAAsian/PI","Asian/PI",
+#                                                                                                            ifelse(data$combo=="NANative", "Native",
+#                                                                                                                   ifelse(data$combo=="NAother","other",
+#                                                                                                                          data$racefamily)))))))
+#                                                                  )))))))
+#     # data <- data %>% 
+#     #   group_by(familyID) %>% 
+#     #   fill(racefamily1, .direction=c("downup"))
+#   }
+#   if(type==F){
+#   data$combo <- paste(data$mothersrace, data$fathersrace, sep="")
+#   data <- left_join(data, combos)
+#   data$racefamily2 <- ifelse(data$combo=="Asian/PINA", "Asian/PI",
+#                          ifelse(data$combo=="blackNA","black",
+#                                 ifelse(data$combo=="hispanicNA","hispanic",
+#                                        ifelse(data$combo=="NAhispanic","hispanic",
+#                                               ifelse(data$combo=="NativeNA","Native",
+#                                                      ifelse(data$combo=="otherNA","other",
+#                                                             ifelse(data$combo=="whiteNA","white",
+#                                                                    ifelse(data$combo=="NANA",NA,
+#                                                                           ifelse(data$combo=="NAwhite","white",
+#                                                                                  ifelse(data$combo=="NAblack","black",
+#                                                                                         ifelse(data$combo=="NAhispanic","hispanic",
+#                                                                                                ifelse(data$combo=="NAAsian/PI","Asian/PI",
+#                                                                                                       ifelse(data$combo=="NANative", "Native",
+#                                                                                                              ifelse(data$combo=="NAother","other",
+#                                                                                                                     data$racefamily)))))))
+#                                                             )))))))
+#   # data <- data %>% 
+#   #   group_by(familyID) %>% 
+#   #   fill(racefamily2, .direction=c("downup"))
+#   }
+#   return(data)
+# }
+# 
+# code_race_parents <- function(df){
+#   mother <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
+#     rename(IDmother = uniqueID,
+#            mothersrace = individualrace) %>% ungroup() %>% fill(mothersrace, .direction=c("downup")) %>%
+#     group_by(IDmother) %>% distinct() 
+#   df <- left_join(df, mother)
+#   father <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
+#     rename(IDfather = uniqueID,
+#            fathersrace = individualrace) %>% fill(fathersrace, .direction=c("downup")) %>%
+#     group_by(IDfather) %>% distinct()
+#   df <- left_join(df, father)
+#   return(df)
+# }
 
 process_parent_ed <- function(data){
   headfathered <- 	c("V318", "V793", "V1484", "V2196", "V2822", "V3240", "V3662", "V4138", "V4681", "V5601", "V6150", "V6747", "V7380",

@@ -40,8 +40,12 @@ relationship <- process_relationship(data)
 
 # process sampling weights 
 sampleweights <- process_sample_weights(data)
+
+source(("SIMAH_code/PSID/1_process_data/process_race_new_method.R"))
+
+### Process and assign race and ethnicity
  
-# process race and ethnicity
+## 1. process race and ethnicity data
 race <- process_race(data) #1.
 
 # remove individuals with the same uniqueID for person and mother - 0 people
@@ -49,48 +53,48 @@ race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
                          match = ifelse(is.na(match),0,match)) %>% 
   filter(match==0)
 
-# Summarise number of individuals missing race and ethnicity data...
-# See other script
-
 race <- left_join(race, relationship)
 
-# recode race based on the race of the head and/or wife, generating 2 variables:
-# racefamily_both_known <- when both the head and wife have data
-# racefamily_one_known <- when either the head or wife have data
-race <- family_race_head_wife(race)
+## 2. Generate family race variables based on the race of the head and/or wife
+race <- generate_family_race(race)
 
-# Review number of individuals with racefamily data
+# Review number of individuals with family race data
 summary(as.factor(race$racefamily_both_known))# Total NA = 152,115 out of 200,592
-summary(as.factor(race$racefamily_one_known)) # Total NA = 46,181
+summary(as.factor(race$racefamily_one_known)) # Total NA = 46,185
 
-race <- individual_race_head(race) #3. assign individuals a race based on racefamily_head
+## 3. Assign individuals their family race
+race <- assign_individual_family_race(race)
 
-# recode race based on parents race if race of head or wife unknown
-race <- code_race_parents(race) #4.
-race <- family_race_parents(race) #5. generate variable racefamily_parents
-race <- individual_race_parents(race) #6. assign individuals a race based on racefamily_parents
+## 4. Process the race and ethnicity data of an individual's parents (based on record linkage)
+race <- process_race_parents(race)
 
+## 5. Generate an overarching race variable for the parents
+race <- generate_race_parents(race)
+
+## 6. Assign any individuals with missing 'individual race' data, the parents race
+race <- assign_individual_race_parents(race) 
+
+# condense the race dataset
+race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) 
+
+# Review missing data by i) oberservations i.e. rows and ii) individuals
 summary(as.factor(race$individualrace))
+missing <- race %>% filter(individualrace=="NA") %>% group_by(uniqueID) %>% tally()  # 57 individuals
 
-race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) %>% 
-  group_by(uniqueID) %>% 
-  fill(individualrace, .direction=c("downup"))
-
-summary(as.factor(race$individualrace))
-# Total NA now 23,635 out of 200,592
-
-# now get a definitive race for each individual - see if there are any discrepancies
+# Get a definitive race for each individual & see if there are any discrepancies
 tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>% 
   distinct() %>% 
   ungroup() %>% group_by(uniqueID) %>% tally() %>% 
   mutate(flag=ifelse(n>1,1,0))
 
-IDS <- unique(subset(tally, flag==1)$uniqueID) 
+IDS <- unique(subset(tally, flag==1)$uniqueID) # 657 individuals with discrepencies
 
-# just take each individuals first observation of race and ethnicity
+## 7. Take each individuals first observation of race and ethnicity
 firsteth <- race %>% 
   mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
   filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
+
+### EDUCATIONAL ATTAINMENT
   
 # process parents educational attainment
 parented <- process_parent_ed(data)
