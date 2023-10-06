@@ -52,10 +52,9 @@ race <- process_race(data) #1.
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
                          match = ifelse(is.na(match),0,match)) %>% 
   filter(match==0)
-
 race <- left_join(race, relationship)
 
-## 2. Generate family race variables based on the race of the head and/or wife
+## 2. Generate family race variable based on the race of the head and/or wife
 race <- generate_family_race(race)
 
 # Review number of individuals with family race data
@@ -77,7 +76,7 @@ race <- assign_individual_race_parents(race)
 # condense the race dataset
 race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) 
 
-# Review missing data by i) oberservations i.e. rows and ii) individuals
+# Review missing data by i) observations i.e. rows and ii) individuals
 summary(as.factor(race$individualrace))
 missing <- race %>% filter(individualrace=="NA") %>% group_by(uniqueID) %>% tally()  # 57 individuals
 
@@ -87,12 +86,15 @@ tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>%
   ungroup() %>% group_by(uniqueID) %>% tally() %>% 
   mutate(flag=ifelse(n>1,1,0))
 
-IDS <- unique(subset(tally, flag==1)$uniqueID) # 657 individuals with discrepencies
+IDS <- unique(subset(tally, flag==1)$uniqueID) # 657 individuals with discrepancies
 
-## 7. Take each individuals first observation of race and ethnicity
+## Take each individuals first observation of race and ethnicity
 firsteth <- race %>% 
   mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
   filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
+
+## 7. Process Transition to Adulthood Supplement race data
+TAS_race <- process_TAS_race(data)
 
 ### EDUCATIONAL ATTAINMENT
   
@@ -168,29 +170,25 @@ maindata <- maindata %>%
 # maindata <- left_join(maindata, nonresponse) %>%
 #   mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
 
-write.csv(maindata, "SIMAH_workplace/PSID/maindata_1999_2021.csv", row.names=F)
-
-### Clean the TAS data
-
-# Process TAS race data
-race <- process_TAS_race(data)
-
 # Process TAS education data
-education <- process_TAS_education(data) %>% distinct()
+TAS_education <- process_TAS_education(data) %>% distinct()
 
 # Generate clean TAS datafile, merging the processed race and education data files
-TAS <- merge(education, race, by=c("uniqueID"))
+TAS <- merge(TAS_education, TAS_race, by=c("uniqueID", "year"))
 TAS$year <- as.integer(TAS$year)
 TAS$uniqueID <- as.integer(TAS$uniqueID)
 
 # save the TAS 
-write.csv(TAS, "SIMAH_workplace/PSID/TAS_2011_2019.csv", row.names=F)
+# write.csv(TAS, "SIMAH_workplace/PSID/TAS_2011_2021.csv", row.names=F)
 
 # Select all unique individuals from the TAS and their race
 TAS <- TAS %>% dplyr::select(uniqueID, TAS_race) %>% distinct()
 
 # join these with the main sample data 
 alldata <- left_join(maindata, TAS)
+
+
+################################# race processing cont.
 
 # Fill individuals race data for each year (based on the year their race was recorded)
 alldata <- alldata %>% 
@@ -202,35 +200,19 @@ alldata <- alldata %>%
 # Check the face validity by viewing the data for one individual only
 test <- alldata %>% filter(uniqueID==53042)
 
+##### 8. Allocate final race
 # ensure that each person has a unique value for race and ethnicity over time
-race_eth_function <- function(data){
-  races <- unique(data$race_new)
-  # recode according to hierarchy - black, hispanic, native american, asian/pi, other
-  newrace <- ifelse("black" %in% races, "black",
-                    ifelse("hispanic" %in% races, "hispanic", 
-                           ifelse("Native" %in% races, "Native",
-                                  ifelse("Asian/PI" %in% races, "Asian/PI",
-                                         ifelse("other" %in% races, "other",
-                                                ifelse("white" %in% races, "white", NA))))))
-  data$race_new_unique <- newrace
-  return(data)
-}
-
 uniquerace <- alldata %>% dplyr::select(uniqueID, race_new) %>% 
   distinct() %>% 
   group_by(uniqueID) %>% 
-  do(race_eth_function(.))
+  do(allocate_final_race(.))
 
 uniquerace <- uniquerace %>% dplyr::select(uniqueID, race_new_unique) %>% 
   distinct()
 
 alldata <- left_join(alldata, uniquerace)
 
-# write new version of df containing TAS race and education 
-write.csv(alldata, "SIMAH_workplace/PSID/alldata_1999_2019.csv", row.names=F)
-
-
-
+write.csv(alldata, "SIMAH_workplace/PSID/alldata_1999_2021.csv", row.names=F)
 
 
 

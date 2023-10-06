@@ -13,7 +13,7 @@ process_education <- function(data){
     mutate(education = ifelse(education==0, NA,
                               ifelse(education==99, NA, 
                                      ifelse(education==98, NA, education))),
-           education_cat = ifelse(education<12, "LHS",
+           education_cat = ifelse(education<=12, "LEHS",
                                   ifelse(education>12 & education<16, "SomeC",
                                          ifelse(education>=16, "College", NA))),
            education_cat_detailed = ifelse(education<=12, "LEHS",
@@ -22,22 +22,9 @@ process_education <- function(data){
                                                          ifelse(education==15, "SomeC3",
                                                                 ifelse(education>=16, "College", NA))))),
            year = as.numeric(year)) %>% group_by(uniqueID) %>% 
+    # fill education, first down, then up
     fill(education, .direction=c("downup")) %>% fill(education_cat, .direction=c("downup")) %>% 
     fill(education_cat_detailed, .direction=c("downup")) %>% ungroup()
-  mother <- newdata %>% dplyr::select(uniqueID, year, education, education_cat) %>% 
-    rename(IDmother = uniqueID,
-           motherseducation = education,
-          motherseducationcat = education_cat) %>% drop_na(IDmother) %>% group_by(IDmother) %>%
-    fill(motherseducation, .direction=c("downup")) %>% fill(motherseducationcat, .direction=c("downup")) %>% 
-    group_by(IDmother) %>% summarise(motherseducation = max(motherseducation))
-  newdata <- left_join(newdata, mother)
-  father <- newdata %>% dplyr::select(uniqueID, year, education, education_cat) %>% 
-    rename(IDfather = uniqueID,
-           fatherseducation = education,
-           fatherseducationcat = education_cat) %>% drop_na(IDfather) %>% 
-    fill(fatherseducation, .direction=c("downup")) %>% 
-    group_by(IDfather) %>% summarise(fatherseducation=max(fatherseducation, na.rm=T))
-  newdata <- left_join(newdata, father)
   return(newdata)
 }
 
@@ -68,7 +55,7 @@ varnames <- c("ER30003", "ER30022", "ER30045", "ER30069", "ER30093", "ER30119", 
               "ER30219", "ER30248", "ER30285", "ER30315", "ER30345", "ER30375", "ER30401", "ER30431", "ER30465",
               "ER30500", "ER30537", "ER30572", "ER30608", "ER30644", "ER30691", "ER30735", "ER30808", "ER33103",
               "ER33203", "ER33303", "ER33403","ER33503","ER33603","ER33703","ER33803","ER33903","ER34003","ER34103",
-                       "ER34203","ER34303","ER34503", "ER34703", "ER34903")
+              "ER34203","ER34303","ER34503", "ER34703", "ER34903")
 newdata <- data %>% dplyr::select(uniqueID, ER30001, all_of(c(varnames)))
 years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
 names(newdata)[3:44] <- years
@@ -126,6 +113,8 @@ weights <- weights %>% pivot_longer(cols='1999':'2021', names_to="year", values_
 return(weights)
 }
 
+### PROCESSING RACE - OLD METHOD
+#
 # process_race <- function(data){
 #   
 # race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096","V5662","V6209","V6802",
@@ -335,6 +324,292 @@ return(weights)
 #   return(df)
 # }
 
+# PROCESSING RACE - NEW METHOD
+
+###### FUNCTION 1: PROCESS_RACE
+
+process_race <- function(data){
+
+  # Race of head
+  race <- c("V181","V801","V1490","V2202","V2828","V3300","V3720","V4204","V5096","V5662","V6209","V6802",
+            "V7447","V8099","V8723","V9408","V11055","V11938","V13565","V14612","V16086",
+            "V17483","V18814","V20114","V21420","V23276","ER3944","ER6814","ER9060","ER11848","ER15928",
+            "ER19989","ER23426","ER27393","ER40565","ER46543","ER51904","ER57659","ER64810","ER70882", "ER76897",
+            "ER81144")
+  
+  racevars <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, sex, all_of(race))
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(racevars)[6:47] <- years
+  racevars <- racevars %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="racehead") %>% 
+    mutate(racehead = 
+             case_when(
+               # White
+               racehead==1 ~ "white",
+               # Black
+               racehead==2 ~ "black",
+               # Hispanic
+               year <=1984 & racehead==3 | year>=1990 & racehead==5 ~ "hispanic",
+               # Native American
+               year>=1985 & racehead==3 ~ "Native",
+               # Asian/PI
+               racehead==4 & year>=1985 | racehead==5 & year>=2005 ~ "Asian/PI", # recoding of 5 as Asian here is a new addition
+               # other
+               racehead==7 | racehead==8 ~ "other",
+               # NA
+               racehead==9 | racehead==0 ~ "NA"))
+ 
+  # Race of wife
+  wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
+            "ER3883","ER6753","ER8999","ER11760","ER15836","ER19897","ER23334","ER27297",
+            "ER40472","ER46449","ER51810","ER57549","ER64671","ER70744","ER76752", "ER81017")
+  wiferace <- data %>% dplyr::select(uniqueID, all_of(wife))
+  years <- c(1985:1997,1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(wiferace)[2:26] <- years
+  wiferace <- wiferace %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="racewife") %>% 
+    mutate(racewife = 
+             case_when(
+               # White
+               racewife==1 ~ "white",
+               # Black
+               racewife==2 ~ "black",
+               # Hispanic
+               year <=1984 & racewife==3| year>=1990 & racewife==5 ~ "hispanic", 
+               # Native American
+               year>=1985 & racewife==3 ~ "Native",
+               # Asian/PI
+               racewife==4 & year>=1985 | racewife==5 & year>=2005 ~ "Asian/PI",
+               # other
+               racewife==7| racewife==8 ~ "other",
+               # NA
+               racewife==9| racewife==0 ~ "NA"))
+  
+  # Hispanic status of head
+  hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
+                 "V21419","V23275","ER3941","ER6811","ER9057","ER27392","ER40564",
+                 "ER46542","ER51903","ER57658","ER64809","ER70881","ER76896", "ER81143")
+  years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  hispanic <- data %>% dplyr::select(uniqueID, all_of(hispanic1))
+  names(hispanic)[2:22] <- years
+  hispanic <- hispanic %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanichead") %>% 
+    mutate(hispanichead = case_when(
+      # Not hispanic
+      hispanichead==0 ~ "nothispanic",
+      # Hispanic
+      hispanichead==1| hispanichead==2| hispanichead ==3| hispanichead==4| hispanichead==5| hispanichead==6| hispanichead==7 ~ "hispanic",
+      # NA
+      hispanichead==9 ~ NA))
+  
+  # Hispanic status of wife 
+  hispanic2 <- c("V12292","V13499","V14546","V16020",
+                 "V17417","V18748","V20048","V21354",
+                 "V23211","ER3880","ER6750","ER8996",
+                 "ER27296","ER40471","ER46448","ER51809",
+                 "ER57548","ER64670","ER70743","ER76751", "ER81016")
+  hispanicwife <- data %>% dplyr::select(uniqueID, all_of(hispanic2))
+  years <- c(1985:1996, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(hispanicwife)[2:22] <- years
+  hispanicwife <- hispanicwife %>% pivot_longer(cols='1985':'2021', names_to="year", values_to="hispanicwife") %>% 
+    mutate(hispanicwife= case_when(
+      # Not hispanic
+      hispanicwife==0 ~ "nothispanic",
+      # Hispanic
+      hispanicwife==1| hispanicwife==2| hispanicwife==3| hispanicwife==4| hispanicwife==5| hispanicwife==6| hispanicwife==7 ~ "hispanic",
+      # NA
+      hispanicwife==9 ~ NA))
+  
+  ## Combine information from race variable and hispanic variable to generate a combined 'raceeth' variable
+  
+  # Merge data
+  alldata <- expand.grid(uniqueID = unique(data$uniqueID), 
+                         year =  as.character(c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)))
+  raceall <- left_join(alldata, racevars)
+  raceall <- left_join(raceall, wiferace)
+  raceall <- left_join(raceall, hispanic)
+  raceall <- left_join(raceall, hispanicwife)
+  raceall$year <- as.numeric(raceall$year)
+  
+  # Resolve any conflicts so that if either one of the ethnicity or race variables is recorded as Hispanic that will be assigned as the individuals primary raceeth:
+  # Gives resulting categories: NH White, NH Black, NH Asian, NH other, Hispanic (i.e. Hispanic White, Hispanic other, Hispanic Black etc. all included within Hispanic)
+  # nb. pre 1985 no Hispanic ethnicity Q available. 
+  raceall <- raceall %>% 
+    mutate(raceethhead = ifelse(year<=1984, racehead,
+                                ifelse(year>1984 & hispanichead=="hispanic","hispanic",
+                                       ifelse(year>1984 & hispanichead!="hispanic",racehead,NA))),
+           raceethwife = ifelse(year<=1984, racewife,
+                                ifelse(year>1984 & hispanicwife=="hispanic","hispanic",
+                                       ifelse(year>1984 & hispanicwife!="hispanic",racewife,NA)))) %>% 
+    dplyr::select(uniqueID, familyID, IDmother, IDfather, year, sex, raceethhead, raceethwife)
+    return(raceall)
+}
+
+###### FUNCTION 2: GENERATE_FAMILY_RACE (previously "recode_race(type=T)")
+generate_family_race <- function(data){
+  # generate a grid with all possible combinations of head and wife raceeth
+  head <- c("black","white","hispanic","other","Native","Asian/PI")
+  wife <- c("black","white","hispanic","other","Native","Asian/PI")
+  combos <- expand.grid(head,wife)
+  # rename the column headings
+  names(combos) <- c("head","wife") 
+  combos$head <- as.character(combos$head)
+  combos$wife <- as.character(combos$wife)
+
+# Generate a new variable, "racefamily_both_known", when both the head and wife have race data available
+  # Assign racefamily_both_known based on the highest priority rated Race, with the following order:
+  # Hispanic > Black > Native > Asian/PI > other > White
+  combos <- combos %>% mutate(
+    racefamily_both_known = case_when(
+      head==wife ~ head,
+      head=="hispanic"|wife=="hispanic" ~ "hispanic",
+      head=="black" | wife=="black" ~ "black",
+      head=="Native" | wife=="Native" ~ "Native",
+      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
+      head=="other" | wife=="other" ~ "other",
+      head=="white" | wife=="white" ~ "white"))
+  combos$combo <- paste(combos$head,combos$wife,sep="")
+  
+# Generate a new variable "race_family_one_known", when at least one either the head or wife have data
+  data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
+  data <- left_join(data, combos)
+  data <- data %>% mutate(
+    racefamily_one_known = case_when(
+      head==wife ~ head,
+      head=="hispanic"|wife=="hispanic" ~ "hispanic",
+      head=="black" | wife=="black" ~ "black",
+      head=="Native" | wife=="Native" ~ "Native",
+      head=="Asian/PI" | wife=="Asian/PI" ~ "Asian/PI",
+      head=="other" | wife=="other" ~ "other",
+      head=="white" | wife=="white" ~ "white",
+      combo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
+      combo=="blackNA" | combo=="NAblack" ~ "black",
+      combo=="NativeNA" | combo=="NANative" ~ "Native",
+      combo=="Asian/PINA" | combo=="NAAsian/PI" ~ "Asian/PI",
+      combo=="otherNA" | combo=="NAother" ~ "other",
+      combo=="whiteNA" | combo=="NAwhite" ~ "white",
+      combo=="NANA" ~ NA)
+  ) %>%
+    dplyr::select(-c("head", "wife"))
+  return(data)
+}
+
+###### FUNCTION 3:ASSIGN_INDIVIDUAL_FAMILY_RACE (previously "individual_race(type = T)")
+## Assign each individual their raceeth.  As the race question is only asked of the head and of their spouse directly, individuals may have their raceeth information imputed based on their nearest family member. 
+# For example, the parent and child of the head is given the same race as the head.
+
+# Allocate race based on the head or wife
+assign_individual_family_race <- function(data){
+  data <- data %>% mutate(
+    individualrace = case_when(
+      relationship=="head" | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" ~ raceethhead,
+      relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
+      relationship=="grandchild" ~ racefamily_one_known,
+      relationship=="born after this year or nonresponse" | is.na(relationship) | relationship=="Immigrant/Latino" | relationship=="nonrelative" | relationship=="cohabitor" ~ NA)) %>%
+    dplyr::group_by(uniqueID) %>% 
+    tidyr::fill(individualrace, .direction=c("downup")) 
+  return(data)
+}
+
+###### FUNCTION 4: PROCESS_RACE_PARENTS
+# All individuals have a unique ID and a IDmother (their mothers unique ID number).
+# Most indiviudals have their parents in the dataset due to the survey design, and their parents will have info on their race/ethnicity
+# from when they were interviewed as heads/wives themselves.
+# We therefore generate a look up table for mothers and fathers, renaming the mothers UniqueID as IDmother
+# in order to match them with their children, and add a column to each of their children, stating their mother's race 
+
+process_race_parents <- function(df){
+  mother <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
+    rename(IDmother = uniqueID,
+           mothersrace = individualrace) %>%  group_by(IDmother) %>% fill(mothersrace, .direction=c("downup")) %>% distinct() 
+  df <- left_join(df, mother)
+  father <- df %>% ungroup() %>% dplyr::select(uniqueID, year, individualrace) %>% 
+    rename(IDfather = uniqueID,
+           fathersrace = individualrace)  %>% group_by(IDfather) %>% 
+    fill(fathersrace, .direction=c("downup"))%>% distinct()
+  df <- left_join(df, father)
+  return(df)
+}
+
+###### FUNCTION 5: GENERATE_RACE_PARENTS (previously recode_race(type=F)")
+# Generate a new variable, "racefamily_parents", based on the parents race data
+generate_race_parents <- function(data) {
+  data$parentscombo <- paste(data$mothersrace, data$fathersrace, sep="")
+  # data <- left_join(data, combos)
+  ## from here Hispanic, black, native, asian, other, white
+  data %>% mutate(
+    race_parents = case_when(
+      mothersrace==fathersrace ~ fathersrace,
+      fathersrace=="hispanic"|mothersrace=="hispanic" ~ "hispanic",
+      fathersrace=="black" | mothersrace=="black" ~ "black",
+      fathersrace=="Native" | mothersrace=="Native" ~ "Native",
+      fathersrace=="Asian/PI" | mothersrace=="Asian/PI" ~ "Asian/PI",
+      fathersrace=="other" | mothersrace=="other" ~ "other",
+      fathersrace=="white" | mothersrace=="white" ~ "white",
+      parentscombo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
+      parentscombo=="blackNA" | combo=="NAblack" ~ "black",
+      parentscombo=="NativeNA" | combo=="NANative" ~ "Native",
+      parentscombo=="Asian/PINA" | combo=="NAAsian/PI"  ~ "Asian/PI",
+      parentscombo=="otherNA" | combo=="NAother" ~ "other",
+      parentscombo=="whiteNA" | combo=="NAwhite" ~ "white",
+      parentscombo=="NANA" ~ NA)
+  ) %>% 
+    return(data)
+}
+
+###### FUNCTION 6: INDIVIDUAL_RACE_PARENTS
+# If race not reported, or unknown for head and wife, allocate race based on the parents
+assign_individual_race_parents <- function(data){    
+  toallocate <- data[is.na(data$individualrace),]
+  toallocate <- toallocate %>% 
+    mutate(individualrace = race_parents)
+  data <- data %>% drop_na(individualrace)
+  data <- rbind(data, toallocate) %>% 
+    group_by(uniqueID) %>% fill(individualrace, .direction=c("downup"))
+  return(data)
+}
+
+###### FUNCTION 7 PROCESS_TAS_RACE
+process_TAS_race <- function(data){
+  varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
+  years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019) # 2021 data not yet available
+  race <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(race)[2:9] <- years
+  race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="TAS_race") %>% 
+    mutate(TAS_race = 
+             case_when(
+               # White
+               TAS_race==1 ~ "white",
+               # Black
+               TAS_race==2 & year<=2015 | TAS_race==3 & year>=2017 ~ "black", 
+               # Hispanic
+               TAS_race==2 | year>=2017 ~ "hispanic",
+               # Native American
+               TAS_race==3 & year<=2015 | TAS_race==5 & year>=2017 ~ "Native",
+               # Asian/PI
+               TAS_race==4 | TAS_race==5 & year <=2015 | TAS_race==7 & year>=2017 ~ "Asian/PI", # recoding of 5 as Asian here is a new addition
+               # other
+               TAS_race==7 & year<=2015 | TAS_race==6 & year>=2017 | TAS_race==8 & year>=2017 ~ "other",
+               # NA
+               TAS_race==6 & year<=2015 | TAS_race==8 & year<=2015 | TAS_race==8 | TAS_race==9 | TAS_race==98 | TAS_race==99 ~ "NA")) %>% 
+    group_by(uniqueID) %>% fill(TAS_race, .direction=c("downup")) %>% 
+    dplyr::select(uniqueID, TAS_race, year) %>% distinct()
+  return(race)
+}
+
+###### FUNCTION 8: ALLOCATE_RACE_FINAL()
+# ensure that each person has a unique value for race and ethnicity over time
+allocate_final_race <- function(data){
+  races <- unique(data$race_new)
+  # recode according to hierarchy - black, hispanic, native american, asian/pi, other
+  newrace <- ifelse("black" %in% races, "black",
+                    ifelse("hispanic" %in% races, "hispanic", 
+                           ifelse("Native" %in% races, "Native",
+                                  ifelse("Asian/PI" %in% races, "Asian/PI",
+                                         ifelse("other" %in% races, "other",
+                                                ifelse("white" %in% races, "white", NA))))))
+  data$race_new_unique <- newrace
+  return(data)
+}
+
+### Process education
 process_parent_ed <- function(data){
   headfathered <- 	c("V318", "V793", "V1484", "V2196", "V2822", "V3240", "V3662", "V4138", "V4681", "V5601", "V6150", "V6747", "V7380",
                      "V8032", "V8656", "V9342", "V10989", "V11922", "V13549", "V14596", "V16070", "V17467", "V18798", "V20098",
@@ -343,7 +618,7 @@ process_parent_ed <- function(data){
   headfather <- data %>% dplyr::select(uniqueID, all_of(headfathered))
   years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   names(headfather)[2:43] <- years
-  headfather <- headfather %>% pivot_longer(cols='1968':'2019', names_to="year", values_to="head_fathered") %>% 
+  headfather <- headfather %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="head_fathered") %>% 
     # mutate(head_fathered = ifelse(head_fathered<=4, "LEHS",
     #                               ifelse(head_fathered>4 & head_fathered<=6, "SomeC",
     #                                      ifelse(head_fathered> 6 & head_fathered<=8, "College", NA)))) %>% 
@@ -358,7 +633,7 @@ process_parent_ed <- function(data){
   headmother <- data %>% dplyr::select(uniqueID, all_of(headmothered))
   years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   names(headmother)[2:37] <- years
-  headmother <- headmother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="head_mothered") %>% 
+  headmother <- headmother %>% pivot_longer(cols='1974':'2021', names_to="year", values_to="head_mothered") %>% 
     # mutate(head_mothered = ifelse(head_mothered<=4, "LEHS",
     #                               ifelse(head_mothered>4 & head_mothered<=6, "SomeC",
     #                                      ifelse(head_mothered> 6 & head_mothered<=8, "College", NA)))) %>% 
@@ -391,7 +666,7 @@ process_parent_ed <- function(data){
   
   years <- c(1974:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
   names(spousemother)[2:37] <- years
-  spousemother <- spousemother %>% pivot_longer(cols='1974':'2019', names_to="year", values_to="spouse_mothered") %>% 
+  spousemother <- spousemother %>% pivot_longer(cols='1974':'2021', names_to="year", values_to="spouse_mothered") %>% 
     # mutate(spouse_mothered = ifelse(spouse_mothered<=4, "LEHS",
     #                                 ifelse(spouse_mothered>4 & spouse_mothered<=6, "SomeC",
     #                                        ifelse(spouse_mothered> 6 & spouse_mothered<=8, "College", NA)))) %>% 
@@ -404,54 +679,7 @@ process_parent_ed <- function(data){
   alldata <- left_join(alldata, spousemother)
   alldata$year <- as.numeric(alldata$year)
   
-  
-  
   return(alldata)
-}
-
-process_parent_ed_data <- function(data){
-  mother <- data %>% ungroup() %>% dplyr::select(uniqueID, year, education) %>% 
-    rename(IDmother = uniqueID,
-           mothers_ed_alt = education) %>% ungroup() %>% fill(mothers_ed_alt, .direction=c("downup")) %>%
-    group_by(IDmother) %>% distinct() 
-  data <- left_join(data, mother)
-  father <- data %>% ungroup() %>% dplyr::select(uniqueID, year, education) %>% 
-    rename(IDfather = uniqueID,
-           fathers_ed_alt = education) %>% fill(fathers_ed_alt, .direction=c("downup")) %>%
-    group_by(IDfather) %>% distinct()
-  data <- left_join(data, father)
-  return(data)
-}
-
-code_education_parent <- function(data){
-  data <- data %>% 
-    mutate(
-      mothers_ed_question = ifelse(relationship=="head", head_mothered,
-                                   ifelse(relationship=="wife", spouse_mothered, NA)),
-      fathers_ed_question = ifelse(relationship=="head", head_fathered,
-                                   ifelse(relationship=="wife", spouse_fathered, NA)))
-
-  data <- data %>% dplyr::select(uniqueID, year, mothers_ed_question, mothers_ed_alt, 
-                                 fathers_ed_question, fathers_ed_alt) %>% 
-    fill(mothers_ed_question, .direction=c("downup")) %>% 
-    fill(mothers_ed_alt, .direction=c("downup")) %>% 
-    fill(fathers_ed_question, .direction=c("downup")) %>% 
-    fill(fathers_ed_alt, .direction=c("downup")) %>% 
-    mutate(finalyear = ifelse(year==max(year),1,0)) %>% 
-    filter(finalyear==1) %>% 
-    mutate(mothers_ed_final = ifelse(is.na(mothers_ed_question), mothers_ed_alt, mothers_ed_question),
-           fathers_ed_final = ifelse(is.na(fathers_ed_question), fathers_ed_alt, fathers_ed_question)) %>% 
-    dplyr::select(uniqueID, mothers_ed_question, mothers_ed_alt, fathers_ed_question, fathers_ed_alt,
-                  mothers_ed_final, fathers_ed_final) %>% distinct()
-
-    # rowwise() %>% 
-    # mutate(sumparented = sum(mothers_ed_final,fathers_ed_final, na.rm=TRUE),
-    #        onecollege = ifelse(mothers_ed_final == 3 | fathers_ed_final==3, 1,0),
-    #        onecollegeplus = ifelse(onecollege==1, 1,
-    #                                ifelse(is.na(mothers_ed_final) & is.na(fathers_ed_final), NA,
-    #                                       0)))
-
-  return(data)
 }
 
 process_kessler <- function(data){
@@ -624,29 +852,29 @@ recode_alcohol <- function(data){
 
 ## TAS for 2021 not yet available
 
-process_TAS_race <- function(data){
-  varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
-  years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
-  race <- data %>% dplyr::select(uniqueID, all_of(varlist))
-  names(race)[2:9] <- years
-  race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="TAS_race") %>% 
-    mutate(TAS_race = ifelse(TAS_race==1, "white",
-                             ifelse(TAS_race==2 & year<=2015, "black",
-                                    ifelse(TAS_race==3 & year<=2015, "Native",
-                                           ifelse(TAS_race>=4 & TAS_race<=6 & year<=2015, "Asian/PI",
-                                                  ifelse(TAS_race==7 & year<=2015, "other",
-                                                         ifelse(TAS_race==2 & year>2015, "hispanic",
-                                                                ifelse(TAS_race==3 & year>2015, "black",
-                                                                       ifelse(TAS_race==4 & year>2015, "Asian/PI",
-                                                                              ifelse(TAS_race==5 & year>2015, "Native",
-                                                                                     ifelse(TAS_race==7 & year>2015, "Asian/PI",
-                                                                                            ifelse(TAS_race==6 & year>2015, "other",
-                                                                                                   ifelse(TAS_race==8 & year>2015, "other",
-                                                                                                          NA))))))))))))) %>% 
-    group_by(uniqueID) %>% fill(TAS_race, .direction=c("downup")) %>% 
-    dplyr::select(uniqueID, TAS_race) %>% distinct()
-  return(race)
-}
+# process_TAS_race <- function(data){
+#   varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
+#   years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+#   race <- data %>% dplyr::select(uniqueID, all_of(varlist))
+#   names(race)[2:9] <- years
+#   race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="TAS_race") %>% 
+#     mutate(TAS_race = ifelse(TAS_race==1, "white",
+#                              ifelse(TAS_race==2 & year<=2015, "black",
+#                                     ifelse(TAS_race==3 & year<=2015, "Native",
+#                                            ifelse(TAS_race>=4 & TAS_race<=6 & year<=2015, "Asian/PI",
+#                                                   ifelse(TAS_race==7 & year<=2015, "other",
+#                                                          ifelse(TAS_race==2 & year>2015, "hispanic",
+#                                                                 ifelse(TAS_race==3 & year>2015, "black",
+#                                                                        ifelse(TAS_race==4 & year>2015, "Asian/PI",
+#                                                                               ifelse(TAS_race==5 & year>2015, "Native",
+#                                                                                      ifelse(TAS_race==7 & year>2015, "Asian/PI",
+#                                                                                             ifelse(TAS_race==6 & year>2015, "other",
+#                                                                                                    ifelse(TAS_race==8 & year>2015, "other",
+#                                                                                                           NA))))))))))))) %>% 
+#     group_by(uniqueID) %>% fill(TAS_race, .direction=c("downup")) %>% 
+#     dplyr::select(uniqueID, TAS_race) %>% distinct()
+#   return(race)
+# }
 
 process_TAS_education <- function(data){
   varlist<-c("TA110687", "TA130707", "TA150717", "TA170780", "TA190917")
@@ -658,4 +886,6 @@ process_TAS_education <- function(data){
                                   ifelse(TAS_education>=96, NA, TAS_education))) %>% 
     group_by(uniqueID) %>% fill(TAS_education, .direction=c("down"))
   return(ed)
-  }
+}
+
+

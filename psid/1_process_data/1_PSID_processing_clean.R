@@ -82,7 +82,7 @@ tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>%
 
 IDS <- unique(subset(tally, flag==1)$uniqueID)
 
-# just take each individuals first observation of race and ethnicity?
+# just take each individuals first observation of race and ethnicity
 firsteth <- race %>% 
   mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
   filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
