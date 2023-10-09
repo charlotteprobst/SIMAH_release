@@ -37,11 +37,19 @@ recode_race_ethnicity_all <- function(data){
       HISPYN == 2 & RACENEW == 400 ~ 11, # Hispanic, Asian only*
       HISPYN == 2 & RACENEW == 520 ~ 12, # Hispanic, Other race 
       HISPYN == 2 & RACENEW == 530 ~ 13, # Hispanic, Race group not releasable
-      HISPYN == 2 & RACENEW == 541 ~ 14, # Hispanic, Multiple race *
+      HISPYN == 2 & RACENEW == 541 ~ 14), # Hispanic, Multiple race *
   
-  ))
+  race_6_cats = case_when(
+    race_ethnicity==1 ~ "White",
+    race_ethnicity==8 ~ "Hispanic White",
+    race_ethnicity==2 ~ "Black",
+    race_ethnicity==4 ~ "Asian",
+    race_ethnicity==7 ~ "Multiple race",
+    race_ethnicity==3 ~ "AI/AN")
+  )
   return(data)
 }
+
 
 # Key:
 

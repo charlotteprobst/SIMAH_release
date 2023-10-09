@@ -217,10 +217,9 @@ intersections <- distinct(data, intersections, .keep_all = TRUE)
 fixed_effects <- full_grams@FP
 fixed_effects <- as.data.frame(fixed_effects)
 
-# Estimates of random effects
+# Estimates of random effects (variance)
 random_effects <- full_grams@RP
 random_effects <- as.data.frame(random_effects)
-
 
 ##### PREPARE FIXED-PART PAREMETER CHAINS 
 # Store the constant and estimated coef for each variable, for each iteration (100 iterations)
@@ -275,12 +274,12 @@ mu_prepped$iteration <- 1:nrow(mu_prepped)
 mu_prepped <- pivot_longer(resi_chains_lev_2, u_0_1:u_0_108)
 mu_prepped$iteration <- rep(c(1:100), each = 108)
 
-# # level 1 (individual)
+# # # level 1 (individual)
 # resi_chains_lev_1 <- full_grams@resi.chains$resi_lev1
 # resi_chains_lev_1 <- as.data.frame(resi_chains_lev_1)
 # # reformat
 # mu_prepped_lev_1 <- resi_chains_lev_1
-# mu_prepped_lev_1$iteration <- 1:nrow(mu_prepped)
+# mu_prepped_lev_1$iteration <- 1:nrow(mu_prepped_lev_1)
 # mu_prepped_lev_1 <- pivot_longer(resi_chains_lev_1, u_0_1:u_0_108)
 # mu_prepped_lev_1$iteration <- rep(c(1:100), each = 108)
 
@@ -290,6 +289,65 @@ mdata_prepped$name <- str_sub(mdata_prepped$name, 5) # rename intersection u_0_1
 mdata_prepped$name <- as.numeric(mdata_prepped$name)
 mdata_prepped <- dplyr::rename(mdata_prepped, intersections = name, u = value)
 mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
+
+
+### Trialling addition of eijs
+# level_1_intercepts <- as.data.frame(full_grams@residual$lev_1_resi_est_Intercept)
+# test <- cbind(model_data, level_1_intercepts)
+# test2 <- test %>% group_by(intersectional_names) %>% mutate(
+#   average_eij = mean(`full_grams@residual$lev_1_resi_est_Intercept`)
+# ) 
+# test3 <- distinct(test2, intersectional_names, .keep_all = TRUE)
+# mdata_prepped_test <- inner_join(mdata_prepped, test3, by = 'intersections')
+# 
+# # Estimates including both additive and interaction effects and eij (trial):
+# mdata_prepped_test <- mdata_prepped_test %>% mutate(
+#   est = exp(b_cons*Intercept
+#             + b_female*SEXFemale
+#             + b_adult*`age_diaz25-59`
+#             + b_older_adult*`age_diaz60+`  
+#             + b_Hispanic*`race_6_catsHispanic White`
+#             + b_Asian*`race_6_catsAsian`
+#             + b_AI_AN*`race_6_catsAI/AN`
+#             + b_Black*`race_6_catsBlack`
+#             + b_Multiple_race*`race_6_catsMultiple race`
+#             + b_med*`education_3_catssome college`
+#             + b_high*`education_3_cats4+ years college`
+#             + b_2001*`YEAR2001`
+#             + b_2002*`YEAR2002`
+#             + b_2003*`YEAR2003`
+#             + b_2004*`YEAR2004`
+#             + b_2005*`YEAR2005`
+#             + b_2006*`YEAR2006`
+#             + b_2007*`YEAR2007`
+#             + b_2008*`YEAR2008`
+#             + b_2009*`YEAR2009`
+#             + b_2010*`YEAR2010`
+#             + b_2011*`YEAR2011`
+#             + b_2012*`YEAR2012`
+#             + b_2013*`YEAR2013`
+#             + b_2014*`YEAR2014`
+#             + b_2015*`YEAR2015`
+#             + b_2016*`YEAR2016`
+#             + b_2017*`YEAR2017`
+#             + b_2018*`YEAR2018`
+#             + u + average_eij)
+# )
+# 
+# # Calculate the mean, 2.5th and 97.5th percentiles of the MCMC chains
+# mdata_prepped_test <- mdata_prepped_test %>% 
+#   group_by(intersections) %>%
+#   mutate(estmn = mean(est),
+#          estlo = quantile(est,.25),
+#          esthi = quantile(est,.75))
+# 
+# # Drop chains and just keep their summaries (mean, 2.5th and 97.5th)
+# mdata_results_test <- mdata_prepped_test %>%
+#   dplyr::select(-"iteration", -"est", -contains(c("b_", "u_" ))) %>%
+#   distinct(intersections, .keep_all=TRUE)
+# 
+# # Merge with intersectional names reference table
+# mdata_results_eij <- inner_join(mdata_results_test, intersections_reference)
 
 
 ##### CALCULATE VALUES OF INTEREST
@@ -435,3 +493,5 @@ ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() 
 ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_MAIN.png", 
        dpi=300, width=33, height=19, units="cm")
+
+

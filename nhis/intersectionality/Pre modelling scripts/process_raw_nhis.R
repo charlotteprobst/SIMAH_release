@@ -356,10 +356,14 @@ median(nhis_alc_clean$alc_daily_g) # 0.3
 mean(nhis_alc_clean$alc_daily_g_capped_200) # 4.8
 median(nhis_alc_clean$alc_daily_g_capped_200) # 0.3
 
-# Check raw means by intersections (rough)
+# Check raw means by intersections
 raw_means_per_group <- nhis_alc_clean %>% 
-  group_by(SEX, age_diaz, race_5_cats, education_3_cats) %>% 
-  summarise(mean = mean(alc_daily_g_capped_200)) # max 13 grams
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(alc_daily_g)) # max 26 grams
+
+raw_means_per_group_capped <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(alc_daily_g_capped_200)) # max 26 grams
 
 ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + 
   geom_histogram(bins=400) + 
@@ -375,12 +379,23 @@ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality
 # Consider data transformation for alc daily grams
 nhis_alc_clean <- nhis_alc_clean %>% 
   mutate(new_grams = alc_daily_g_capped_200 + 0.02)# add half of the smallest grams value (for drinkers) to zero values
+# Check new variable
+mean_new_grams <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(new_grams)) # max 26.07 grams
+
 # Check recommended lambda with boxcox
 b <- MASS::boxcox(lm(nhis_alc_clean$new_grams ~ 1))
 lambda <- b$x[which.max(b$y)] # -0.06
 lambda2 <- forecast::BoxCox.lambda(nhis_alc_clean$new_grams)  # -0.07
-# As both suggested lambda are close to 0, log transformation is appropriate
+
+# As both suggested lambda are close to 0, log transform:
 nhis_alc_clean$capped_daily_grams_log <- log(nhis_alc_clean$new_grams)
+# Check new variable
+mean_log_grams <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(capped_daily_grams_log))
+
 # Distribution plot 
 ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=200) + 
   ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
