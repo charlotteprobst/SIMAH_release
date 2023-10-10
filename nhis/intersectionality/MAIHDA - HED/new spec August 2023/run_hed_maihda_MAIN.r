@@ -408,3 +408,12 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(pBmn, n = 5)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
 write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_5_interactions_MAIN.csv")
+
+# Generate a table comparing the observed & predicted proportion of heavy drinkers:
+obs_vs_est <- merge(summary_table, mdata_results)
+obs_vs_est <- obs_vs_est %>% dplyr::select(intersectional_names, numerator, denominator, proportion, pmn)
+obs_vs_est <- obs_vs_est %>% mutate(n = numerator + denominator, 
+                                    percentage=proportion*100,
+                                    difference=pmn-percentage)
+write.csv(obs_vs_est, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/obs_vs_est_MAIN")
+# Difference in observed and estimated range from 14% lower than the observed to 7% higher

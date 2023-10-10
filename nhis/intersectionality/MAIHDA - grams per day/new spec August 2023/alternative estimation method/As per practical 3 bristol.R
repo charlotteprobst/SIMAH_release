@@ -46,7 +46,7 @@ str(mydata)
 # Check the number intersections (level-2 units) there are in the data
 length(unique(mydata$intersections))
 
-# There are 516,439 individuals (level-1) nested within 108 schools (level-2)
+# There are 516,439 individuals (level-1) nested within 108 intersectionss (level-2)
 
 # Summarise all variables in the data: This includes the mean and 
 # five-number summary and frequency tables for categorical variables
@@ -61,19 +61,19 @@ plot(mydata$intersections, mydata$capped_daily_grams_log)
 ggplot(mydata, aes(x = intersections, y = capped_daily_grams_log)) +
   geom_point()
 
-# Generate the school means of age 16 scores
+# Generate the intersections means of age 16 scores
 mydata$intersectionalmean <- ave(exp(mydata$capped_daily_grams_log), mydata$intersections, FUN = mean, 
                          na.rm = TRUE)
 # The ave() function allows us to repeat a command across groups. Here we
-# use it to calculate the mean of normexam separately for each school. 
+# use it to calculate the mean of normexam separately for each intersections. 
 # The function ave() can be used with any function. 
 # Here, we use the mean() function to calculate the mean age 16 score 
-# (within each school).
+# (within each intersections).
 # The option na.rm has been set to TRUE to calculate the mean after removing 
 # missing values. Otherwise, the mean() function would return NA if there are 
 # any missing data.
 
-# Add the school means to the graph
+# Add the intersections means to the graph
 ggplot(mydata,aes(x = intersections)) +
   geom_point(aes(y = exp(capped_daily_grams_log), colour = "NHISPID")) +
   geom_point(aes(y = intersectionalmean, colour = "intersections" )) +
@@ -83,9 +83,9 @@ ggplot(mydata,aes(x = intersections)) +
                                  "intersections" = "intersectional mean"),
                       name=NULL)
 # Including the argument "colour" in the aes() function for the geom_point()
-# function twice allow us to add labels to the individual and school 
+# function twice allow us to add labels to the individual and intersections 
 # predictions. We then define the colours and labels using the 
-# scale_colour_manual() function, black for individual and red for school 
+# scale_colour_manual() function, black for individual and red for intersections 
 # predictions.
 
 
@@ -132,7 +132,7 @@ summary(m2)
 # in the fixed part of the model but not in the random part.
 # We do not need to explicitly request for the fixed-part intercept,
 # but we do need to request for a random intercept by including 1 in the 
-# random part specification (1 | school).
+# random part specification (1 | intersections).
 # The level-1 random part, that is the usual observation-level residual, is 
 # added automatically and so does not need to be specified.
 # We fit the model using maximum likelihood (MLE) instead of the restricted
@@ -180,45 +180,25 @@ lrtest(m1, m2)
 #-------------------------------------------------------------------------------
 
 # Fit Model 3
-m3 <- lmer(capped_daily_grams_log ~ 1 + SEX + age_diaz + education_3_cats + race_6_cats + (1 | intersections), data = mydata, REML = FALSE)
+m3 <- lmer(capped_daily_grams_log ~ 1 + SEX + age_diaz + education_3_cats + race_6_cats +
+             (1 | intersections), data = mydata, REML = FALSE)
 summary(m3)
 
 # Display confidence intervals for the model parameters
 confint(m3)
 
-# Predict the average school line
+# Predict the average intersections line
 mydata$xb <- predict(m3, re.form = NA)
 # The predict() function with the re.form = NA argument (meaning no random effects) predicts the
 # fixed-portion of the linear predictor. That is, that part of the model
 # involving the regression coefficients and which describes the relationship 
-# in the average school.
-# 
-# # Plot the average school line on top of a scatterplot of age 16 scores
-# # against age 11 scores
-# ggplot(mydata, aes(x = standlrt, y = normexam, colour = "student")) +
-#   geom_point() +
-#   geom_line(aes(y = xb, colour = "school" )) +
-#   scale_colour_manual(guide = "legend", 
-#                       values = c("student" = "black", "school" = "red"),
-#                       labels = c("student" = "Student scores", 
-#                                  "school" = "Prediction"),
-#                       name=NULL)
+# in the average intersections.
 
-# Predict the fitted school lines
+# Predict the fitted intersections lines
 mydata$xbu <- predict(m3)
 # By default, the predict() function gives the fitted values. That is, the 
 # fixed-portion of the linear prediction plus contributions based on 
 # predicted random effects (i.e. by default re.form = NULL, meaning all random effects are included)
-
-# # Plot the 65 school lines
-# ggplot(mydata,aes(x = standlrt, y = normexam, colour = "student")) +
-#   geom_point() +
-#   geom_line(aes(y=xbu, colour = "school" , group=school)) +
-#   scale_colour_manual(guide = "legend", 
-#                       values = c("student" = "black", "school" = "red"),
-#                       labels = c("student" = "Student scores", 
-#                                  "school" = "Prediction"),
-#                       name=NULL)
 
 # The package lme4 provides different functions to recover the estimation
 # results. The estimated model parameters can be recovered using the
@@ -230,7 +210,7 @@ vcov(m3)
 rpm3 <- as.data.frame(VarCorr(m3))
 rpm3
 
-# Calculate the proportion of between-school variance explained by fixed effects
+# Calculate the proportion of between-intersections variance explained by fixed effects
 (rpm2$vcov[rpm2$grp == "intersections"] - rpm3$vcov[rpm3$grp == "intersections"]) /
   rpm2$vcov[rpm2$grp == "intersections"] # PCV 94.5%
 
@@ -241,7 +221,7 @@ rpm3
 # VPC/ICC = var(u)/[var(u) + var(e)]
 rpm3$vcov[rpm3$grp == "intersections"] / sum(rpm3$vcov)
 
-# Predict the school random effects and their standard errors
+# Predict the intersections random effects and their standard errors
 u0 <- data.frame(ranef(m3), condVar = TRUE)
 head(u0)
 # The variable 'condval' contains the estimated random intercepts, while the
@@ -251,7 +231,8 @@ head(u0)
 # To help understand shrinkage, generate the unshrunken residuals we first 
 # need to know the number of individuals in each intersection.
 mydata$n <- ave(mydata$cons, mydata$intersections, FUN = sum, na.rm = TRUE)
-head(mydata$n)
+max(mydata$n)
+min(mydata$n)
 # This is another use of the function ave(), this time adding 1s to
 # count the number of students within each strata.
 # Then we add this information to the data frame u0 with the predicted
@@ -281,15 +262,15 @@ ggplot(u0, aes(x = unshrunken, y = condval, label = grp)) +
 # Here we have used the function geom_abline() to plot a 45 degree line on
 # the top of a scatterplot of the shrunken and unshrunken residuals.
 # We have used the geom_text() function and the label aesthetic to plot the
-# school ids instead of points. 
+# intersections ids instead of points. 
 
-# Plot a caterpillar plot of the school effects
+# Plot a caterpillar plot of the intersections effects
 
 # Calculate the lower and upper values of the confidence intervals
 u0$lower <- u0$condval - 1.96 * u0$condsd
 u0$upper <- u0$condval + 1.96 * u0$condsd
 
-# Calculate the school rank
+# Calculate the intersections rank
 u0$rank <- rank(u0$condval)
 head(u0)
 
@@ -300,14 +281,13 @@ ggplot(u0, aes(x = rank, y = condval, ymin = lower, ymax = upper)) +
   geom_point()
 # We added the geom_hline() function to plot a horizontal line at 0
 
-
 # Predict the grams for Male 21-24 AI/AN 4+years college
-# fem5["(Intercept)"] + fem5["girl"]
+# m3["(Intercept)"] + fem5["girl"]
 # 
-# # Predict the age 16 score for an average boy in a boys' school
+# # Predict the age 16 score for an average boy in a boys' intersections
 # fem5["(Intercept)"] + fem5["schgendboysch"]
 # 
-# # Predict the age 16 score for an average girl in a girls' school
+# # Predict the age 16 score for an average girl in a girls' intersections
 # fem5["(Intercept)"] + fem5["girl"] + fem5["schgendgirlsch"]
 
 # Using the predict() function 
@@ -321,10 +301,12 @@ pdata <- data.frame(SEX = c("Male", "Female"),
                     intersections = c("52", "106"))
 pdata
 
-# Predict as estimated in model 3 and for the values in pdata
-round(predict(m3, pdata, re.form = NA), 4)
+# Predict as estimated in model 3 and for the values in pdata, including the random effects
+exp(round(predict(m3, pdata), 4))
+# Male, 4+ years college, "AI/AN", "21-24" = 1.097
+# Female, 4+ years college, "AI/AN", "21-24" = 0.315
 
-# Compare to estimates from null model
-round(predict(m2, pdata, re.form = NA), 4)
-
-## Summary: When just using the intersections, ignoring year and using predict, very similar, as if generated on a middling year
+# Compare to estimates from model 2 (null model)
+exp(round(predict(m2, pdata), 4))
+# Male, 4+ years college, "AI/AN", "21-24" = 0.32
+# Female, 4+ years college, "AI/AN", "21-24" = 0.69

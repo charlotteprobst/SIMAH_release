@@ -90,7 +90,16 @@ model_data$YEAR <- as.factor(model_data$YEAR)
 # Add a column with the number of people (n)
 model_data <- model_data %>%
   group_by(intersections) %>% 
-  add_count()
+  add_count() %>%
+  ungroup()
+
+# Summarise the raw grams data
+grams_summary <- model_data %>% ungroup() %>% summarise(mean_raw = mean(alc_daily_g_capped_200),
+                         min_raw = min(alc_daily_g_capped_200), # 4.91grams
+                         max_raw = max(alc_daily_g_capped_200),
+                         mean_log = mean(capped_daily_grams_log),
+                         min_log = min(capped_daily_grams_log),
+                         max_log = max(capped_daily_grams_log))
 
 # Generate reference table with intersectional names, n, and mean observed grams
 intersections_reference <- model_data %>% distinct(intersections, intersectional_names, mean_observed_grams, n)
