@@ -145,7 +145,7 @@ process_race <- function(data){
                # other
                racehead==7 | racehead==8 ~ "other",
                # NA
-               racehead==9 | racehead==0 ~ "NA"))
+               racehead==9 | racehead==0 ~ NA))
  
   # Race of wife
   wife <- c("V12293","V13500","V14547","V16021","V17418","V18749","V20049","V21355","V23212",
@@ -170,7 +170,7 @@ process_race <- function(data){
                # other
                racewife==7| racewife==8 ~ "other",
                # NA
-               racewife==9| racewife==0 ~ "NA"))
+               racewife==9| racewife==0 ~ NA))
   
   # Hispanic status of head
   hispanic1 <- c("V11937","V13564","V14611","V16085","V17482","V18813","V20113",
@@ -377,7 +377,7 @@ process_TAS_race <- function(data){
                # other
                TAS_race==7 & year<=2015 | TAS_race==6 & year>=2017 | TAS_race==8 & year>=2017 ~ "other",
                # NA
-               TAS_race==6 & year<=2015 | TAS_race==8 & year<=2015 | TAS_race==8 | TAS_race==9 | TAS_race==98 | TAS_race==99 ~ "NA")) %>% 
+               TAS_race==6 & year<=2015 | TAS_race==8 & year<=2015 | TAS_race==8 | TAS_race==9 | TAS_race==98 | TAS_race==99 ~ NA)) %>% 
     group_by(uniqueID) %>% fill(TAS_race, .direction=c("downup")) %>% 
     dplyr::select(uniqueID, TAS_race, year) %>% distinct()
   return(race)

@@ -41,8 +41,6 @@ relationship <- process_relationship(data)
 # process sampling weights 
 sampleweights <- process_sample_weights(data)
 
-source(("SIMAH_code/PSID/1_process_data/process_race_new_method.R"))
-
 ### Process and assign race and ethnicity
  
 ## 1. process race and ethnicity data
