@@ -6,7 +6,7 @@ library(readxl)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-data <- read_excel("SIMAH_workplace/PSID/Full_2021/J324498.xlsx")
+data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021/J324498.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
@@ -35,6 +35,8 @@ age <- process_age(data)
 
 # process relationship to householder data
 relationship <- process_relationship(data)
+# review relationship data
+relationship %>% group_by(relationship) %>% count()
 
 # weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf") ??
 
@@ -71,8 +73,13 @@ race <- generate_race_parents(race)
 ## 6. Assign any individuals with missing 'individual race' data, the parents race
 race <- assign_individual_race_parents(race) 
 
+## 7. Assign the method for imputation of race
+race <- assign_race_method(race)
+summary_race_methods <- race %>% group_by(relationship, race_method) %>% count()
+write.csv(summary_race_methods, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary of race methods.csv")
+
 # condense the race dataset
-race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) 
+# race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) 
 
 # Review missing data by i) observations i.e. rows and ii) individuals
 summary(as.factor(race$individualrace))
@@ -91,8 +98,12 @@ firsteth <- race %>%
   mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
   filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
 
-## 7. Process Transition to Adulthood Supplement race data
+## 8. Process Transition to Adulthood Supplement race data
 TAS_race <- process_TAS_race(data)
+
+# join the TAS race with the main race data 
+TAS_race$year <- as.numeric(TAS_race$year)
+all_race <- left_join(race, TAS_race)
 
 # kessler score 
 kessler <- process_kessler(data)

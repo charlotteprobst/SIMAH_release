@@ -362,7 +362,22 @@ assign_individual_race_parents <- function(data){
   return(data)
 }
 
-###### FUNCTION 7 PROCESS_TAS_RACE
+###### FUNCTION 7 ASSIGN_RACE_METHOD
+
+assign_race_method <- function(data){
+  data <- data %>% mutate(
+    race_method = case_when(
+      relationship=="head" & !(is.na(raceethhead))  ~ "self reported",
+      relationship=="wife/partner" & !(is.na(raceethwife))  ~ "reported by head",
+      relationship=="head" & is.na(raceethhead)| relationship=="wife" & is.na(raceethwife) | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" |
+      relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" |
+      relationship=="grandchild" & !(is.na(racefamily_best_guess)) ~ "imputed based on nearest family member",
+      !(is.na(individualrace)) & !(is.na(race_parents)) ~ "imputed based on parents",
+      individualrace==NA ~ NA))
+  return(data)
+ }
+
+###### FUNCTION 8 PROCESS_TAS_RACE
 process_TAS_race <- function(data){
   varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
   years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019) # 2021 data not yet available
