@@ -96,21 +96,6 @@ firsteth <- race %>%
 ## 7. Process Transition to Adulthood Supplement race data
 TAS_race <- process_TAS_race(data)
 
-### EDUCATIONAL ATTAINMENT
-  
-# process parents educational attainment
-parented <- process_parent_ed(data)
-
-# recode parents educational attainment - based on what is available 
-# first join together parent education and relation to householder 
-parented <- left_join(parented, relationship)
-
-parented <- left_join(parented, education)
-
-parented <- process_parent_ed_data(parented)
-
-parented <- code_education_parent(parented)
-
 # kessler score 
 kessler <- process_kessler(data)
 
