@@ -6,7 +6,7 @@ library(readxl)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-data <- read_excel("SIMAH_workplace/PSID/Full_2021/extract_v3/J324498.xlsx")
+data <- read_excel("SIMAH_workplace/PSID/Full_2021/J324498.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
@@ -57,7 +57,7 @@ race <- generate_family_race(race)
 
 # Review number of individuals with family race data
 summary(as.factor(race$racefamily_both_known))# Total NA = 152,115 out of 200,592
-summary(as.factor(race$racefamily_one_known)) # Total NA = 46,185
+summary(as.factor(race$racefamily_best_guess)) # Total NA = 46,185
 
 ## 3. Assign individuals their family race
 race <- assign_individual_family_race(race)

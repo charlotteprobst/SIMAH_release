@@ -256,11 +256,11 @@ generate_family_race <- function(data){
       head=="white" | wife=="white" ~ "white"))
   combos$combo <- paste(combos$head,combos$wife,sep="")
   
-# Generate a new variable "race_family_one_known", when at least one either the head or wife have data
+# Generate a new variable "race_family_best_guess", based on all available head or wife have data
   data$combo <- paste(data$raceethhead, data$raceethwife, sep="")
   data <- left_join(data, combos)
   data <- data %>% mutate(
-    racefamily_one_known = case_when(
+    racefamily_best_guess = case_when(
       head==wife ~ head,
       head=="hispanic"|wife=="hispanic" ~ "hispanic",
       head=="black" | wife=="black" ~ "black",
@@ -274,8 +274,15 @@ generate_family_race <- function(data){
       combo=="Asian/PINA" | combo=="NAAsian/PI" ~ "Asian/PI",
       combo=="otherNA" | combo=="NAother" ~ "other",
       combo=="whiteNA" | combo=="NAwhite" ~ "white",
-      combo=="NANA" ~ NA)
-  ) %>%
+      combo=="NANA" ~ NA),
+    racefamily_one_known = case_when(
+      combo=="hispanicNA" | combo=="NAhispanic" ~ "hispanic",
+      combo=="blackNA" | combo=="NAblack" ~ "black",
+      combo=="NativeNA" | combo=="NANative" ~ "Native",
+      combo=="Asian/PINA" | combo=="NAAsian/PI" ~ "Asian/PI",
+      combo=="otherNA" | combo=="NAother" ~ "other",
+      combo=="whiteNA" | combo=="NAwhite" ~ "white",
+      combo=="NANA" ~ NA)) %>%
     dplyr::select(-c("head", "wife"))
   return(data)
 }
@@ -290,7 +297,7 @@ assign_individual_family_race <- function(data){
     individualrace = case_when(
       relationship=="head" | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" ~ raceethhead,
       relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
-      relationship=="grandchild" ~ racefamily_one_known,
+      relationship=="grandchild" ~ racefamily_best_guess,
       relationship=="born after this year or nonresponse" | is.na(relationship) | relationship=="Immigrant/Latino" | relationship=="nonrelative" | relationship=="cohabitor" ~ NA)) %>%
     dplyr::group_by(uniqueID) %>% 
     tidyr::fill(individualrace, .direction=c("downup")) 
