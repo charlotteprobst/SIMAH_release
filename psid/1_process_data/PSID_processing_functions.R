@@ -6,9 +6,9 @@ process_education <- function(data){
                      "ER30584", "ER30620", "ER30657", "ER30703", "ER30748", "ER30820",  "ER33115", "ER33215", "ER33315", "ER33415",
                      "ER33516","ER33616","ER33716","ER33817","ER33917","ER34020","ER34119","ER34230","ER34349","ER34548", "ER34752", "ER34952")
   
-  newdata <- data %>% dplyr::select(uniqueID, familyID, IDmother, IDfather, all_of(varnames))
+  newdata <- data %>% dplyr::select(uniqueID, familyID, all_of(varnames))
   years <- c(1968, 1970:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-  names(newdata)[5:45] <- years
+  names(newdata)[3:43] <- years
   newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="education") %>% 
     mutate(education = ifelse(education==0, NA,
                               ifelse(education==99, NA, 
@@ -26,6 +26,18 @@ process_education <- function(data){
     fill(education, .direction=c("downup")) %>% fill(education_cat, .direction=c("downup")) %>% 
     fill(education_cat_detailed, .direction=c("downup")) %>% ungroup()
   return(newdata)
+}
+
+process_TAS_education <- function(data){
+  varlist<-c("TA110687", "TA130707", "TA150717", "TA170780", "TA190917")
+  years <- c(2011, 2013, 2015, 2017, 2019)
+  ed <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(ed)[2:6] <- years
+  ed <- ed %>% pivot_longer(cols='2011':'2019', names_to="year", values_to="TAS_education") %>% 
+    mutate(TAS_education = ifelse(TAS_education==0, NA,
+                                  ifelse(TAS_education>=96, NA, TAS_education))) %>% 
+    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down"))
+  return(ed)
 }
 
 process_age <- function(data){
@@ -614,16 +626,5 @@ recode_alcohol <- function(data){
 #   return(race)
 # }
 
-process_TAS_education <- function(data){
-  varlist<-c("TA110687", "TA130707", "TA150717", "TA170780", "TA190917")
-  years <- c(2011, 2013, 2015, 2017, 2019)
-  ed <- data %>% dplyr::select(uniqueID, all_of(varlist))
-  names(ed)[2:6] <- years
-  ed <- ed %>% pivot_longer(cols='2011':'2019', names_to="year", values_to="TAS_education") %>% 
-    mutate(TAS_education = ifelse(TAS_education==0, NA,
-                                  ifelse(TAS_education>=96, NA, TAS_education))) %>% 
-    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down"))
-  return(ed)
-}
 
 

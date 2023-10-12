@@ -28,7 +28,8 @@ data$sex <- data$ER32000
 data$sex <- recode(as.factor(data$sex), "1"="male", "2"="female")
 
 # Process educational attainment data
-education <- process_education(data)
+education <- process_education(data) # main survey
+TAS_education <- process_TAS_education(data) %>% distinct() # Transition to Adulthood Supplement (TAS)
 
 # process age data 
 age <- process_age(data)
@@ -38,15 +39,14 @@ relationship <- process_relationship(data)
 # review relationship data
 relationship %>% group_by(relationship) %>% count()
 
-# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf") ??
-
 # process sampling weights 
+# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf") ??
 sampleweights <- process_sample_weights(data)
 
 ### Process and assign race and ethnicity
  
 ## 1. process race and ethnicity data
-race <- process_race(data) #1.
+race <- process_race(data)
 
 # remove individuals with the same uniqueID for person and mother - 0 people
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
@@ -81,29 +81,89 @@ write.csv(summary_race_methods, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workpla
 # condense the race dataset
 # race <- race %>% dplyr::select(uniqueID, year, sex, individualrace) 
 
-# Review missing data by i) observations i.e. rows and ii) individuals
-summary(as.factor(race$individualrace))
-missing <- race %>% filter(individualrace=="NA") %>% group_by(uniqueID) %>% tally()  # 57 individuals
+# Review missing race data in the main survey
+summary(as.factor(race$individualrace)) # 23,142 NA observations
+missing <- race %>% filter(is.na(individualrace)) %>% group_by(uniqueID) %>% tally()  # 551 individuals
+missing_IDS <- unique(missing$uniqueID)
 
-# Get a definitive race for each individual & see if there are any discrepancies
+# Explore discrepancies in race data
 tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>% 
   distinct() %>% 
   ungroup() %>% group_by(uniqueID) %>% tally() %>% 
   mutate(flag=ifelse(n>1,1,0))
 
-IDS <- unique(subset(tally, flag==1)$uniqueID) # 657 individuals with discrepancies
+inconsistant_IDS <- unique(subset(tally, flag==1)$uniqueID) 
+inconsistant_race <- race %>% filter(uniqueID%in%inconsistant_IDS)
+inconsistant_race_summary <- inconsistant_race %>% group_by(uniqueID) %>% count(race_method) 
+# 392 individuals with discrepancies
 
-## Take each individuals first observation of race and ethnicity
-firsteth <- race %>% 
-  mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
-  filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
+has_self_report <- inconsistant_race_summary %>% filter(race_method=="self reported") 
+self_report_IDS <- unique(has_self_report$uniqueID) # 392 individuals with discrepancies
+# 303 of those with inconsistant data have self reported data available
+
+temp <- race %>% filter(uniqueID%in%self_report_IDS) %>% filter(race_method=="self reported") %>% 
+  group_by(uniqueID) %>% count(individualrace) 
+consistant_self_report <- temp %>% group_by(uniqueID) %>% count() %>% filter(n==1) # 289
+inconsistant_self_report <- temp %>% group_by(uniqueID) %>% count() %>% filter(n>1) # 14
+# 14 of those with self reported data, have inconsistencies within their self-reported data
+
+no_self_report <- inconsistant_race_summary %>% filter(!(uniqueID%in%self_report_IDS)) 
+temp <- no_self_report %>% count(uniqueID)
+no_self_report_IDS <- unique(no_self_report$uniqueID)
+# All 89 others either change between NA (i.e. imputed from another year or unavailable) or 
+# switch from one method to another (e.g. imputed based on nearest family member and then reported by head)
 
 ## 8. Process Transition to Adulthood Supplement race data
 TAS_race <- process_TAS_race(data)
 
+# Explore missing race data in the TAS
+summary(as.factor(TAS_race$TAS_race)) # Nil NA in TAS
+
 # join the TAS race with the main race data 
 TAS_race$year <- as.numeric(TAS_race$year)
 all_race <- left_join(race, TAS_race)
+
+###############################################################################
+# 38,208 observations of race from the TAS
+
+# Assign individuals their TAS self-reported race, if this is available, creating a variable called race_new
+all_race <- all_race %>% 
+  mutate(race_new = ifelse(is.na(TAS_race), individualrace, TAS_race))
+all_race %>% group_by(race_new) %>% count()
+
+# Compare TAS race & individual race to see how many inconsistencies there are:
+all_race <- all_race %>% 
+  mutate(inconsistancies_TAS_main = ifelse(is.na(TAS_race), NA,
+                                           ifelse(TAS_race==individualrace, 0, 1)))
+
+all_race %>% ungroup() %>% group_by(inconsistancies_TAS_main) %>% count() 
+# consistant in 25,176 cases
+# inconsistant in 8,624 cases # 34%
+# note total does not add to 38,208 because some individuals in TAS are not within the all_race dataset??
+
+# Fill individuals race data for each year if not already filled
+all_race <- all_race %>%
+  group_by(uniqueID) %>%
+  fill(individualrace, .direction=c("downup")) %>%
+  fill(TAS_race, .direction=c("downup"))
+
+# Re-compare TAS_race & individual race to see how many inconsistencies there are:
+all_race <- all_race %>% 
+  mutate(inconsistancies_TAS_main = ifelse(is.na(TAS_race), NA,
+                                           ifelse(TAS_race==individualrace, 0, 1)))
+all_race %>% ungroup() %>% group_by(inconsistancies_TAS_main) %>% count() 
+# consistant in 141965 cases
+# inconsistant in 35485 cases # 25%
+
+# Need to look into when we are doing filling so that can be sure to compare like for like?# 
+############################################################################################
+
+### Get a definitive race for each individual, consistent across all years and then compare consistency again
+
+# 1. By taking each individuals first observation of race and ethnicity
+firsteth <- race %>% 
+  mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
+  filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
 
 # kessler score 
 kessler <- process_kessler(data)
@@ -121,11 +181,19 @@ income <- process_income(data)
 homeowner <- process_homeowner(data)
 
 # now combine all the data together and look at missingness
-maindata <- left_join(education, firsteth) %>% left_join(., age) %>% 
+# maindata <- left_join(education, firsteth) %>% left_join(., age) %>% 
+#   left_join(., relationship) %>% left_join(.,alcohol) %>% 
+#   left_join(., kessler) %>% left_join(., sampleweights) %>% 
+#   left_join(., employment) %>% left_join(., income) %>% 
+#   left_join(.,homeowner)
+
+maindata <- left_join(education, all_race) %>% left_join(., age) %>% 
   left_join(., relationship) %>% left_join(.,alcohol) %>% 
   left_join(., kessler) %>% left_join(., sampleweights) %>% 
   left_join(., employment) %>% left_join(., income) %>% 
-  left_join(.,homeowner) %>% left_join(., parented)
+  left_join(.,homeowner)
+
+
 
 # recode alcohol and kessler values 
 maindata <- recode_alcohol(maindata)
@@ -164,22 +232,6 @@ maindata <- maindata %>%
 # maindata <- left_join(maindata, nonresponse) %>%
 #   mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
 
-# Process TAS education data
-TAS_education <- process_TAS_education(data) %>% distinct()
-
-# Generate clean TAS datafile, merging the processed race and education data files
-TAS <- merge(TAS_education, TAS_race, by=c("uniqueID", "year"))
-TAS$year <- as.integer(TAS$year)
-TAS$uniqueID <- as.integer(TAS$uniqueID)
-
-# save the TAS 
-# write.csv(TAS, "SIMAH_workplace/PSID/TAS_2011_2021.csv", row.names=F)
-
-# Select all unique individuals from the TAS and their race
-TAS <- TAS %>% dplyr::select(uniqueID, TAS_race) %>% distinct()
-
-# join these with the main sample data 
-alldata <- left_join(maindata, TAS)
 
 
 ################################# race processing cont.
