@@ -40,7 +40,6 @@ relationship <- process_relationship(data)
 relationship %>% group_by(relationship) %>% count()
 
 # process sampling weights 
-# weightsdata <- read.dbf("SIMAH_workplace/education_transitions/J312968/J312968.dbf") ??
 sampleweights <- process_sample_weights(data)
 
 ### Process and assign race and ethnicity
@@ -95,17 +94,16 @@ tally <- race %>% dplyr::select(uniqueID, sex, individualrace) %>%
 inconsistant_IDS <- unique(subset(tally, flag==1)$uniqueID) 
 inconsistant_race <- race %>% filter(uniqueID%in%inconsistant_IDS)
 inconsistant_race_summary <- inconsistant_race %>% group_by(uniqueID) %>% count(race_method) 
-# 392 individuals with discrepancies
+# 402 individuals with discrepancies
 
 has_self_report <- inconsistant_race_summary %>% filter(race_method=="self reported") 
-self_report_IDS <- unique(has_self_report$uniqueID) # 392 individuals with discrepancies
-# 303 of those with inconsistant data have self reported data available
+self_report_IDS <- unique(has_self_report$uniqueID) 
+# 305 of those with inconsistant data have self reported data available
 
 temp <- race %>% filter(uniqueID%in%self_report_IDS) %>% filter(race_method=="self reported") %>% 
   group_by(uniqueID) %>% count(individualrace) 
-consistant_self_report <- temp %>% group_by(uniqueID) %>% count() %>% filter(n==1) # 289
+consistant_self_report <- temp %>% group_by(uniqueID) %>% count() %>% filter(n==1) # 291
 inconsistant_self_report <- temp %>% group_by(uniqueID) %>% count() %>% filter(n>1) # 14
-# 14 of those with self reported data, have inconsistencies within their self-reported data
 
 no_self_report <- inconsistant_race_summary %>% filter(!(uniqueID%in%self_report_IDS)) 
 temp <- no_self_report %>% count(uniqueID)
@@ -131,32 +129,44 @@ all_race <- all_race %>%
   mutate(race_new = ifelse(is.na(TAS_race), individualrace, TAS_race))
 all_race %>% group_by(race_new) %>% count()
 
+# assign TAS as a new race_method
+all_race <- assign_race_method_TAS(all_race)
+
 # Compare TAS race & individual race to see how many inconsistencies there are:
 all_race <- all_race %>% 
   mutate(inconsistancies_TAS_main = ifelse(is.na(TAS_race), NA,
                                            ifelse(TAS_race==individualrace, 0, 1)))
 
 all_race %>% ungroup() %>% group_by(inconsistancies_TAS_main) %>% count() 
-# consistant in 25,176 cases
-# inconsistant in 8,624 cases # 34%
+# consistant in 25,186 cases
+# inconsistant in 8,622 cases 
 # note total does not add to 38,208 because some individuals in TAS are not within the all_race dataset??
 
-# Fill individuals race data for each year if not already filled
-all_race <- all_race %>%
-  group_by(uniqueID) %>%
-  fill(individualrace, .direction=c("downup")) %>%
-  fill(TAS_race, .direction=c("downup"))
+# Explore discrepancies in the race_new variable
+tally_race_new <- all_race %>% dplyr::select(uniqueID, race_new) %>% 
+  distinct() %>% 
+  ungroup() %>% group_by(uniqueID) %>% tally() %>% 
+  mutate(flag=ifelse(n>1,1,0))
 
-# Re-compare TAS_race & individual race to see how many inconsistencies there are:
-all_race <- all_race %>% 
-  mutate(inconsistancies_TAS_main = ifelse(is.na(TAS_race), NA,
-                                           ifelse(TAS_race==individualrace, 0, 1)))
-all_race %>% ungroup() %>% group_by(inconsistancies_TAS_main) %>% count() 
-# consistant in 141965 cases
-# inconsistant in 35485 cases # 25%
+inconsistant_race_new_IDS <- unique(subset(tally_race_new, flag==1)$uniqueID)
+inconsistant_race_new <- all_race %>% filter(uniqueID%in%inconsistant_race_new_IDS)
+inconsistant_race_new_summary <- inconsistant_race_new %>% group_by(uniqueID) %>% count(race_method) 
+# 3,370 individuals with discrepancies
 
-# Need to look into when we are doing filling so that can be sure to compare like for like?# 
-############################################################################################
+has_self_report_race_new <- inconsistant_race_summary_TAS %>% filter(race_method=="self reported") 
+self_report_IDS_race_new <- unique(has_self_report_race_new$uniqueID) 
+ 
+temp <- all_race %>% filter(uniqueID%in%self_report_IDS_race_new) %>% filter(race_method=="self reported") %>% 
+   group_by(uniqueID) %>% count(race_new) 
+consistant_self_report_race_new <- temp %>% group_by(uniqueID) %>% count() %>% filter(n==1) 
+inconsistant_self_report_race_new <- temp %>% group_by(uniqueID) %>% count() %>% filter(n>1) 
+
+no_self_report_race_new <- inconsistant_race_new_summary %>% filter(!(uniqueID%in%self_report_IDS_race_new)) 
+temp <- no_self_report_race_new %>% count(uniqueID)
+no_self_report_IDS_race_new <- unique(no_self_report_race_new$uniqueID)
+# # All 89 others either change between NA (i.e. imputed from another year or unavailable) or 
+# # switch from one method to another (e.g. imputed based on nearest family member and then reported by head)
+
 
 ### Get a definitive race for each individual, consistent across all years and then compare consistency again
 
@@ -193,8 +203,6 @@ maindata <- left_join(education, all_race) %>% left_join(., age) %>%
   left_join(., employment) %>% left_join(., income) %>% 
   left_join(.,homeowner)
 
-
-
 # recode alcohol and kessler values 
 maindata <- recode_alcohol(maindata)
 
@@ -220,19 +228,6 @@ maindata <- maindata %>%
   group_by(uniqueID) %>% 
   fill(weight, .direction=c("downup")) %>% 
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
-
-# remove nonresponders ?
-# nonresponse <- read.dbf("SIMAH_workplace/education_transitions/J312243/J312243.dbf") %>%
-#   mutate(familyID = ER30001,
-#          ID = ER30002,
-#          uniqueID = familyID*1000 + ID,
-#          year_nonresponse = ER32007) %>%
-#   dplyr::select(uniqueID, familyID, year_nonresponse)
-# 
-# maindata <- left_join(maindata, nonresponse) %>%
-#   mutate(toremove = ifelse(year_nonresponse<=year, 1,0))
-
-
 
 ################################# race processing cont.
 

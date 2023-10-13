@@ -99,15 +99,6 @@ return(newdata)
 }
 
 process_sample_weights <- function(data){
-  
-# varnames <- c("ER33430", "ER33546", "ER33637", "ER33740", "ER33848", "ER33950",
-#               "ER34045", "ER34154", "ER34268", "ER34413", "ER34650", "ER34863", "ER35064")
-# newdata <- data %>% select(uniqueID, c(varnames))
-# years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-# names(newdata)[2:14] <- years
-# newdata <- newdata %>% pivot_longer(cols='1997':'2021', names_to="year", values_to="sampleweight") %>% 
-#   mutate(year = as.numeric(year))
-
 familyweights <- c("ER16518","ER20394","ER24179","ER28078","ER41069","ER47012","ER52436",
                    "ER58257","ER65492","ER71570","ER77631", "ER81958")
 data$familyID <- data$ER30001
@@ -308,7 +299,7 @@ assign_individual_family_race <- function(data){
   data <- data %>% mutate(
     individualrace = case_when(
       relationship=="head" | relationship=="childofhead" | relationship=="parentofhead" | relationship=="brotherofhead" ~ raceethhead,
-      relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
+      relationship=="wife/partner" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife" ~ raceethwife,
       relationship=="grandchild" ~ racefamily_best_guess,
       relationship=="born after this year or nonresponse" | is.na(relationship) | relationship=="Immigrant/Latino" | relationship=="nonrelative" | relationship=="cohabitor" ~ NA)) %>%
     dplyr::group_by(uniqueID) %>% 
@@ -387,7 +378,13 @@ assign_race_method <- function(data){
       !(is.na(individualrace)) & !(is.na(race_parents)) ~ "imputed based on parents",
       individualrace==NA ~ NA))
   return(data)
- }
+}
+
+assign_race_method_TAS <- function(data){
+  data <- data %>% mutate(
+    race_method = ifelse(is.na(TAS_race), race_method, "self reported"))
+  return(data)
+}
 
 ###### FUNCTION 8 PROCESS_TAS_RACE
 process_TAS_race <- function(data){
