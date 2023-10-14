@@ -117,24 +117,20 @@ race <- race %>% mutate(consistency = case_when((!(uniqueID%in%inconsistent_IDS)
 ###############################################################################
 ### Assign one single race for each individual, across all years, based on the main data.
 
-# Option A.  final_race_first_obs_MAIN
-# 1. If individuals have self-reported data, assign their final main race to be that
-# 2. Otherwise, assign them their first observation of individualrace
+# Option A.  final_race_first_year
 
-# Continue from here....
-
+# Add an indicator of the first year a person has race data
 race <- race %>% 
-  mutate(final_race_first_obs_MAIN = ifelse(!(uniqueID%in%inconsistent_IDS), individualrace,
-    ifelse(uniqueID%in%consistent_self_report_IDS & race_method=="self reported",  individualrace, NA)))
-                                            
-                                  
-#                                             
-#                                             individualrace, TAS_race))
-# all_race %>% group_by(final_race_first_obs_MAIN) %>% count()
+  mutate(firstyear = ifelse(year==min(year),1,0))
 
-# firsteth <- race %>% 
-#   mutate(firstyear = ifelse(year==min(year),1,0)) %>% 
-#   filter(firstyear==1) %>% dplyr::select(-c(firstyear, year))
+# If indivudals has consistent data assign them that
+race <- race %>% 
+  mutate(final_race_first_year = ifelse(consistency=="consistent throughout", individualrace, 
+# If individual has inconsistent data, but consistent self report, assign them that        
+                                     ifelse(consistency=="inconsistent, but self-reports consistent" & race_method=="self reported",  individualrace,  
+# Otherwise, assign them their first observation of individualrace                   
+                                     ifelse(consistency=="inconsistent" & firstyear==1, individualrace, NA)))) %>%
+  group_by(uniqueID) %>% fill(final_race_first_year, .direction="downup")
 
 # Option B  final_race_priority_MAIN
 # 1. If individuals have self-reported data, assign their final main race to be that
