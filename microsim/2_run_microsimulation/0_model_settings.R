@@ -19,7 +19,7 @@ PopulationSize <- 1000000
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 1
+updatingeducation <- 0
 
 # switch on and off alcohol updates
 updatingalcohol <- 0
@@ -33,7 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC","UIJ")
+diseases <- c("LVDC")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"

@@ -190,7 +190,7 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
 basepop <- subset(basepop, microsim.init.age<=79)
 
 # add and remove migrants
-if(y>=2001){
+if(y>=2000){
   basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
   basepop <- outward_migration(basepop,migration_counts,y)
 }

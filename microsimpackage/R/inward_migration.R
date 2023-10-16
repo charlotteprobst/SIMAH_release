@@ -4,9 +4,9 @@
 #' @export
 #' @examples
 #' inward_migration
-inward_migration <- function(basepop, migration_rates, y, brfss, model){
+inward_migration <- function(basepop, migration_counts, y, brfss, model){
   # convert from a rate to the N to remove
-  summary <- migration_rates %>% filter(Year==y) %>%
+  summary <- migration_counts %>% filter(Year==y) %>%
     mutate(toadd = MigrationInN*proportion) %>%
     dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd)
 
