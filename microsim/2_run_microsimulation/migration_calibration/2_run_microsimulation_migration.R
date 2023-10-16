@@ -45,7 +45,7 @@ samplenum <- 1
 # set lhs to the first element of the lhs list- for testing 
 lhs <- lhs[[1]]
 
-migration_counts <- read.csv("SIMAH_workplace/microsim/census_data/migration_in_USA.csv")
+migration_counts <- read.csv("SIMAH_workplace/microsim/1_input_data/migration_in_USA.csv")
 
 # checking how the original migration counts fit the population data
 Output <- list()
@@ -59,7 +59,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_inflated,
                        update_base_rate,
-                       minyear=2000, maxyear=2019, output="demographics")
+                       minyear=2000, maxyear=2002, output="demographics")
 Output
 
 
