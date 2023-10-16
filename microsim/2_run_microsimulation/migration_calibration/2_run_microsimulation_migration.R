@@ -62,27 +62,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                        minyear=2000, maxyear=2019, output="demographics")
 Output
 
-compare <- Output %>% 
-  mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,80),
-                      labels=c("18","19-24","25-29","30-34","35-39",
-                               "40-44","45-49","50-54","55-59",
-                               "60-64","65-69","70-74","75-79"))) %>% 
-  group_by(year,microsim.init.sex,microsim.init.race,agecat) %>% 
-  summarise(n=sum(n)) %>% mutate(data="microsim",
-                                 year = as.numeric(as.character(year))) %>% 
-  rename(Year=year)
-  
-  # for comparison
-ACS <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv") %>% 
-  mutate(data = "ACS") %>% mutate(n=round(TotalPop*proportion)) %>% 
-  dplyr::select(-TotalPop)
 
-compare <- rbind(compare, ACS) %>% distinct() %>% 
-  pivot_wider(names_from=data, values_from=n) %>% 
-  mutate(pct_diff = (microsim-ACS)/ACS)
-
-ggplot(data=subset(compare,agecat=="25-29"), aes(x=Year, y=n, colour=data)) + geom_line() + 
-  facet_grid(cols=vars(microsim.init.race), rows=vars(microsim.init.sex))
 
 
 if(output_type=="demographics"){

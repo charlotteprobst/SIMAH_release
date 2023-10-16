@@ -8,6 +8,7 @@ library(R.utils)
 library(dplyr)
 library(labelled)
 library(ggplot2)
+library(zoo)
 # gunzip("SIMAH_workplace/ACS/usa_00040.dat.gz", remove=FALSE)
 
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
@@ -19,6 +20,7 @@ data <- remove_attributes(data, "var_desc")
 
 births <- data %>% 
   filter(AGE==18) %>% 
+  filter(MIGRATE1!=4) %>% 
   filter(SAMPLE!=200004) %>% 
   mutate(SEX=recode(SEX,"1"="m","2"="f"),
          RACE = ifelse(RACE==1, "WHI",
@@ -54,12 +56,14 @@ ggsave("SIMAH_workplace/ACS/compare_imputation_18yearolds.png",
 births$MigrationInN <- births$MigrationInN_impute
 births$MigrationInN_impute <- NULL
 
+# exclude migrants when we select the 18-year olds
+
 migrants <- data %>% 
   filter(MIGRATE1==4) %>% 
-  filter(AGE!=18) %>% 
+  # filter(AGE!=18) %>% 
   mutate(agecat = cut(AGE,
-                      breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
-                      labels=c("19-24","25-29","30-34","35-39","40-44",
+                      breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
+                      labels=c("18","19-24","25-29","30-34","35-39","40-44",
                                "45-49","50-54","55-59","60-64","65-69",
                                "70-74","75-79")),
     SEX=recode(SEX,"1"="m","2"="f"),
