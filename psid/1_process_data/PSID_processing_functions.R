@@ -35,8 +35,12 @@ process_TAS_education <- function(data){
   names(ed)[2:6] <- years
   ed <- ed %>% pivot_longer(cols='2011':'2019', names_to="year", values_to="TAS_education") %>% 
     mutate(TAS_education = ifelse(TAS_education==0, NA,
-                                  ifelse(TAS_education>=96, NA, TAS_education))) %>% 
-    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down"))
+                                    ifelse(TAS_education==99, NA, 
+                                      ifelse(TAS_education==98, NA, TAS_education))),
+           TAS_education_cat = ifelse(TAS_education<=12, "LEHS",
+                                    ifelse(TAS_education>12 & TAS_education<16, "SomeC",
+                                      ifelse(TAS_education>=16, "College", NA)))) %>% 
+    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down")) %>% fill(TAS_education_cat, .direction=c("down"))
   return(ed)
 }
 

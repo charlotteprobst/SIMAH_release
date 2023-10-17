@@ -7,51 +7,62 @@ library(haven)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-# data <- read_excel("SIMAH_workplace/PSID/Raw_data/J315522/J315522.xlsx")
-# data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021/J324498.xlsx")
-data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021_new/J325211.xlsx")
+main_data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021_new/main sample/J325252.xlsx")
+tas_data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021_new/TAS sample/J325254.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
 
 # Recode static variables
-data$familyID <- data$ER30001
-data$ID <- data$ER30002
-data$uniqueID <- (data$familyID*1000) + data$ID
+main_data$familyID <- main_data$ER30001
+tas_data$familyID <- tas_data$ER30001
 
-data$IDmother = ifelse(data$ER32010==0, NA, 
-                       ifelse(data$ER32010>=800 & data$ER32010<=999, NA,
-                  (data$ER32010*1000) + data$ER30002))
+main_data$ID <- main_data$ER30002
+tas_data$ID <- tas_data$ER30002
 
-data$IDfather = ifelse(data$ER32017==0, NA,
-                       ifelse(data$ER32017>=800 & data$ER32017<=999, NA,
-                  (data$ER32017*1000) + data$ER30002))
+main_data$uniqueID <- (main_data$familyID*1000) + main_data$ID
+tas_data$uniqueID <- (tas_data$familyID*1000) + tas_data$ID
 
-data$sex <- data$ER32000
-data$sex <- recode(as.factor(data$sex), "1"="male", "2"="female")
+main_data$IDmother = ifelse(main_data$ER32010==0, NA, 
+                       ifelse(main_data$ER32010>=800 & main_data$ER32010<=999, NA,
+                  (main_data$ER32010*1000) + main_data$ER30002))
 
-# Count number of individuals in dataset
-data %>% group_by(uniqueID) %>% count() # 4,776
+main_data$IDfather = ifelse(main_data$ER32017==0, NA,
+                       ifelse(main_data$ER32017>=800 & main_data$ER32017<=999, NA,
+                  (main_data$ER32017*1000) + main_data$ER30002))
+
+main_data$sex <- main_data$ER32000
+main_data$sex <- recode(as.factor(main_data$sex), "1"="male", "2"="female")
+
+# Count number of individuals in each dataset
+main_data %>% group_by(uniqueID) %>% count() # 84,121
+tas_data %>% group_by(uniqueID) %>% count() # 4,776
+
+# # Merge the datasets
+# data <- merge(main_data, tas_data, by = c("uniqueID", "year"))
 
 # Process educational attainment data
-education <- process_education(data) # main survey
-TAS_education <- process_TAS_education(data) %>% distinct() # Transition to Adulthood Supplement (TAS)
+education <- process_education(main_data) 
+TAS_education <- process_TAS_education(tas_data) %>% distinct() # Transition to Adulthood Supplement (TAS)
+# Join the TAS education with the main education data 
+TAS_education$year <- as.numeric(TAS_education$year)
+all_education <- left_join(education, TAS_education)
 
 # process age data 
-age <- process_age(data) # nb only returns birthyear.  Sample only seems to have people born after 1982
+age <- process_age(main_data) # nb only returns birthyear.  Sample only seems to have people born after 1982
 
 # process relationship to householder data
-relationship <- process_relationship(data)
+relationship <- process_relationship(main_data)
 # review relationship data
-relationship %>% group_by(relationship) %>% count()
+relationship_summary <- relationship %>% group_by(relationship) %>% count()
 
 # process sampling weights 
-sampleweights <- process_sample_weights(data)
+sampleweights <- process_sample_weights(main_data)
 
 ### Process and assign race and ethnicity
  
 ## 1. process race and ethnicity data
-race <- process_race(data)
+race <- process_race(main_data)
 
 # remove individuals with the same uniqueID for person and mother - 0 people
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
@@ -170,7 +181,7 @@ highest_priority_summary_main <- race %>% group_by(uniqueID) %>%
   count(final_race_highest_priority)
 
 ## 8. Process Transition to Adulthood Supplement race data
-TAS_race <- process_TAS_race(data)
+TAS_race <- process_TAS_race(tas_data)
 
 # number of individuals in the TAS data:
 TAS_race %>% group_by(uniqueID) %>% count() # 4766 (no individuals with zero race data)
@@ -256,17 +267,17 @@ all_race <- assign_race_method_TAS(all_race)
 all_race <- all_race %>% 
   mutate(inconsistancies_first_year = ifelse(final_race_first_year==final_race_first_year_TAS, 0, 1))
 all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistancies_first_year) %>% count() 
-# 1                          0  3448 - consistent
-# 2                          1   778 - inconsistent
-# 3                         NA   550 - no race in main data
+# 1                          0  3497 - consistent
+# 2                          1  1060 - inconsistent
+# 3                         NA  79560 - don't have data to compare
 
 # Comparing estimates based on highest priority
 all_race <- all_race %>% 
   mutate(inconsistancies_highest_priority = ifelse(final_race_highest_priority==final_race_highest_priority_TAS, 0, 1))
 all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistancies_highest_priority) %>% count() 
-# 1                                0  1612 - consistent
-# 2                                1  2614 - inconsistent
-# 3                               NA   550 - no race in main data
+# 1                                0  1617 - consistent
+# 2                                1  2940 - inconsistent
+# 3                               NA  79560 - don't have data to compare
 
 # Comparing estimates based on highest priority
 
@@ -274,10 +285,10 @@ all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistancies_h
 # For now taking their highest priority race
 all_race <- all_race %>% 
   mutate(race_new = ifelse(is.na(final_race_highest_priority_TAS), individualrace, final_race_highest_priority_TAS))
-all_race %>% group_by(race_new) %>% count()
+summary_final_race <- all_race %>% group_by(race_new) %>% count()
  
 # kessler score 
-kessler <- process_kessler(data)
+kessler <- process_kessler(main_data)
 
 #Create as a categorized variable based on paper by Prochaska et al. 2012-Validity study of the K6 scale as ameasure of moderate mental distressbased on mental health treatment needand utilization
 kessler$distress_severe <- ifelse(kessler$kessler_score>=13, "Yes",
@@ -289,27 +300,30 @@ summary(as.factor(kessler$distress_severe))
 summary(as.factor(kessler$distress_class))
 
 # alcohol data
-alcohol <- process_alcohol(data)
+alcohol <- process_alcohol(main_data)
 
 # employment status
-employment <- process_employment(data)
+employment <- process_employment(main_data)
 
 # process income 
-income <- process_income(data)
+income <- process_income(main_data)
 
 # process home ownership 
-homeowner <- process_homeowner(data)
+homeowner <- process_homeowner(main_data)
 
 # Combine all subsets of data
-all_data <- left_join(education, all_race) %>% left_join(., age) %>% 
+all_data <- left_join(all_education, all_race) %>% left_join(., age) %>% 
   left_join(., relationship) %>% left_join(.,alcohol) %>% 
   left_join(., kessler) %>% left_join(., sampleweights) %>% 
   left_join(., employment) %>% left_join(., income) %>% 
   left_join(.,homeowner)
 
+# Final steps of cleaning:
+
 # recode alcohol
 all_data <- recode_alcohol(all_data)
 
+# Fill education and weight data
 all_data <- all_data %>% 
   filter(year>=1999) %>% 
   group_by(uniqueID) %>% 
@@ -318,8 +332,11 @@ all_data <- all_data %>%
 
 all_data$age <- all_data$year - all_data$birthyear
 
-write.csv(all_data, "SIMAH_workplace/PSID/all_data_1999_2021.csv", row.names=F)
- 
+write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_highest_priority_race.csv", row.names=F)
+
+# Final sample count:
+all_data %>% group_by(uniqueID) %>% count() # 84,121
+
 
 
 
