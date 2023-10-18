@@ -25,4 +25,5 @@ Imports:
     readr,
     readxl, 
     parallel, 
-    foreach	
+    foreach,
+    data.table	

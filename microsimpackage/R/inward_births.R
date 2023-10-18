@@ -1,10 +1,10 @@
-#' Adds new migrants in each year from existing data pool
+#' Adds new births- estimating rates version
 #' @param
 #' @keywords microsimulation
 #' @export
 #' @examples
-#' inward_migration
-inward_migration <- function(basepop, migration_counts, y, brfss, model){
+#' inward_births_estimate_rate
+inward_births <- function(basepop, migration_counts, y, brfss, model){
   # convert from a rate to the N to remove
   births <- migration_counts %>% filter(agecat=="18") %>%
     filter(Year==y) %>%

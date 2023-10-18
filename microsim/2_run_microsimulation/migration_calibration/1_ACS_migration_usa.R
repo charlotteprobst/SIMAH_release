@@ -20,7 +20,7 @@ data <- remove_attributes(data, "var_desc")
 
 births <- data %>% 
   filter(AGE==18) %>% 
-  filter(MIGRATE1!=4) %>% 
+  # filter(MIGRATE1!=4) %>% 
   filter(SAMPLE!=200004) %>% 
   mutate(SEX=recode(SEX,"1"="m","2"="f"),
          RACE = ifelse(RACE==1, "WHI",
@@ -55,11 +55,14 @@ ggsave("SIMAH_workplace/ACS/compare_imputation_18yearolds.png",
 
 births$MigrationInN <- births$MigrationInN_impute
 births$MigrationInN_impute <- NULL
+# births$BirthsIN <- births$MigrationInN
+# births$MigrationInN <- NULL
 
 # exclude migrants when we select the 18-year olds
 
 migrants <- data %>% 
   filter(MIGRATE1==4) %>% 
+  filter(SAMPLE!=200007) %>% 
   # filter(AGE!=18) %>% 
   mutate(agecat = cut(AGE,
                       breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
@@ -106,10 +109,22 @@ migrants <- migrants %>%
   mutate(MigrationInN = ifelse(agecat=="19-24" | agecat=="25-29",MigrationInN_impute,MigrationInN)) %>% 
   dplyr::select(-MigrationInN_impute)
 
-migrants <- rbind(births,migrants)
+births$birth <- "births"
+migrants$birth <- "migrants"
+
+compare_18 <- rbind(births,migrants) %>% 
+  pivot_wider(names_from=birth, values_from=MigrationInN) %>% 
+  mutate(BirthsInN = births-migrants,
+         BirthsInN = ifelse(is.na(BirthsInN), births, BirthsInN)) %>% 
+  dplyr::select(-c(migrants,births)) %>% 
+  filter(agecat=="18")
+
+migrants$birth <- NULL
+
+migrants <- rbind(compare_18,migrants)
 
 # For USA -> no information about outward migration so need to assume 0 as a prior
 migrants$MigrationOutN <- 0
+migrants$Year <- migrants$Year-1
 
-write.csv(migrants, "SIMAH_workplace/microsim/census_data/migration_in_USA.csv", row.names=F)
-
+write.csv(migrants, "SIMAH_workplace/microsim/1_input_data/migration_in_USA.csv", row.names=F)

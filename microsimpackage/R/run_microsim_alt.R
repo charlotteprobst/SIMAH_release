@@ -3,6 +3,7 @@
 #' This function runs the microsimulation
 #' @param
 #' @keywords microsimulation
+#' @import data.table
 #' @export
 #' @examples
 #' run_microsim_alt
@@ -22,6 +23,8 @@ Summary <- list()
 DeathSummary <- list()
 DiseaseSummary <- list()
 PopPerYear <- list()
+birth_rates <- list()
+migration_rates <- list()
 names <- names(lhs)
 lhs <- as.numeric(lhs)
 names(lhs) <- names
@@ -43,13 +46,11 @@ if(policy==1 & y ==year_policy){
 }
 
 # apply death rates - all other causes
-if(y>=2000){
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
 DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
                                               dead, cause) %>% mutate(year=y, seed=seed)
 # remove individuals due to death and remove columns no longer needed
 basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
-}
 
 # simulate mortality from specific diseases
 print("simulating disease mortality")
@@ -137,7 +138,7 @@ for (disease in diseases) {
 basepop <- basepop %>% dplyr::select(-c(cat,prob))
 
 # transition education for individuals aged 34 and under
-if(updatingeducation==1 & y>=2000){
+if(updatingeducation==1){
   print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
@@ -155,7 +156,7 @@ if(updatingeducation==1 & y>=2000){
 }
 
 # update alcohol use categories
-if(updatingalcohol==1 & y>=2000){
+if(updatingalcohol==1){
   print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
@@ -190,9 +191,17 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
 basepop <- subset(basepop, microsim.init.age<=79)
 
 # add and remove migrants
-if(y>=2000){
-  basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
-  basepop <- outward_migration(basepop,migration_counts,y)
+if(y<2019){
+  files <- inward_births_estimate_rate(basepop, migration_counts, y, brfss)
+basepop <- files[[1]]
+birth_rates[[paste(y)]] <- files[[2]] %>%
+  mutate(year=y)
+files <- inward_migration_estimate_rate(basepop, migration_counts,y,brfss)
+basepop <- files[[1]]
+migration_rates[[paste(y)]] <- files[[2]] %>%
+  mutate(year=y)
+# basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
+basepop <- outward_migration(basepop,migration_counts,y)
 }
 
 }
@@ -204,19 +213,16 @@ if(output=="mortality"){
     mutate(seed = seed, samplenum = samplenum)
   }else if(output=="demographics"){
     # add seed to the output file here TODO
-  Summary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
-                                                  samplenum=as.factor(samplenum),
-                                                  seed=as.factor(seed),
-                                                  microsim.init.sex=as.factor(microsim.init.sex),
-                                                  microsim.init.race=as.factor(microsim.init.race),
-                                                  microsim.init.education=as.factor(microsim.init.education),
-                                                  # agecat = ifelse(microsim.init.age<=29, "18-29",
-                                                  #                 ifelse(microsim.init.age>=30 & microsim.init.age<=49,"30-49",
-                                                  #                        "50+")),
-                                                  agecat=as.factor(agecat),
-                                                  AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, seed, microsim.init.sex, microsim.init.age, microsim.init.race, microsim.init.education,
-             .drop=FALSE) %>% tally()
+  for(i in 1:length(PopPerYear)){
+    PopPerYear[[i]]$agecat <- cut(PopPerYear[[i]]$microsim.init.age,
+                                                  breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
+                                                  labels=c("18","19-24","25-29","30-34","35-39","40-44",
+                                                           "45-49","50-54","55-59","60-64","65-69",
+                                                           "70-74","75-79"))
+    PopPerYear[[i]] <- as.data.table(PopPerYear[[i]])
+    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, microsim.init.sex, microsim.init.race, agecat)]
+  }
+    Summary <- do.call(rbind,PopPerYear)
 }else if(output=="alcohol"){
   CatSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
@@ -242,5 +248,7 @@ if(output=="mortality"){
   # add former drinkers and lifetime abstainers to this summary TODO
   Summary <- list(CatSummary, MeanSummary)
 }
-return(Summary)
+migration_rates <- do.call(rbind,migration_rates)
+birth_rates <- do.call(rbind,birth_rates)
+return(list(Summary,birth_rates,migration_rates))
 }

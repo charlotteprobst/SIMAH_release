@@ -34,7 +34,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 # alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
 alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.RDS"))
 
-output_type <- "mortality"
+# output_type <- "mortality"
 
 # random number seed - sample random number 
 seed <- as.numeric(sample(1:100, 1))
@@ -59,8 +59,39 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
                        age_inflated,
                        update_base_rate,
-                       minyear=2000, maxyear=2002, output="demographics")
+                       minyear=2000, maxyear=2019, output="demographics")
 Output
+
+birth_rates <- Output[[2]]
+
+ggplot(data=birth_rates, aes(x=year, y=rate, colour=microsim.init.sex)) + 
+  geom_line() + 
+  facet_grid(rows=vars(microsim.init.race)) + 
+  ylim(0,0.05)
+
+model <- lm(rate~year+microsim.init.sex+microsim.init.race, data=subset(birth_rates,year>=2015))
+
+datatopredict <- expand.grid(year=c(2019:2025),
+                             agecat="18",
+                             microsim.init.sex=unique(birth_rates$microsim.init.sex),
+                             microsim.init.race=unique(birth_rates$microsim.init.race)) %>%
+  mutate(toadd = NA,
+         n = NA,
+         rate=NA)
+birth_rates <- rbind(birth_rates,datatopredict)
+
+birth_rates$rate_predicted <- predict(model, birth_rates)
+
+ggplot(data=birth_rates, aes(x=year, y=rate)) +
+  geom_line() + 
+  geom_line(aes(x=year, y=rate_predicted), colour="red") + 
+  facet_grid(cols=vars(microsim.init.sex),
+             rows=vars(microsim.init.race))
+
+migration_rates <- Output[[3]]
+ggplot(data=migration_rates, aes(x=year, y=rate, colour=microsim.init.sex)) + 
+  geom_line() +
+  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
 
 
 

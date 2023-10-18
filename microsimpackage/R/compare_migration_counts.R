@@ -24,12 +24,13 @@ compare_migration_count <- function(Output, year, migration_counts){
 
   compare <- rbind(compare, ACS) %>% distinct()
 
-  pct_diff <- compare %>%
-    pivot_wider(names_from=data, values_from=n) %>%
-    mutate(pct_diff = (microsim-ACS)/ACS) %>% filter(Year==year)
+  # pct_diff <- compare %>%
+  #   pivot_wider(names_from=data, values_from=n) %>%
+  #   mutate(pct_diff = (microsim-ACS)/ACS) %>% filter(Year==year)
 
-
-  ggplot(data=subset(compare,agecat=="25-29"), aes(x=Year, y=n, colour=data)) + geom_line() +
+  ggplot(data=subset(compare,agecat=="18"), aes(x=Year, y=n, colour=data)) + geom_line() +
     facet_grid(cols=vars(microsim.init.race), rows=vars(microsim.init.sex))
+
+
   return(plot)
 }
