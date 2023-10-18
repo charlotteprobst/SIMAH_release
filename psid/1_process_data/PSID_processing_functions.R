@@ -377,13 +377,20 @@ assign_race_method <- function(data){
       (relationship=="wife" | relationship=="childofpartner" | relationship=="parentofwife" | relationship=="brotherofwife") & !(is.na(raceethwife))| 
       relationship=="grandchild" & !(is.na(racefamily_best_guess)) ~ "imputed based on nearest family member",
       !(is.na(individualrace)) & !(is.na(race_parents)) ~ "imputed based on parents",
-      individualrace==NA ~ NA))
+      individualrace==NA ~ NA),
+    race_method_rank = case_when(
+      race_method=="self reported" ~ 1,
+      race_method=="reported by head" ~ 2,
+      race_method=="imputed based on nearest family member" ~ 3,
+      race_method=="imputed based on parents" ~ 5,
+      race_method==NA ~ NA))
   return(data)
 }
 
 assign_race_method_TAS <- function(data){
   data <- data %>% mutate(
-    race_method = ifelse(is.na(TAS_race), race_method, "self reported"))
+    race_method = ifelse(is.na(TAS_race), race_method, "self reported"),
+    race_method_rank = ifelse(is.na(TAS_race), race_method_rank, 1))
   return(data)
 }
 

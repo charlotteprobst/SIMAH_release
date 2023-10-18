@@ -38,9 +38,6 @@ main_data$sex <- recode(as.factor(main_data$sex), "1"="male", "2"="female")
 main_data %>% group_by(uniqueID) %>% count() # 84,121
 tas_data %>% group_by(uniqueID) %>% count() # 4,776
 
-# # Merge the datasets
-# data <- merge(main_data, tas_data, by = c("uniqueID", "year"))
-
 # Process educational attainment data
 education <- process_education(main_data) 
 TAS_education <- process_TAS_education(tas_data) %>% distinct() # Transition to Adulthood Supplement (TAS)
@@ -54,7 +51,8 @@ age <- process_age(main_data) # nb only returns birthyear.  Sample only seems to
 # process relationship to householder data
 relationship <- process_relationship(main_data)
 # review relationship data
-relationship_summary <- relationship %>% group_by(relationship) %>% count()
+relationship_summary <- relationship %>% group_by(relationship) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+# nb. counts sum to more than the total population as individuals may hold multiple roles
 
 # process sampling weights 
 sampleweights <- process_sample_weights(main_data)
@@ -74,10 +72,10 @@ race <- left_join(race, relationship)
 race <- generate_family_race(race)
 
 # Review number of individuals with family race data
-summary(as.factor(race$racefamily_both_known))# Total NA = 152,115 out of 200,592
-summary(as.factor(race$racefamily_best_guess)) # Total NA = 46,185
+summary(as.factor(race$racefamily_both_known))
+summary(as.factor(race$racefamily_best_guess)) 
 
-## 3. Assign individuals their family race
+## 3. Assign individuals their individual race (race of the head if direct relative to the head, race of partner if direct relative of the partner, or race of family if grandchild)
 race <- assign_individual_family_race(race)
 
 ## 4. Process the race and ethnicity data of an individual's parents (based on record linkage)
@@ -86,12 +84,11 @@ race <- process_race_parents(race)
 ## 5. Generate an overarching race variable for the parents
 race <- generate_race_parents(race)
 
-## 6. Assign any individuals with missing 'individual race' data, the parents race
+## 6. Assign any individuals with missing 'individual race' data, their parents race (if known)
 race <- assign_individual_race_parents(race) 
 
-# Label the method used to imputate each persons race
+# Label the method used to impute each persons race
 race <- assign_race_method(race)
-summary_race_methods <- race %>% group_by(race_method) %>% count()
 
 ## 7. Fill individual race data by individual
 race <- race %>% group_by(uniqueID) %>% fill(individualrace, race_method, .direction = c("downup"))
@@ -149,9 +146,8 @@ ifelse(consistency=="inconsistent, but self-reports consistent" & race_method=="
 ifelse(consistency=="inconsistent" & firstyear==1, individualrace, NA)))) %>%
 group_by(uniqueID) %>% fill(final_race_first_year, .direction="downup")
 
-first_year_summary_main <- race %>% group_by(uniqueID) %>% 
-  distinct(final_race_first_year) %>% ungroup() %>% 
-  count(final_race_first_year)
+final_race_first_year_main_summary <- race %>% group_by(final_race_first_year) %>% 
+  summarise(distinct_individuals = n_distinct(uniqueID))
 
 ## Option B  final_race_priority_MAIN
 
@@ -176,9 +172,8 @@ ifelse(consistency=="inconsistent, but self-reports consistent" & race_method=="
 ifelse(consistency=="inconsistent" & highest_priority_race==1, individualrace, NA)))) %>%
 group_by(uniqueID) %>% fill(final_race_highest_priority, .direction="downup")
 
-highest_priority_summary_main <- race %>% group_by(uniqueID) %>% 
-  distinct(final_race_highest_priority) %>% ungroup() %>% 
-  count(final_race_highest_priority)
+final_race_hierarchy_main_summary <- race %>% group_by(final_race_highest_priority) %>% 
+  summarise(distinct_individuals = n_distinct(uniqueID))
 
 ## 8. Process Transition to Adulthood Supplement race data
 TAS_race <- process_TAS_race(tas_data)
@@ -215,9 +210,8 @@ TAS_race <- TAS_race %>%
           ifelse(flag==1 & firstyear_TAS==1, TAS_race, NA))) %>%
   fill(final_race_first_year_TAS, .direction="downup")
 
-first_year_summary_TAS <- TAS_race %>% group_by(uniqueID) %>% 
-   distinct(final_race_first_year_TAS) %>% ungroup() %>% 
-   count(final_race_first_year_TAS)
+final_race_first_year_TAS_summary <- TAS_race %>% group_by(final_race_first_year_TAS) %>% 
+  summarise(distinct_individuals = n_distinct(uniqueID))
 
 # Option B: final_race_priority_TAS
 # Assign them their highest 'priority' race
@@ -241,9 +235,8 @@ TAS_race <- TAS_race %>%
 ifelse(flag==1 & highest_priority_race==1, TAS_race, NA))) %>%
   fill(final_race_highest_priority_TAS, .direction="downup")
 
-highest_priority_summary_TAS <- TAS_race %>% group_by(uniqueID) %>% 
-  distinct(final_race_highest_priority_TAS) %>% ungroup() %>% 
-  count(final_race_highest_priority_TAS)
+final_race_hierarchy_TAS_summary <- TAS_race %>% group_by(final_race_highest_priority_TAS) %>% 
+  summarise(distinct_individuals = n_distinct(uniqueID))
 
 # Keep only important variables from TAS_Race
 TAS_race <- TAS_race %>% dplyr::select(uniqueID, year, TAS_race, final_race_first_year_TAS, final_race_highest_priority_TAS)
@@ -284,9 +277,25 @@ all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistancies_h
 # Assign individuals their TAS self-reported race, if this is available, creating a variable called race_new
 # For now taking their highest priority race
 all_race <- all_race %>% 
-  mutate(race_new = ifelse(is.na(final_race_highest_priority_TAS), individualrace, final_race_highest_priority_TAS))
-summary_final_race <- all_race %>% group_by(race_new) %>% count()
- 
+  mutate(race_new = ifelse(is.na(final_race_highest_priority_TAS), final_race_highest_priority, final_race_highest_priority_TAS))
+
+# Check that only one race per person
+race_per_person <- all_race %>% group_by(uniqueID) %>% 
+  summarise(n_races=n_distinct(race_new)) %>%
+  filter(n_races>1)
+
+# Note the best available race method used to allocate the final_race
+all_race <- all_race %>% group_by(uniqueID) %>%
+  mutate(best_available_race_method = ifelse(race_method_rank==min(race_method_rank, na.rm=TRUE),race_method,NA)) %>%
+  fill(best_available_race_method, .direction="downup")
+
+# Summarise final race demographics and the method used to generate them:
+summary_final_method <- all_race %>% group_by(best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+summary_final_race <- all_race %>% group_by(race_new, best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+summary_final_race <- summary_final_race %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
+summary_final_race <- summary_final_race %>% group_by(race_new) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_final_race, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race.csv")
+
 # kessler score 
 kessler <- process_kessler(main_data)
 
@@ -334,13 +343,6 @@ all_data$age <- all_data$year - all_data$birthyear
 
 # write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_highest_priority_race.csv", row.names=F)
 write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_all_years_highest_priority_race.csv", row.names=F)
-
-# Final sample count:
-all_data %>% group_by(uniqueID) %>% count() # 84,121
-
-# Number of individuals who are the head or wife
-explore <- all_data %>% filter(relationship=="head"|relationship=="wife/partner") %>%
-  group_by(uniqueID) %>% count()
 
 
 
