@@ -325,18 +325,22 @@ all_data <- recode_alcohol(all_data)
 
 # Fill education and weight data
 all_data <- all_data %>% 
-  filter(year>=1999) %>% 
+#  filter(year>=1999) %>% 
   group_by(uniqueID) %>% 
   fill(weight, .direction=c("downup")) %>% 
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
 
 all_data$age <- all_data$year - all_data$birthyear
 
-write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_highest_priority_race.csv", row.names=F)
+# write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_highest_priority_race.csv", row.names=F)
+write.csv(all_data, "SIMAH_workplace/PSID/cleaned data/all_data_all_years_highest_priority_race.csv", row.names=F)
 
 # Final sample count:
 all_data %>% group_by(uniqueID) %>% count() # 84,121
 
+# Number of individuals who are the head or wife
+explore <- all_data %>% filter(relationship=="head"|relationship=="wife/partner") %>%
+  group_by(uniqueID) %>% count()
 
 
 
