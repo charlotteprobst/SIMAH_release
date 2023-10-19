@@ -11,7 +11,7 @@ data <- read_csv(paste0(DataDirectory, "/prior_range_inflations.csv")) %>%
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
-                               "54-64","65-79")),
+                               "55-64","65-79")),
          SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
          RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                        "OTH"="Others")) %>% 
@@ -47,7 +47,7 @@ ggplot(data=subset(summary, SEX=="Women" & AGECAT=="18-24" & EDUC=="LEHS"),
   facet_grid(cols=vars(inflation), rows=vars(RACE)) + 
   theme_bw() + 
   # theme(legend.position = "none") + 
-  ggtitle("Women, 18-24 non-inflated prior") + 
+  ggtitle("Women, 18-24 inflated prior") + 
   xlab("Year")
 
 ggsave(paste0(DataDirectory, "/plot_prior_inflation_comparison_women.png"), dpi=300, width=33, height=19, units="cm")
@@ -66,6 +66,7 @@ ggsave(paste0(DataDirectory, "/plot_prior_women_new.png"), dpi=300, width=33, he
 
 # calculate implausibility 
 implausibility <- data %>% 
+  filter(inflation==20) %>% 
   filter(AGECAT=="18-24") %>% 
   filter(YEAR<=2019) %>% 
   group_by(YEAR, samplenum, SEX,AGECAT, RACE, EDUC) %>% 
@@ -77,10 +78,11 @@ maxmean <- implausibility %>%
             meanimplausibility = mean(implausibility)) %>% 
   ungroup() %>% 
   mutate(
-            ntilemax = ntile(maximplausibility, 1000),
-            ntilemean = ntile(meanimplausibility, 1000)) 
+            ntilemax = ntile(maximplausibility, nrow(.)),
+            ntilemean = ntile(meanimplausibility, nrow(.))) 
 
 max <- data %>% 
+  filter(inflation==20) %>% 
   filter(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum | 
            samplenum %in% subset(maxmean, ntilemean<=3)$samplenum) %>% 
   mutate(type=ifelse(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum, "max", "mean"),
@@ -89,6 +91,11 @@ max <- data %>%
 max <- max %>% 
   filter(samplenum %in% subset(maxmean, ntilemax<=1)$samplenum | 
            samplenum %in% subset(maxmean, ntilemean<=1)$samplenum)
+
+max <- max %>% 
+  group_by(YEAR, samplenum, SEX, AGECAT, RACE, EDUC) %>% 
+    mutate(implausibility = abs(prop-target)/sqrt(SE))
+
 
 ggplot(data=subset(max, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(EDUC))) + 
@@ -100,7 +107,7 @@ ggplot(data=subset(max, SEX=="Women" & AGECAT=="18-24"),
         legend.title=element_blank()) + 
   ggtitle("Women, 18-24") + 
   xlab("Year") +
-  scale_y_continuous(labels=scales::percent) 
+  scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
 
 ggsave(paste0(DataDirectory, "/max_mean_women.png"), dpi=300, width=33, height=19, units="cm")
 
