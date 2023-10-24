@@ -30,8 +30,6 @@ options(scipen=10)
 
 ################################################################# PRE PROCESSING
 
-## FULL SAMPLE
-
 # Read in data (full sample):
 data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
 
@@ -130,23 +128,61 @@ full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/in
 ##### CHECK MODELLING ASSUMPTIONS
 
 ## Null model
-# Histogram of residuals
-hist(residuals(null_grams))
-# Heteroskedasticity of residuals
-plot(fitted(null_grams), resid(null_grams))
-abline(h = 0, lty = 2, col = "red")
-# QQ plot
-qqnorm(residuals(null_grams))
-qqline(residuals(null_grams), col = "steelblue", lwd = 2)
+# # Histogram of residuals
+# hist(residuals(null_grams))
+# # Heteroskedasticity of residuals
+# plot(fitted(null_grams), resid(null_grams))
+# abline(h = 0, lty = 2, col = "red")
+# # QQ plot
+# qqnorm(residuals(null_grams))
+# qqline(residuals(null_grams), col = "steelblue", lwd = 2)
+# 
+# ## Full model
+# hist(residuals(full_grams))
+# # Heteroskedasticity of residuals
+# plot(fitted(full_grams), resid(full_grams))
+# abline(h = 0, lty = 2, col = "red")
+# # QQ plot
+# qqnorm(residuals(full_grams))
+# qqline(residuals(full_grams), col = "steelblue", lwd = 2)
 
-## Full model
-hist(residuals(full_grams))
+
+## Null model
+## Level 1 residuals
+hist(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
-plot(fitted(full_grams), resid(full_grams))
+plot(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 abline(h = 0, lty = 2, col = "red")
 # QQ plot
-qqnorm(residuals(full_grams))
-qqline(residuals(full_grams), col = "steelblue", lwd = 2)
+qqnorm(null_grams["residual"][["lev_1_resi_est_Intercept"]])
+qqline(null_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+## Level 2 residuals
+hist(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+# Heteroskedasticity of residuals
+plot(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(null_grams["residual"][["lev_2_resi_est_Intercept"]])
+qqline(null_grams["residual"][["lev_2_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+
+### Full model
+## Level 1 residuals
+hist(full_grams["residual"][["lev_1_resi_est_Intercept"]])
+# Heteroskedasticity of residuals
+plot(full_grams["residual"][["lev_1_resi_est_Intercept"]])
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(full_grams["residual"][["lev_1_resi_est_Intercept"]])
+qqline(full_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+## Level 2 residuals
+hist(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+# Heteroskedasticity of residuals
+plot(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+abline(h = 0, lty = 2, col = "red")
+# QQ plot
+qqnorm(full_grams["residual"][["lev_2_resi_est_Intercept"]])
+qqline(full_grams["residual"][["lev_2_resi_est_Intercept"]], col = "steelblue", lwd = 2)
+
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
 # comparing the null and full models
@@ -389,6 +425,7 @@ write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace
 
 ##### Explore face validity of estimates
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
+write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
  ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers.png", 
