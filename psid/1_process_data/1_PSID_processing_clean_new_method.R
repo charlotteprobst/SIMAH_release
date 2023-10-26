@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(readxl)
 library(haven)
+library(naniar)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
@@ -32,11 +33,12 @@ main_data$IDfather = ifelse(main_data$ER32017==0, NA,
                   (main_data$ER32017*1000) + main_data$ER30002))
 
 main_data$sex <- main_data$ER32000
+main_data <- main_data %>%dplyr::mutate(sex = dplyr::na_if(sex, 9))
 main_data$sex <- recode(as.factor(main_data$sex), "1"="male", "2"="female")
 
 # Count number of individuals in each dataset
-main_data %>% group_by(uniqueID) %>% count() # 84,121
-tas_data %>% group_by(uniqueID) %>% count() # 4,776
+n_distinct(main_data$uniqueID) # 84,121
+n_distinct(tas_data$uniqueID) # 4,776
 
 # Process educational attainment data
 education <- process_education(main_data) 
@@ -60,7 +62,7 @@ sampleweights <- process_sample_weights(main_data)
 ### Process and assign race and ethnicity
  
 ## 1. process race and ethnicity data
-race <- process_race(main_data)
+race <- process_race(main_data) # loosing 4 people here, check case_when statements again
 
 # remove individuals with the same uniqueID for person and mother - 0 people
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
@@ -104,8 +106,16 @@ tally <- race %>% dplyr::select(uniqueID, individualrace) %>%
   ungroup() %>% group_by(uniqueID) %>% tally() %>% 
   mutate(flag=ifelse(n>1,1,0))
 
-# Inconsistent
+# REview how many people have inconsistent race data
 inconsistent_IDS <- unique(subset(tally, flag==1)$uniqueID) 
+inconsistent_data_main <- race %>% filter(uniqueID%in%inconsistent_IDS)
+n_distinct(inconsistent_data_main$uniqueID) # 6,132
+
+# Count how many of those with inconsistent data have more than one race method
+tally_temp_1 <- inconsistent_data_main %>% dplyr::select(uniqueID, race_method) %>% 
+  distinct() %>% 
+  ungroup() %>% group_by(uniqueID) %>% tally() %>% 
+ filter(n>1)
 
 # IDs of individuals who have some self-reported race data: 
 self_report <- race %>% filter(uniqueID%in%inconsistent_IDS) %>%
@@ -207,7 +217,7 @@ TAS_race <- left_join(TAS_race, TAS_first_year)
 TAS_race <- TAS_race %>% 
    mutate(final_race_first_year_TAS = ifelse(flag==0, TAS_race, 
 # If individual has inconsistent data,assign them their first observation of TAS_race                   
-          ifelse(flag==1 & firstyear_TAS==1, TAS_race, NA))) %>%
+          ifelse(flag==1 & firstyear_TAS==1, TAS_race, NA))) %>% group_by(uniqueID) %>%
   fill(final_race_first_year_TAS, .direction="downup")
 
 final_race_first_year_TAS_summary <- TAS_race %>% group_by(final_race_first_year_TAS) %>% 
@@ -233,6 +243,7 @@ TAS_race <- TAS_race %>%
   mutate(final_race_highest_priority_TAS = ifelse(flag==0, TAS_race, 
 # Otherwise, assign them their highest priority race                  
 ifelse(flag==1 & highest_priority_race==1, TAS_race, NA))) %>%
+  group_by(uniqueID) %>%
   fill(final_race_highest_priority_TAS, .direction="downup")
 
 final_race_hierarchy_TAS_summary <- TAS_race %>% group_by(final_race_highest_priority_TAS) %>% 
@@ -248,8 +259,8 @@ TAS_race$year <- as.numeric(TAS_race$year)
 all_race <- left_join(race, TAS_race)
 
 # Fill final TAS race variables for all years
-all_race <- all_race %>% fill(final_race_first_year_TAS, .direction="downup")
-all_race <- all_race %>% fill(final_race_highest_priority_TAS, .direction="downup")
+all_race <- all_race %>% group_by(uniqueID) %>% fill(final_race_first_year_TAS, .direction="downup")
+all_race <- all_race %>% group_by(uniqueID) %>% fill(final_race_highest_priority_TAS, .direction="downup")
 
 # assign 'self reported' as the race method for those assigned their TAS race variable
 all_race <- assign_race_method_TAS(all_race)
@@ -279,6 +290,9 @@ all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistancies_h
 all_race <- all_race %>% 
   mutate(race_new = ifelse(is.na(final_race_highest_priority_TAS), final_race_highest_priority, final_race_highest_priority_TAS))
 
+temp <- all_race %>% filter(!(is.na(race_new)))
+n_allocated_final_race <- n_distinct(temp$uniqueID)
+
 # Check that only one race per person
 race_per_person <- all_race %>% group_by(uniqueID) %>% 
   summarise(n_races=n_distinct(race_new)) %>%
@@ -288,6 +302,11 @@ race_per_person <- all_race %>% group_by(uniqueID) %>%
 all_race <- all_race %>% group_by(uniqueID) %>%
   mutate(best_available_race_method = ifelse(race_method_rank==min(race_method_rank, na.rm=TRUE),race_method,NA)) %>%
   fill(best_available_race_method, .direction="downup")
+
+# Check that only one race method per person
+race_method_per_person <- all_race %>% group_by(uniqueID) %>% 
+  summarise(n_race_methods=n_distinct(best_available_race_method)) %>%
+  filter(n_race_methods>1)
 
 # Summarise final race demographics and the method used to generate them:
 summary_final_method <- all_race %>% group_by(best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))

@@ -450,7 +450,6 @@ process_kessler <- function(data){
   return(kessler)
 }
 
-## recode_PSID_vars does not currently seem to be called upon in the 1_PSID_processing_clean script.
 recode_PSID_vars <- function(data, varlist, variable, years){
   newdata <- data %>%
     mutate(origINTNO = ER30001,
