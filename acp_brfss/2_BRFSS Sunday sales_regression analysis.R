@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230925
+DATE <- 20231026
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -64,15 +64,17 @@ pdat <- data %>%
 # set plot design
 
 ggdesign <- theme_bw() +
-  theme(legend.position = "none",
+  theme(legend.position = "bottom",
         plot.title = element_text(size = 12), strip.text = element_text(size = 12),
         axis.text = element_text(size = 12, color = "black"), 
         axis.title.y = element_text(size = 12, color = "black"), 
+        legend.title = element_text(size = 12), legend.text = element_text(size = 12), 
         axis.title.x = element_blank(), axis.ticks = element_blank())
 
-col1 <- c("#1D9A6C", "#0A2F51")
+col1 <- c("#B5C95A", "#1D9A6C", "#0A2F51")
 
-label_education <- c("low", "medium", "high")
+#label_education <- c("low", "medium", "high")
+label_ban <- c("Ban", "No Ban")
 
 # ----------------------------------------------------------------
 # DRINKING ALCOHOL VS. ABSTAINING: MIXED-EFFECT MODELS
@@ -109,11 +111,11 @@ margins <- ggemmeans(drinkstatus.m, terms = c("education_summary", "sunsalesban_
 
 # INTERACTION PLOT
 IA.DS.M <- 
-  ggplot(margins, aes(x, predicted, color = group, group = group)) +
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_color_manual(values = col1) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) +  
   scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
-  scale_x_discrete(label = label_education) + 
+  scale_x_discrete(label = label_ban) + 
   labs(title = "\n", y = "\nEMM: any alcohol use\n") + ggdesign
 
 # --------------------------------------------------------------------------------------
@@ -148,11 +150,11 @@ margins <- ggemmeans(drinkstatus.w, terms = c("education_summary", "sunsalesban_
 
 # INTERACTION PLOT
 IA.DS.W <- 
-  ggplot(margins, aes(x, predicted, color = group, group = group)) +
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_color_manual(values = col1) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
   scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
-  scale_x_discrete(label = label_education) + 
+  scale_x_discrete(label = label_ban) + 
   labs(title = "\n", y = "\nEMM: any alcohol use\n") + ggdesign
 
 #beep()
@@ -174,7 +176,7 @@ pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 gpd.m <- lme(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
                race_eth + marital_status + age_gr, random = ~1|State, 
-             data = pdat[pdat$sex_recode == "Men"])
+             data = pdat[pdat$sex_recode == "Men",])
 summary(gpd.m)
 
 # CHECK SECULAR TREND
@@ -197,10 +199,10 @@ margins <- ggemmeans(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>
 
 # INTERACTION PLOT
 IA.GPD.M <- 
-  ggplot(margins, aes(x, exp(predicted), color = group, group = group)) +
+  ggplot(margins, aes(group, exp(predicted), color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_x_discrete(label = label_education) + 
-  scale_color_manual(values = col1) +
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
   labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
 
 #beep()
@@ -212,7 +214,7 @@ IA.GPD.M <-
 gpd.w <- lme(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
                race_eth + marital_status + age_gr, random = ~1|State, 
-             data = pdat[pdat$sex_recode == "Women"])
+             data = pdat[pdat$sex_recode == "Women",])
 summary(gpd.w)
 
 # CHECK SECULAR TREND
@@ -234,10 +236,10 @@ margins <- ggemmeans(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>
 
 # INTERACTION PLOT
 IA.GPD.W <- 
-  ggplot(margins, aes(x, exp(predicted), color = group, group = group)) +
+  ggplot(margins, aes(group, exp(predicted), color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_x_discrete(label = label_education) + 
-  scale_color_manual(values = col1) +
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
   labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
 
 #beep()
@@ -283,10 +285,11 @@ margins <- ggemmeans(alccat.m, terms = c("education_summary", "sunsalesban_di"))
 
 # INTERACTION PLOT
 IA.ALCCAT.M <- 
-  ggplot(margins, aes(x, predicted, color = group, group = group)) +
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_x_discrete(label = label_education) + 
-  scale_color_manual(values = col1) + scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
 
 #beep()
@@ -322,10 +325,11 @@ margins <- ggemmeans(alccat.w, terms = c("education_summary", "sunsalesban_di"))
 
 # INTERACTION PLOT
 IA.ALCCAT.W <- 
-  ggplot(margins, aes(x, predicted, color = group, group = group)) +
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
   geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
-  scale_x_discrete(label = label_education) + 
-  scale_color_manual(values = col1) + scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
   labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
 
 #beep()
@@ -338,9 +342,9 @@ IA.ALCCAT.W <-
 
 ggarrange(IA.DS.M, IA.GPD.M, IA.ALCCAT.M, IA.DS.W, IA.GPD.W, IA.ALCCAT.W,
           labels = c("1A: MEN", "2A: MEN", "3A: MEN", "1B: WOMEN", "2B: WOMEN", "3B: WOMEN"),
-          ncol = 3, nrow = 2)
+          ncol = 3, nrow = 2, common.legend = TRUE, legend="bottom")
 
-ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_BRFSS_INTERACT.jpg"), dpi = 300, width = 12, height = 8)
+ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_BRFSS_INTERACT_ALT.jpg"), dpi = 300, width = 12, height = 8)
 
 # ----------------------------------------------------------------
 # EXPORT: TABLE
