@@ -1,4 +1,5 @@
 #' Runs microsimulation - alternative version with different ordering
+#' This version adjusts the migration COUNTS to match with the observed ACS data
 #'
 #' This function runs the microsimulation
 #' @param
@@ -6,11 +7,11 @@
 #' @import data.table
 #' @export
 #' @examples
-#' run_microsim_alt
-run_microsim_alt <- function(seed,samplenum,basepop,brfss,
+#' run_microsim_alt_adjustmigration
+run_microsim_alt_adjustmigration <- function(seed,samplenum,basepop,brfss,
                          death_counts,
                          updatingeducation, education_transitions,
-                         migration_rates,
+                         migration_counts, population_counts,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
@@ -190,19 +191,52 @@ basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
                                                     "65-74","75-79")))
 basepop <- subset(basepop, microsim.init.age<=79)
 
+basepopsave <- basepop
+
 # add and remove migrants
 if(y<2019){
-basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
-basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
-# files <- inward_births_estimate_rate(basepop, migration_counts, y, brfss)
-# basepop <- files[[1]]
-# birth_rates[[paste(y)]] <- files[[2]] %>%
-#   mutate(year=y)
-# files <- inward_migration_estimate_rate(basepop, migration_counts,y,brfss)
-# basepop <- files[[1]]
-# migration_rates[[paste(y)]] <- files[[2]] %>%
-#   mutate(year=y)
-# basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
+basepop <- inward_births(basepop, migration_counts, y, brfss, model)
+  # adding in migrants
+basepop <- inward_migration(basepop, migration_counts, y, brfss, model)
+basepop <- outward_migration(basepop,migration_counts,y)
+# comparing to the population counts for the next year (to calibrate migration in out rates)
+compare <- population_counts %>% filter(Year==y)
+popsummary <- basepop %>% group_by(agecat, microsim.init.sex, microsim.init.race) %>%
+  tally()
+compare <- left_join(compare, popsummary) %>%
+  mutate(diff = n-TotalPop,
+    pct_diff = (n - TotalPop) / TotalPop,
+         flag = case_when(
+           pct_diff > 0.01 ~ 1,
+           pct_diff < -0.01 ~ 1,
+           TRUE ~ 0
+         )) %>%
+  # filter(flag==1) %>%
+  dplyr::select(Year,agecat,microsim.init.sex,microsim.init.race,diff)
+
+# check to adjust migration in rates
+adjusting <- migration_counts %>% filter(Year==y) %>%
+  dplyr::select(-BirthsInN) %>% distinct() %>% drop_na()
+compare <- left_join(compare,adjusting) %>%
+  mutate(MigrationInN_new = MigrationInN+diff,
+         MigrationOutN_new = ifelse(MigrationInN_new<0, abs(MigrationInN_new),
+                                    MigrationOutN)) %>%
+  dplyr::select(Year, agecat, microsim.init.sex, microsim.init.race,
+                MigrationInN_new, MigrationOutN_new)
+# now join back up with the migration counts file
+migration_counts <- left_join(migration_counts, compare)
+migration_counts <- migration_counts %>%
+  mutate(MigrationInN_new = ifelse(MigrationInN_new<0, 0, MigrationInN_new),
+         MigrationInN = ifelse(!is.na(MigrationInN_new), MigrationInN_new,
+                                MigrationInN),
+         MigrationOutN = ifelse(!is.na(MigrationOutN_new), MigrationOutN_new,
+                                 MigrationOutN))
+
+# now apply the updated migration in and out rates to get the correct basepop for next year
+basepop <- basepopsave
+basepop <- inward_births(basepop, migration_counts, y, brfss, model)
+# adding in migrants
+basepop <- inward_migration(basepop, migration_counts, y, brfss, model)
 basepop <- outward_migration(basepop,migration_counts,y)
 }
 
@@ -252,5 +286,5 @@ if(output=="mortality"){
 }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(list(Summary))
+return(list(Summary,migration_counts))
 }
