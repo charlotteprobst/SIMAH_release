@@ -1,5 +1,27 @@
 # PSID processing functions
 
+process_family_interview_ID <- function(data){
+  varnames <- c("V3", "V442", "V1102", "V1802", "V2402", "V3002", "V3402", "V3802", "V4302", "V5202", "V5702",
+                "V6302", "V6902", "V7502", "V8202", "V8802", "V10002", "V11102", "V12502", "V13702", "V14802",
+  "V16302", "V17702", "V19002", "V20302", "V21602", "ER2002", "ER5002", "ER7002", "ER10002", "ER13002", "ER17002",
+  "ER21002", "ER25002", "ER36002", "ER42002", "ER47302", "ER53002", "ER60002", "ER66002", "ER72002", "ER78002")
+  newdata <- data %>% dplyr::select(uniqueID, familyID, all_of(varnames))
+  years <- c(1968:1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(newdata)[3:44] <- years
+  newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_to="family_interview_ID")
+  return(newdata)
+}
+
+process_survey_year <- function(data){
+  varnames <- c("ER10007", "ER13008", "ER17011", "ER21014", "ER25014", "ER36014", "ER42014",
+                "ER47314", "ER53014", "ER60014", "ER66014", "ER72014", "ER78014")
+  newdata <- data %>% dplyr::select(uniqueID, familyID, all_of(varnames))
+  years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
+  names(newdata)[3:15] <- years
+  newdata <- newdata %>% pivot_longer(cols='1997':'2021', names_to="year", values_to="survey_year")
+  return(newdata)
+}
+
 process_education <- function(data){
   varnames <- c("ER30010", "ER30052","ER30076", "ER30100", "ER30126", "ER30147","ER30169", "ER30197", "ER30226", "ER30255",
                      "ER30296", "ER30326", "ER30356", "ER30384",  "ER30413",  "ER30443", "ER30478", "ER30513", "ER30549",
@@ -21,10 +43,10 @@ process_education <- function(data){
                                                   ifelse(education==14, "SomeC2",
                                                          ifelse(education==15, "SomeC3",
                                                                 ifelse(education>=16, "College", NA))))),
-           year = as.numeric(year)) %>% group_by(uniqueID) %>% 
+           year = as.numeric(year)) # %>% group_by(uniqueID) # %>% 
     # fill education, first down, then up
-    fill(education, .direction=c("downup")) %>% fill(education_cat, .direction=c("downup")) %>% 
-    fill(education_cat_detailed, .direction=c("downup")) %>% ungroup()
+    # fill(education, .direction=c("downup")) %>% fill(education_cat, .direction=c("downup")) %>% 
+    # fill(education_cat_detailed, .direction=c("downup")) %>% ungroup()
   return(newdata)
 }
 
@@ -39,8 +61,9 @@ process_TAS_education <- function(data){
                                       ifelse(TAS_education==98, NA, TAS_education))),
            TAS_education_cat = ifelse(TAS_education<=12, "LEHS",
                                     ifelse(TAS_education>12 & TAS_education<16, "SomeC",
-                                      ifelse(TAS_education>=16, "College", NA)))) %>% 
-    group_by(uniqueID) %>% fill(TAS_education, .direction=c("down")) %>% fill(TAS_education_cat, .direction=c("down"))
+                                      ifelse(TAS_education>=16, "College", NA)))) # %>% 
+   # group_by(uniqueID) # %>% 
+    # fill(TAS_education, .direction=c("down")) %>% fill(TAS_education_cat, .direction=c("down"))
   return(ed)
 }
 
@@ -58,10 +81,10 @@ newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_
   mutate(age = ifelse(age==0, NA, 
                       ifelse(age==999, NA, age)),
          year = as.numeric(year),
-         birthyear = year - age) %>% 
-  group_by(uniqueID) %>% 
-  reframe(birthyear = unique(birthyear),
-            birthyear = mean(birthyear, na.rm=T)) %>% distinct()
+         birthyear = year - age) %>%
+   group_by(uniqueID) %>%
+   reframe(birthyear = unique(birthyear),
+           birthyear = mean(birthyear, na.rm=T)) %>% distinct()
 return(newdata)
 }
 
@@ -408,7 +431,7 @@ process_TAS_race <- function(data){
                # Black
                TAS_race==2 & year<=2015 | TAS_race==3 & year>=2017 ~ "black", 
                # Hispanic
-               TAS_race==2 | year>=2017 ~ "hispanic",
+               TAS_race==2 & year>=2017 ~ "hispanic",
                # Native American
                TAS_race==3 & year<=2015 | TAS_race==5 & year>=2017 ~ "Native",
                # Asian/PI
@@ -444,7 +467,7 @@ process_kessler <- function(data){
   kessler <- data %>% dplyr::select(uniqueID, all_of(varlist))
   names(kessler)[2:11] <- years
   kessler <- kessler %>% pivot_longer(cols='2001':'2021', names_to="year", values_to="kessler_score") %>% 
-    group_by(uniqueID) %>% fill(kessler_score, .direction=c("downup"))
+    group_by(uniqueID) # %>% fill(kessler_score, .direction=c("downup"))
   kessler$kessler_score <- ifelse(kessler$kessler_score==99|kessler$kessler_score==98, NA, kessler$kessler_score)
   kessler$year <- as.numeric(kessler$year)
   return(kessler)
@@ -602,4 +625,3 @@ recode_alcohol <- function(data){
   return(data)
   
 }
-
