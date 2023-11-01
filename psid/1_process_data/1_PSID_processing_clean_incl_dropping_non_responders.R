@@ -150,9 +150,9 @@ race <- assign_individual_race_parents(race)
 
 # Label the method used to impute each persons race
 race <- assign_race_method(race)
-
-## 7. Fill individual race data by individual
-race <- race %>% group_by(uniqueID) %>% fill(individualrace, race_method, .direction = c("downup"))
+# 
+# ## 7. Fill individual race data by individual
+# race <- race %>% group_by(uniqueID) %>% fill(individualrace, race_method, .direction = c("downup"))
 
 # Review missing race data in the main survey
 summary(as.factor(race$individualrace))

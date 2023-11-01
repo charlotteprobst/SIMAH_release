@@ -412,52 +412,37 @@ assign_race_method <- function(data){
 
 assign_race_method_TAS <- function(data){
   data <- data %>% mutate(
-    race_method = ifelse(is.na(TAS_race), race_method, "self reported"),
-    race_method_rank = ifelse(is.na(TAS_race), race_method_rank, 1))
+    race_method = ifelse(is.na(individualrace_TAS), race_method, "self reported"),
+    race_method_rank = ifelse(is.na(individualrace_TAS), race_method_rank, 1))
   return(data)
 }
 
-###### FUNCTION 8 PROCESS_TAS_RACE
+###### FUNCTION 8 PROCESS_individualrace_TAS
 process_TAS_race <- function(data){
   varlist<-c("TA050884", "TA070865", "TA090925", "TA111057", "TA131092", "TA151132", "TA171955", "TA192131")
   years <- c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019) # 2021 data not yet available
   race <- data %>% dplyr::select(uniqueID, all_of(varlist))
   names(race)[2:9] <- years
-  race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="TAS_race") %>% 
-    mutate(TAS_race = 
+  race <- race %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="individualrace_TAS") %>% 
+    mutate(individualrace_TAS = 
              case_when(
                # White
-               TAS_race==1 ~ "white",
+               individualrace_TAS==1 ~ "white",
                # Black
-               TAS_race==2 & year<=2015 | TAS_race==3 & year>=2017 ~ "black", 
+               individualrace_TAS==2 & year<=2015 | individualrace_TAS==3 & year>=2017 ~ "black", 
                # Hispanic
-               TAS_race==2 & year>=2017 ~ "hispanic",
+               individualrace_TAS==2 & year>=2017 ~ "hispanic",
                # Native American
-               TAS_race==3 & year<=2015 | TAS_race==5 & year>=2017 ~ "Native",
+               individualrace_TAS==3 & year<=2015 | individualrace_TAS==5 & year>=2017 ~ "Native",
                # Asian/PI
-               TAS_race==4 | TAS_race==5 & year <=2015 | TAS_race==7 & year>=2017 ~ "Asian/PI", # recoding of 5 as Asian here is a new addition
+               individualrace_TAS==4 | individualrace_TAS==5 & year <=2015 | individualrace_TAS==7 & year>=2017 ~ "Asian/PI", # recoding of 5 as Asian here is a new addition
                # other
-               TAS_race==7 & year<=2015 | TAS_race==6 & year>=2017 | TAS_race==8 & year>=2017 ~ "other",
+               individualrace_TAS==7 & year<=2015 | individualrace_TAS==6 & year>=2017 | individualrace_TAS==8 & year>=2017 ~ "other",
                # NA
-               TAS_race==6 & year<=2015 | TAS_race==8 & year<=2015 | TAS_race==8 | TAS_race==9 | TAS_race==98 | TAS_race==99 ~ NA)) %>% 
-    dplyr::select(uniqueID, TAS_race, year) %>% distinct()
+               individualrace_TAS==6 & year<=2015 | individualrace_TAS==8 & year<=2015 | individualrace_TAS==8 | individualrace_TAS==9 | individualrace_TAS==98 | individualrace_TAS==99 ~ NA)) %>% 
+    dplyr::select(uniqueID, individualrace_TAS, year) %>% distinct()
   return(race)
 }
-# 
-# ###### FUNCTION 8: ALLOCATE_RACE_FINAL()
-# # ensure that each person has a unique value for race and ethnicity over time
-# allocate_final_race <- function(data){
-#   races <- unique(data$race_new)
-#   # recode according to hierarchy - black, hispanic, native american, asian/pi, other
-#   newrace <- ifelse("black" %in% races, "black",
-#                     ifelse("hispanic" %in% races, "hispanic", 
-#                            ifelse("Native" %in% races, "Native",
-#                                   ifelse("Asian/PI" %in% races, "Asian/PI",
-#                                          ifelse("other" %in% races, "other",
-#                                                 ifelse("white" %in% races, "white", NA))))))
-#   data$race_new_unique <- newrace
-#   return(data)
-# }
 
 process_kessler <- function(data){
   ###Using Kesslers scale (K6) total score variable (0-24)
