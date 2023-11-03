@@ -569,7 +569,7 @@ recode_alcohol <- function(data){
            drinkingstatus = ifelse(drinkingstatus==1,1,
                                    ifelse(drinkingstatus==5,0,NA))) %>%
     dplyr::select(-c(everdrinkhd, everdrinkspouse))
-  #drinking quantity
+  # drinking quantity
   data <- data %>%
     mutate(quantity = ifelse(relationship=="head", drinksperdayhd,
                              ifelse(relationship=="wife/partner" | relationship=="husbandofhead", drinksperdayspouse,
@@ -609,4 +609,75 @@ recode_alcohol <- function(data){
                                                                             ifelse(sex=="female" & gpd>60,"Very high risk",NA))))))))))
   return(data)
   
+}
+
+
+# Process_alcohol_TAS
+
+process_alcohol_TAS <- function(data){
+  
+  years<-c(2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019)
+  
+  # Ever drinks
+  # (NB. If the TAS respondent was the Head or Wife/"Wife" in any of these years, the main PSID interview values for this variable were taken from that interview.
+  varlist <- c("TA050766","TA070737","TA090796","TA110912","TA130945","TA150967","TA171824","TA191986")
+  ever_drink_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(ever_drink_tas)[2:9] <- years
+  ever_drink_tas <- ever_drink_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="everdrink")
+  ever_drink_tas <- ever_drink_tas %>% mutate(everdrink_TAS = case_when(
+  everdrink==1 ~ "yes",
+  everdrink==5 ~ "no",
+  everdrink==8|everdrink==9 ~ NA))
+  
+  # Frequency of drinking
+  varlist <-c("TA050767","TA070738","TA090797","TA110913","TA130946","TA150968","TA171825","TA191987")
+  freq_drink_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(freq_drink_tas)[2:9] <- years
+  freq_drink_tas <- freq_drink_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="freqdrink")
+  # Estimate number of drinking days per moneth based on descriptive variable
+  freq_drink_tas <- freq_drink_tas %>% mutate(frequency_TAS = case_when(
+    freqdrink==8|freqdrink==9|freqdrink==0 ~ NA, # Don't know, refused or inappropriate (does not drink)
+    freqdrink==1 ~ 1, # Less than once a month
+    freqdrink==2 ~ 1.5, # About once a month
+    freqdrink==3 ~ 3.5, # Several times a month
+    freqdrink==4 ~ 5, # About once a week
+    freqdrink==5 ~ 12, # Several times a week
+    freqdrink==6 ~ 30)) # Every day
+  
+  # Drinks per drinking day
+  varlist <- c("TA050768","TA070739","TA090798","TA110914","TA130947","TA150969","TA171826","TA191988")
+  drinksperday_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(drinksperday_tas)[2:9] <- years
+  drinksperday_tas <- drinksperday_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="drinksperday")
+  drinksperday_tas <- drinksperday_tas %>% mutate(quantity_TAS = ifelse(
+    drinksperday==98|drinksperday==99|drinksperday==0, NA, drinksperday))
+  
+  # Heavy episodic drinking days in the last year (4 or more for women, 5 or more for men)
+  varlist <- c("TA050769","TA070740","TA090799","TA110915","TA130948","TA150970","TA171827","TA191989", "sex")
+  bingedrinkdays_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
+  names(bingedrinkdays_tas)[2:9] <- years
+  bingedrinkdays_tas <- bingedrinkdays_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="bingedrinkdays")
+  bingedrinkdays_tas <- bingedrinkdays_tas %>% mutate(bingedrink_TAS = ifelse(
+    bingedrinkdays==998|bingedrinkdays==999|bingedrinkdays==0, NA, bingedrinkdays))
+  
+  # Combine all drinking variables into one dataset
+  drinking <- left_join(ever_drink_tas, freq_drink_tas) %>% 
+    left_join(., drinksperday_tas) %>% left_join(., bingedrinkdays_tas)
+    
+  # Estimate grams per day for an individual (basic formula)
+  drinking <- drinking %>%  mutate(gpd_TAS = (quantity_TAS*frequency_TAS*14)/30)
+  
+  # Recode to WHO alcohol categories
+  drinking <- drinking %>%
+    mutate(AlcCAT_TAS = ifelse(gpd_TAS==0,"Non-drinker",
+                           ifelse(sex=="male" & gpd_TAS>0 & gpd_TAS<=40,"Low risk",
+                                  ifelse(sex=="female" & gpd_TAS>0 & gpd_TAS<=20,"Low risk",
+                                         ifelse(sex=="male" & gpd_TAS>40 & gpd_TAS<=60,"Medium risk",
+                                                ifelse(sex=="female" & gpd_TAS>20 & gpd_TAS<=40,"Medium risk",
+                                                       ifelse(sex=="male" & gpd_TAS>60 & gpd_TAS<=100,"High risk",
+                                                              ifelse(sex=="female" & gpd_TAS>40 & gpd_TAS<=60,"High risk",
+                                                                     ifelse(sex=="male" & gpd_TAS>100,"Very high risk",
+                                                                            ifelse(sex=="female" & gpd_TAS>60,"Very high risk",NA))))))))))
+  
+  return(drinking)
 }

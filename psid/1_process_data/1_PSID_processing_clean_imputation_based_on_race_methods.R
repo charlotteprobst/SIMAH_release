@@ -8,8 +8,8 @@ library(naniar)
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 # read in the data 
-main_data <- read_excel("SIMAH_workplace/PSID/Raw_data/J325713/J325713.xlsx")
-tas_data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021_new/TAS sample/J325254.xlsx")
+main_data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021/main sample/J325713.xlsx")
+tas_data <- read_excel("SIMAH_workplace/PSID/Raw_data/Full_2021/TAS sample/J325902.xlsx")
 
 # Source existing PSID processing functions
 source("SIMAH_code/PSID/1_process_data/PSID_processing_functions.R")
@@ -35,6 +35,9 @@ main_data$IDfather = ifelse(main_data$ER32017==0, NA,
 main_data$sex <- main_data$ER32000
 main_data <- main_data %>%dplyr::mutate(sex = dplyr::na_if(sex, 9))
 main_data$sex <- recode(as.factor(main_data$sex), "1"="male", "2"="female")
+tas_data$sex <- tas_data$ER32000
+tas_data <- tas_data %>% dplyr::mutate(sex = dplyr::na_if(sex, 9))
+tas_data$sex <- recode(as.factor(tas_data$sex), "1"="male", "2"="female")
 
 # Counts within in each dataset
 n_distinct(main_data$uniqueID) # 84,121 individuals
@@ -72,11 +75,12 @@ relationship_summary <- relationship %>% group_by(relationship) %>% summarise(di
 # process family sampling weights 
 sampleweights <- process_sample_weights(main_data)
 sum(is.na(sampleweights$weight)) # 608,203 out of 1,009,452 (60%)
+sampleweights$year <- as.double(sampleweights$year)
 
 # kessler score 
 kessler <- process_kessler(main_data)
 
-#Create as a categorized variable based on paper by Prochaska et al. 2012-Validity study of the K6 scale as ameasure of moderate mental distressbased on mental health treatment needand utilization
+# Create as a categorized variable based on paper by Prochaska et al. 2012-Validity study of the K6 scale as ameasure of moderate mental distressbased on mental health treatment needand utilization
 kessler$distress_severe <- ifelse(kessler$kessler_score>=13, "Yes",
                                    ifelse(kessler$kessler_score<13, "No", NA))
 kessler$distress_class <- ifelse(kessler$kessler_score<5, "Low or none",
@@ -86,7 +90,10 @@ summary(as.factor(kessler$distress_severe))
 summary(as.factor(kessler$distress_class))
 
 # process alcohol data
-alcohol <- process_alcohol(main_data)
+alcohol_data <- process_alcohol(main_data)
+alcohol_TAS <- process_alcohol_TAS(tas_data)
+alcohol_TAS$year <- as.numeric(alcohol_TAS$year)
+alcohol <- left_join(alcohol_data, alcohol_TAS)
 
 # process employment status
 employment <- process_employment(main_data)
@@ -99,13 +106,18 @@ homeowner <- process_homeowner(main_data)
 
 # Combine all subsets of data
 all_data <- left_join(responses, age) %>% 
-  left_join(., relationship) %>% left_join(.,alcohol) %>% 
+ left_join(., relationship) %>% 
   left_join(., kessler) %>% left_join(., sampleweights) %>% 
-  left_join(., employment) %>% left_join(., income) %>% 
-  left_join(.,homeowner) %>% 
-  left_join(.,all_education) # n 3,533,082
+  left_join(.,all_education) %>%
+  left_join(., income) %>% 
+  left_join(.,homeowner) %>% left_join(.,alcohol) %>%
+  left_join(., employment)
+  # n 3,533,082
 n_distinct(all_data$familyID) # 8,102 families 
 n_distinct(all_data$uniqueID) # 84,121 individuals remaining 
+
+# Fill sex data for all years
+all_data <- all_data %>% group_by(uniqueID) %>% fill(sex, .direction="downup")
 
 # Drop rows of data where non-responses (no family interview ID)
 all_data_responses_only <- all_data %>% filter(flag_non_response==0) # 2,036,453
@@ -114,20 +126,20 @@ n_distinct(all_data_responses_only$uniqueID) # 84,121 individuals remaining
 
 # Drop rows of data where individuals are not yet born (age <1)
 all_data_responses_only$age <- all_data_responses_only$year - all_data_responses_only$birthyear
-all_data_responses_and_born_only <- all_data_responses_only %>% filter(age >= 1) # 1,308,153
+all_data_responses_and_born_only <- all_data_responses_only %>% filter(age >= 0) # 1,308,153
 n_distinct(all_data_responses_and_born_only$familyID) # 8102 families remaining
 n_distinct(all_data_responses_and_born_only$uniqueID) # 83,974 individuals remaining
 
 ### Process and assign race and ethnicity
 
-race <- process_race(main_data) # 3,533,082
+race <- process_race(main_data) 
 
 # Remove individuals with the same uniqueID for person and mother
 race <- race %>% mutate(match=ifelse(uniqueID==IDmother,1,0),
                          match = ifelse(is.na(match),0,match)) %>%
   filter(match==0) # 3,532,914
 
-# Join race data with all other data (to exclude non-respondents)
+# # Join race data with all other data (to exclude non-response years)
 race <- left_join(all_data_responses_and_born_only, race) # 1,308,153
 
 # Generate family race variable based on the race of the head and/or wife
@@ -148,10 +160,10 @@ race <- assign_individual_race_parents(race)
 race <- assign_race_method(race)
 
 # Identify individuals who (following imputation based on family/parents) have some race data, and those who still have no race data
-some_race_data <- race %>% filter(!is.na(individualrace))
-some_race_data_IDS <- unique(some_race_data$uniqueID)
+some_race_data <- race %>% filter(!(is.na(individualrace)))
+some_race_data_IDS <- unique(some_race_data$uniqueID) # 60,812
 no_race_data <- race %>% filter(!(uniqueID%in%some_race_data_IDS))
-no_race_data_IDS <- unique(no_race_data$uniqueID)
+no_race_data_IDS <- unique(no_race_data$uniqueID) # 23,162
 
 # Identify individuals who have inconsistent race data over time
 inconsistent_race_tally <- race %>% dplyr::select(uniqueID, individualrace) %>%
@@ -160,7 +172,7 @@ inconsistent_race_tally <- race %>% dplyr::select(uniqueID, individualrace) %>%
   mutate(flag=ifelse(n>1,1,0))
 inconsistent_IDS <- unique(subset(inconsistent_race_tally, flag==1)$uniqueID)
 inconsistent_data_main <- race %>% filter(uniqueID%in%inconsistent_IDS)
-n_distinct(inconsistent_data_main$uniqueID) # 1,317
+n_distinct(inconsistent_data_main$uniqueID) # 3,472
 
 # For each inconsistent individual, flag whether they are consistent within method(s)
 temp <- inconsistent_data_main %>% dplyr::select(uniqueID, individualrace, race_method) %>%
@@ -168,23 +180,23 @@ temp <- inconsistent_data_main %>% dplyr::select(uniqueID, individualrace, race_
   ungroup() %>% group_by(uniqueID, race_method) %>% tally() %>%
   mutate(flag_consistency_within_race_method=ifelse(n==1,1,0))
 race <- left_join(race, temp) 
-temp <- race %>% filter(flag_consistency_within_race_method==1) # %>% dplyr::select(uniqueID, individualrace, race_method, flag_consistency_within_race_method)
+temp <- race %>% filter(flag_consistency_within_race_method==1) 
 
 # Consistent self-reports
 temp_self_report <- temp %>% filter(race_method=="self reported")
-consistent_self_report_IDS <- unique(temp_self_report$uniqueID) # 421
+consistent_self_report_IDS <- unique(temp_self_report$uniqueID) # 1,222
 
 # Consistent reports by the head
 temp_head_report <- temp %>% filter(race_method=="reported by head")
-consistent_head_report_IDS <- unique(temp_head_report$uniqueID) # 169
+consistent_head_report_IDS <- unique(temp_head_report$uniqueID) # 608
 
 # Consistent imputation from nearest family member
 temp_imputed_family <- temp %>% filter(race_method=="imputed based on nearest family member")
-consistent_imputed_family_IDS <- unique(temp_imputed_family$uniqueID) # 372
+consistent_imputed_family_IDS <- unique(temp_imputed_family$uniqueID) # 1256
 
 # Consistent imputation from parental record linkage
 temp_imputed_parents <- temp %>% filter(race_method=="imputed based on parents")
-consistent_imputed_parents_IDS <- unique(temp_imputed_parents$uniqueID) # 141
+consistent_imputed_parents_IDS <- unique(temp_imputed_parents$uniqueID) # 873
 
 # Inconsistent within all methods
 temp <- race %>% filter(flag_consistency_within_race_method==0) 
@@ -192,7 +204,7 @@ temp_inconsistent_within_all_methods <- temp %>% filter(!(uniqueID%in%consistent
                                                    !(uniqueID%in%consistent_head_report_IDS) & 
                                                    !(uniqueID%in%consistent_imputed_family_IDS) &
                                                    !(uniqueID%in%consistent_imputed_parents_IDS))
-inconsistent_within_all_methods_IDS <- unique(temp_inconsistent_within_all_methods$uniqueID) # 735
+inconsistent_within_all_methods_IDS <- unique(temp_inconsistent_within_all_methods$uniqueID) # 
 
 # Add a column to each individual noting their best available consistent data
 race <- race %>% mutate(race_consistency_main = case_when(uniqueID%in%no_race_data_IDS ~ "no race data",
@@ -284,7 +296,7 @@ inconsistent_race_tally_TAS <- TAS_no_na %>% dplyr::select(uniqueID, individualr
   distinct() %>%
   ungroup() %>% group_by(uniqueID) %>% tally() %>%
   mutate(race_consistency_TAS=ifelse(n>1,"inconsistent within TAS","consistent within TAS"))
-TAS_race <- left_join(TAS_race, inconsistent_race_tally_TAS)
+TAS_race <- left_join(TAS_no_na, inconsistent_race_tally_TAS)
 inconsistent_IDS_TAS <- unique(subset(inconsistent_race_tally_TAS, race_consistency_TAS=="inconsistent within TAS")$uniqueID)
 
 # Assign one single race for each individual, across all years, based on the TAS data (2 options)
@@ -347,17 +359,22 @@ all_race <- assign_race_method_TAS(all_race)
 
 # Compare the race estimated based on the main sample data to the race estimated based on TAS data:
 
-# Comparing estimates based on first year
+# Compare estimates based on first year
 all_race <- all_race %>%
   mutate(inconsistent_race_MAIN_vs_TAS_using_first_year = ifelse(race_using_first_year==race_using_first_year_TAS, 0, 1))
 all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistent_race_MAIN_vs_TAS_using_first_year) %>% count()
 
-# Comparing estimates based on highest priority
+# Compare estimates based on highest priority
 all_race <- all_race %>%
   mutate(inconsistent_race_MAIN_vs_TAS_using_priority_order = ifelse(race_using_priority_order==race_using_priority_order_TAS, 0, 1))
 all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistent_race_MAIN_vs_TAS_using_priority_order) %>% count()
 
-# Resolve conflicts between the main and TAS estimates of race (2 options)
+# Compare estimates based on best method (main) and highest priority (TAS)
+all_race <- all_race %>%
+  mutate(inconsistent_race_MAIN_vs_TAS_using_method_hierarchy = ifelse(race_using_method_hierarchy==race_using_priority_order_TAS, 0, 1))
+all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistent_race_MAIN_vs_TAS_using_method_hierarchy) %>% count()
+
+# Resolve conflicts between the main and TAS estimates of race (2 options as decision made to not use first year)
 
 # Option A. Assign individuals their TAS self-reported race, if available, otherwise assign race_using_priority_order from main
 all_race <- all_race %>%
@@ -365,9 +382,9 @@ all_race <- all_race %>%
   group_by(uniqueID) %>% fill(final_race_using_priority_order, .direction="downup")
 
 temp <- all_race %>% filter(!(is.na(final_race_using_priority_order)))
-n_distinct(temp$uniqueID) # n allocated final race 34,102
+n_distinct(temp$uniqueID) # n allocated final race 61,337
 temp <- all_race %>% filter(is.na(final_race_using_priority_order))
-n_distinct(temp$uniqueID) # n not allocated final race 49,872
+n_distinct(temp$uniqueID) # n not allocated final race 22,637
 
 # Check that only one race per person
 all_race %>% group_by(uniqueID) %>%
@@ -380,9 +397,9 @@ all_race <- all_race %>%
   group_by(uniqueID) %>% fill(final_race_using_method_hierarchy, .direction="downup")
 
 temp <- all_race %>% filter(!(is.na(final_race_using_method_hierarchy)))
-n_distinct(temp$uniqueID) # n allocated final race 34,102
+n_distinct(temp$uniqueID) # n allocated final race 61,337
 temp <- all_race %>% filter(is.na(final_race_using_method_hierarchy))
-n_distinct(temp$uniqueID) # n not allocated final race 49,872
+n_distinct(temp$uniqueID) # n not allocated final race 22,637
 
 # Check that only one race per person
 all_race %>% group_by(uniqueID) %>%
@@ -401,28 +418,45 @@ all_race %>% group_by(uniqueID) %>%
 
 # Summarise final race demographics and the method used to generate them:
 summary_final_method <- all_race %>% group_by(best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+write.csv(summary_final_method, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_best_avaialble_race_method.csv")
 
+temp <- all_race %>% group_by(final_race_using_method_hierarchy) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+summary_race_using_method_hierarchy <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_method_hierarchy, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy.csv")
 temp <- all_race %>% group_by(final_race_using_method_hierarchy, best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 temp <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
-summary_race_using_method_hierarchy <- temp %>% group_by(final_race_using_method_hierarchy) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
-write.csv(summary_race_using_method_hierarchy, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_race_using_method_hierarchy.csv")
+summary_race_using_method_hierarchy_detailed <- temp %>% group_by(final_race_using_method_hierarchy) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_method_hierarchy_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy_detailed.csv")
 
+temp <- all_race %>% group_by(final_race_using_priority_order) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+summary_race_using_priority_order <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_priority_order, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_priority_order.csv")
 temp <- all_race %>% group_by(final_race_using_priority_order, best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 temp <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
-summary_race_using_priority_order <- temp %>% group_by(final_race_using_priority_order) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
-write.csv(summary_race_using_priority_order, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_race_using_priority_order.csv")
+summary_race_using_priority_order_detailed <- temp %>% group_by(final_race_using_priority_order) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_priority_order_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_priority_order_detailed.csv")
 
 # Final steps of cleaning:
 
 # recode alcohol
 all_data_incl_race <- recode_alcohol(all_race)
 
-# Fill education and weight data
+# Check if any discrepancies in alcohol estimates between main and TAS
+alcohol_discrepencies <- all_data_incl_race %>% 
+  mutate(flag = ifelse(gpd==gpd_TAS,0,1)) %>% 
+  filter(flag==1) %>%
+  dplyr::select(uniqueID, year, everdrink, quantity, frequency, gpd,
+                everdrink_TAS, quantity_TAS, frequency_TAS, gpd_TAS) 
+# 4 discrepancies - estimates higher based on TAS estimates so suggest using them in alcohol analyses
+
+# Fill education and weight data and filter by year >= 1999
 all_data_filled <- all_data_incl_race %>%
   filter(year>=1999) %>%
   group_by(uniqueID) %>%
   fill(weight, .direction=c("downup")) %>%
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
+# 43,884 individuals
+# 3,018 families
 
 # Filter to select only final variables
 PSID_data_cleaned <- all_data_filled %>% 
@@ -431,8 +465,6 @@ PSID_data_cleaned <- all_data_filled %>%
     "uniqueID","familyID","relationship","IDmother", "IDfather","family_interview_ID","year","survey_year", 
     # Age and sex
     "birthyear","age", "sex", 
-    # Psychological distress
-    "kessler_score","distress_severe","distress_class", 
     # Socioeconomic status
     "employment_stat","total_fam_income","homeowner", 
     "education", "education_cat", "education_cat_detailed", "TAS_education","TAS_education_cat", 
@@ -442,8 +474,10 @@ PSID_data_cleaned <- all_data_filled %>%
     "individualrace_TAS","race_using_first_year_TAS", "race_consistency_TAS",
     "final_race_using_priority_order", "final_race_using_method_hierarchy","best_available_race_method",
     # Alcohol consumption
-     "drinkingstatus","quantity","frequency","gpd","bingedrinkdays","AlcCAT"))    
-
+    "drinkingstatus","quantity","frequency","gpd","bingedrinkdays","AlcCAT",
+    "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
+    # Psychological distress
+    "kessler_score","distress_severe","distress_class"))
 write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders.csv", row.names=F)
 
 
