@@ -81,10 +81,10 @@ newdata <- newdata %>% pivot_longer(cols='1968':'2021', names_to="year", values_
   mutate(age = ifelse(age==0, NA, 
                       ifelse(age==999, NA, age)),
          year = as.numeric(year),
-         birthyear = year - age) %>%
-   group_by(uniqueID) %>%
-   reframe(birthyear = unique(birthyear),
-           birthyear = mean(birthyear, na.rm=T)) %>% distinct()
+         birthyear = year - age) # %>%
+   # group_by(uniqueID) %>%
+   # reframe(birthyear = unique(birthyear),
+   #         birthyear = mean(birthyear, na.rm=T)) %>% distinct()
 return(newdata)
 }
 

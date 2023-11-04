@@ -158,9 +158,9 @@ race <- assign_race_method(race)
 
 # Identify individuals with no race data
 some_race_data <- race %>% filter(!(is.na(individualrace))) 
-some_race_data_IDS <- unique(some_race_data$uniqueID) # 60,744 (approx. 300 people lose race data if don't keep all rows here)
+some_race_data_IDS <- unique(some_race_data$uniqueID) # 60,727
 no_race_data <- race %>% filter(!(uniqueID%in%some_race_data_IDS)) 
-no_race_data_IDS <- unique(no_race_data$uniqueID) # 23,377
+no_race_data_IDS <- unique(no_race_data$uniqueID) # 23,394
 
 # Identify individuals who have inconsistent race data over time
 inconsistent_race_tally <- race %>% dplyr::select(uniqueID, individualrace) %>%
@@ -169,7 +169,7 @@ inconsistent_race_tally <- race %>% dplyr::select(uniqueID, individualrace) %>%
   mutate(flag=ifelse(n>1,1,0))
 inconsistent_IDS <- unique(subset(inconsistent_race_tally, flag==1)$uniqueID)
 inconsistent_data_main <- race %>% filter(uniqueID%in%inconsistent_IDS) 
-n_distinct(inconsistent_data_main$uniqueID) # 4,373
+n_distinct(inconsistent_data_main$uniqueID) # 4,372
 
 # For each inconsistent individual, flag whether they are consistent within method(s)
 temp <- inconsistent_data_main %>% dplyr::select(uniqueID, individualrace, race_method) %>%
@@ -273,24 +273,13 @@ mutate(race_using_method_hierarchy = case_when(
   race_consistency_main=="no race data" ~ NA)) %>%
  group_by(uniqueID) %>% fill(race_using_method_hierarchy, .direction="downup")
  
-# # Drop rows of data for non-response years (no family interview ID)
-# race_data_response_years_only <- race %>% filter(flag_non_response==0) # 2,036,453
-# n_distinct(race_data_response_years_only$familyID) # 8102 families remaining
-# n_distinct(race_data_response_years_only$uniqueID) # 84,121 individuals remaining
-# 
-# # Drop rows of data for individuals not yet born (age <1)
-# race_data_response_years_only$age <- race_data_response_years_only$year - race_data_response_years_only$birthyear
-# race_data_response_years_only <- race_data_response_years_only %>% filter(age >= 0) # 1,338,707
-# n_distinct(race_data_response_years_only$familyID) # 8102 families remaining
-# n_distinct(race_data_response_years_only$uniqueID) # 83,974 individuals remaining
-# 
-# # Summarise results based on each method
-# race_using_first_year_main_summary <- race_data_response_years_only %>% group_by(race_using_first_year) %>%
-#   summarise(distinct_individuals = n_distinct(uniqueID))
-# race_using_priority_order_main_summary <- race_data_response_years_only %>% group_by(race_using_priority_order) %>%
-#   summarise(distinct_individuals = n_distinct(uniqueID))
-# race_using_method_hierarchy_main_summary <- race_data_response_years_only %>% group_by(race_using_method_hierarchy) %>%
-#   summarise(distinct_individuals = n_distinct(uniqueID))
+# Summarise results based on each method
+race_using_first_year_main_summary <- race %>% group_by(race_using_first_year) %>%
+   summarise(distinct_individuals = n_distinct(uniqueID))
+race_using_priority_order_main_summary <- race %>% group_by(race_using_priority_order) %>%
+   summarise(distinct_individuals = n_distinct(uniqueID))
+race_using_method_hierarchy_main_summary <- race %>% group_by(race_using_method_hierarchy) %>%
+ summarise(distinct_individuals = n_distinct(uniqueID))
 
 # Process race data from within the Transition to Adulthood Supplement (TAS)
 TAS_race <- process_TAS_race(tas_data)
@@ -396,9 +385,9 @@ all_race <- all_race %>%
   group_by(uniqueID) %>% fill(final_race_using_priority_order, .direction="downup")
 
 temp <- all_race %>% filter(!(is.na(final_race_using_priority_order)))
-n_distinct(temp$uniqueID) # n allocated final race 61,260
+n_distinct(temp$uniqueID) # n allocated final race 61,262
 temp <- all_race %>% filter(is.na(final_race_using_priority_order))
-n_distinct(temp$uniqueID) # n not allocated final race 22,714
+n_distinct(temp$uniqueID) # n not allocated final race 22,859
 
 # Check that only one race per person
 all_race %>% group_by(uniqueID) %>%
@@ -411,19 +400,16 @@ all_race <- all_race %>%
   group_by(uniqueID) %>% fill(final_race_using_method_hierarchy, .direction="downup")
 
 temp <- all_race %>% filter(!(is.na(final_race_using_method_hierarchy)))
-n_distinct(temp$uniqueID) # n allocated final race 61,260
+n_distinct(temp$uniqueID) # n allocated final race 61,262
 temp <- all_race %>% filter(is.na(final_race_using_method_hierarchy))
-n_distinct(temp$uniqueID) # n not allocated final race 22,714
+n_distinct(temp$uniqueID) # n not allocated final race 22,859
 
 # Check that only one race per person
 all_race %>% group_by(uniqueID) %>%
   summarise(n_races=n_distinct(final_race_using_method_hierarchy)) %>%
   filter(n_races>1) %>% count()
 
-
-#### FIX THIS BIT
-
-# # Drop rows of data for non-response years (no family interview ID)
+# Drop rows of data for non-response years (no family interview ID)
 race_data_response_years_only <- all_race %>% filter(flag_non_response==0) # 2,036,453
 n_distinct(race_data_response_years_only$familyID) # 8102 families remaining
 n_distinct(race_data_response_years_only$uniqueID) # 84,121 individuals remaining
@@ -443,15 +429,15 @@ all_race %>% group_by(uniqueID) %>%
 
 # Summarise final race demographics and the method used to generate them:
 summary_final_method <- all_race %>% group_by(best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
-write.csv(summary_final_method, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_best_avaialble_race_method.csv")
+write.csv(summary_final_method, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_best_avaialble_race_method_041123.csv")
 
 temp <- all_race %>% group_by(final_race_using_method_hierarchy) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 summary_race_using_method_hierarchy <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
-#write.csv(summary_race_using_method_hierarchy, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy041123.csv")
+write.csv(summary_race_using_method_hierarchy, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy041123.csv")
 temp <- all_race %>% group_by(final_race_using_method_hierarchy, best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 temp <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
 summary_race_using_method_hierarchy_detailed <- temp %>% group_by(final_race_using_method_hierarchy) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
-#write.csv(summary_race_using_method_hierarchy_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy_detailed041123.csv")
+write.csv(summary_race_using_method_hierarchy_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_method_hierarchy_detailed041123.csv")
 
 temp <- all_race %>% group_by(final_race_using_priority_order) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 summary_race_using_priority_order <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
@@ -480,6 +466,8 @@ all_data_filled <- all_data_incl_race %>%
   group_by(uniqueID) %>%
   fill(weight, .direction=c("downup")) %>%
   fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
+n_distinct(all_data_filled$familyID)
+n_distinct(all_data_filled$uniqueID)
 # 43,884 individuals
 # 3,018 families
 
@@ -503,7 +491,7 @@ PSID_data_cleaned <- all_data_filled %>%
     "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
     # Psychological distress
     "kessler_score","distress_severe","distress_class"))
-write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders.csv", row.names=F)
+write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders041123.csv", row.names=F)
 
 
 
