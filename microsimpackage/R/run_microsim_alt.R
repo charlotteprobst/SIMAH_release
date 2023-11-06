@@ -54,7 +54,7 @@ basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overall
 
 # simulate mortality from specific diseases
 print("simulating disease mortality")
-disease <- unique(diseases)
+# disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
   basepop <- CirrhosisHepatitis(basepop,lhs)
 }
