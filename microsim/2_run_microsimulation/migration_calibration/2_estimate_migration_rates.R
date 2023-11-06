@@ -66,22 +66,26 @@ birth_rates <- Output[[2]] %>% dplyr::select(year,agecat,microsim.init.race,micr
   rename(birthrate=rate) %>% mutate(migrationinrate=NA)
 library(scales)
 scaleFUN <- function(x) sprintf("%.2f", x)
-ggplot(data=birth_rates, aes(x=year, y=rate, colour=microsim.init.sex)) + 
+ggplot(data=birth_rates, aes(x=year, y=birthrate, colour=microsim.init.sex)) + 
   geom_line() + 
   facet_grid(rows=vars(microsim.init.race)) + 
   ylim(0,0.05) + 
   scale_y_continuous(labels=scaleFUN, limits=c(0,0.05))
-ggsave("SIMAH_code/microsim/2_output_data/migration/birth_rates.png", dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/migration/birth_rates.png", dpi=300, width=33, height=19, units="cm")
   
-
-migration_rates <- Output[[3]]%>% dplyr::select(year,agecat,microsim.init.race,microsim.init.sex,rate) %>% 
-  rename(migrationinrate=rate) %>% mutate(birthrate=NA)
-ggplot(data=migration_rates, aes(x=year, y=rate, colour=microsim.init.sex)) + 
+migration_rates <- Output[[3]]%>% dplyr::select(year,agecat,microsim.init.race,microsim.init.sex,rate_in, rate_out)
+ggplot(data=migration_rates, aes(x=year, y=rate_in, colour=microsim.init.sex)) + 
   geom_line() +
   facet_grid(cols=vars(agecat), rows=vars(microsim.init.race)) + 
   scale_y_continuous(labels=scaleFUN, limits=c(0,0.07))
-ggsave("SIMAH_code/microsim/2_output_data/migration/migration_rates.png", dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/migration/migration_rates.png", dpi=300, width=33, height=19, units="cm")
+
+migration_rates <- migration_rates %>% 
+  rename(migrationinrate=rate_in,
+          migrationoutrate=rate_out) %>% 
+  mutate(birthrate=NA)
+birth_rates$migrationoutrate <- NA
 
 migration_rates <- rbind(birth_rates, migration_rates)
 
-write.csv(migration_rates, "SIMAH_workplace/microsim/1_input_data/birth_migration_rates_raw.csv",row.names=F)
+write.csv(migration_rates, "SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv",row.names=F)
