@@ -42,13 +42,18 @@ data$agecat <- ifelse(data$age==18, "18",
 
 datat1 <- data %>% filter(year<=2005)
 datat1 <- data[order(datat1$newID, datat1$year),]
+length(unique(datat1$uniqueID))
+length(unique(datat1$newID))
 
 datat2 <- data %>% filter(year<=2013 & year>=2007)
 datat2 <- data[order(datat2$newID, datat2$year),]
+length(unique(datat2$uniqueID))
+length(unique(datat2$newID))
 
 datat3 <- data %>% filter(year>=2015)
 datat3 <- data[order(datat3$newID, datat3$year),]
-
+length(unique(datat3$uniqueID))
+length(unique(datat3$newID))
 # specify baseline models - just race and ethnicity 
 modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                                    center=FALSE,

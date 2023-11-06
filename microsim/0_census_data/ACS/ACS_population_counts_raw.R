@@ -22,10 +22,10 @@ setwd(paste(WorkingDirectory))
 
 # first read in the data 2000 to 2021
 #
-gunzip("SIMAH_workplace/ACS/usa_00035.dat.gz", remove=FALSE)
+# gunzip("SIMAH_workplace/ACS/usa_00042.dat.gz", remove=FALSE)
 
 # now read in the data for 2021 
-ddi <- read_ipums_ddi("SIMAH_workplace/ACS/usa_00035.xml")
+ddi <- read_ipums_ddi("SIMAH_workplace/ACS/usa_00042.xml")
 
 data <- read_ipums_micro(ddi)
 library(labelled)
@@ -72,9 +72,9 @@ data <- left_join(data, lookup_table)
 summary <- data %>% 
   filter(AGE>=18) %>% 
   mutate(age_gp = cut(AGE, breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,10000),
-                      labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
-                               "50-54","55-59","60-64","65-69",
-                               "70-74","75-79","80+")),
+                      labels=c("18","25","30","35","40","45",
+                               "50","55","60","65",
+                               "70","75","80")),
                       race = ifelse(RACE==1, "White",
                                     ifelse(RACE==2,"Black",
                                            "Other")),
@@ -87,8 +87,22 @@ summary <- data %>%
   group_by(YEAR, state, sex, race, age_gp, edclass) %>%
   summarise(TPop=sum(PERWT)) %>% rename(year=YEAR)
 
-summaryUSA <- summary %>% group_by(year, sex, race, age_gp, edclass) %>% 
-  summarise(TPop = sum(TPop)) %>% mutate(state="USA")
+summaryUSA <- data %>%   filter(AGE>=18) %>% 
+  mutate(age_gp = cut(AGE, breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,79,10000),
+                      labels=c("18","25","30","35","40","45",
+                               "50","55","60","65",
+                               "70","75","80")),
+         race = ifelse(RACE==1, "White",
+                       ifelse(RACE==2,"Black",
+                              "Other")),
+         race = ifelse(HISPAN==0, race,
+                       "Hispanic"),
+         race = as.factor(race),
+         edclass = ifelse(EDUC<=6, "LEHS",
+                          ifelse(EDUC>6 & EDUC<=9, "SomeC","College")),
+         sex = SEX) %>% 
+  group_by(YEAR, sex, race, age_gp, edclass) %>% 
+  summarise(TPop = sum(PERWT)) %>% mutate(state="USA")
 
 summary <- rbind(summary, summaryUSA)
 

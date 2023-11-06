@@ -1,6 +1,15 @@
-Sample_Probs <- function(model, nsamples, TimePeriod, inflation){
+Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflated){
   estimates <- model$estimates.t
-  covmat <- data.frame(model$covmat)*inflation
+  covmat <- model$covmat
+  SEs <- diag(covmat)
+  SDs <- SEs * sqrt(inflated)
+  newSEs = SDs / (sqrt(original))
+  # work out the magnitude of the difference 
+  magnitude <- newSEs/SEs
+  covmat <- covmat*magnitude
+
+  # adjust the covariance matrix - first estimate standard deviations 
+  
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   sex <- c(0,1)
