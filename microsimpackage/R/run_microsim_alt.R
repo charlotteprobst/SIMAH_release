@@ -194,16 +194,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 if(y<2019){
 basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
 basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
-# files <- inward_births_estimate_rate(basepop, migration_counts, y, brfss)
-# basepop <- files[[1]]
-# birth_rates[[paste(y)]] <- files[[2]] %>%
-#   mutate(year=y)
-# files <- inward_migration_estimate_rate(basepop, migration_counts,y,brfss)
-# basepop <- files[[1]]
-# migration_rates[[paste(y)]] <- files[[2]] %>%
-#   mutate(year=y)
-# basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
-basepop <- outward_migration(basepop,migration_counts,y)
+basepop <- outward_migration_rate(basepop,migration_rates,y)
 }
 
 }

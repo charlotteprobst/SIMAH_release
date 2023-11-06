@@ -45,7 +45,7 @@ samplenum <- 1
 # set lhs to the first element of the lhs list- for testing 
 lhs <- lhs[[1]]
 
-migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_raw.csv")
+migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
 
 # checking how the original migration counts fit the population data
 Output <- list()
@@ -71,5 +71,8 @@ Population <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_cons
 compare <- rbind(PopSummary, Population)
 
 ggplot(subset(compare,microsim.init.sex=="m"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
+  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+
+ggplot(subset(compare,microsim.init.sex=="f"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
   facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
   
