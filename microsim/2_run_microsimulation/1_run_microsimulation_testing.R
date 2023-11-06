@@ -50,29 +50,17 @@ minyear <- 2000
 maxyear <- 2005
 
 Output <- list()
-Output1 <- run_microsim(seed=1,samplenum=1,basepop,brfss,
-                       death_counts,
-                       updatingeducation, education_transitions,
-                       migration_counts,
-                       updatingalcohol, alcohol_transitions,
-                       catcontmodel, Hep, drinkingdistributions,
-                       base_counts, diseases, lhs, liverinteraction,
-                       policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                       age_inflated,
-                       update_base_rate,
-                       minyear, maxyear, output="mortality")
-
-Output2 <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
-                        death_counts,
-                        updatingeducation, education_transitions,
-                        migration_counts,
-                        updatingalcohol, alcohol_transitions,
-                        catcontmodel, Hep, drinkingdistributions,
-                        base_counts, diseases, lhs, liverinteraction,
-                        policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                        age_inflated,
-                        update_base_rate,
-                        minyear, maxyear, output="mortality")
+Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
+                           death_counts,
+                           updatingeducation, education_transitions,
+                           migration_rates,
+                           updatingalcohol, alcohol_transitions,
+                           catcontmodel, Hep, drinkingdistributions,
+                           base_counts, diseases, lhs, liverinteraction,
+                           policy=0, percentreduction=0.1, year_policy, inflation_factors,
+                           age_inflated,
+                           update_base_rate,
+                           minyear=2000, maxyear=2019, output="mortality")
 
 alcohol_type <- "categorical"
 
