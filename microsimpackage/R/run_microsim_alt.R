@@ -17,7 +17,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2019, output="demographics"){
+                         minyear=2000, maxyear=2005, output="demographics"){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
@@ -52,7 +52,8 @@ DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat
 # remove individuals due to death and remove columns no longer needed
 basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 
-# simulate mortality from specific diseases
+# If diseases are specified in the disease vector, simulate mortality from those specific diseases
+if(!is.null(diseases)){
 print("simulating disease mortality")
 # disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
@@ -96,9 +97,8 @@ if(y == 2000){
 }
 
 # update the base rate based on lhs file
-if(update_base_rate==1){
-  rates <- update_base_rate(rates, lhs, y)
-}
+# if(update_base_rate==1){
+#   rates <- update_base_rate(rates, lhs, y)
 
 basepop <- left_join(basepop, rates, by=c("cat"))
 
@@ -136,6 +136,8 @@ for (disease in diseases) {
 }
 
 basepop <- basepop %>% dplyr::select(-c(cat,prob))
+
+}
 
 # transition education for individuals aged 34 and under
 if(updatingeducation==1){
