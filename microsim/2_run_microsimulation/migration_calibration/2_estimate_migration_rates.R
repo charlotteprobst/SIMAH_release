@@ -45,11 +45,11 @@ samplenum <- 1
 # set lhs to the first element of the lhs list- for testing 
 lhs <- lhs[[1]]
 
-migration_counts <- read.csv("SIMAH_workplace/microsim/1_input_data/migration_in_USA.csv")
+migration_counts <- read.csv("SIMAH_workplace/microsim/1_input_data/migration_in_calibrated_USA.csv")
 
 # checking how the original migration counts fit the population data
 Output <- list()
-Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
+Output <- run_microsim_alt_estimaterate(seed=1,samplenum=1,basepop,brfss,
                        death_counts,
                        updatingeducation, education_transitions,
                        migration_counts,

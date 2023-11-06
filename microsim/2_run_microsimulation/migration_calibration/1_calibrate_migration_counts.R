@@ -52,7 +52,7 @@ migration_counts <- read.csv("SIMAH_workplace/microsim/1_input_data/migration_in
 
 population_counts <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv") %>% 
   mutate(TotalPop=round(TotalPop*proportion),
-         Year=Year+1)
+         Year=Year-1)
 
 # checking how the original migration counts fit the population data
 Output <- list()
@@ -71,10 +71,20 @@ Output
 
 migration_counts_new <- Output[[2]]
 
-popsummary <- Output[[1]]
+write.csv(migration_counts_new, "SIMAH_workplace/microsim/1_input_data/migration_in_calibrated_USA.csv",
+          row.names=F)
+
+popsummary <- Output[[1]] %>% 
+  rename(microsim=n)
 
 population_counts <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv") %>% 
   mutate(TotalPop=round(TotalPop*proportion)) %>% 
-  rename(year=Year)
+  rename(year=Year, ACS=TotalPop)
 popsummary <- left_join(popsummary, population_counts) %>% 
-  mutate(pct_diff = abs(n-TotalPop)/TotalPop)
+  pivot_longer(microsim:ACS)
+
+ggplot(data=subset(popsummary,microsim.init.sex=="f"), aes(x=year, y=value, colour=name, linetype=name)) + 
+  geom_line(alpha=0.4) + facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+
+ggplot(data=subset(popsummary,microsim.init.sex=="m"), aes(x=year, y=value, colour=name, linetype=name)) + 
+  geom_line(alpha=0.4) + facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))

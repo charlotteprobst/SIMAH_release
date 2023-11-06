@@ -1,5 +1,4 @@
 #' Runs microsimulation - alternative version with different ordering
-#' This version adjusts the migration COUNTS to match with the observed ACS data
 #'
 #' This function runs the microsimulation
 #' @param
@@ -7,11 +6,11 @@
 #' @import data.table
 #' @export
 #' @examples
-#' run_microsim_alt_adjustmigration
-run_microsim_alt_adjustmigration <- function(seed,samplenum,basepop,brfss,
+#' run_microsim_alt_estimaterate
+run_microsim_alt_estimaterate <- function(seed,samplenum,basepop,brfss,
                          death_counts,
                          updatingeducation, education_transitions,
-                         migration_counts, population_counts,
+                         migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
                          base_counts, diseases, lhs, liverinteraction,
@@ -24,8 +23,8 @@ Summary <- list()
 DeathSummary <- list()
 DiseaseSummary <- list()
 PopPerYear <- list()
-# birth_rates <- list()
-# migration_rates <- list()
+birth_rates <- list()
+migration_rates <- list()
 names <- names(lhs)
 lhs <- as.numeric(lhs)
 names(lhs) <- names
@@ -193,50 +192,23 @@ basepop <- subset(basepop, microsim.init.age<=79)
 
 # add and remove migrants
 if(y<2019){
-basepop <- inward_births(basepop, migration_counts, y, brfss, model)
-basepopsave <- basepop
-  # adding in migrants
-basepop <- inward_migration(basepop, migration_counts, y, brfss, model)
-basepop <- outward_migration(basepop,migration_counts,y)
-# comparing to the population counts for the next year (to calibrate migration in out rates)
-compare <- population_counts %>% filter(Year==y)
-popsummary <- basepop %>% group_by(agecat, microsim.init.sex, microsim.init.race) %>%
-  tally()
-compare <- left_join(compare, popsummary) %>%
-  mutate(diff = TotalPop-n,
-    pct_diff = (n - TotalPop) / TotalPop,
-         flag = case_when(
-           pct_diff > 0.001 ~ 1,
-           pct_diff < -0.001 ~ 1,
-           TRUE ~ 0
-         )) %>%
-  # filter(flag==1) %>%
-  dplyr::select(Year,agecat,microsim.init.sex,microsim.init.race,TotalPop, n, diff)
+# basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
+# basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
+files <- inward_births_estimate_rate(basepop, migration_counts, y, brfss)
+basepop <- files[[1]]
+birth_rates[[paste(y)]] <- files[[2]] %>%
+  mutate(year=y)
+files <- inward_migration_estimate_rate(basepop, migration_counts,y,brfss)
+basepop <- files[[1]]
+migration_rates[[paste(y)]] <- files[[2]] %>%
+  mutate(year=y, rate_in=rate)
 
-# check to adjust migration in rates
-adjusting <- migration_counts %>% filter(Year==y) %>%
-  dplyr::select(-BirthsInN) %>% distinct() %>% drop_na()
-compare <- left_join(compare,adjusting) %>%
-  mutate(MigrationInN_new = MigrationInN+diff,
-         MigrationOutN_new = ifelse(MigrationInN_new<0, abs(MigrationInN_new),
-                                    MigrationOutN)) %>%
-  dplyr::select(Year, agecat, microsim.init.sex, microsim.init.race,
-                MigrationInN_new, MigrationOutN_new)
-# now join back up with the migration counts file
-migration_counts <- left_join(migration_counts, compare)
-migration_counts <- migration_counts %>%
-  mutate(MigrationInN_new = ifelse(MigrationInN_new<0, 0, MigrationInN_new),
-         MigrationInN = ifelse(!is.na(MigrationInN_new), MigrationInN_new,
-                                MigrationInN),
-         MigrationOutN = ifelse(!is.na(MigrationOutN_new), MigrationOutN_new,
-                                 MigrationOutN)) %>%
-  dplyr::select(-c(MigrationOutN_new, MigrationInN_new))
+files <- outward_migration_estimate_rate(basepop, migration_counts,y)
+basepop <- files[[1]]
+migration_rates[[paste(y)]] <- left_join(migration_rates[[paste(y)]], files[[2]])
 
-# now apply the updated migration in and out rates to get the correct basepop for next year
-basepop <- basepopsave
-# adding in migrants
-basepop <- inward_migration(basepop, migration_counts, y, brfss, model)
-basepop <- outward_migration(basepop,migration_counts,y)
+# basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
+# basepop <- outward_migration(basepop,migration_counts,y)
 }
 
 }
@@ -283,7 +255,7 @@ if(output=="mortality"){
   # add former drinkers and lifetime abstainers to this summary TODO
   Summary <- list(CatSummary, MeanSummary)
 }
-# migration_rates <- do.call(rbind,migration_rates)
-# birth_rates <- do.call(rbind,birth_rates)
-return(list(Summary,migration_counts))
+migration_rates <- do.call(rbind,migration_rates)
+birth_rates <- do.call(rbind,birth_rates)
+return(list(Summary,birth_rates,migration_rates))
 }

@@ -8,7 +8,7 @@ inward_births_estimate_rate <- function(basepop, migration_counts, y, brfss){
   # convert from a rate to the N to remove
   summary <- migration_counts %>% filter(agecat=="18") %>%
     filter(Year==y) %>%
-    mutate(toadd = BirthsInN*proportion) %>%
+    mutate(toadd = BirthsInN) %>%
     dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd) %>%
     drop_na()
 
