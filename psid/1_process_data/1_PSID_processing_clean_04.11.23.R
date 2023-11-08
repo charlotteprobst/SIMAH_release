@@ -80,9 +80,8 @@ relationship <- process_relationship(main_data)
 relationship_summary <- relationship %>% group_by(relationship) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 # nb. counts sum to more than the total population as individuals may hold multiple roles
 
-# process family sampling weights 
+# process individual and family longitudinal sampling weights 
 sampleweights <- process_sample_weights(main_data)
-sum(is.na(sampleweights$weight)) # 608,203 out of 1,009,452 (60%)
 sampleweights$year <- as.double(sampleweights$year)
 
 # kessler score 
@@ -260,7 +259,7 @@ group_by(uniqueID) %>% fill(race_using_priority_order, .direction="downup")
 
 # Option C.  race_using_method_hierarchy
 
-# Assign race based on hierarchy of methods (self report > reported by head > imputed) if consistent within that method. 
+# Assign race based on hierarchy of methods (self report > reported by head > imputed from family > imputed from parental linkage) if consistent within that method. 
 race <- race %>%
 mutate(race_using_method_hierarchy = case_when(
   race_consistency_main=="consistent throughout" ~ individualrace,
@@ -464,18 +463,19 @@ alcohol_discrepencies <- all_data_incl_race %>%
 all_data_filled <- all_data_incl_race %>%
   filter(year>=1999) %>%
   group_by(uniqueID) %>%
-  fill(weight, .direction=c("downup")) %>%
-  fill(education_cat, .direction=c("downup")) %>% mutate(weight=mean(weight, na.rm=T))
-n_distinct(all_data_filled$familyID)
-n_distinct(all_data_filled$uniqueID)
-# 43,884 individuals
-# 3,018 families
+#  fill(weight, .direction=c("downup")) %>% Is it appropriate to fill weights?
+  fill(education_cat, .direction=c("downup")) # %>% mutate(weight=mean(weight, na.rm=T))
+n_distinct(all_data_filled$familyID)# 3,018 families
+n_distinct(all_data_filled$uniqueID)# 43,884 individuals
+
+# Save full cleaned data
+write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders081123.csv", row.names=F)
 
 # Filter to select only final variables
 PSID_data_cleaned <- all_data_filled %>% 
   dplyr::select(c(
     # Interview information
-    "uniqueID","familyID","relationship","IDmother", "IDfather","family_interview_ID","year","survey_year", 
+    "uniqueID","familyID","relationship","IDmother", "IDfather","family_interview_ID","year","survey_year", "individualweight","family_weight",
     # Age and sex
     "birthyear","age", "sex", 
     # Socioeconomic status
@@ -491,7 +491,7 @@ PSID_data_cleaned <- all_data_filled %>%
     "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
     # Psychological distress
     "kessler_score","distress_severe","distress_class"))
-write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders041123.csv", row.names=F)
+write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/subset_data_1999_2021_excl_non_responses081123.csv", row.names=F)
 
 
 
