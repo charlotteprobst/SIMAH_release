@@ -169,7 +169,8 @@ if(updatingalcohol==1){
                                 prob = runif(nrow(.)))
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
   basepop <- basepop %>%
-    mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
+    mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
+           AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
   # }
   # allocate a numeric gpd for individuals based on model
   # allocate every year even when transitions are only every two years?
@@ -179,6 +180,8 @@ if(updatingalcohol==1){
   # print(summary(basepop$formerdrinker))
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
+  basepop$totransition <-  NULL
+
 }
 
 #delete anyone over 79
