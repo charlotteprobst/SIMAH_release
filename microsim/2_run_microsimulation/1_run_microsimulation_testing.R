@@ -47,20 +47,20 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2003
+maxyear <- 2005
 
 Output <- list()
-Output <- run_microsim(seed=1,samplenum=1,basepop,brfss,
-                       death_counts,
-                       updatingeducation, education_transitions,
-                       migration_counts,
-                       updatingalcohol, alcohol_transitions,
-                       catcontmodel, Hep, drinkingdistributions,
-                       base_counts, diseases, lhs, liverinteraction,
-                       policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                       age_inflated,
-                       update_base_rate,
-                       minyear, maxyear, output="mortality")
+Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
+                           death_counts,
+                           updatingeducation, education_transitions,
+                           migration_rates,
+                           updatingalcohol, alcohol_transitions,
+                           catcontmodel, Hep, drinkingdistributions,
+                           base_counts, diseases, lhs, liverinteraction,
+                           policy=0, percentreduction=0.1, year_policy, inflation_factors,
+                           age_inflated,
+                           update_base_rate,
+                           minyear=2000, maxyear=2019, output="mortality")
 
 alcohol_type <- "categorical"
 
@@ -75,7 +75,8 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary <- summarise_mortality_output(Output, SelectedState, DataDirectory, diseases, 2000)
+summary1 <- summarise_mortality_output(Output1, SelectedState, DataDirectory, diseases, 2000)
+summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
 }
 # data frame containing mortality outputs
 summary_mortality <- summary[[1]]

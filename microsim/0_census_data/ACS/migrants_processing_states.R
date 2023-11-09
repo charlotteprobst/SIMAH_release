@@ -1,4 +1,4 @@
-#####script for processing the ACS data to estimate inward and outward migration
+#####script for processing the ACS data to estimate inward and outward migration and new 18 year olds in each year
 ###set working directory to the main "Microsimulation" folder in your directory 
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "/home/cbuckley/SIMAH/Microsimulation"

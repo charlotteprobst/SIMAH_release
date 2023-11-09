@@ -15,7 +15,7 @@ setwd(wd)
 dat <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% filter(YEAR>=2000) %>% 
   filter(State=="USA")
 
-saveRDS(dat, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_USA.RDS")
+# saveRDS(dat, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_USA.RDS")
 
 assign_alc_cat <- function(data){
   data <- data %>% mutate(AlcCAT = ifelse(sex_recode=="Male" & gramsperday_upshifted>0 &
@@ -34,6 +34,8 @@ assign_alc_cat <- function(data){
 }
 
 dat <- dat %>% assign_alc_cat() 
+
+dat <- dat %>% filter(gramsperday_upshifted>0)
 
 dat <- dat %>% mutate(group = paste(AlcCAT, race_eth, education_summary, sex_recode, sep="_"))
 
@@ -78,7 +80,6 @@ for(i in unique(dat$group)){
 }
 
 distribution <- do.call(rbind, distributions)
-  
   
 # 
 # dat <- left_join(dat, distribution)

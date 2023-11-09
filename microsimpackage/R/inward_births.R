@@ -1,17 +1,29 @@
-#' Adds new migrants in each year from existing data pool
+#' Adds new births- estimating rates version
 #' @param
 #' @keywords microsimulation
 #' @export
 #' @examples
-#' inward_migration
-inward_migration <- function(basepop, migration_counts, y, brfss, model){
+#' inward_births_estimate_rate
+inward_births <- function(basepop, migration_counts, y, brfss, model){
   # convert from a rate to the N to remove
-  summary <- migration_counts %>% filter(Year==y) %>%
-    mutate(toadd = MigrationInN) %>%
+  births <- migration_counts %>% filter(agecat=="18") %>%
+    filter(Year==y) %>%
+    mutate(toadd = BirthsInN) %>%
     dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd) %>% drop_na()
 
-  summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
-  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
+  # denominator <- basepop %>%
+  #   mutate(agecat = cut(microsim.init.age,
+  #                       breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
+  #                       labels=c("18","19-24","25-29","30-34","35-39","40-44",
+  #                                "45-49","50-54","55-59","60-64","65-69",
+  #                                "70-74","75-79"))) %>%
+  #   group_by(microsim.init.race, microsim.init.sex) %>%
+  #   tally()
+  # births <- left_join(births, denominator)
+  # births$rate <- births$toadd/births$n
+
+  births$cat <- paste(births$microsim.init.sex, births$agecat, births$microsim.init.race, sep="_")
+  tojoin <- births %>% ungroup() %>% dplyr::select(cat, toadd)
 
   cats <- unique(tojoin$cat)
 
