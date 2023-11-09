@@ -343,7 +343,6 @@ TAS_race <- TAS_race %>% dplyr::select(uniqueID, year, individualrace_TAS, race_
 
 # Join the TAS race with the main race data
 TAS_race$year <- as.numeric(TAS_race$year)
-#all_race <- left_join(race_data_response_years_only, TAS_race)
 all_race <- left_join(race, TAS_race)
 
 # Fill TAS race variables for all years

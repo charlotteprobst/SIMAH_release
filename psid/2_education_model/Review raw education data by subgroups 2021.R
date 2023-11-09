@@ -2,9 +2,12 @@
 
 library(dplyr)
 library(ggplot2)
+library(survey)
+library(srvyr)
+library(tidyverse)
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
-all_data <- read.csv("SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_highest_priority_race_excl_non_responders.csv")
+all_data <- read.csv("SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders081123.csv")
 
 n_individuals_all_data <- n_distinct(all_data$uniqueID) # 43,884 individuals in the data
 
@@ -20,44 +23,28 @@ education_no_na <- plot_data %>% filter(!is.na(education_cat))
 n_education_individuals <- n_distinct(education_no_na$uniqueID) # 31,924 individuals with education data
 n_education_na_individuals <- n_individuals_all_data - n_education_individuals # 11,960 individuals with missing education data
 
+# Plots - unweighted
+plot_data <- education_no_na %>%
+  group_by(year, sex, final_race_using_method_hierarchy, education_cat) %>%
+  summarise(n = n()) %>%
+  mutate(prop = n / sum(n)*100)
 
-### Plots
+ggplot(data=plot_data, aes(x=year, y=prop, colour=education_cat)) + geom_line() + facet_grid(cols=vars(education_cat), scales="free") +
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
+  facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender - unweighted")
 
-## Including NAs
+# Plots - weighted
 
-# Full sample
-g_na <- ggplot(plot_data, aes(x = year))
-g_na + geom_bar(aes(fill=education_cat))+
-  ggtitle("Trends in educational attainment over time")+
-  scale_x_continuous(limits = c(1998,2022))+
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(y= "Count", colour = "Educational attainment")
+# Create a survey design object
+survey_design <- education_no_na %>% 
+  as_survey_design(weights = individualweight)
 
-# Excluding NAs
-g <- ggplot(education_no_na, aes(x = year))
-g + geom_bar(aes(fill=education_cat)) 
+# Calculate weighted proportions by year, sex, race and education category
+weighted_plot_data <- survey_design %>%
+  group_by(year, sex, final_race_using_method_hierarchy, education_cat) %>%
+  summarise(proportion= survey_mean()*100)
 
-# By sex
-g + geom_bar(aes(fill=education_cat)) +
-  ggtitle("Trends in educational attainment over time")+
-  theme(axis.text.x = element_text(angle = 90)) +
-  facet_grid(cols=vars(sex)) +
-  labs(y= "Count", colour = "Educational attainment")
+ggplot(data=weighted_plot_data, aes(x=year, y=proportion, colour=education_cat)) + geom_line() + facet_grid(cols=vars(education_cat), scales="free") +
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
+  facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender - weighted")
 
-# By race
-g + geom_bar(aes(fill=education_cat))+
-  ggtitle("Trends in educational attainment over time")+
-  theme(axis.text.x = element_text(angle = 90)) +
-  facet_grid(cols=vars(race_new)) +
-  labs(y= "Count", colour = "Educational attainment")
-
-# Line plots method
-
-# draw a plot of all of all age groups
-line_plot_data <- plot_data %>% group_by(year, sex, race_new, education_cat) %>% mutate(Tpop = n_distinct(uniqueID))
-  
-  summarise(TPop=sum(TPop)) %>% 
-  mutate(sex = ifelse(sex==1, "Men","Women"), edclass = factor(edclass, levels=c("LEHS","SomeC","College")))
-
-ggplot(data=allages, aes(x=year, y=TPop, colour=sex)) + geom_line(size=1) + facet_grid(cols=vars(edclass), scales="free") +
-  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(2010, 2021)
