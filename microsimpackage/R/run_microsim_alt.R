@@ -47,10 +47,10 @@ if(policy==1 & y ==year_policy){
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
-DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
-                                              dead, cause) %>% mutate(year=y, seed=seed)
-# remove individuals due to death and remove columns no longer needed
-basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
+# DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
+#                                               dead, cause) %>% mutate(year=y, seed=seed)
+# # remove individuals due to death and remove columns no longer needed
+# basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 
 # simulate mortality from specific diseases
 print("simulating disease mortality")
