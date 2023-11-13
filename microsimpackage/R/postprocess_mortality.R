@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_counts){
+postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
   death_counts <- death_counts %>% pivot_longer(cols = contains("mort")) %>%
@@ -27,14 +27,14 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_counts){
     dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
 
-  Diseases <- left_join(Diseases, death_counts)
+    Diseases <- left_join(Diseases, death_counts)
+  
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",
                               ifelse(education=="Som","SomeC","College"))) %>%
     rename(popcount = n)
   return(Diseases)
-
 
   # Summary <- do.call(rbind, DeathSummary) %>%
   #   mutate(agecat = as.factor(agecat),
