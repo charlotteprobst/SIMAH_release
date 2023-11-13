@@ -19,9 +19,9 @@ options(dplyr.summarise.inform = FALSE)
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
-WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
@@ -51,6 +51,7 @@ minyear <- 2000
 maxyear <- 2005
 
 Output <- list()
+diseases <- NULL
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,
@@ -61,6 +62,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
+                           minyear=2000, maxyear=2005, output="demographics")
 
 alcohol_type <- "categorical"
 
