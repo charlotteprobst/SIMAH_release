@@ -6,9 +6,8 @@
 #' @examples
 #' base rates
 postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
-  if(!is.null(diseases)){
   disease <- unique(diseases)
-  Diseases <- do.call(rbind, DiseaseSummary)}
+  Diseases <- do.call(rbind, DiseaseSummary)
   death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
     mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
@@ -28,12 +27,7 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
     dplyr::select(year, cat, name, value) %>%
     pivot_wider(names_from=name, values_from=value)
 
-  if (!is.null(diseases)) {
     Diseases <- left_join(Diseases, death_counts)
-    } else {
-    Diseases <- death_counts
-  }
-  if(!is.null(diseases)){
   
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
@@ -41,7 +35,6 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
                               ifelse(education=="Som","SomeC","College"))) %>%
     rename(popcount = n)
   return(Diseases)
-}
 
   # Summary <- do.call(rbind, DeathSummary) %>%
   #   mutate(agecat = as.factor(agecat),

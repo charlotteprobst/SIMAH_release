@@ -203,9 +203,11 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 # save output - depending on which was selected
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
-if(output=="mortality"){
+if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
+}else if(output==mortality & is.null(diseases)){
+    Summary <- 0
   }else if(output=="demographics"){
     # add seed to the output file here TODO
   for(i in 1:length(PopPerYear)){
