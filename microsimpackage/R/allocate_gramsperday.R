@@ -6,7 +6,7 @@
 #' @examples
 #' allocate_gpd
 allocate_gramsperday <- function(basepop, y, model, DataDirectory){
-  prepdata <- basepop %>% filter(AlcCAT!="Non-drinker") %>%
+  prepdata <- basepop %>% filter(AlcCAT!="Non-drinker" & totransition == 1) %>%
     mutate(age_var = microsim.init.age, sex_recode = ifelse(microsim.init.sex=="m","Male","Female"),
            YEAR = y, education_summary = microsim.init.education, race_eth = ifelse(microsim.init.race=="BLA","Black",
                                                                                     ifelse(microsim.init.race=="WHI","White",
@@ -55,8 +55,10 @@ prepdata <- prepdata %>% group_by(group) %>% do(samplegpd(.)) %>%
   # basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
   #                                         basepop$newgpd)
   # basepop$newgpd <- NULL
-  basepop$newgpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
-                                                                               basepop$newgpd)
+  basepop$newgpd <-  ifelse(basepop$totransition==1 & basepop$AlcCAT!="Non-drinker", basepop$newgpd, 
+                            ifelse(basepop$totransition==0 & basepop$AlcCAT!="Non-drinker", basepop$microsim.init.alc.gpd,
+                                   ifelse(basepop$AlcCAT=="Non-drinker", 0, NA)))
+    
   return(basepop)
 }
 

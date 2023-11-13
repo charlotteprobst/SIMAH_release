@@ -1,14 +1,23 @@
-#' Adds new migrants in each year from existing data pool
+#' Adds new births- estimating rates version
 #' @param
 #' @keywords microsimulation
 #' @export
 #' @examples
-#' inward_migration
-inward_migration <- function(basepop, migration_counts, y, brfss, model){
+#' inward_births_estimate_rate
+inward_births_estimate_rate <- function(basepop, migration_counts, y, brfss){
   # convert from a rate to the N to remove
-  summary <- migration_counts %>% filter(Year==y) %>%
-    mutate(toadd = MigrationInN) %>%
-    dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd) %>% drop_na()
+  summary <- migration_counts %>% filter(agecat=="18") %>%
+    filter(Year==y) %>%
+    mutate(toadd = BirthsInN) %>%
+    dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd) %>%
+    drop_na()
+
+  denominator <- basepop %>%
+    group_by(microsim.init.race, microsim.init.sex) %>%
+    tally()
+
+  births <- left_join(summary, denominator)
+  births$rate <- births$toadd/births$n
 
   summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
   tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
@@ -53,34 +62,21 @@ inward_migration <- function(basepop, migration_counts, y, brfss, model){
                                  npoptotal = sum(tojoin$toadd,na.rm=T),
                                  percentmissing = 0)
   }
+  toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
+    # mutate(toadd=round(toadd, digits=0)) %>%
+    do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
+    # do(slice_sample(.,n=toadd, replace = T)) %>%
+    mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
+    dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
+                  microsim.init.alc.gpd, microsim.init.BMI,
+                  microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
 
-  if(model=="SIMAH"){
-    toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
-      # mutate(toadd=round(toadd, digits=0)) %>%
-      do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
-      # do(slice_sample(.,n=toadd, replace = T)) %>%
-      mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-      dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                    microsim.init.alc.gpd, microsim.init.BMI,
-                    microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
-  }else if(model=="CASCADE"){
-    toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
-      # mutate(toadd=round(toadd, digits=0)) %>%
-      do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
-      # do(slice_sample(.,n=toadd, replace = T)) %>%
-      mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-      dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                    microsim.init.alc.gpd, microsim.init.BMI,
-                    microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT,
-                    chronicB, chronicC, yearsincedrink, Cirrhosis_risk, grams_10years)
-
-  }
   from <- max(basepop$microsim.init.id)+1
   to <- (nrow(toadd)) + max(basepop$microsim.init.id)
   microsim.init.id <- from:to
   toadd <- cbind(microsim.init.id, toadd)
   basepopnew <- rbind(basepop, toadd)
   # list <- list(basepop,summarymissing)
-  return(basepopnew)
+  return(list(basepopnew,births))
 }
 

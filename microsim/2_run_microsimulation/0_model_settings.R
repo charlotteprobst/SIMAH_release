@@ -22,7 +22,7 @@ migrationdeaths <- 1
 updatingeducation <- 1
 
 # switch on and off alcohol updates
-updatingalcohol <- 0
+updatingalcohol <- 1
 
 # switch between modelling mortality and morbidity (mortality = 1)
 mortality <- 1
@@ -96,7 +96,8 @@ brfss <- load_brfss(model,SelectedState, DataDirectory)
 death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
 
 # read in migration in and out counts and project rates forwards to 2025 (in case needed)
-migration_counts <- load_migration_counts(SelectedState, DataDirectory)
+# migration_counts <- load_migration_counts(SelectedState, DataDirectory)
+migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
 
 # load in the education transition rates
 list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
