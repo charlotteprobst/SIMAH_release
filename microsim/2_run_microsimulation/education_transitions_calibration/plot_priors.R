@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated.csv")) %>% 
+data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_newn.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -18,9 +18,12 @@ data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated.csv")) %>%
          RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                        "OTH"="Others")) %>% 
   rename(EDUC=microsim.init.education, YEAR=year) %>% 
-  group_by(YEAR, samplenum, SEX, AGECAT, RACE,
+  group_by(YEAR, samplenum, seed, SEX, AGECAT, RACE,
            EDUC) %>% 
   summarise(n=sum(n)) %>% 
+  ungroup() %>% 
+  group_by(YEAR, samplenum, SEX, AGECAT, RACE, EDUC) %>% 
+  summarise(n=mean(n)) %>% 
   ungroup() %>% 
   group_by(YEAR, samplenum, SEX, AGECAT, RACE) %>% 
   mutate(prop=n/sum(n), YEAR=as.integer(YEAR)) %>% 
@@ -42,9 +45,9 @@ ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"),
   theme_bw() + 
   theme(legend.position = "none") + 
   ggtitle("Men, 18-24 non-inflated prior") + 
-  xlab("Year")
+  xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_men_new.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_men_newn.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
@@ -54,9 +57,9 @@ ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"),
   theme_bw() + 
   theme(legend.position = "none") + 
   ggtitle("Women, 18-24 non-inflated prior") + 
-  xlab("Year")
+  xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_women_new.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_women_newn.png"), dpi=300, width=33, height=19, units="cm")
 
 # calculate implausibility 
 implausibility <- data %>% 

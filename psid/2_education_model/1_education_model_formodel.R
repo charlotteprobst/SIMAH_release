@@ -45,16 +45,18 @@ datat1 <- data[order(datat1$newID, datat1$year),]
 length(unique(datat1$uniqueID))
 length(unique(datat1$newID))
 
-datat2 <- data %>% filter(year<=2013 & year>=2007)
+datat2 <- data %>% filter(year<=2013 & year>=2005)
 datat2 <- data[order(datat2$newID, datat2$year),]
 length(unique(datat2$uniqueID))
 length(unique(datat2$newID))
 
-datat3 <- data %>% filter(year>=2015)
+datat3 <- data %>% filter(year>=2013)
 datat3 <- data[order(datat3$newID, datat3$year),]
 length(unique(datat3$uniqueID))
 length(unique(datat3$newID))
 # specify baseline models - just race and ethnicity 
+Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat1)
+
 modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q,
                                    center=FALSE,
                                    covariates=~agecat + sex + racefinal2,
@@ -74,7 +76,7 @@ modelt3 <- msm(educNUM~year, newID, data=datat3, qmatrix=Q,
 modelt3
 
 
-saveRDS(modelt1, "SIMAH_workplace/education_transitions/final_models/formodel_modelt1.RDS")
-saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2.RDS")
-saveRDS(modelt3, "SIMAH_workplace/education_transitions/final_models/formodel_modelt3.RDS")
+saveRDS(modelt1, "SIMAH_workplace/education_transitions/final_models/formodel_modelt1_newn.RDS")
+saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_newn.RDS")
+saveRDS(modelt3, "SIMAH_workplace/education_transitions/final_models/formodel_modelt3_newn.RDS")
 

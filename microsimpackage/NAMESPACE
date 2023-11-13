@@ -19,14 +19,10 @@ export(assign_chronic_hep)
 export(calculate_base_rate)
 export(cirrhosis_heavy_use)
 export(cirrhosis_metabolic)
-<<<<<<< HEAD
-=======
 export(compare_migration_count)
-export(education_setup)
 export(inward_births)
 export(inward_births_estimate_rate)
 export(inward_births_rate)
->>>>>>> main
 export(inward_migration)
 export(inward_migration_estimate_rate)
 export(inward_migration_rate)

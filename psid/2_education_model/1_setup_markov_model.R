@@ -84,7 +84,7 @@ setup_markov_model_formodel <- function(data){
                                               ifelse(data$education==15,4,
                                                      ifelse(data$education>=16,5,NA)))))
   
-  data <- data %>% drop_na(sex,age,education,race_new_unique, total_fam_income)
+  data <- data %>% drop_na(sex,age,education,race_new_unique)
   
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -109,21 +109,21 @@ setup_markov_model_formodel <- function(data){
   data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data <- data.frame(data)
   data <- as.data.frame(lapply(data, unlist))
-  # remove absorbing transitions - i.e. anyone after they have reached 16 
-  toremove <- data %>% group_by(newID) %>% 
-    filter(educNUM==5) %>% 
-    mutate(minyear = min(year),
-           keep = ifelse(minyear==year, 1,0)) %>% 
-    dplyr::select(newID, year, keep)
-  data <- left_join(data, toremove)
-  data$keep[is.na(data$keep)] <- 1
-  data <- data %>% filter(keep==1)
-  # remove those with 1 observation or less 
-  toremove <- data %>% group_by(newID) %>% 
-    tally() %>% mutate(toremove = ifelse(n==1, 1,0)) %>% 
-    filter(toremove==0)
-  IDS <- unique(toremove$newID)
-  data <- data %>% filter(newID %in% IDS)
+  # # remove absorbing transitions - i.e. anyone after they have reached 16 
+  # toremove <- data %>% group_by(newID) %>% 
+  #   filter(educNUM==5) %>% 
+  #   mutate(minyear = min(year),
+  #          keep = ifelse(minyear==year, 1,0)) %>% 
+  #   dplyr::select(newID, year, keep)
+  # data <- left_join(data, toremove)
+  # data$keep[is.na(data$keep)] <- 1
+  # data <- data %>% filter(keep==1)
+  # # remove those with 1 observation or less 
+  # toremove <- data %>% group_by(newID) %>% 
+  #   tally() %>% mutate(toremove = ifelse(n==1, 1,0)) %>% 
+  #   filter(toremove==0)
+  # IDS <- unique(toremove$newID)
+  # data <- data %>% filter(newID %in% IDS)
   data$agescaled <- as.numeric(scale(data$age, center=T))
   data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
