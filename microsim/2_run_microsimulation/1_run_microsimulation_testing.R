@@ -60,7 +60,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2019, output="mortality")
+                           minyear=2000, maxyear=2010, output="mortality")
 
 alcohol_type <- "categorical"
 
@@ -75,7 +75,7 @@ summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
 summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
 }
 }else if(output_type=="mortality"){
-summary1 <- summarise_mortality_output(Output1, SelectedState, DataDirectory, diseases, 2000)
+summary1 <- summarise_mortality_output(Output[[1]], SelectedState, DataDirectory, diseases, 2010)
 summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
 }
 # data frame containing mortality outputs
