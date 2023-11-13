@@ -153,7 +153,7 @@ if(updatingeducation==1){
                                                                ifelse(totransition$microsimnewED=="SomeC3","SomeC",
                                                                       ifelse(totransition$microsimnewED=="College","College",NA)
                                                                       ))))
-  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, cat, newED))
+  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED))
   basepop <- rbind(totransition, tostay)
 }
 
@@ -183,7 +183,6 @@ if(updatingalcohol==1){
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
   basepop$totransition <-  NULL
-
 }
 
 #delete anyone over 79
@@ -209,7 +208,7 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
-}else if(output==mortality & is.null(diseases)){
+}else if(output=="mortality" & is.null(diseases)){
     Summary <- 0
   }else if(output=="demographics"){
     # add seed to the output file here TODO
