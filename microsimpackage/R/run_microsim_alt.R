@@ -47,10 +47,10 @@ if(policy==1 & y ==year_policy){
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
-DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
-                                              dead, cause) %>% mutate(year=y, seed=seed)
-# remove individuals due to death and remove columns no longer needed
-basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
+# DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
+#                                               dead, cause) %>% mutate(year=y, seed=seed)
+# # remove individuals due to death and remove columns no longer needed
+# basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 
 # simulate mortality from specific diseases
 print("simulating disease mortality")
@@ -169,7 +169,8 @@ if(updatingalcohol==1){
                                 prob = runif(nrow(.)))
   basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
   basepop <- basepop %>%
-    mutate(AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
+    mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
+           AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
   # }
   # allocate a numeric gpd for individuals based on model
   # allocate every year even when transitions are only every two years?
@@ -179,6 +180,8 @@ if(updatingalcohol==1){
   # print(summary(basepop$formerdrinker))
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
+  basepop$totransition <-  NULL
+
 }
 
 #delete anyone over 79
