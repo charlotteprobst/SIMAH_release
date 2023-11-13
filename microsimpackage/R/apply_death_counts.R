@@ -26,14 +26,12 @@ apply_death_counts <- function(basepop, death_counts, y, diseases){
   # select all cases where "mort" is in the name of the column
   # use that to recode the line below in pivot_longer
   # potentially need to use the naming conventions for selecting names we use in other parts of the simulation
-  summary <- summary %>% pivot_longer(cols=LVDCmort: RESTmort, names_to="cause", values_to="count") %>%
+  summary <- summary %>% pivot_longer(cols = contains("mort"), names_to="cause", values_to="count") %>%
     mutate(cause = gsub("mort","",cause))
     # filter(!cause %in% diseases) #remove causes of death being modelled
   summary <- summary %>% group_by(cat) %>%
     mutate(count = round(count, digits=0), proportion = count/n,
            cprob=cumsum(proportion))
-  # %>%
-  #   group_by(cat) %>% mutate(rate=cumsum(proportion))
   options(digits=22)
 
   rates <- summary %>% dplyr::select(cat,cause,cprob) %>% group_by(cat)
