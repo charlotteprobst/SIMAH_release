@@ -8,7 +8,7 @@
 postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
-  death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
+  death_counts <- death_counts %>% pivot_longer(cols = contains("mort")) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
     mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
                            ifelse(agecat=="35-39" | agecat=="40-44","35-44",
