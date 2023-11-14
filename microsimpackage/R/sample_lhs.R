@@ -14,10 +14,10 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
     prior <- list(
       LVDC <- list(
-        c("qnorm", 0.03655479, 0.01144372), #MBLIVER1 SD 0.01144372
-        c("qnorm", -0.00011081, 0.00011053), #MBLIVER2 SD 0.00011053
-        c("qnorm", 0.06064636, 0.00649378), #FBLIVER1 SD 0.00649378
-        c("qnorm", -0.00031181, 0.00005372), #FBLIVER2 SD 0.00005372
+        c("qnorm", 0.04167190, 0.00974742), #MBLIVER1 SD 0.00974742
+        c("qnorm", -0.00011339, 0.00009910), #MBLIVER2 SD 0.00009910
+        c("qnorm", 0.06438698, 0.00567568), #FBLIVER1 SD 0.00567568
+        c("qnorm", -0.00033988, 0.00004845), #FBLIVER2 SD 0.00004845
         c("qnorm", 0.8297913, 0.3016328)), #LIVER FORMER DRINKERS SD 0.3016328
 
       HLVDC <- list(
