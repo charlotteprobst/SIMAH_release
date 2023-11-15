@@ -375,9 +375,9 @@ all_race <- all_race %>%
   mutate(inconsistent_race_MAIN_vs_TAS_using_method_hierarchy = ifelse(race_using_method_hierarchy==race_using_priority_order_TAS, 0, 1))
 all_race %>% distinct(uniqueID, .keep_all = TRUE) %>% group_by(inconsistent_race_MAIN_vs_TAS_using_method_hierarchy) %>% count()
 
-# Resolve conflicts between the main and TAS estimates of race (2 options as decision made to not use first year)
+# Resolve conflicts between the main and TAS estimates of race
 
-# Option A. Assign individuals their TAS self-reported race, if available, otherwise assign race_using_priority_order from main
+# Option A. Assign individuals their TAS self-reported race (priority order), if available, otherwise assign race_using_priority_order from main
 all_race <- all_race %>%
   mutate(final_race_using_priority_order = ifelse(is.na(race_using_priority_order_TAS), race_using_priority_order, race_using_priority_order_TAS)) %>%
   group_by(uniqueID) %>% fill(final_race_using_priority_order, .direction="downup")
@@ -392,7 +392,7 @@ all_race %>% group_by(uniqueID) %>%
   summarise(n_races=n_distinct(final_race_using_priority_order)) %>%
   filter(n_races>1) %>% count()
 
-# Option B. Assign individuals their TAS self-reported race, if available, otherwise assign race_using_method_hierarchy from main
+# Option B. Assign individuals their TAS self-reported race (priority order), if available, otherwise assign race_using_method_hierarchy from main
 all_race <- all_race %>%
   mutate(final_race_using_method_hierarchy = ifelse(is.na(race_using_priority_order_TAS), race_using_method_hierarchy, race_using_priority_order_TAS)) %>%
   group_by(uniqueID) %>% fill(final_race_using_method_hierarchy, .direction="downup")
@@ -406,6 +406,17 @@ n_distinct(temp$uniqueID) # n not allocated final race 22,859
 all_race %>% group_by(uniqueID) %>%
   summarise(n_races=n_distinct(final_race_using_method_hierarchy)) %>%
   filter(n_races>1) %>% count()
+
+# Option C.  Assign individuals their TAS self-reported race (first year), if available, otherwise assign race_using_first_year from TAS
+
+all_race <- all_race %>%
+  mutate(final_race_using_first_year = ifelse(is.na(race_using_first_year_TAS), race_using_first_year, race_using_first_year_TAS)) %>%
+  group_by(uniqueID) %>% fill(final_race_using_first_year, .direction="downup")
+
+temp <- all_race %>% filter(!(is.na(final_race_using_first_year)))
+n_distinct(temp$uniqueID) # n allocated final race 61,262
+temp <- all_race %>% filter(is.na(final_race_using_first_year))
+n_distinct(temp$uniqueID) # n not allocated final race 22,859
 
 # Drop rows of data for non-response years (no family interview ID)
 race_data_response_years_only <- all_race %>% filter(flag_non_response==0) # 2,036,453
@@ -483,14 +494,14 @@ PSID_data_cleaned <- all_data_filled %>%
     # Race and ethnicity
     "raceethhead","raceethwife","racefamily_best_guess","mothersrace","fathersrace", 
     "individualrace", "race_consistency_main",
-    "individualrace_TAS","race_using_first_year_TAS", "race_consistency_TAS",
-    "final_race_using_priority_order", "final_race_using_method_hierarchy","best_available_race_method",
+    "individualrace_TAS","race_using_first_year_TAS", "race_using_priority_order_TAS", "race_consistency_TAS",
+    "final_race_using_first_year", "final_race_using_priority_order", "final_race_using_method_hierarchy","best_available_race_method",
     # Alcohol consumption
     "drinkingstatus","quantity","frequency","gpd","bingedrinkdays","AlcCAT",
     "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
     # Psychological distress
     "kessler_score","distress_severe","distress_class"))
-write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/subset_data_1999_2021_excl_non_responses081123.csv", row.names=F)
+write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/subset_data_1999_2021_excl_non_responses151123.csv", row.names=F)
 
 
 
