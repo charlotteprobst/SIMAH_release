@@ -11,6 +11,7 @@ data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersec
 
 # View the mean alc daily grams
 mean(data$alc_daily_g_capped_200) # 7.88
+median(data$alc_daily_g_capped_200) # 2.3
 
 #### Identify outliers based on z-score
 
