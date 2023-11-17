@@ -35,6 +35,36 @@ targets <- read.csv(paste0(DataDirectory, "/target_data.csv")) %>%
   summarise(n=sum(n)) %>% 
   ungroup() %>% group_by(YEAR,SEX,AGECAT,RACE) %>% 
   mutate(target=n/sum(n))
+
+psid <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") %>% 
+  mutate(agecat = cut(age, breaks=c(0,24,34),
+                      labels=c("18-24","25-34")),
+         race = recode(race_new_unique, "black"="Black",
+         "white"="White","hispanic"="Hispanic","Native"="Others",
+         "Asian/PI"="Others","other"="Others"),
+         education = ifelse(education<=12, "LEHS",
+                            ifelse(education>=13 & education<=15, "SomeC",
+                                   ifelse(education>=16, "College", NA))),
+         sex = recode(sex, "female"="Women","male"="Men")) %>% 
+  group_by(year, sex, agecat, education, race) %>% 
+    tally() %>% 
+  rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>% 
+  ungroup() %>% 
+  group_by(YEAR, SEX, AGECAT, RACE) %>% 
+  mutate(PSID = n/sum(n)) %>% dplyr::select(-n)
+
+targets <- left_join(targets, psid) %>% 
+  pivot_longer(target:PSID)
+
+test <- targets %>% filter(AGECAT=="18-24") %>% drop_na()
+
+ggplot(subset(test, AGECAT=="18-24"), aes(x=YEAR, y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
+  geom_line() + 
+  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
+  ylim(0,1) + 
+  scale_linetype_manual(values=c("dashed","solid"))
+ggsave(paste0(DataDirectory, "/compare_PSID_ACS.png"), dpi=300, width=33, height=19, units="cm")
+
   
   # 
   # dplyr::select(-n) %>% 
