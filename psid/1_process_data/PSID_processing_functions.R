@@ -127,13 +127,22 @@ return(newdata)
 
 process_sample_weights <- function(data){
   
-# Combined Core-Immigrant Sample Individual Longitudinal Weight
+# Combined Core-Immigrant Individual Cross-sectional Weight 
+varnames <- c("ER33438","ER33547","ER33639","ER33742","ER33849","ER33951","ER34046","ER34155","ER34269","ER34414","ER34651","ER34864","ER35065")
+newdata <- data %>% select(uniqueID, all_of(varnames))		
+years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)		
+names(newdata)[2:14] <- years		
+cross_sectional_weights_individual <- newdata %>%
+  pivot_longer(cols='1997':'2021', names_to="year", values_to="individualweight_cross-sectional") %>% 
+  mutate(year = as.numeric(year))
+  
+# Combined Core-Immigrant Individual Longitudinal Weight
 varnames <- c("ER33430", "ER33546", "ER33637", "ER33740", "ER33848", "ER33950", "ER34045", "ER34154", "ER34268", "ER34413", "ER34650", "ER34863", "ER35064")		
 newdata <- data %>% select(uniqueID, all_of(varnames))		
 years <- c(1997, 1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)		
 names(newdata)[2:14] <- years		
-newdata <- newdata %>% 
-  pivot_longer(cols='1997':'2021', names_to="year", values_to="individualweight") %>% 
+longitudinal_weights_individual <- newdata %>% 
+  pivot_longer(cols='1997':'2021', names_to="year", values_to="individualweight_longitudinal") %>% 
   mutate(year = as.numeric(year))
 
 # Core/Immigrant Longitudinal Family Weight  
@@ -142,16 +151,26 @@ familyweights <- c("ER16518","ER20394","ER24179","ER28078","ER41069","ER47012","
 data$familyID <- data$ER30001
 data$ID <- data$ER30002
 data$uniqueID <- (data$familyID*1000) + data$ID
-
 weights <- data %>% dplyr::select(uniqueID, all_of(familyweights))
-
 years <- c(1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021)
-
 names(weights)[2:13] <- years
-weights <- weights %>% pivot_longer(cols='1999':'2021', names_to="year", values_to="family_weight") %>% 
+longitudinal_weights_family <- weights %>% pivot_longer(cols='1999':'2021', names_to="year", values_to="family_weight_longitudinal") %>% 
   mutate(year=as.integer(year))
 
-weights <- inner_join(newdata, weights)
+# Core/Immigrant cross-sectional Family Weight  
+familyweights <- c("ER12224","ER16519","ER20459", "ER24180", "ER71571", "ER77632")
+data$familyID <- data$ER30001
+data$ID <- data$ER30002
+data$uniqueID <- (data$familyID*1000) + data$ID
+weights <- data %>% dplyr::select(uniqueID, all_of(familyweights))
+years <- c(1997, 1999, 2001, 2003, 2017, 2019)
+names(weights)[2:7] <- years
+cross_sectional_weights_family <- weights %>% pivot_longer(cols='1997':'2019', names_to="year", values_to="family_weight_cross-sectional") %>% 
+  mutate(year=as.integer(year))
+
+weights <- inner_join(cross_sectional_weights_individual, longitudinal_weights_individual) %>% 
+  inner_join(., longitudinal_weights_family) %>%
+  inner_join(., cross_sectional_weights_family)
 
 return(weights)
 }

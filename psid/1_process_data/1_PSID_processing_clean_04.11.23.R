@@ -24,17 +24,9 @@ tas_data$ID <- tas_data$ER30002
 main_data$uniqueID <- (main_data$familyID*1000) + main_data$ID
 tas_data$uniqueID <- (tas_data$familyID*1000) + tas_data$ID
 
-# main_data$IDmother = ifelse(main_data$ER32010==0, NA, 
-#                        ifelse(main_data$ER32010>=800 & main_data$ER32010<=999, NA,
-#                   (main_data$ER32010*1000) + main_data$ER30002))
-
 main_data$IDmother = ifelse(main_data$ER32010==0, NA, 
                                 ifelse(main_data$ER32010>=800 & main_data$ER32010<=999, NA,
                                        (main_data$ER30001*1000) + main_data$ER32010))
-
-# main_data$IDfather = ifelse(main_data$ER32017==0, NA,
-#                        ifelse(main_data$ER32017>=800 & main_data$ER32017<=999, NA,
-#                   (main_data$ER32017*1000) + main_data$ER30002))
 
 main_data$IDfather = ifelse(main_data$ER32017==0, NA,
                             ifelse(main_data$ER32017>=800 & main_data$ER32017<=999, NA,
@@ -80,7 +72,7 @@ relationship <- process_relationship(main_data)
 relationship_summary <- relationship %>% group_by(relationship) %>% summarise(distinct_individuals = n_distinct(uniqueID))
 # nb. counts sum to more than the total population as individuals may hold multiple roles
 
-# process individual and family longitudinal sampling weights 
+# process survey weights (cross-sectional and longitudinal, individual and family)
 sampleweights <- process_sample_weights(main_data)
 sampleweights$year <- as.double(sampleweights$year)
 
@@ -493,7 +485,9 @@ write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_psid_data_1999
 PSID_data_cleaned <- all_data_filled %>% 
   dplyr::select(c(
     # Interview information
-    "uniqueID","familyID","relationship","IDmother", "IDfather","family_interview_ID","year","survey_year", "individualweight","family_weight",
+    "uniqueID","familyID","relationship","IDmother", "IDfather","family_interview_ID","year","survey_year", 
+    # Survey weights
+    "individualweight_cross-sectional","individualweight_longitudinal", "family_weight_cross-sectional","family_weight_longitudinal",
     # Age and sex
     "birthyear","age", "sex", 
     # Socioeconomic status
