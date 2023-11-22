@@ -31,9 +31,6 @@ names(lhs) <- names
 for(y in minyear:maxyear){
 print(y)
 
-# save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
-
 # apply policy effects
 if(policy==1 & year_policy>maxyear & y==minyear){
   print("policy is not within model time frame")
@@ -45,6 +42,9 @@ if(policy==1 & y ==year_policy){
   basepop <- update_alcohol_cat(basepop)
 }
 
+# save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+  
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
 # DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
