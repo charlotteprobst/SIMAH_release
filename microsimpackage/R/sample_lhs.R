@@ -27,6 +27,8 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       AUD <- list(
         c("qnorm", 0.0319, 0.0017), #BAUD MEN SD 0.0017
         c("qnorm", 0.0343, 0.0014)), #BAUD ALL SD 0.0014
+        c("qnorm", 0.5306283, 0.2328008), #AUD FORMER DRINKERS MEN SD 0.2328008
+        c("qnorm", 1.289233, 0.3406336)), #AUD FORMER DRINKERS WOMEN SD 0.3406336
 
       IJ <- list(
         c("qnorm", 0.01100787, 0.0032), #BIJ MEN SD 0.0032
@@ -80,7 +82,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$LVDC) <- c("B_LIVER1_MEN","B_LIVER2_MEN",
                     "B_LIVER1_WOMEN","B_LIVER2_WOMEN", "LIVER_FORMERDRINKER")
   names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
-  names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL")
+  names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL","AUD_FORMERDRINKER_MEN","AUD_FORMERDRINKER_WOMEN")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
   names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
