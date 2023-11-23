@@ -168,9 +168,9 @@ names(weights)[2:7] <- years
 cross_sectional_weights_family <- weights %>% pivot_longer(cols='1997':'2019', names_to="year", values_to="family_weight_cross-sectional") %>% 
   mutate(year=as.integer(year))
 
-weights <- inner_join(cross_sectional_weights_individual, longitudinal_weights_individual) %>% 
-  inner_join(., longitudinal_weights_family) %>%
-  inner_join(., cross_sectional_weights_family)
+weights <- left_join(cross_sectional_weights_individual, longitudinal_weights_individual) %>% 
+  left_join(., longitudinal_weights_family) %>%
+  left_join(., cross_sectional_weights_family)
 
 return(weights)
 }
@@ -494,8 +494,8 @@ recode_PSID_vars <- function(data, varlist, variable, years){
   newdata <- data %>%
     mutate(origINTNO = ER30001,
            ID = ER30002,
-           uniqueID = (origINTNO*1000) + ID,
-           sex = recode(as.factor(ER32000), "1"="male", "2"="female")) %>%
+           uniqueID = (origINTNO*1000) + ID) %>%
+      #     sex = recode(as.factor(ER32000), "1"="male", "2"="female")) %>%
     dplyr::select(uniqueID, sex, all_of(varlist))
   names(newdata)[3:length(newdata)] <- years
   newdata <- newdata %>% pivot_longer(cols=as.character(min(years)):'2021', names_to="year", values_to=variable) %>%

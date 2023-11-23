@@ -33,11 +33,11 @@ main_data$IDfather = ifelse(main_data$ER32017==0, NA,
                                    (main_data$ER30001*1000) + main_data$ER32017))
 
 main_data$sex <- main_data$ER32000
-main_data <- main_data %>%dplyr::mutate(sex = dplyr::na_if(sex, 9))
-main_data$sex <- recode(as.factor(main_data$sex), "1"="male", "2"="female")
+main_data <- main_data %>% dplyr::mutate(sex = dplyr::na_if(sex, 9))
+main_data <- main_data %>% dplyr::mutate(sex = recode_factor(sex, "1" = "male", "2" = "female"))
 tas_data$sex <- tas_data$ER32000
 tas_data <- tas_data %>% dplyr::mutate(sex = dplyr::na_if(sex, 9))
-tas_data$sex <- recode(as.factor(tas_data$sex), "1"="male", "2"="female")
+tas_data <- tas_data %>% dplyr::mutate(sex = recode_factor(sex, "1" = "male", "2" = "female"))
 
 # Counts within each dataset
 n_distinct(main_data$uniqueID) # 84,121 individuals

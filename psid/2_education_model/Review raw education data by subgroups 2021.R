@@ -7,7 +7,7 @@ library(srvyr)
 library(tidyverse)
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
-all_data <- read.csv("SIMAH_workplace/PSID/cleaned data/all_data_1999_2021_excl_non_responders081123.csv")
+all_data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv")
 
 n_individuals_all_data <- n_distinct(all_data$uniqueID) # 43,884 individuals in the data
 
@@ -33,7 +33,7 @@ n_education_na_individuals <- n_individuals_all_data - n_education_individuals #
 
 # Plots of educational attainment over time
 
-# unweighted
+# Unweighted
 plot_data <- education_no_na %>%
   group_by(year, sex, final_race_using_method_hierarchy, education_cat) %>%
   summarise(n = n()) %>%
@@ -43,28 +43,45 @@ ggplot(data=plot_data, aes(x=year, y=prop, colour=education_cat)) + geom_line() 
   theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
   facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender - unweighted")
 
-# weighted
+# Using condensed racial groups
+plot_data_ACS <- education_no_na %>%
+  group_by(year, sex, race_ACS_cats, education_cat) %>%
+  summarise(n = n()) %>%
+  mutate(prop = n / sum(n)*100)
+
+ggplot(data=plot_data_ACS, aes(x=year, y=prop, colour=education_cat)) + geom_line() + 
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
+  facet_grid(sex~race_ACS_cats) + ggtitle("Trends in educational attainment by race (ACS cats) and gender, unweighted")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Education trends/education_trends_unweighted.png", width = 40, height = 25, units = "cm")
+
+# Weighted
+
+# Replace any weights of NA with zeros
+weights_no_na <- education_no_na %>%
+  mutate(individualweight_longitudinal = ifelse(is.na(individualweight_longitudinal), 0, individualweight_longitudinal),
+         individualweight_cross.sectional = ifelse(is.na(individualweight_cross.sectional), 0, individualweight_cross.sectional))
+
+# LONGITUDINAL WEIGHTS
 
 # Create a survey design object
-survey_design <- education_no_na %>% 
-  as_survey_design(weights = individualweight)
+survey_design_longitudinal <- weights_no_na %>% 
+  as_survey_design(weights = individualweight_longitudinal)
 
 # Calculate weighted proportions by year, sex, race and education category
-weighted_plot_data <- survey_design %>%
+longitudinal_plot_data <- survey_design_longitudinal %>%
   group_by(year, sex, final_race_using_method_hierarchy, education_cat) %>%
   summarise(proportion= survey_mean()*100)
 
-ggplot(data=weighted_plot_data, aes(x=year, y=proportion, colour=education_cat)) + geom_line() + 
+ggplot(data=longitudinal_plot_data, aes(x=year, y=proportion, colour=education_cat)) + geom_line() + 
   theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
-  facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender - weighted")
+  facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender, using longitudinal weights")
 
-# condensed racial groups & including confidence intervals
-
-weighted_plot_data_ACS <- survey_design %>%
+# Using condensed racial groups & including confidence intervals
+longitudinal_plot_data_ACS <- survey_design_longitudinal %>%
   group_by(year, sex, race_ACS_cats, education_cat) %>%
   summarise(proportion= survey_mean()*100)
 
-ggplot(data=weighted_plot_data_ACS, aes(x=year, y=proportion, colour=education_cat)) + 
+ggplot(data=longitudinal_plot_data_ACS, aes(x=year, y=proportion, colour=education_cat)) + 
   geom_line() + 
   geom_errorbar(aes(ymin = proportion - 1.96 * proportion_se, ymax = proportion + 1.96 * proportion_se), width = 0.2) +
   theme_bw() + 
@@ -72,24 +89,37 @@ ggplot(data=weighted_plot_data_ACS, aes(x=year, y=proportion, colour=education_c
   ylim(0,NA) + 
   xlim(1999, 2021)+
   facet_grid(sex~race_ACS_cats) + 
-  ggtitle("Trends in educational attainment by race (ACS cats) and gender - weighted")
+  ggtitle("Trends in educational attainment by race (ACS cats) and gender, using longitudinal weights")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Education trends/education_trends_longitudinal_weights.png", width = 40, height = 25, units = "cm")
 
-# Explore the strange peak in 2005 by plotting proportions in each racial category 
+# CROSS SECTIONAL WEIGHTS
 
-race_over_time_unweighted <- education_no_na %>%
-  group_by(year, race_ACS_cats) %>%
-  summarise(n = n()) %>%
-  mutate(proportion = n / sum(n)*100)
+# Create a survey design object
+survey_design_crosssectional <- education_no_na %>% 
+  as_survey_design(weights = individualweight_cross.sectional)
 
-ggplot(data=race_over_time_unweighted, aes(x=year, y=proportion, colour=race_ACS_cats)) + geom_line() +
-  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + 
-  ggtitle("Trends in race over time - unweighted")
-
-race_over_time_weighted <- survey_design %>%
-  group_by(year, race_ACS_cats) %>%
+# Calculate weighted proportions by year, sex, race and education category
+crosssectional_plot_data <- survey_design_crosssectional %>%
+  group_by(year, sex, final_race_using_method_hierarchy, education_cat) %>%
   summarise(proportion= survey_mean()*100)
 
-ggplot(data=race_over_time_weighted, aes(x=year, y=proportion, colour=race_ACS_cats)) + geom_line() +
-  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + 
- ggtitle("Trends in race over time - weighted")
+ggplot(data=crosssectional_plot_data, aes(x=year, y=proportion, colour=education_cat)) + geom_line() + 
+  theme_bw() + theme(legend.title=element_blank(), legend.position="bottom") + ylim(0,NA) + xlim(1999, 2021)+
+  facet_grid(sex~final_race_using_method_hierarchy) + ggtitle("Trends in educational attainment by race and gender - weighted")
+
+# condensed racial groups & including confidence intervals
+crosssectional_plot_data_ACS <- survey_design_crosssectional %>%
+  group_by(year, sex, race_ACS_cats, education_cat) %>%
+  summarise(proportion= survey_mean()*100)
+
+ggplot(data=crosssectional_plot_data_ACS, aes(x=year, y=proportion, colour=education_cat)) + 
+  geom_line() + 
+  geom_errorbar(aes(ymin = proportion - 1.96 * proportion_se, ymax = proportion + 1.96 * proportion_se), width = 0.2) +
+  theme_bw() + 
+  theme(legend.title=element_blank(), legend.position="bottom") + 
+  ylim(0,NA) + 
+  xlim(1999, 2021)+
+  facet_grid(sex~race_ACS_cats) + 
+  ggtitle("Trends in educational attainment by race (ACS cats) and gender, using cross-sectional weights")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Education trends/education_trends_crosssectional_weights.png", width = 40, height = 25, units = "cm")
 
