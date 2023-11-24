@@ -117,7 +117,8 @@ for (disease in diseases) {
            inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
                                      ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
     group_by(cat) %>%
-    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
+    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor),
+              !!paste0("yll_", disease) := sum(!!sym(paste0("yll_", disease))/inflation_factor))
 }
 
 DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
