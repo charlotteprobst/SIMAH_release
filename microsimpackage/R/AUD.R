@@ -23,7 +23,7 @@ AUD <- function(data,lhs){
                               ifelse(microsim.init.alc.gpd<100 & microsim.init.sex=="f",
                                      exp(0 + B_AUD1_ALL*microsim.init.alc.gpd),
                                      ifelse(microsim.init.alc.gpd>=100 & microsim.init.sex=="f",
-                                            exp(0 + B_AUD1_ALL*100), NA))))),
+                                            exp(0 + B_AUD1_ALL*100), NA)))),
           RR_AUD = ifelse(formerdrinker==1 & microsim.init.sex=="m",
                  exp(AUD_FORMERDRINKER_MEN),
                  ifelse(formerdrinker==1 & microsim.init.sex=="f",

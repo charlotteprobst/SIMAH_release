@@ -26,7 +26,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
 
       AUD <- list(
         c("qnorm", 0.0319, 0.0017), #BAUD MEN SD 0.0017
-        c("qnorm", 0.0343, 0.0014)), #BAUD ALL SD 0.0014
+        c("qnorm", 0.0343, 0.0014), #BAUD ALL SD 0.0014
         c("qnorm", 0.5306283, 0.2328008), #AUD FORMER DRINKERS MEN SD 0.2328008
         c("qnorm", 1.289233, 0.3406336)), #AUD FORMER DRINKERS WOMEN SD 0.3406336
 
