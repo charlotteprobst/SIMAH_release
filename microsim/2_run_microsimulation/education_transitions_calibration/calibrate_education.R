@@ -54,7 +54,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 500
+nsamples <- 100
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 
 # save samples 
@@ -96,7 +96,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% 
 
 # save the output 
 Output <- do.call(rbind,Output)
-write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_uninflated.csv", row.names=F)
+write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_uninflated_sophie.csv", row.names=F)
 
 # # plot the data compared to target
 # data <- Output %>%

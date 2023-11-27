@@ -18,11 +18,11 @@ adjust_income_inflation <- function(data){
 
 
 setup_markov_model <- function(data,y){
-  if(y==2009){
-  data <- data %>% filter(year<=2009)
-  }else{
-    data <- data %>% filter(year>=2009)
-  }
+  # if(y==2009){
+  # data <- data %>% filter(year<=2009)
+  # }else{
+  #   data <- data %>% filter(year>=2009)
+  # }
   data$educNUM <- ifelse(data$education<=11, 1,
                       ifelse(data$education==12, 2,
                          ifelse(data$education==13, 3,
@@ -30,7 +30,7 @@ setup_markov_model <- function(data,y){
                                        ifelse(data$education==15,5,
                                               ifelse(data$education>=16,6,NA))))))
   
-  data <- data %>% drop_na(sex,age,education,race_new_unique, total_fam_income)
+  data <- data %>% drop_na(sex,age,education, final_race_using_priority_order)
 
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -44,10 +44,10 @@ setup_markov_model <- function(data,y){
   source("SIMAH_code/education_transitions/2_analysis/cleaning_education_function2.R")
   backIDs <- getIDs(data)
   data <- data[!data$newID %in% backIDs,]
-  data <- data %>% filter(age>=16)
+  data <- data %>% filter(age>=18)
   data$age <- round(data$age, digits=0)
   data$agesq <- data$age^2
-  data$racefinal2 <- as.character(data$race_new_unique)
+  data$racefinal2 <- as.character(data$final_race_using_priority_order)
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$racefinal2 <- as.factor(data$racefinal2)
@@ -84,7 +84,7 @@ setup_markov_model_formodel <- function(data){
                                               ifelse(data$education==15,4,
                                                      ifelse(data$education>=16,5,NA)))))
   
-  data <- data %>% drop_na(sex,age,education,race_new_unique)
+  data <- data %>% drop_na(sex,age,education,final_race_using_method_hierarchy)
   
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -101,7 +101,7 @@ setup_markov_model_formodel <- function(data){
   data <- data %>% filter(age>=18)
   data$age <- round(data$age, digits=0)
   data$agesq <- data$age^2
-  data$racefinal2 <- as.character(data$race_new_unique)
+  data$racefinal2 <- as.character(data$final_race_using_method_hierarchy)
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$racefinal2 <- as.factor(data$racefinal2)

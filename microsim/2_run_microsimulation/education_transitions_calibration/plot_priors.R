@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_neworder.csv")) %>% 
+data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_sophie.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -53,8 +53,30 @@ psid <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.cs
   group_by(YEAR, SEX, AGECAT, RACE) %>% 
   mutate(PSID = n/sum(n)) %>% dplyr::select(-n)
 
-targets <- left_join(targets, psid) %>% 
-  pivot_longer(target:PSID)
+# PSID new version
+newpsid <- read_csv("SIMAH_workplace/PSID/psid_data_1999_2021.csv") %>% 
+  filter(age<=34) %>% 
+  mutate(agecat = cut(age, breaks=c(0,24,34),
+                      labels=c("18-24","25-34")),
+         race = recode(final_race_using_priority_order, "black"="Black",
+                       "white"="White","hispanic"="Hispanic","Native"="Others",
+                       "Asian/PI"="Others","other"="Others"),
+         education = ifelse(education<=12, "LEHS",
+                            ifelse(education>=13 & education<=15, "SomeC",
+                                   ifelse(education>=16, "College", NA))),
+         sex = recode(sex, "female"="Women","male"="Men")) %>% 
+  group_by(year, sex, agecat, education, race) %>% 
+  drop_na(race,education) %>% 
+  summarise(n=sum(`individualweight_cross-sectional`)) %>% 
+  rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>% 
+  ungroup() %>% 
+  group_by(YEAR, SEX, AGECAT, RACE) %>% 
+  mutate(PSID_new = n/sum(n)) %>% dplyr::select(-n)
+
+targets <- left_join(targets, newpsid)
+targets <- left_join(targets, psid) 
+# %>% 
+#   pivot_longer(target:PSID)
 
 test <- targets %>% filter(AGECAT=="18-24") %>% drop_na()
 
@@ -62,8 +84,8 @@ ggplot(subset(test, AGECAT=="18-24"), aes(x=YEAR, y=value, colour=as.factor(EDUC
   geom_line() + 
   facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
   ylim(0,1) + 
-  scale_linetype_manual(values=c("dashed","solid"))
-ggsave(paste0(DataDirectory, "/compare_PSID_ACS.png"), dpi=300, width=33, height=19, units="cm")
+  scale_linetype_manual(values=c("dashed","dotted","solid"))
+ggsave(paste0(DataDirectory, "/compare_PSID_ACS_incnew.png"), dpi=300, width=33, height=19, units="cm")
 
   
   # 
@@ -83,7 +105,7 @@ ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"),
   ggtitle("Men, 18-24 non-inflated prior") + 
   xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_men_new.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_men_sophie.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 

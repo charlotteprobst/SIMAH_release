@@ -14,13 +14,13 @@ source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibrat
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/extract_for_estimates.R")
 
-model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1_newn.RDS")
-model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_newn.RDS")
-model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_newn.RDS")
+model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1_sophie.RDS")
+model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
+model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_sophie.RDS")
 
-Samples1 <- Sample_Probs(model1, nsamples, "1999-2006", 1, 3031,66610)
-Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1, 3956,88240)
-Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1, 3046,66917)
+Samples1 <- Sample_Probs(model1, nsamples, "1999-2006", 1, 2067,675073)
+Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1, 2769,915752)
+Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1, 2365,772327)
 
 estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 
