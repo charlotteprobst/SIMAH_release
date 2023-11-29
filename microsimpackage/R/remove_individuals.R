@@ -52,7 +52,8 @@ remove_individuals <- function(data = basepop, disease, age_inflated, inflation_
     dplyr::select(-c(!!sym(paste0('mort_', disease)),
                      !!sym(paste0("RR_", disease)),
                      !!sym(paste0("risk_", disease)),
-                     !!sym(paste0("rate_", disease))))
+                     !!sym(paste0("rate_", disease)),
+                     !!sym(paste0("yll_", disease))))
   return(data)
 }
 
