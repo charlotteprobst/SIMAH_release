@@ -12,11 +12,12 @@ setwd("~/Desktop/CAMH/Fall 2023/SIMAH II")
 
 # Graph results by sex and SES or by sex, ses, and race
 k.run <- "ses" # "ses" or "detail"
-k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS_pred" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
 
+# created in 2a_decomp_revised_SIMAH. Load either 2019-2020 or 2020-2021
 if(k.run == "detail") {
   if(k.pop_type=="ACS"){
-    dDecomp <- read.csv("~/Desktop/CAMH/Fall 2023/SIMAH II/Decomposition Output/Results_contrib_2019_2020_detail_ACS.csv")
+    dDecomp <- read.csv("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/2019 to 2020/Results_contrib_2020_2021_ses_ACS.csv")
   }else if(k.pop_type=="ACS_pred"){
     dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2019_2020_detail_ACS_pred.csv")
   }else if (k.pop_type == "CPS") {
@@ -24,9 +25,9 @@ if(k.run == "detail") {
   }
 } else if (k.run == "ses") {
   if(k.pop_type=="ACS"){
-    dDecomp <- read.csv("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/Results_contrib_2020_2021_ses_ACS.csv") # created in 2a_decomp_revised_SIMAH - only need to change this. Load either 2019-2020 or 2020-2021
+    dDecomp <- read.csv("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/2020 to 2021/Results_contrib_2020_2021_ses_ACS.csv") 
   }else if(k.pop_type=="ACS_pred"){
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2019_2020_ses_ACS_pred.csv")
+    dDecomp <- read.csv("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/2020 to 2021/Results_contrib_2020_2021_ses_ACS_pred.csv") 
   }else if (k.pop_type == "CPS") {
     dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2020_decomp/Results_contrib_2019_2020_ses_CPS.csv")
   }
@@ -125,7 +126,7 @@ color.vec <- c(rev(brewer.pal(infectious,"Blues"))[2:4],
 
 write.csv(dgathered, paste0("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/decomp_results_2020_2021_", 
                             k.pop_type, "_", k.run, ".csv"))
-dgathered <- filter(dgathered, start_year == 2020) #change to 2019 if running 2019-2020 results
+dgathered <- filter(dgathered, start_year == 2020) #change to 2019 if running 2019-2020 results, and 2020 if running 2020-2021 results
 ## Plot showing changes in every year (will not be included in publication)
 dcomp_plot <- ggplot(data = dgathered, 
                      aes(x = Education, y = Contribution, fill = Cause_of_death)) +
@@ -148,7 +149,7 @@ dcomp_plot <- ggplot(data = dgathered,
 if (k.run == "detail") {
   dcomp_plot <- dcomp_plot + facet_grid(rows = vars(Sex, Race))
 }
-
+dcomp_plot
 ggsave(plot = dcomp_plot, 
        filename =  
          paste0("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/decomp_plot_2020_2021_",
@@ -161,10 +162,16 @@ color.vec2 <- rev(brewer.pal(9,"YlGnBu")[-1])
 color.vec2 <- c("#8ab17d", "#e76f51", "#f4a261", "#e9c46a", "#2a9d8f", "#287271", "#264653", "#ced4da")
 color.vec2 <- c("#90be6d", "#577590", "#4d908e", "#43aa8b", "#f9c74f", "#f94144", "#f3722c", "#ced4da")
 
-dcomp_plot <- ggplot(data = dgathered, 
-                     aes(x = Education, y = Contribution, fill = Category)) +
-  geom_bar(position = position_stack(reverse = TRUE), stat = "identity") +
-  scale_fill_manual("Cause of death", values = color.vec2)+ 
+# If dgathered2 is not used, the cause of deaths will show seperate (same colour) bars in the figure
+# this code allows to show the net contribution of each cause of death
+dgathered2 <- dgathered %>%
+  group_by(Education, Category, Sex) %>%
+  summarise(net_contribution = sum(Contribution))
+
+dcomp_plot <- ggplot(data = dgathered2, 
+                     aes(x = Education, y = net_contribution, fill = Category)) +
+  geom_bar(position = position_stack(reverse = T), stat = "identity") +
+  scale_fill_manual("Cause of death", values = color.vec)+ 
   facet_grid( rows = vars(Sex),  scales = "free")  + 
   coord_flip() +
   theme_light()+
@@ -187,7 +194,7 @@ if (k.run == "detail") {
 dcomp_plot
 ggsave(plot = dcomp_plot, 
        filename =  
-         paste0("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/decomp_plot_2020_2021_categories",
+         paste0("~/Desktop/CAMH/Fall 2023/SIMAH II/Output/decomp_plot_2020_2021_net_categories",
                 k.pop_type, "_",
                 k.run, ".jpeg"), 
        dpi=600, width=30, height=15, units="cm", device = "jpeg")
