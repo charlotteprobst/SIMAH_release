@@ -13,7 +13,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, Hep, drinkingdistributions,
-                         base_counts, diseases, lhs, liverinteraction,
+                         base_counts, diseases, lhs, sesinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
@@ -60,14 +60,18 @@ if("HLVDC" %in% diseases==TRUE){
   basepop <- CirrhosisHepatitis(basepop,lhs)
 }
 if("LVDC" %in% diseases==TRUE){
-  if(liverinteraction==1){
+  if(sesinteraction==1){
     basepop <- CirrhosisAllInteraction(basepop,lhs)
-  }else if(liverinteraction==0){
+  }else if(sesinteraction==0){
     basepop <- CirrhosisAll(basepop,lhs)
   }
 }
 if("AUD" %in% diseases==TRUE){
-  basepop <- AUD(basepop,lhs)
+  if(sesinteraction==1){
+    basepop <- AUDInteraction(basepop,lhs)
+  }else if(sesinteraction==0){
+    basepop <- AUD(basepop,lhs)
+  }
 }
 if("IJ" %in% diseases==TRUE){
   basepop <- SUICIDE(basepop, lhs)
@@ -76,7 +80,11 @@ if("DM" %in% diseases==TRUE){
   basepop <- DM(basepop, lhs)
 }
 if("IHD" %in% diseases==TRUE){
-  basepop <- IHD(basepop, lhs)
+  if(sesinteraction==1){
+    basepop <- IHDInteraction(basepop,lhs)
+  }else if(sesinteraction==0){
+    basepop <- IHD(basepop,lhs)
+  }
 }
 if("ISTR" %in% diseases==TRUE){
   basepop <- ISTR(basepop, lhs)
