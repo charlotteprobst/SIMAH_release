@@ -13,7 +13,7 @@ library(readxl)
 # setwd("/home/cbuckley")
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
-source("SIMAH_code/psid/2_education_model/1_setup_markov_model_2021.R")
+source("SIMAH_code/education_transitions/2021/1_setup_education_model_2021.R")
 
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs_2021.csv")
@@ -21,7 +21,7 @@ data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs_20
 # Prep data using setup_markov_model_formodel function from the 1_setup_markov_model_2021.R script.
 # (re-codes education/race, drops individuals with one year of data, drops anyone who transitions backwards etc.)
 
-data <- setup_markov_model_formodel(data)
+data <- setup_education_model_2021(data)
 
 Q <- rbind( c(0.5, 0.5, 0, 0, 0),
             c(0, 0.5, 0.5, 0, 0),
