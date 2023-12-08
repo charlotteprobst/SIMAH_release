@@ -1,4 +1,4 @@
-# script to extract summary tables for education for education transitions paper
+# Script to view transtions over time
 library(splitstackshape)
 library(dplyr)
 library(msm)
@@ -59,8 +59,7 @@ simulatedpop_all_years <- rbind(simulatedpop2005, simulatedpop2011) %>%
   rbind(., simulatedpop2021)
 output <- simulatedpop_all_years
 
-## Continue from here.  Currently people all start at age 18 in the first year of the time period
-# so they end up a max age of 24...
+## Continue from here.  
 
 # by age 26 where have people ended up
 # 6 categories instead of 5 

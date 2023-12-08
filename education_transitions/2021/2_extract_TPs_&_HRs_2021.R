@@ -9,17 +9,17 @@ library(msm)        # model transition probabilities
 library(tableone)   # create descriptives table
 library(knitr)      # create descriptives table
 options(scipen = 999)
-
-# Load model data
-data <- readRDS("SIMAH_workplace/education_transitions/prepped_data_for_markov_2021.rds")
+# 
+# # Load model data
+data <- readRDS("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
 
 # Load MSM Models 
-modelt1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1_newn.RDS")
-modelt2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_newn.RDS")
-modelt3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_newn.RDS")
-modelt4 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt4_newn.RDS")
-modelt5 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt5_newn.RDS")
-modelt6 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt6_newn.RDS")
+modelt1 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt1_newn.RDS")
+modelt2 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt2_newn.RDS")
+modelt3 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt3_newn.RDS")
+modelt4 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt4_newn.RDS")
+modelt5 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt5_newn.RDS")
+modelt6 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt6_newn.RDS")
 
 # Extract TPs for moving between states, overall
 
@@ -190,12 +190,27 @@ modelt4_HRs <- predicted_HR(modelt4)
 modelt5_HRs <- predicted_HR(modelt5)
 modelt6_HRs <- predicted_HR(modelt6)
 
-# Save results
-write_csv(modelt1_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_1999_2005.csv") 
-write_csv(modelt2_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_2006_2011.csv") 
-write_csv(modelt3_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_2012_2018.csv") 
-write_csv(modelt4_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_2019_2021.csv") 
-write_csv(modelt5_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_all_years_a.csv") 
-write_csv(modelt6_HRs, "SIMAH_workplace/education_transitions/2021_results/annual_education_HRs_all_years_b.csv") 
+# Adjust the CIs to reflect the true (rather than replicated) population size
+modelt1_HRs_adjusted <- adjust_CIs_2001(modelt1, "1999-2005", data)
+modelt2_HRs_adjusted <- adjust_CIs_2001(modelt1, "2006-2011", data)
+modelt3_HRs_adjusted <- adjust_CIs_2001(modelt1, "2012-2018", data)
+modelt4_HRs_adjusted <- adjust_CIs_2001(modelt1, "2019-2021", data)
+modelt5_HRs_adjusted <- adjust_CIs_2001(modelt5, "1999-2009", data)
+modelt6_HRs_adjusted <- adjust_CIs_2001(modelt6, "1999-2009", data)
+
+# write_csv(modelt1_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_1999_2005.csv") 
+# write_csv(modelt2_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2006_2011.csv") 
+# write_csv(modelt3_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2012_2018.csv") 
+# write_csv(modelt4_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2019_2021.csv") 
+# write_csv(modelt5_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_all_years_a.csv")
+# write_csv(modelt6_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_all_years_b.csv")
+
+# OR read in adjusted HR tables
+modelt1_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_1999_2005.csv") 
+modelt2_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2006_2011.csv") 
+modelt3_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2012_2018.csv") 
+modelt4_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_2019_2021.csv") 
+modelt5_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_all_years_a.csv") 
+modelt6_HRs_adjusted <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_all_years_b.csv") 
 
 

@@ -55,7 +55,7 @@ simulate_population <- function(population, TPs, timeperiod){
  
      }else if(timeperiod=="2019-2021"){
     minyear <- 2019
-    maxyear <- 2021
+    maxyear <- 2024
     transitions <- TPs %>% filter(time_period=="2019-2021") %>% 
       mutate(cat = paste(race, sex,age,  "STATEFROM", StateFrom, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, StateTo,prob) %>% 
