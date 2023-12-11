@@ -37,7 +37,7 @@ AUDInteraction <- function(data,lhs){
   AUD_SomeCxFD_WOMEN <- as.numeric(lhs["AUD_SomeCxFD_WOMEN"])
   
   data <- data %>%
-    mutate(RR_AUD_INT = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
+    mutate(RR_AUD = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
                                 exp(B_AUD_LEHS_MEN + B_AUD_GPD_MEN*microsim.init.alc.gpd + B_AUD_LEHSxGPD_MEN*microsim.init.alc.gpd),
                                 ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m",
                                       exp(B_AUD_SomeC_MEN + B_AUD_GPD_MEN*microsim.init.alc.gpd + B_AUD_SomeCxGPD_MEN*microsim.init.alc.gpd),
@@ -49,7 +49,7 @@ AUDInteraction <- function(data,lhs){
                                                           exp(B_AUD_SomeC_WOMEN + B_AUD_GPD_WOMEN*microsim.init.alc.gpd + B_AUD_SomeCxGPD_WOMEN*microsim.init.alc.gpd),
                                                           ifelse(microsim.init.education=="College" & microsim.init.sex=="f",
                                                                  exp(B_AUD_GPD_WOMEN*microsim.init.alc.gpd), NA)))))),
-           RR_AUD_INT = ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="m", 
+           RR_AUD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="m", 
                                  exp(AUD_FD_LEHS_MEN + AUD_FD_MEN*microsim.init.alc.gpd + AUD_LEHSxFD_MEN*microsim.init.alc.gpd),
                                  ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="m",
                                         exp(AUD_FD_SomeC_MEN + AUD_FD_MEN*microsim.init.alc.gpd + AUD_SomeCxFD_MEN*microsim.init.alc.gpd),
@@ -60,6 +60,6 @@ AUDInteraction <- function(data,lhs){
                                                       ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="f",
                                                             exp(AUD_FD_SomeC_WOMEN + AUD_FD_WOMEN*microsim.init.alc.gpd + AUD_SomeCxFD_WOMEN*microsim.init.alc.gpd),
                                                             ifelse(formerdrinker==1 & microsim.init.education=="College" & microsim.init.sex=="f",
-                                                                   exp(AUD_FD_WOMEN*microsim.init.alc.gpd), RR_AUD_INT)))))))
+                                                                   exp(AUD_FD_WOMEN*microsim.init.alc.gpd), RR_AUD)))))))
   return(data)
 }

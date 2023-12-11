@@ -39,7 +39,7 @@ CirrhosisAllInteraction <- function(data,lhs){
   # FORMERDRINKER <- as.numeric(lhs["LIVER_FORMERDRINKER"])
 
    data <- data %>%
-    mutate(RR_LIVER_INT = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
+    mutate(RR_LVDC = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
                                 exp(B_LIVER_LEHS_MEN + B_LIVER_GPD_MEN*microsim.init.alc.gpd + B_LIVER_LEHSxGPD_MEN*microsim.init.alc.gpd),
                                 ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m",
                                       exp(B_LIVER_SomeC_MEN + B_LIVER_GPD_MEN*microsim.init.alc.gpd + B_LIVER_SomeCxGPD_MEN*microsim.init.alc.gpd),
@@ -51,11 +51,11 @@ CirrhosisAllInteraction <- function(data,lhs){
                                                           exp(B_LIVER_SomeC_WOMEN + B_LIVER_GPD_WOMEN*microsim.init.alc.gpd + B_LIVER_SomeCxGPD_WOMEN*microsim.init.alc.gpd), 
                                                           ifelse(microsim.init.education=="College" & microsim.init.sex=="f",
                                                                  exp(B_LIVER_GPD_WOMEN*microsim.init.alc.gpd), NA)))))),
-           RR_LIVER_INT = ifelse(formerdrinker==1 & microsim.init.education=="LEHS", 
+           RR_LVDC = ifelse(formerdrinker==1 & microsim.init.education=="LEHS", 
                                  exp(LIVER_FD_LEHS + LIVER_FD*microsim.init.alc.gpd + LIVER_LEHSxFD*microsim.init.alc.gpd),
                                  ifelse(formerdrinker==1 & microsim.init.education=="SomeC",
                                         exp(LIVER_FD_SomeC + LIVER_FD*microsim.init.alc.gpd + LIVER_SomeCxFD*microsim.init.alc.gpd),
                                         ifelse(formerdrinker==1 & microsim.init.education=="College",
-                                               exp(LIVER_FD*microsim.init.alc.gpd), RR_LIVER_INT))))
+                                               exp(LIVER_FD*microsim.init.alc.gpd), RR_LVDC))))
   return(data)
 }

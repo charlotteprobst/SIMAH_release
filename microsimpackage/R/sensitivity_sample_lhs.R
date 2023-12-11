@@ -127,8 +127,8 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  #names(prior) <- c("LVDC", "AUD", "IJ", "IHD", "ALL")
-  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
+  names(prior) <- c("LVDC", "AUD", "IHD", "ALL")
+  #names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
   names(prior$LVDC) <- c("B_LIVER_LEHS_MEN","B_LIVER_SomeC_MEN","B_LIVER_LEHS_WOMEN","B_LIVER_SomeC_WOMEN",  
                          "B_LIVER_GPD_MEN","B_LIVER_GPD_WOMEN", 
                          "B_LIVER_LEHSxGPD_MEN","B_LIVER_SomeCxGPD_MEN","B_LIVER_LEHSxGPD_WOMEN","B_LIVER_SomeCxGPD_WOMEN",
@@ -140,9 +140,14 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
                         "AUD_FD_LEHS_MEN","AUD_FD_SomeC_MEN","AUD_FD_LEHS_WOMEN","AUD_FD_SomeC_WOMEN",
                         "AUD_FD_MEN","AUD_FD_WOMEN",
                         "AUD_LEHSxFD_MEN","AUD_SomeCxFD_MEN","AUD_LEHSxFD_WOMEN","AUD_SomeCxFD_WOMEN")
-  names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
+  #names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   #names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
-  names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
+  names(prior$IHD) <- c("B_IHD_LEHS_MEN", "B_IHD_SomeC_MEN", "B_IHD_LEHS_WOMEN", "B_IHD_SomeC_WOMEN",
+                        "B_IHD_CAT1_MEN", "B_IHD_CAT2_MEN", "B_IHD_CAT3_MEN", "B_IHD_CAT4_MEN", "B_IHD_CAT1_WOMEN", "B_IHD_CAT2_WOMEN",
+                        "B_IHD_LEHSxCAT1_MEN", "B_IHD_LEHSxCAT2_MEN", "B_IHD_LEHSxCAT3_MEN", "B_IHD_LEHSxCAT4_MEN",
+                        "B_IHD_SomeCxCAT1_MEN", "B_IHD_SomeCxCAT2_MEN", "B_IHD_SomeCxCAT3_MEN", "B_IHD_SomeCxCAT4_MEN",
+                        "B_IHD_LEHSxCAT1_WOMEN", "B_IHD_LEHSxCAT2_WOMEN", "B_IHD_SomeCxCAT1_WOMEN", "B_IHD_SomeCxCAT2_WOMEN",
+                        "IHD_FD_MEN","IHD_FD_WOMEN", "IHD_LEHSxFD_MEN","IHD_SomeCxFD_MEN","IHD_LEHSxFD_WOMEN", "IHD_SomeCxFD_WOMEN")
   #names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   #names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   #names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")

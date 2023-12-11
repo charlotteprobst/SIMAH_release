@@ -33,6 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
+# if interaction is switch on we can only model the available interactions for: LVDC, AUD, IHD
 diseases <- c("LVDC","AUD","IHD")
 
 # switch between CASCADE and SIMAH models 

@@ -12,11 +12,11 @@ CirrhosisAllInteraction(data, lhs)
 \description{
 Calculates RR of liver cirrhosis through all type pathway - with different SES effects
 
-Calculates RR of liver cirrhosis through all type pathway - with different SES effects
+Calculates RR of liver cirrhosis through all type pathway - with SES interaction effects
 }
 \examples{
 all type pathway pathway including SES interaction
-all type pathway pathway including SES interaction
+LC all type pathway pathway including SES interaction effects (alcohol use as continuous)
 }
 \keyword{all}
 \keyword{cirrhosis}
