@@ -15,6 +15,8 @@ AUD <- function(data,lhs){
     dplyr::select(-ageCAT)
   B_AUD1_MEN <- as.numeric(lhs["B_AUD1_MEN"])
   B_AUD1_ALL <- as.numeric(lhs["B_AUD1_ALL"])
+  AUD_FORMERDRINKER_MEN <- as.numeric(lhs["AUD_FORMERDRINKER_MEN"])
+  AUD_FORMERDRINKER_WOMEN <- as.numeric(lhs["AUD_FORMERDRINKER_WOMEN"])
   data <- data %>%
     mutate(RR_AUD = ifelse(microsim.init.alc.gpd<100 & microsim.init.sex=="m",
                        exp(0 + B_AUD1_MEN*microsim.init.alc.gpd),
