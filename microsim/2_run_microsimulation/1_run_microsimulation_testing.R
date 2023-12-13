@@ -51,8 +51,8 @@ minyear <- 2000
 maxyear <- 2005
 
 Output <- list()
-diseases <- NULL
 updatingeducation <- 0
+
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,

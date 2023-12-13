@@ -19,6 +19,7 @@ data <- read_ipums_micro(ddi)
 data <- zap_ipums_attributes(data)
 
 data <- data %>% filter(AGE>=18) %>% 
+  filter(ASECFLAG==1) %>% 
   mutate(edclass = ifelse(EDUC==1, NA,
                           ifelse(EDUC<=73, "LEHS",
                        ifelse(EDUC==999, NA,
