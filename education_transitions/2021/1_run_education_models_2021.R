@@ -13,7 +13,7 @@ library(readxl)
 # setwd("/home/cbuckley")
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
-source("SIMAH_code/education_transitions/2021/0_setup_education_model_2021.R")
+source("SIMAH_code/education_transitions/2021/functions/0_setup_education_model_2021.R")
 
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 data <- read_csv("SIMAH_workplace/education_transitions/2021/data_to_model/new_PSID_weighted_IDs_2021.csv")
@@ -83,7 +83,6 @@ modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q1,
                                    center=FALSE,
                                    covariates=~agecat + sex + racefinal2,
                         control=list(trace=1, fnscale=271181, maxit=200))
-modelt1
 
 Q2 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat2)
 
@@ -91,7 +90,6 @@ modelt2 <- msm(educNUM~year, newID, data=datat2, qmatrix=Q2,
                center=FALSE,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt2
 
 Q3 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat3)
 
@@ -99,7 +97,6 @@ modelt3 <- msm(educNUM~year, newID, data=datat3, qmatrix=Q3,
                center=FALSE,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt3
 
 Q4 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat4)
 
@@ -107,7 +104,6 @@ modelt4 <- msm(educNUM~year, newID, data=datat4, qmatrix=Q,
                center=FALSE,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt4
 
 # One combined model with a covariate for the time period
 Q5 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat5)
@@ -115,7 +111,6 @@ modelt5 <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
                center=FALSE,
                covariates=~agecat + sex + racefinal2 + timevary,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt5
 
 # One combined model with a covariate for the time period (comparing most recent time period only)
 Q6 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat6)
@@ -123,7 +118,6 @@ modelt6 <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
                center=FALSE,
                covariates=~agecat + sex + racefinal2 + timevary,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt6
 
 saveRDS(modelt1, "SIMAH_workplace/education_transitions/final_models/formodel_modelt1_newn.RDS")
 saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_newn.RDS")
@@ -132,37 +126,68 @@ saveRDS(modelt4, "SIMAH_workplace/education_transitions/final_models/formodel_mo
 saveRDS(modelt5, "SIMAH_workplace/education_transitions/final_models/formodel_modelt5_newn.RDS")
 saveRDS(modelt6, "SIMAH_workplace/education_transitions/final_models/formodel_modelt6_newn.RDS")
 
-# Run model 5 with interaction for sex
+# Run seperate models for each sex group to enable interactions (based on model 5)
 
-# Separate the model data into data for men and data for women
-men <- data %>% filter(sex==0)
-women <- data %>% filter(sex==1)
-
-# Set-up the data for an interaction by sex 
-men$timevary <- cut(men$year,
-                       breaks=c(0,2005,2011,2018, 2021),
-                       labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-Q_men <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=men)
-
-women$timevary <- cut(women$year,
-                                    breaks=c(0,2005,2011,2018, 2021),
-                                    labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-Q_women <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=women)
-
-## Run separate model for men and women to enable interactions
+sex_data <- data
+sex_data$timevary <- cut(sex_data$year,
+                 breaks=c(0,2005,2011,2018, 2021),
+                 labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
 # Men
+men <- sex_data %>% filter(sex==0)
+Q_men <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=men)
 modelt5_men <- msm(educNUM~year, newID, data=men, qmatrix=Q_men,
                center=FALSE,
                covariates=~agecat + racefinal2 + timevary,
                control=list(trace=1, fnscale=271181, maxit=200))
-modelt5_men
-
 # Women
+women <- sex_data %>% filter(sex==1)
+Q_women <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=women)
 modelt5_women <- msm(educNUM~year, newID, data=women, qmatrix=Q_women,
                    center=FALSE,
                    covariates=~agecat + racefinal2 + timevary,
                    control=list(trace=1, fnscale=271181, maxit=200))
-modelt5_women
 
 saveRDS(modelt5_men, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_men.RDS")
 saveRDS(modelt5_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_women.RDS")
+
+## Run separate models for each race group to enable interactions (based on model 5)
+race_data <- data
+race_data$timevary <- cut(data$year,
+                              breaks=c(0,2005,2011,2018, 2021),
+                              labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+# White
+white <- race_data %>% filter(racefinal2=="white")
+Q_white <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=white)
+modelt5_white <- msm(educNUM~year, newID, data=white, qmatrix=Q_white,
+                   center=FALSE,
+                   covariates=~agecat + sex + timevary,
+                   control=list(trace=1, fnscale=271181, maxit=200))
+
+# Black
+black <- race_data %>% filter(racefinal2=="black")
+Q_black <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=black)
+modelt5_black <- msm(educNUM~year, newID, data=black, qmatrix=Q_black,
+                   center=FALSE,
+                   covariates=~agecat + sex + timevary,
+                   control=list(trace=1, fnscale=271181, maxit=200))
+
+# Hispanic
+hispanic <- race_data %>% filter(racefinal2=="hispanic")
+Q_hispanic <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=hispanic)
+modelt5_hispanic <- msm(educNUM~year, newID, data=hispanic, qmatrix=Q_hispanic,
+                     center=FALSE,
+                     covariates=~agecat + sex + timevary,
+                     control=list(trace=1, fnscale=271181, maxit=200))
+# Other
+other <- race_data %>% filter(racefinal2=="other")
+Q_other <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=other)
+modelt5_other <- msm(educNUM~year, newID, data=other, qmatrix=Q_other,
+                     center=FALSE,
+                     covariates=~agecat + sex + timevary,
+                     control=list(trace=1, fnscale=271181, maxit=200))
+
+saveRDS(modelt5_white, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_white.RDS")
+saveRDS(modelt5_black, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_black.RDS")
+saveRDS(modelt5_hispanic, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_hispanic.RDS")
+saveRDS(modelt5_other, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_other.RDS")
+
