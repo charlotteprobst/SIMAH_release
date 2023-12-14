@@ -1,9 +1,9 @@
 
-adjust_CIs_2001 <- function(model, timeperiod, data){
+adjust_CIs <- function(model, timeperiod, data){
   dat <- print(model)
   if(length(dat)>1){
-    dat <- t(dat)
-    dat <- data.frame(dat)
+    dat <- t(dat) # swap the rows and columns
+    dat <- data.frame(dat) # convert to a data frame
     dat$names <- row.names(dat)
     origsample <- length(unique(data$uniqueID))
     expandedsample <- length(unique(data$newID))
@@ -39,7 +39,12 @@ adjust_CIs_2001 <- function(model, timeperiod, data){
              corrected_lower = round(exp(corrected_lower), digits=2),
              corrected_upper = round(exp(corrected_upper), digits=2),
              corrected_upper = ifelse(corrected_upper>100, 100, corrected_upper)) %>%
-      dplyr::select(-(c(Estimate, Lower, Upper, SE, SD, corrected_SE)))
-  }
+      mutate(estimate_CI = paste(estimate, " (", corrected_lower, "-", corrected_upper, ")", sep = "")) %>%
+      ungroup() %>%
+      dplyr::select(Variable, Transition, estimate_CI) %>%
+      pivot_wider(names_from = "Transition", values_from = estimate_CI)
+      dat$Variable <- gsub("agecat", "age",dat$Variable) 
+      dat$Variable <- gsub("racefinal2|timevary", "",dat$Variable) 
+     }
   return(dat)
 }

@@ -23,12 +23,6 @@ data <- read_csv("SIMAH_workplace/education_transitions/2021/data_to_model/new_P
 
 data <- setup_education_model_2021(data)
 
-Q <- rbind( c(0.5, 0.5, 0, 0, 0),
-            c(0, 0.5, 0.5, 0, 0),
-            c(0, 0, 0.5, 0.5, 0),
-            c(0, 0, 0, 0.5, 0.5),
-            c(0, 0, 0, 0, 0.5))
-
 data$agecat <- ifelse(data$age==18, "18",
                         ifelse(data$age==19, "19",
                                ifelse(data$age==20, "20",
@@ -39,6 +33,10 @@ data$agecat <- factor(data$agecat, levels = c("18", "19", "20", "21-25", "26+"))
 
 # Save prepped model data
 write_rds(data, "SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
+
+################################################################################################################
+# Read in prepped data
+data <- read_rds("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
 
 # Set-up an individual model for each time period
 datat1 <- data %>% filter(year<=2005)
@@ -72,6 +70,13 @@ datat6$timevary <- cut(datat6$year,
                        labels=c("2012-2018", "2019-2021"))
 
 # specify models
+
+Q <- rbind( c(0.5, 0.5, 0, 0, 0),
+            c(0, 0.5, 0.5, 0, 0),
+            c(0, 0, 0.5, 0.5, 0),
+            c(0, 0, 0, 0.5, 0.5),
+            c(0, 0, 0, 0, 0.5))
+
 Q1 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat1)
 
 modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q1,
@@ -126,3 +131,38 @@ saveRDS(modelt3, "SIMAH_workplace/education_transitions/final_models/formodel_mo
 saveRDS(modelt4, "SIMAH_workplace/education_transitions/final_models/formodel_modelt4_newn.RDS")
 saveRDS(modelt5, "SIMAH_workplace/education_transitions/final_models/formodel_modelt5_newn.RDS")
 saveRDS(modelt6, "SIMAH_workplace/education_transitions/final_models/formodel_modelt6_newn.RDS")
+
+# Run model 5 with interaction for sex
+
+# Separate the model data into data for men and data for women
+men <- data %>% filter(sex==0)
+women <- data %>% filter(sex==1)
+
+# Set-up the data for an interaction by sex 
+men$timevary <- cut(men$year,
+                       breaks=c(0,2005,2011,2018, 2021),
+                       labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+Q_men <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=men)
+
+women$timevary <- cut(women$year,
+                                    breaks=c(0,2005,2011,2018, 2021),
+                                    labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+Q_women <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=women)
+
+## Run separate model for men and women to enable interactions
+# Men
+modelt5_men <- msm(educNUM~year, newID, data=men, qmatrix=Q_men,
+               center=FALSE,
+               covariates=~agecat + racefinal2 + timevary,
+               control=list(trace=1, fnscale=271181, maxit=200))
+modelt5_men
+
+# Women
+modelt5_women <- msm(educNUM~year, newID, data=women, qmatrix=Q_women,
+                   center=FALSE,
+                   covariates=~agecat + racefinal2 + timevary,
+                   control=list(trace=1, fnscale=271181, maxit=200))
+modelt5_women
+
+saveRDS(modelt5_men, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_men.RDS")
+saveRDS(modelt5_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_women.RDS")
