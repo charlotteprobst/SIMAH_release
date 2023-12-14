@@ -24,7 +24,7 @@ generate_population <- function(TPs, sizepop){
 simulate_population <- function(population, TPs, timeperiod){
   if(timeperiod=="1999-2005"){
     minyear <- 1999
-    maxyear <- 2005
+    maxyear <- 2007 # Simulate until all individuals aged 18 in minyear are aged 26
     transitions <- TPs %>% filter(time_period=="1999-2005") %>%
       mutate(timeperiod=timeperiod,
              cat = paste(race, sex,age, "STATEFROM", StateFrom, sep="_")) %>% 
@@ -35,7 +35,7 @@ simulate_population <- function(population, TPs, timeperiod){
     
   }else if(timeperiod=="2006-2011"){
     minyear <- 2006
-    maxyear <- 2011
+    maxyear <- 2014 # Simulate until all individuals aged 18 in minyear are aged 26
     transitions <- TPs %>% filter(time_period=="2006-2011") %>% 
       mutate(cat = paste(race, sex,age, "STATEFROM", StateFrom, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, StateTo,prob) %>% 
@@ -45,7 +45,7 @@ simulate_population <- function(population, TPs, timeperiod){
     
   }else if(timeperiod=="2012-2018"){
     minyear <- 2012
-    maxyear <- 2018
+    maxyear <- 2020 # Simulate until all individuals aged 18 in minyear are aged 26
     transitions <- TPs %>% filter(time_period=="2012-2018") %>% 
       mutate(cat = paste(race, sex,age,  "STATEFROM", StateFrom, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, StateTo,prob) %>% 
@@ -55,7 +55,7 @@ simulate_population <- function(population, TPs, timeperiod){
  
      }else if(timeperiod=="2019-2021"){
     minyear <- 2019
-    maxyear <- 2024
+    maxyear <- 2027 # Simulate until all individuals aged 18 in min year are aged 26
     transitions <- TPs %>% filter(time_period=="2019-2021") %>% 
       mutate(cat = paste(race, sex,age,  "STATEFROM", StateFrom, sep="_")) %>% 
       data.frame(.) %>% dplyr::select(cat, StateTo,prob) %>% 
