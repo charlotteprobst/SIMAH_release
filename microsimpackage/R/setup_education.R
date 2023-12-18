@@ -19,6 +19,7 @@ setup_education <- function(basepop,y){
   basepop$year <- ifelse(y<=2006, "1999-2006",
                          ifelse(y>=2007 & y<=2013, "2007-2013",
                          ifelse(y>=2014,"2014-2019",NA)))
+  basepop$year <- "1999-2019"
   # basepop$year <- ifelse(y<=2006, "1999-2005",
   #                        ifelse(y>=2007 & y<=2013, "2006-2011",
   #                               ifelse(y>=2014,"2012-2017",NA)))

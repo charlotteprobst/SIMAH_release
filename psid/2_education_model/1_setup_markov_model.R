@@ -85,7 +85,6 @@ setup_markov_model_formodel <- function(data){
                                                      ifelse(data$education>=16,5,NA)))))
   
   data <- data %>% drop_na(sex,age,education,final_race_using_method_hierarchy)
-  
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
     filter(totalobservations>1) %>% mutate(sex=factor(sex),
@@ -125,7 +124,7 @@ setup_markov_model_formodel <- function(data){
   # IDS <- unique(toremove$newID)
   # data <- data %>% filter(newID %in% IDS)
   data$agescaled <- as.numeric(scale(data$age, center=T))
-  data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T))
+  # data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T))
   data$agesqscaled <- as.numeric(scale(data$agesq, center=T))
   data <- data[order(data$newID, data$year),]
   return(data)

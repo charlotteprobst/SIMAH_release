@@ -195,6 +195,7 @@ basepop <- subset(basepop, microsim.init.age<=79)
 
 # add and remove migrants
 if(y<2019){
+model <- "SIMAH"
 basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
 basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
 basepop <- outward_migration_rate(basepop,migration_rates,y)

@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_sophie.csv")) %>% 
+data <- read_csv(paste0(DataDirectory, "/prior_range_inflated_allyears.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -31,31 +31,33 @@ data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_sophie.csv")) %>
 
 # read in target data 
 targets <- read.csv(paste0(DataDirectory, "/target_data.csv")) %>% 
-  group_by(YEAR,SEX,AGECAT,EDUC,RACE) %>% 
-  summarise(n=sum(n)) %>% 
-  ungroup() %>% group_by(YEAR,SEX,AGECAT,RACE) %>% 
-  mutate(target=n/sum(n))
+  dplyr::select(YEAR, SEX, AGECAT, EDUC, RACE, prop, SE) %>% 
+  rename(target=prop)
+  # group_by(YEAR,SEX,AGECAT,EDUC,RACE) %>% 
+  # summarise(n=sum(n)) %>% 
+  # ungroup() %>% group_by(YEAR,SEX,AGECAT,RACE) %>% 
+  # mutate(target=n/sum(n))
 
-psid <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") %>% 
-  mutate(agecat = cut(age, breaks=c(0,24,34),
-                      labels=c("18-24","25-34")),
-         race = recode(race_new_unique, "black"="Black",
-         "white"="White","hispanic"="Hispanic","Native"="Others",
-         "Asian/PI"="Others","other"="Others"),
-         education = ifelse(education<=12, "LEHS",
-                            ifelse(education>=13 & education<=15, "SomeC",
-                                   ifelse(education>=16, "College", NA))),
-         sex = recode(sex, "female"="Women","male"="Men")) %>% 
-  group_by(year, sex, agecat, education, race) %>% 
-    tally() %>% 
-  rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>% 
-  ungroup() %>% 
-  group_by(YEAR, SEX, AGECAT, RACE) %>% 
-  mutate(PSID = n/sum(n)) %>% dplyr::select(-n)
-
-# PSID new version
-newpsid <- read_csv("SIMAH_workplace/PSID/psid_data_1999_2021.csv") %>% 
-  filter(age<=34) %>% 
+# psid <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv") %>% 
+#   mutate(agecat = cut(age, breaks=c(0,24,34),
+#                       labels=c("18-24","25-34")),
+#          race = recode(race_new_unique, "black"="Black",
+#          "white"="White","hispanic"="Hispanic","Native"="Others",
+#          "Asian/PI"="Others","other"="Others"),
+#          education = ifelse(education<=12, "LEHS",
+#                             ifelse(education>=13 & education<=15, "SomeC",
+#                                    ifelse(education>=16, "College", NA))),
+#          sex = recode(sex, "female"="Women","male"="Men")) %>% 
+#   group_by(year, sex, agecat, education, race) %>% 
+#     tally() %>% 
+#   rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>% 
+#   ungroup() %>% 
+#   group_by(YEAR, SEX, AGECAT, RACE) %>% 
+#   mutate(PSID = n/sum(n)) %>% dplyr::select(-n)
+# 
+# # PSID new version
+newpsid <- read_csv("SIMAH_workplace/PSID/psid_data_1999_2021.csv") %>%
+  filter(age<=34) %>%
   mutate(agecat = cut(age, breaks=c(0,24,34),
                       labels=c("18-24","25-34")),
          race = recode(final_race_using_priority_order, "black"="Black",
@@ -64,30 +66,37 @@ newpsid <- read_csv("SIMAH_workplace/PSID/psid_data_1999_2021.csv") %>%
          education = ifelse(education<=12, "LEHS",
                             ifelse(education>=13 & education<=15, "SomeC",
                                    ifelse(education>=16, "College", NA))),
-         sex = recode(sex, "female"="Women","male"="Men")) %>% 
-  group_by(year, sex, agecat, education, race) %>% 
-  drop_na(race,education) %>% 
-  summarise(n=sum(`individualweight_cross-sectional`)) %>% 
-  rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>% 
-  ungroup() %>% 
-  group_by(YEAR, SEX, AGECAT, RACE) %>% 
+         sex = recode(sex, "female"="Women","male"="Men")) %>%
+  group_by(year, sex, agecat, education, race) %>%
+  drop_na(race,education) %>%
+  summarise(n=sum(`individualweight_cross-sectional`)) %>%
+  rename(YEAR=year, SEX=sex, AGECAT=agecat, EDUC=education, RACE=race) %>%
+  ungroup() %>%
+  group_by(YEAR, SEX, AGECAT, RACE) %>%
   mutate(PSID_new = n/sum(n)) %>% dplyr::select(-n)
-
+# 
 targets <- left_join(targets, newpsid)
-targets <- left_join(targets, psid) 
-# %>% 
-#   pivot_longer(target:PSID)
-
-test <- targets %>% filter(AGECAT=="18-24") %>% drop_na()
-
-ggplot(subset(test, AGECAT=="18-24"), aes(x=YEAR, y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
-  geom_line() + 
-  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
-  ylim(0,1) + 
-  scale_linetype_manual(values=c("dashed","dotted","solid"))
-ggsave(paste0(DataDirectory, "/compare_PSID_ACS_incnew.png"), dpi=300, width=33, height=19, units="cm")
-
-  
+# targets <- left_join(targets, psid) 
+# 
+# targets$magnitudeold <- targets$target/targets$PSID
+# targets$magnitudenew <- targets$target/targets$PSID_new
+# 
+# magnitude <- targets %>% dplyr::select(YEAR,SEX, AGECAT, EDUC,RACE,target,
+#                                        PSID_new, PSID, magnitudenew, magnitudeold) %>% 
+#   drop_na()
+# # %>% 
+# #   pivot_longer(target:PSID)
+# 
+# test <- targets %>% filter(AGECAT=="18-24") %>% drop_na()
+# 
+# ggplot(subset(test, AGECAT=="18-24"), aes(x=YEAR, y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
+#   geom_line() + 
+#   facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
+#   ylim(0,1) + 
+#   scale_linetype_manual(values=c("dashed","dotted","solid"))
+# ggsave(paste0(DataDirectory, "/compare_PSID_ACS_incnew.png"), dpi=300, width=33, height=19, units="cm")
+# 
+#   
   # 
   # dplyr::select(-n) %>% 
   # rename(target=prop)
@@ -98,14 +107,15 @@ data <- left_join(data,targets) %>%
 ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) + 
+  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +
+  # geom_line(aes(x=YEAR,y=PSID_new), colour="purple",linewidth=1, linetype="dashed") +
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
   ggtitle("Men, 18-24 non-inflated prior") + 
   xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_men_sophie.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_men_allyears.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
@@ -117,7 +127,7 @@ ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"),
   ggtitle("Women, 18-24 non-inflated prior") + 
   xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_women_new.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_women_allyears.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
@@ -142,34 +152,27 @@ maxmean <- implausibility %>%
   group_by(samplenum) %>%
   summarise(maximplausibility = max(implausibility),
             meanimplausibility = mean(implausibility)) %>% 
-  ungroup() %>% 
-  mutate(
-            ntilemax = ntile(maximplausibility, 500),
-            ntilemean = ntile(meanimplausibility, 500)) 
+  mutate(percentile=ntile(maximplausibility,200))
 
-max <- data %>% 
-  filter(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum | 
-           samplenum %in% subset(maxmean, ntilemean<=3)$samplenum) %>% 
-  mutate(type=ifelse(samplenum %in% subset(maxmean, ntilemax<=3)$samplenum, "max", "mean"),
-         typesample = paste0(type, "_", samplenum))
+topsample <- subset(maxmean, percentile==1)$samplenum
 
-max <- max %>% 
-  filter(samplenum %in% subset(maxmean, ntilemax<=1)$samplenum | 
-           samplenum %in% subset(maxmean, ntilemean<=1)$samplenum)
+best <- data %>% filter(samplenum %in% topsample) %>% 
+  pivot_longer(prop:target)
 
-ggplot(data=subset(max, SEX=="Women" & AGECAT=="18-24"), 
-       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(EDUC))) + 
+ggplot(data=subset(best, AGECAT=="18-24"), 
+       aes(x=as.numeric(YEAR), y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
-  geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
-  facet_grid(cols=vars(typesample), rows=vars(RACE)) + 
+  # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
+  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
+  scale_linetype_manual(values=c("dashed","solid"), labels=c("simulation","target")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
         legend.title=element_blank()) + 
-  ggtitle("Women, 18-24") + 
+  ggtitle("age 18-24") + 
   xlab("Year") +
-  scale_y_continuous(labels=scales::percent) 
+  scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
 
-ggsave(paste0(DataDirectory, "/max_mean_women.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/best_implausibility_allyears.png"), dpi=300, width=33, height=19, units="cm")
 
 
 ggplot(data=subset(max, SEX=="Men" & AGECAT=="18-24"), 

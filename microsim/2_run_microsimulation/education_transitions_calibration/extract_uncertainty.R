@@ -14,17 +14,24 @@ source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibrat
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/extract_for_estimates.R")
 
-model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1_sophie.RDS")
-model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
-model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_sophie.RDS")
+# model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1_sophie.RDS")
+# model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
+# model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_sophie.RDS")
 
-Samples1 <- Sample_Probs(model1, nsamples, "1999-2006", 1, 2067,675073)
-Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1, 2769,915752)
-Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1, 2365,772327)
+model <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes.RDS")
+original <- 11143
+inflated <- 2650732
 
-estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
+Samples1 <- Sample_Probs(model, nsamples, "1999-2019", 30, original,inflated)
+# Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1, 2769,915752)
+# Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1, 2365,772327)
 
-probs <- rbind(Samples1[[1]], Samples2[[1]], Samples3[[1]])
+# estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
+estimates <- Samples1[[2]]
+
+
+# probs <- rbind(Samples1[[1]], Samples2[[1]], Samples3[[1]])
+probs <- Samples1[[1]]
 
 transitionsList <- list()
 for(i in 1:length(unique(estimates$SampleNum))){
@@ -35,4 +42,4 @@ for(i in 1:length(unique(estimates$SampleNum))){
     dplyr::select(cat, StateTo, cumsum)
 }
 
-rm(model1, model2, model3, Samples1, Samples2, Samples3, probs)
+# rm(model1, model2, model3, Samples1, Samples2, Samples3, probs)

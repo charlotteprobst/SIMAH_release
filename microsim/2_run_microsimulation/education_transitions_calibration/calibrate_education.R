@@ -54,15 +54,16 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 100
+nsamples <- 40
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
+rm(model)
 
 # save samples 
 saveRDS(transitionsList, paste("SIMAH_workplace/microsim/2_output_data/education_calibration/transitionsList", SelectedState,".RDS",sep=""))
 saveRDS(estimates, paste("SIMAH_workplace/microsim/2_output_data/education_calibration/sampled_markov", SelectedState, ".RDS"))
 
 # set to 1 if running on local machine 
-registerDoParallel(15)
+registerDoParallel(10)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -75,6 +76,7 @@ sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
 
 rm(education_transitions)
 baseorig <- basepop
+updatingalcohol <- 0
 Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% {
   print(i)
   samplenum <- as.numeric(sampleseeds$samplenum[i])
@@ -96,7 +98,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% 
 
 # save the output 
 Output <- do.call(rbind,Output)
-write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_uninflated_sophie.csv", row.names=F)
+write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_inflated_allyears.csv", row.names=F)
 
 # # plot the data compared to target
 # data <- Output %>%

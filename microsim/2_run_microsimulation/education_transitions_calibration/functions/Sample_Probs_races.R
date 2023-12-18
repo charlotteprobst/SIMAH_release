@@ -7,21 +7,21 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
   # work out the magnitude of the difference 
   magnitude <- newSEs/SEs
   covmat <- covmat*magnitude
-  covmat <- covmat*inflation
+  # covmat <- covmat*20
 
   # adjust the covariance matrix - first estimate standard deviations 
   
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
   sex <- c(0,1)
-  race <- c("white","black","hispanic","other")
+  # race <- c("white","black","hispanic","other")
   age <- c("18","19","20","21-25","26+")
   # every age sex race combination
-  combinations <- expand.grid(age,sex,race)
-  names(combinations) <- c("age","sex","race")
+  combinations <- expand.grid(age,sex)
+  names(combinations) <- c("age","sex")
   combinations <- data.frame(combinations)
   options(digits=3)
-  combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, sep="_")
+  combinations$cat <- paste(combinations$age, combinations$sex, sep="_")
   # plist <- list()
   # plist <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
   #                                msm.parse.covariates, MatrixExp)
@@ -41,7 +41,7 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
                                       sex = ifelse(sex==1,"female","male"),
                                       time = TimePeriod,
                                       inflation = inflation) %>% 
-    dplyr::select(SampleNum, inflation, StateFrom, StateTo, time, age, sex, race, prob)
+    dplyr::select(SampleNum, inflation, StateFrom, StateTo, time, age, sex, prob)
   SampleNum <- 1:nrow(samples)
   samples <- data.frame(cbind(SampleNum, inflation, TimePeriod, samples))
   list <- list(allsamples, samples)

@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read.csv(paste0(DataDirectory, "/prior_range_uninflated_neworder.csv")) %>% 
+data <- read_csv(paste0(DataDirectory, "/prior_range_uninflated_allyears.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -54,6 +54,10 @@ summary_implausibility <- implausibility %>%
   mutate(percentile = ntile(mean,100))
 
 samples <- summary_implausibility %>% filter(percentile<=10)
+
+
+
+
 
 # now read in the samples
 markovmodel <- readRDS(paste0(DataDirectory, "/sampled_markov USA -1.RDS")) %>% 
