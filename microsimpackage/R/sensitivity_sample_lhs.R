@@ -14,47 +14,64 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
     prior <- list(
       LVDC <- list(
-        c("qnorm", 0.6805684, 0.1226193), #B_LIVER_LEHS_MEN SD 0.1226193
-        c("qnorm", 0.3594212, 0.1369978), #B_LIVER_SomeC_MEN SD 0.1369978
-        c("qnorm", 0.7436502, 0.1632077), #B_LIVER_LEHS_WOMEN SD 0.1632077
-        c("qnorm", 0.4489715, 0.1710205), #B_LIVER_SomeC_WOMEN SD  0.1710205
-        c("qnorm", 0.003095205, 0.0004831719), #B_LIVER_GPD_MEN SD 0.0004831719
-        c("qnorm", 0.002895803, 0.0008393614), #B_LIVER_GPD_WOMEN SD 0.0008393614
-        c("qnorm", -0.000100005, 0.0005357949), #B_LIVER_LEHSxGPD_MEN SD 0.0005357949
-        c("qnorm", 0.002397125, 0.0007125759), #B_LIVER_SomeCxGPD_MEN SD 0.0007125759
-        c("qnorm", 0.001099395, 0.0009428886), #B_LIVER_LEHSxGPD_WOMEN SD 0.0009428886
-        c("qnorm",  0.004390348, 0.001320722), #B_LIVER_SomeCxGPD_WOMEN SD 0.001320722
+        c("qnorm", 0.70650753, 0.100516439), #B_LIVER_LEHS SD 0.100516439
+        c("qnorm", 0.396895157, 0.1060469776), #B_LIVER_SomeC SD 0.1060469776
+        c("qnorm", 0.00319489, 0.00038145156), #B_LIVER_GPD SD 0.00038145156
+        c("qnorm", 0, 0.000459183797), #B_LIVER_LEHSxGPD SD 0.000459183797
+        c("qnorm",  0.002297359, 0.000610840), #B_LIVER_SomeCxGPD SD 0.000610840
         c("qnorm", 0.7793249, 0.2074557), #LIVER_FD_LEHS SD 0.2074557
         c("qnorm", 0.5364934, 0.2380034), #LIVER_FD_SomeC SD 0.2380034
         c("qnorm", 1.033184,  0.3418635), #LIVER_FD SD  0.3418635
         c("qnorm", -0.6348783,  0.380269), #LIVER_LEHSxFD SD  0.380269
         c("qnorm", 0.3418635, 0.4293024)), #LIVER_SomeCxFD SD 0.4293024
+        
+        # c("qnorm", 0.6805684, 0.1226193), #B_LIVER_LEHS_MEN SD 0.1226193
+        # c("qnorm", 0.3594212, 0.1369978), #B_LIVER_SomeC_MEN SD 0.1369978
+        # c("qnorm", 0.7436502, 0.1632077), #B_LIVER_LEHS_WOMEN SD 0.1632077
+        # c("qnorm", 0.4489715, 0.1710205), #B_LIVER_SomeC_WOMEN SD  0.1710205
+        # c("qnorm", 0.003095205, 0.0004831719), #B_LIVER_GPD_MEN SD 0.0004831719
+        # c("qnorm", 0.002895803, 0.0008393614), #B_LIVER_GPD_WOMEN SD 0.0008393614
+        # c("qnorm", -0.000100005, 0.0005357949), #B_LIVER_LEHSxGPD_MEN SD 0.0005357949
+        # c("qnorm", 0.002397125, 0.0007125759), #B_LIVER_SomeCxGPD_MEN SD 0.0007125759
+        # c("qnorm", 0.001099395, 0.0009428886), #B_LIVER_LEHSxGPD_WOMEN SD 0.0009428886
+        # c("qnorm",  0.004390348, 0.001320722), #B_LIVER_SomeCxGPD_WOMEN SD 0.001320722
 
       # HLVDC <- list(
       #   c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 SD 0.00071320
       #   c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2 SD 0.00000872
 
       AUD <- list(
-        c("qnorm", 0.8109302, 0.2989031), #B_AUD_LEHS_MEN SD 0.2989031
-        c("qnorm", 0.577175, 0.2689286), #B_AUD_SomeC_MEN SD 0.2689286
-        c("qnorm", 0.7857264, 0.5431378), #B_AUD_LEHS_WOMEN SD 0.5431378
-        c("qnorm", 0.5141401, 0.4247704), #B_AUD_SomeC_WOMEN SD  0.4247704
-        c("qnorm", 0.0517382, 0.006734694), #B_AUD_GPD_MEN SD 0.006734694
-        c("qnorm", 0.05515084, 0.01196429), #B_AUD_GPD_WOMEN SD 0.01196429
-        c("qnorm", -0.005113049, 0.007091837), #B_AUD_LEHSxGPD_MEN SD 0.007091837
-        c("qnorm", 0.0259601, 0.009897959), #B_AUD_SomeCxGPD_MEN SD 0.009897959
-        c("qnorm", 0.009752291, 0.01405612), #B_AUD_LEHSxGPD_WOMEN SD  0.01405612
-        c("qnorm", 0.05713619, 0.01941327), #B_AUD_SomeCxGPD_WOMEN SD 0.01941327
-        c("qnorm", 1.261298, 0.4550207), #AUD_FD_LEHS_MEN SD 0.4550207
-        c("qnorm", 0.7884574, 0.5362027), #AUD_FD_SomeC_MEN SD 0.5362027
-        c("qnorm", 1.427916, 0.6434523), #AUD_FD_LEHS_WOMEN SD 0.6434523
-        c("qnorm", 1.264127, 0.8417455), #AUD_FD_SomeC_WOMEN SD 0.8417455
-        c("qnorm", 1.560248,  0.5724836), #AUD_FD_MEN SD  0.5724836
-        c("qnorm", 1.912501,  0.9801991), #AUD_FD_WOMEN SD  0.9801991
-        c("qnorm", -1.108663,  0.6564949), #AUD_LEHSxFD_MEN SD  0.6564949
-        c("qnorm", -1.660731, 0.799871), #AUD_SomeCxFD_MEN SD 0.799871
-        c("qnorm", -0.6348783,  1.052252), #AUD_LEHSxFD_WOMEN SD  1.052252
-        c("qnorm",  -0.7985077, 1.239748)), #AUD_SomeCxFD_WOMEN SD 1.239748
+        c("qnorm", 0.78732035, 0.114789), #B_AUD_LEHS SD 0.114789
+        c("qnorm", 0.555206, 0.12325817), #B_AUD_SomeC SD  0.12325817
+        c("qnorm", 0.05344598, 0.00527199), #B_AUD_GPD SD  0.00527199
+        c("qnorm", -0.0038072, 0.006094266), #B_AUD_LEHSxGPD SD 0.006094266
+        c("qnorm", 0.025180299, 0.0084577), #B_AUD_SomeCxGPD SD 0.0084577
+        c("qnorm", 1.21491274, 0.38280031), #AUD_FD_LEHS SD 0.38280031
+        c("qnorm",  0.8586616, 0.448253556), #AUD_FD_SomeC SD 0.448253556
+        c("qnorm", 1.73342389,  0.498620239), #AUD_FD SD  0.498620239
+        c("qnorm", -0.94160854,  0.5626876), #AUD_LEHSxFD SD  0.5626876
+        c("qnorm", -1.3470736, 0.65711184)), #AUD_SomeCxFD SD 0.65711184
+        
+        # c("qnorm", 0.8109302, 0.2989031), #B_AUD_LEHS_MEN SD 0.2989031
+        # c("qnorm", 0.577175, 0.2689286), #B_AUD_SomeC_MEN SD 0.2689286
+        # c("qnorm", 0.7857264, 0.5431378), #B_AUD_LEHS_WOMEN SD 0.5431378
+        # c("qnorm", 0.5141401, 0.4247704), #B_AUD_SomeC_WOMEN SD  0.4247704
+        # c("qnorm", 0.0517382, 0.006734694), #B_AUD_GPD_MEN SD 0.006734694
+        # c("qnorm", 0.05515084, 0.01196429), #B_AUD_GPD_WOMEN SD 0.01196429
+        # c("qnorm", -0.005113049, 0.007091837), #B_AUD_LEHSxGPD_MEN SD 0.007091837
+        # c("qnorm", 0.0259601, 0.009897959), #B_AUD_SomeCxGPD_MEN SD 0.009897959
+        # c("qnorm", 0.009752291, 0.01405612), #B_AUD_LEHSxGPD_WOMEN SD  0.01405612
+        # c("qnorm", 0.05713619, 0.01941327), #B_AUD_SomeCxGPD_WOMEN SD 0.01941327
+        # c("qnorm", 1.261298, 0.4550207), #AUD_FD_LEHS_MEN SD 0.4550207
+        # c("qnorm", 0.7884574, 0.5362027), #AUD_FD_SomeC_MEN SD 0.5362027
+        # c("qnorm", 1.427916, 0.6434523), #AUD_FD_LEHS_WOMEN SD 0.6434523
+        # c("qnorm", 1.264127, 0.8417455), #AUD_FD_SomeC_WOMEN SD 0.8417455
+        # c("qnorm", 1.560248,  0.5724836), #AUD_FD_MEN SD  0.5724836
+        # c("qnorm", 1.912501,  0.9801991), #AUD_FD_WOMEN SD  0.9801991
+        # c("qnorm", -1.108663,  0.6564949), #AUD_LEHSxFD_MEN SD  0.6564949
+        # c("qnorm", -1.660731, 0.799871), #AUD_SomeCxFD_MEN SD 0.799871
+        # c("qnorm", -0.6348783,  1.052252), #AUD_LEHSxFD_WOMEN SD  1.052252
+        # c("qnorm",  -0.7985077, 1.239748)), #AUD_SomeCxFD_WOMEN SD 1.239748
  
       # IJ <- list(
       #   c("qnorm", 0.01100787, 0.0032), #BIJ MEN SD 0.0032
@@ -129,17 +146,11 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # name the disease parameters
   names(prior) <- c("LVDC", "AUD", "IHD", "ALL")
   #names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
-  names(prior$LVDC) <- c("B_LIVER_LEHS_MEN","B_LIVER_SomeC_MEN","B_LIVER_LEHS_WOMEN","B_LIVER_SomeC_WOMEN",  
-                         "B_LIVER_GPD_MEN","B_LIVER_GPD_WOMEN", 
-                         "B_LIVER_LEHSxGPD_MEN","B_LIVER_SomeCxGPD_MEN","B_LIVER_LEHSxGPD_WOMEN","B_LIVER_SomeCxGPD_WOMEN",
+  names(prior$LVDC) <- c("B_LIVER_LEHS","B_LIVER_SomeC","B_LIVER_GPD","B_LIVER_LEHSxGPD","B_LIVER_SomeCxGPD",
                          "LIVER_FD_LEHS","LIVER_FD_SomeC","LIVER_FD","LIVER_LEHSxFD","LIVER_SomeCxFD")
   #names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
-  names(prior$AUD) <- c("B_AUD_LEHS_MEN","B_AUD_SomeC_MEN","B_AUD_LEHS_WOMEN","B_AUD_SomeC_WOMEN",  
-                        "B_AUD_GPD_MEN","B_AUD_GPD_WOMEN", 
-                        "B_AUD_LEHSxGPD_MEN","B_AUD_SomeCxGPD_MEN","B_AUD_LEHSxGPD_WOMEN","B_AUD_SomeCxGPD_WOMEN",
-                        "AUD_FD_LEHS_MEN","AUD_FD_SomeC_MEN","AUD_FD_LEHS_WOMEN","AUD_FD_SomeC_WOMEN",
-                        "AUD_FD_MEN","AUD_FD_WOMEN",
-                        "AUD_LEHSxFD_MEN","AUD_SomeCxFD_MEN","AUD_LEHSxFD_WOMEN","AUD_SomeCxFD_WOMEN")
+  names(prior$AUD) <- c("B_AUD_LEHS","B_AUD_SomeC","B_AUD_GPD","B_AUD_LEHSxGPD","B_AUD_SomeCxGPD",
+                        "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_FD_LEHS","AUD_FD_SomeC")
   #names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   #names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
   names(prior$IHD) <- c("B_IHD_LEHS_MEN", "B_IHD_SomeC_MEN", "B_IHD_LEHS_WOMEN", "B_IHD_SomeC_WOMEN",
