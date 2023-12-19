@@ -51,7 +51,7 @@ extractTP_incl_time <- function(model,combo){
     agecat <- combo$agecat[i]
     sex <- combo$sex[i]
     racefinal2 <- combo$racefinal2[i]
-    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(timevary,agecat,sex,racefinal2))
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(agecat, sex, racefinal2, timevary))
     probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
     probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
     probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,

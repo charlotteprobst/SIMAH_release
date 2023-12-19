@@ -43,8 +43,8 @@ adjust_CIs <- function(model, timeperiod, data){
       ungroup() %>%
       dplyr::select(Variable, Transition, estimate_CI) %>%
       pivot_wider(names_from = "Transition", values_from = estimate_CI)
-      dat$Variable <- gsub("agecat", "age",dat$Variable) 
-      dat$Variable <- gsub("racefinal2|timevary", "",dat$Variable) 
+#      dat$Variable <- gsub("agecat", "age",dat$Variable) 
+ #     dat$Variable <- gsub("racefinal2|timevary", "",dat$Variable) 
      }
   return(dat)
 }
