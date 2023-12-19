@@ -63,7 +63,8 @@ temp <- data_2 %>%
   group_by(intersections) %>%
   mutate(count=n())
 
-group_sizes <- temp %>% distinct(intersections, .keep_all = TRUE)
+group_sizes <- temp %>% distinct(intersections, .keep_all = TRUE) %>%
+  dplyr::select(intersectional_names, count) 
 sum(group_sizes$count <= 20) # 3 groups with n<=20
 
 # Add a column of the observed mean grams per day for each intersection
@@ -404,12 +405,17 @@ write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis
 ##### SUMMARY RESULTS TABLES
 mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers.rds")
 
+mdata_results <- inner_join(mdata_results, group_sizes)
+
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
+  dplyr::select(intersectional_names, count, mean_observed_grams, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi) %>%
+  mutate(difference = estmn - mean_observed_grams)
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
-mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
+  dplyr::select(intersectional_names, count, mean_observed_grams, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi) %>%
+  mutate(difference = estmn - mean_observed_grams)
+mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall) %>% 
+  mutate_if(is.numeric, round, 1)
 
 write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_drinkers.csv")
 
@@ -427,6 +433,7 @@ write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
 write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
  ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers.png", 
        dpi=300, width=33, height=19, units="cm")

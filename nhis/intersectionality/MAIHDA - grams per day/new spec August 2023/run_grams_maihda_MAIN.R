@@ -490,6 +490,7 @@ mdata_mean_comparison <- mdata_results %>% dplyr::select(intersectional_names, m
 # Compare the estimates for intersectional groups based on observed and estimated grams
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
  ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_MAIN.png", 
        dpi=300, width=33, height=19, units="cm")

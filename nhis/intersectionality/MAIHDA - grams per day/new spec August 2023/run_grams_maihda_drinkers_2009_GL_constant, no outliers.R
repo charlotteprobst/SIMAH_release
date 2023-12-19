@@ -1,7 +1,5 @@
 # MAIHDA of grams of alcohol per day - FULL SAMPLE
 
-# Spec 1: Original age cats, new race cats.
-
 ######################################################################## Set-up
 
 # Set wd
@@ -26,7 +24,6 @@ options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 options(scipen=10)
-
 
 ################################################################# PRE PROCESSING
 
@@ -76,27 +73,55 @@ saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 
 #################################################################### MODELLING
 
-# Read in prepped data
-data_3 <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.rds")
+# Read in prepped data (drinkers only)
+data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.RDS")
+ 
+# View the mean alc daily grams
+mean(data$alc_daily_g_capped_200) # 7.89
+median(data$alc_daily_g_capped_200) # 2.30
+ 
+## Identify and remove outliers using z-scores #### Identify outliers based on z-score (using the log-transformed daily grams)
 
-temp <- data_3 %>% 
-  group_by(intersections) %>%
-  mutate(count=n())
+# Set the z-score threshold to 2 (as is common practice)
+threshold <- 2
 
-group_sizes <- temp %>% 
-  distinct(intersections, .keep_all = TRUE) %>% 
-  dplyr::select(intersectional_names, count) 
+z_scores_2 <- scale(data$capped_daily_grams_log)
+outliers_indices_2 <- which(abs(z_scores_2) > threshold | abs(z_scores_2) < -threshold)
+
+# Getting NHISPID of the outliers
+outliers_NHISPID_2 <- data$NHISPID[outliers_indices_2]
+
+# Summarise the outliers who will be dropped
+outliers_data_2 <- data %>%
+  filter(NHISPID %in% outliers_NHISPID_2) %>%
+  dplyr::select(intersections, NHISPID, alc_daily_g_capped_200)
+
+# Delete individuals with outliers from the data
+data_no_outliers_2 <- data %>% filter(!(NHISPID%in%outliers_data_2$NHISPID))
+
+# Review distribution of data with no outliers
+data_no_outliers_2 %>% ungroup() %>%
+  summarise("min" = min(alc_daily_g_capped_200), 
+            "max"=max(alc_daily_g_capped_200), 
+            "mean" = mean(alc_daily_g_capped_200))
+# min     max   mean
+# 0.0384  84.4  7.41
+
+#### Run model using data_no_outliers_2
+
+# re-estimate the mean_observed_grams for each intersection based on the non-outlier data
+model_data <- data_no_outliers_2 %>% group_by(intersectional_names) %>%
+  mutate(mean_observed_grams=mean(alc_daily_g_capped_200))
 
 # Prep data for use with Mlwin
-model_data <- data_3 %>%
+model_data <- model_data %>%
   mutate(cons=1) %>% 
   arrange(intersections, NHISPID)
 
 model_data$age_diaz <- droplevels(model_data$age_diaz)
-
 model_data$YEAR <- as.factor(model_data$YEAR)
 
-# Generate reference table with intersectional names & mean observed grams
+# Generate reference table with intersectional names 
 intersections_reference <- model_data %>%
   group_by(intersectional_names) %>% 
   distinct(intersections, intersectional_names, mean_observed_grams)
@@ -105,11 +130,12 @@ intersections_reference <- model_data %>%
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
                           (1 | intersections) + 
                           (1 | NHISPID), 
-                             data = model_data, 
-                             estoptions = list(EstM=1, resi.store=TRUE, resi.store.levs=c(1,2),
-                                               mcmcMeth = list(burnin = 5000,
-                                                               thinning = 50,
-                                                               resi.store=TRUE))))
+                        data = model_data, 
+                        estoptions = list(EstM=1, resi.store=TRUE, resi.store.levs=c(1,2),
+                                          mcmcMeth = list(burnin = 5000,
+                                                          thinning = 50,
+                                                          resi.store=TRUE))))
+
 # Full model
 (full_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
                           SEX + age_diaz + race_6_cats + education_3_cats +
@@ -122,8 +148,8 @@ intersections_reference <- model_data %>%
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers.rds")
+saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers_no_outliers_GL.rds")
+saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers_no_outliers_GL.rds")
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -132,8 +158,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers.rds")
+null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers_no_outliers_GL.rds")
+full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers_no_outliers_GL.rds")
 
 
 ##### CHECK MODELLING ASSUMPTIONS
@@ -220,15 +246,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers.csv")
+saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers_no_outliers_GL.rds")
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers_no_outliers_GL.csv")
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_drinkers.csv")
+write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_drinkers_no_outliers_GL.csv")
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -377,52 +403,43 @@ mdata_results <- mdata_prepped %>%
   dplyr::select(-"iteration", -"est",  -"estA", -"estI", -contains(c("b_", "u_" ))) %>%
   distinct(intersections, .keep_all=TRUE)
 
-# Merge with intersectional names reference table & group sizes
+# Merge with intersectional names reference table
 mdata_results <- inner_join(mdata_results, intersections_reference)
-mdata_results <- inner_join(mdata_results, group_sizes)
-
-# Select only the important variables
-mdata_results <- mdata_results %>% 
-  dplyr::select(intersectional_names, count, mean_observed_grams, 
-                estmn, estlo, esthi,
-                estAmn, estAlo, estAhi,
-                estImn, estIlo, estIhi) %>% 
-  mutate_if(is.numeric, round, 1)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.csv")
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.rds")
+write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.csv")
+
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.rds")
+mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.rds")
 
 # Summarise intersectional groups with the highest and lowest estimated grams
-mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
-mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
+mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
+mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>% 
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_drinkers_2009_GL_constant.csv")
+write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_drinkers_2009_no_outliers_GL_constant.csv")
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
-mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 5) 
-mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
+mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 5) %>% 
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
+mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5) %>% 
+  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_drinkers_2009_GL_constant.csv")
+write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_drinkers_2009_no_outliers_GL_constant.csv")
 
 ##### Explore face validity of estimates
-
-# Compare mean observed and estimated in a table
-temp <- mdata_results %>% dplyr::select(intersectional_names, count, mean_observed_grams, estmn) %>%
-  mutate(difference = estmn - mean_observed_grams)
+temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
 write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
-
-# Compare mean and observed grams in a plot
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
- ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_constant.png", 
+ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_no_outliers_GL_constant.png", 
        dpi=300, width=33, height=19, units="cm")
 # Interpretation: Positive correlation but generally estimates are higher than observed. 
  
@@ -431,11 +448,5 @@ temp$rank_observed_grams <-rank(temp$mean_observed_grams)
 temp$rank_estimated_grams <-rank(temp$estmn)
 ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() + 
 ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_drinkers_2009_GL_constant.png", 
-       dpi=300, width=33, height=19, units="cm")
-
-# Explore the correlation between group size and the difference between observed and estimated grams
-ggplot(temp, aes(x=difference, y=count)) + geom_point() +
-  ggtitle("Correlation between group size and the difference between observed and estimated grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/count_vs_difference_grams_drinkers_2009_GL_constant.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_drinkers_2009_no_outliers_GL_constant.png", 
        dpi=300, width=33, height=19, units="cm")
