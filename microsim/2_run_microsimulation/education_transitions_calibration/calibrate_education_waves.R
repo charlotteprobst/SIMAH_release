@@ -54,7 +54,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 200
+nsamples <- 300
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 rm(model)
 
@@ -100,52 +100,3 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% 
 Output <- do.call(rbind,Output)
 write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_inflated_allyears.csv", row.names=F)
 
-# # plot the data compared to target
-# data <- Output %>%
-#   mutate(AGECAT = cut(microsim.init.age,
-#                       breaks=c(0,24,34,44,54,64,79),
-#                       labels=c("18-24","25-34","35-44","45-54",
-#                                "55-64","65-79")),
-#          SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
-#          RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
-#                        "OTH"="Others")) %>%
-#   rename(EDUC=microsim.init.education, YEAR=year) %>%
-#   group_by(YEAR, samplenum, SEX, AGECAT, RACE,
-#            EDUC) %>%
-#   summarise(n=sum(n)) %>%
-#   ungroup() %>%
-#   group_by(YEAR, samplenum, SEX, AGECAT, RACE) %>%
-#   mutate(prop=n/sum(n), YEAR=as.integer(as.character(YEAR))) %>%
-#   dplyr::select(-n) %>% drop_na()
-# # 
-# # # read in target data 
-# targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/target_data.csv") %>%
-#   dplyr::select(-n) %>%
-#   rename(target=prop)
-# # 
-# data <- left_join(data,targets) %>%
-#   mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
-# 
-# ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"),
-#        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) +
-#   geom_line(linewidth=1) +
-#   geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +
-#   facet_grid(cols=vars(RACE), rows=vars(EDUC)) +
-#   theme_bw() +
-#   theme(legend.position = "none") +
-#   xlab("Year") +
-#   ggtitle("Men") +
-#   scale_y_continuous(labels=scales::percent)
-# # 
-# ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"),
-#        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) +
-#   geom_line(linewidth=1) +
-#   geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +
-#   facet_grid(cols=vars(RACE), rows=vars(EDUC)) +
-#   theme_bw() +
-#   theme(legend.position = "none") +
-#   xlab("Year") +
-#   ggtitle("Women") +
-#   scale_y_continuous(labels=scales::percent)
-
-                     

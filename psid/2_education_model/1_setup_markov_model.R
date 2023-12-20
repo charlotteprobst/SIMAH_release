@@ -84,7 +84,7 @@ setup_markov_model_formodel <- function(data){
                                               ifelse(data$education==15,4,
                                                      ifelse(data$education>=16,5,NA)))))
   
-  data <- data %>% drop_na(sex,age,education,final_race_using_method_hierarchy)
+  data <- data %>% drop_na(sex,age,education,final_race_using_priority_order)
   # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
     filter(totalobservations>1) %>% mutate(sex=factor(sex),
@@ -100,7 +100,7 @@ setup_markov_model_formodel <- function(data){
   data <- data %>% filter(age>=18)
   data$age <- round(data$age, digits=0)
   data$agesq <- data$age^2
-  data$racefinal2 <- as.character(data$final_race_using_method_hierarchy)
+  data$racefinal2 <- as.character(data$final_race_using_priority_order)
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$racefinal2 <- as.factor(data$racefinal2)
@@ -239,7 +239,7 @@ extract_coefficients <- function(model, type, timeperiod, data){
              "SomeC2->SomeC2"=State.3...State.3,
              "SomeC2->SomeC3"=State.3...State.4,
              "SomeC3->SomeC3"=State.4...State.4,
-             "SomeC3->College"=State.4...State.5) %>% select(-c(names)) %>% 
+             "SomeC3->College"=State.4...State.5) %>% dplyr::select(-c(names)) %>% 
       pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College")) %>% 
       pivot_longer(`LEHS->LEHS_Estimate`:`SomeC3->College_Upper`) %>% 
       separate(name, into=c("Transition","Type"),sep="_") %>% 

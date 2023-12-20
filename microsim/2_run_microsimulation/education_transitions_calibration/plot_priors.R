@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read_csv(paste0(DataDirectory, "/prior_range_inflated_allyears.csv")) %>% 
+data <- read_csv(paste0(DataDirectory, "/prior_range_inflated_allyears-2005.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -104,7 +104,7 @@ targets <- left_join(targets, newpsid)
 data <- left_join(data,targets) %>% 
   mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
 
-ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"), 
+ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
   geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +
@@ -112,10 +112,10 @@ ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"),
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
-  ggtitle("Men, 18-24 non-inflated prior") + 
+  ggtitle("Women, 18-24 model fit 2005-2019") + 
   xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_men_allyears.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_women_allyears2005.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
@@ -164,7 +164,7 @@ ggplot(data=subset(best, AGECAT=="18-24"),
   geom_line(linewidth=1) + 
   # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
   facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
-  scale_linetype_manual(values=c("dashed","solid"), labels=c("simulation","target")) + 
+  scale_linetype_manual(values=c("dotdash","solid"), labels=c("simulation","target")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
         legend.title=element_blank()) + 

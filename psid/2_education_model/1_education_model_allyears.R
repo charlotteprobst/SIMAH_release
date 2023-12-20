@@ -22,14 +22,15 @@ data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs_20
 # do the first analysis on the split time periods 
 
 # # setup the datasets for both time periods
+data <- data %>% filter(year>=2005 & year<=2019)
 
 data <- setup_markov_model_formodel(data)
 
-Q <- rbind( c(0.5, 0.5, 0, 0, 0),
-            c(0, 0.5, 0.5, 0, 0),
-            c(0, 0, 0.5, 0.5, 0),
-            c(0, 0, 0, 0.5, 0.5),
-            c(0, 0, 0, 0, 0.5))
+Q <- rbind( c(0.08, 0.08, 0, 0, 0),
+            c(0, 0.08, 0.08, 0, 0),
+            c(0, 0, 0.08, 0.08, 0),
+            c(0, 0, 0, 0.08, 0.08),
+            c(0, 0, 0, 0, 0.08))
 
 # data$timevary <- cut(data$year,
 #                      breaks=c(0,2005,2011,2018),
@@ -48,13 +49,23 @@ length(unique(data$newID))
 # specify baseline models - just race and ethnicity 
 Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=data)
 
+# E <- rbind( c(0, 0.1, 0, 0, 0),
+#        c(0.1, 0, 0.1, 0, 0),
+#        c(0, 0, 0, 0.1, 0),
+#        c(0, 0, 0, 0, 0.1),
+#        c(0, 0, 0, 0.1, 0))
+
 model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                                    center=FALSE,
                                    covariates=~agecat + sex + racefinal2,
-                        control=list(trace=1, fnscale=2543177, maxit=200))
+                        # control=list(trace=1, fnscale=2543177, maxit=200),
+             # opt.method="BFGS",
+             est.initprobs = TRUE)
 model
 
-saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes.RDS")
+saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005.RDS")
+
+
 # saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
 # saveRDS(modelt3, "SIMAH_workplace/education_transitions/final_models/formodel_modelt3_sophie.RDS")
 
@@ -107,3 +118,23 @@ model <- msm(educNUM~year, newID, data=other, qmatrix=Q,
 model
 saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_other.RDS")
 
+data <- data %>% filter(year<=2019)
+extractedmodel1 <- extract_coefficients(model, "original","1999-2019",data)
+
+data <- data %>% filter(year>=2005 & year<=2019)
+# explore the different models 
+extractedmodel2 <- extract_coefficients(model2, "new", "2005-2019", data)
+
+extracted <- rbind(extractedmodel1, extractedmodel2) %>% ungroup() %>% 
+  dplyr::select(Variable, Transition, time, Estimate, newLower, newUpper) %>% 
+  mutate(Estimate=round(Estimate, digits=2),
+         Estimate = paste0(Estimate, " (", newLower, ",",newUpper,")")) %>% 
+  dplyr::select(-c(newLower:newUpper)) %>% 
+  mutate(Variable = gsub("agecat","",Variable),
+         Variable=gsub("racefinal2", "",Variable),
+         Variable = ifelse(Variable=="sex1","Female",Variable),
+         Variable = str_to_title(Variable)) %>% 
+  pivot_wider(names_from=Transition, values_from=Estimate)
+getwd()
+write.csv(extracted, "SIMAH_workplace/microsim/2_output_data/education_calibration/model_compare.csv",
+          row.names=F)
