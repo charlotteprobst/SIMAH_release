@@ -88,34 +88,52 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
 
       #CHECK THIS
       IHD <- list(
-        c("qnorm", 0.1655144, 0.07338828), #B_IHD_LEHS_MEN SD 0.07338828
-        c("qnorm", 0.3148107, 0.09054446), #B_IHD_SomeC_MEN SD 0.09054446
-        c("qnorm", 0.2926696, 0.08164473), #B_IHD_LEHS_WOMEN SD 0.08164473
-        c("qnorm", 0.2070142, 0.08827594), #B_IHD_SomeC_WOMEN SD 0.08827594
-        c("qnorm", -0.4155154, 0.076723), #B_IHD_CAT1_MEN SD 0.076723
-        c("qnorm", -0.3566749, 0.1303127), #B_IHD_CAT2_MEN SD 0.1303127
-        c("qnorm", -0.03045921, 0.2029148), #B_IHD_CAT3_MEN SD 0.2029148
-        c("qnorm", -0.1508229, 0.2647928), #B_IHD_CAT4_MEN SD 0.2647928
-        c("qnorm", -0.6931472, 0.1055006), #B_IHD_CAT1_WOMEN SD 0.1055006
-        c("qnorm", -0.5447272, 0.2647928), #B_IHD_CAT2_WOMEN SD 0.2647928
-        c("qnorm", -0.05129329, 0.07260935), #B_IHD_LEHSxCAT1_MEN SD 0.07260935
-        c("qnorm", 0, 0.1065651), #B_IHD_LEHSxCAT2_MEN SD 0.1065651
-        c("qnorm", -0.0618754, 0.146327), #B_IHD_LEHSxCAT3_MEN SD 0.146327
-        c("qnorm", 0.3784364, 0.1460508), #B_IHD_LEHSxCAT4_MEN SD 0.1460508
-        c("qnorm", -0.08338161, 0.08064286), #B_IHD_SomeCxCAT1_MEN SD 0.08064286
-        c("qnorm", -0.2613648, 0.1346002), #B_IHD_SomeCxCAT2_MEN SD 0.1346002
-        c("qnorm", 0.3220835, 0.1585004), #B_IHD_SomeCxCAT3_MEN SD 0.1585004
-        c("qnorm", 0.04879016, 0.1906159), #B_IHD_SomeCxCAT4_MEN SD 0.1906159
-        c("qnorm", -0.09431068, 0.0863076), #B_IHD_LEHSxCAT1_WOMEN SD 0.0863076
-        c("qnorm", -0.2613648, 0.09098851), #B_IHD_LEHSxCAT2_WOMEN SD 0.09098851
-        c("qnorm", -0.1743534, 0.1815042), #B_IHD_SomeCxCAT1_WOMEN SD 0.1815042
-        c("qnorm", -0.210721, 0.205818), #B_IHD_SomeCxCAT2_WOMEN SD 0.205818
-        c("qnorm", 0.05826891,  0.1161195), #IHD_FD_MEN SD  0.1161195
-        c("qnorm", 0.1222176,  0.1800321), #IHD_FD_WOMEN SD  0.1800321
-        c("qnorm", 0.2468601,  0.07510615), #IHD_LEHSxFD_MEN SD  0.07510615
-        c("qnorm", 0.1988509, 0.1017286), #IHD_SomeCxFD_MEN SD 0.1017286
-        c("qnorm", 0.4054651,  0.09788906), #IHD_LEHSxFD_WOMEN SD  0.09788906
-        c("qnorm", 0.05826891, 0.1327894)), #IHD_SomeCxFD_WOMEN SD 0.1327894
+        c("qnorm", 0.2468601, 0.05558992), #B_IHD_LEHS SD 0.05558992
+        c("qnorm", 0.2623643, 0.06485565), #B_IHD_SomeC SD 0.06485565
+        c("qnorm", -0.4780358, 0.06152093), #B_IHD_CAT1 SD 0.06152093
+        c("qnorm", -0.3710637, 0.1140342), #B_IHD_CAT2 SD 0.1140342
+        c("qnorm", -0.01005034, 0.2004439), #B_IHD_CAT3 SD 0.2004439
+        c("qnorm", -0.1053605, 0.2606253), #B_IHD_CAT4 SD 0.2606253
+        c("qnorm", 0.1570037, 0.0715056), #B_IHD_LEHSxCAT1 SD 0.0715056
+        c("qnorm", 0.0861777, 0.1387765), #B_IHD_LEHSxCAT2 SD 0.1387765
+        c("qnorm", -0.2744368, 0.2433351), #B_IHD_LEHSxCAT3 SD 0.2433351
+        c("qnorm", 0.2700271, 0.291498), #B_IHD_LEHSxCAT4 SD 0.291498
+        c("qnorm", 0.09531018, 0.08074429), #B_IHD_SomeCxCAT1 SD 0.08074429
+        c("qnorm", -0.1165338, 0.1525094), #B_IHD_SomeCxCAT2 SD 0.1525094
+        c("qnorm", 0.10436, 0.2590978), #B_IHD_SomeCxCAT3 SD 0.2590978
+        c("qnorm", -0.0618754, 0.3021823), #B_IHD_SomeCxCAT4 SD 0.3021823
+        c("qnorm", 0.0861777,  0.09770211), #IHD_FD SD  0.09770211
+        c("qnorm", -0.03045921,  0.1077588), #IHD_LEHSxFD SD  0.1077588
+        c("qnorm", 0.09531018, 0.1232587)), #IHD_SomeCxFD SD 0.1232587
+        
+        # c("qnorm", 0.1655144, 0.07338828), #B_IHD_LEHS_MEN SD 0.07338828
+        # c("qnorm", 0.3148107, 0.09054446), #B_IHD_SomeC_MEN SD 0.09054446
+        # c("qnorm", 0.2926696, 0.08164473), #B_IHD_LEHS_WOMEN SD 0.08164473
+        # c("qnorm", 0.2070142, 0.08827594), #B_IHD_SomeC_WOMEN SD 0.08827594
+        # c("qnorm", -0.4155154, 0.076723), #B_IHD_CAT1_MEN SD 0.076723
+        # c("qnorm", -0.3566749, 0.1303127), #B_IHD_CAT2_MEN SD 0.1303127
+        # c("qnorm", -0.03045921, 0.2029148), #B_IHD_CAT3_MEN SD 0.2029148
+        # c("qnorm", -0.1508229, 0.2647928), #B_IHD_CAT4_MEN SD 0.2647928
+        # c("qnorm", -0.6931472, 0.1055006), #B_IHD_CAT1_WOMEN SD 0.1055006
+        # c("qnorm", -0.5447272, 0.2647928), #B_IHD_CAT2_WOMEN SD 0.2647928
+        # c("qnorm", -0.05129329, 0.07260935), #B_IHD_LEHSxCAT1_MEN SD 0.07260935
+        # c("qnorm", 0, 0.1065651), #B_IHD_LEHSxCAT2_MEN SD 0.1065651
+        # c("qnorm", -0.0618754, 0.146327), #B_IHD_LEHSxCAT3_MEN SD 0.146327
+        # c("qnorm", 0.3784364, 0.1460508), #B_IHD_LEHSxCAT4_MEN SD 0.1460508
+        # c("qnorm", -0.08338161, 0.08064286), #B_IHD_SomeCxCAT1_MEN SD 0.08064286
+        # c("qnorm", -0.2613648, 0.1346002), #B_IHD_SomeCxCAT2_MEN SD 0.1346002
+        # c("qnorm", 0.3220835, 0.1585004), #B_IHD_SomeCxCAT3_MEN SD 0.1585004
+        # c("qnorm", 0.04879016, 0.1906159), #B_IHD_SomeCxCAT4_MEN SD 0.1906159
+        # c("qnorm", -0.09431068, 0.0863076), #B_IHD_LEHSxCAT1_WOMEN SD 0.0863076
+        # c("qnorm", -0.2613648, 0.09098851), #B_IHD_LEHSxCAT2_WOMEN SD 0.09098851
+        # c("qnorm", -0.1743534, 0.1815042), #B_IHD_SomeCxCAT1_WOMEN SD 0.1815042
+        # c("qnorm", -0.210721, 0.205818), #B_IHD_SomeCxCAT2_WOMEN SD 0.205818
+        # c("qnorm", 0.05826891,  0.1161195), #IHD_FD_MEN SD  0.1161195
+        # c("qnorm", 0.1222176,  0.1800321), #IHD_FD_WOMEN SD  0.1800321
+        # c("qnorm", 0.2468601,  0.07510615), #IHD_LEHSxFD_MEN SD  0.07510615
+        # c("qnorm", 0.1988509, 0.1017286), #IHD_SomeCxFD_MEN SD 0.1017286
+        # c("qnorm", 0.4054651,  0.09788906), #IHD_LEHSxFD_WOMEN SD  0.09788906
+        # c("qnorm", 0.05826891, 0.1327894)), #IHD_SomeCxFD_WOMEN SD 0.1327894
         
       # ISTR <- list(
       #   c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389
@@ -153,12 +171,10 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
                         "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_FD_LEHS","AUD_FD_SomeC")
   #names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   #names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
-  names(prior$IHD) <- c("B_IHD_LEHS_MEN", "B_IHD_SomeC_MEN", "B_IHD_LEHS_WOMEN", "B_IHD_SomeC_WOMEN",
-                        "B_IHD_CAT1_MEN", "B_IHD_CAT2_MEN", "B_IHD_CAT3_MEN", "B_IHD_CAT4_MEN", "B_IHD_CAT1_WOMEN", "B_IHD_CAT2_WOMEN",
-                        "B_IHD_LEHSxCAT1_MEN", "B_IHD_LEHSxCAT2_MEN", "B_IHD_LEHSxCAT3_MEN", "B_IHD_LEHSxCAT4_MEN",
-                        "B_IHD_SomeCxCAT1_MEN", "B_IHD_SomeCxCAT2_MEN", "B_IHD_SomeCxCAT3_MEN", "B_IHD_SomeCxCAT4_MEN",
-                        "B_IHD_LEHSxCAT1_WOMEN", "B_IHD_LEHSxCAT2_WOMEN", "B_IHD_SomeCxCAT1_WOMEN", "B_IHD_SomeCxCAT2_WOMEN",
-                        "IHD_FD_MEN","IHD_FD_WOMEN", "IHD_LEHSxFD_MEN","IHD_SomeCxFD_MEN","IHD_LEHSxFD_WOMEN", "IHD_SomeCxFD_WOMEN")
+  names(prior$IHD) <- c("B_IHD_LEHS", "B_IHD_SomeC", "B_IHD_CAT1", "B_IHD_CAT2", "B_IHD_CAT3", "B_IHD_CAT4",
+                        "B_IHD_LEHSxCAT1", "B_IHD_LEHSxCAT2", "B_IHD_LEHSxCAT3", "B_IHD_LEHSxCAT4",
+                        "B_IHD_SomeCxCAT1", "B_IHD_SomeCxCAT2", "B_IHD_SomeCxCAT3", "B_IHD_SomeCxCAT4",
+                        "IHD_FD", "IHD_LEHSxFD","IHD_SomeCxFD")
   #names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   #names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   #names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")

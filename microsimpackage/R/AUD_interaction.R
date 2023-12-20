@@ -50,17 +50,16 @@ AUDInteraction <- function(data,lhs){
 
   data <- data %>%
     mutate(RR_AUD = ifelse(microsim.init.education=="LEHS",
-                           exp(B_AUD_LEHS + B_AUD_GPD*microsim.init.alc.gpd + B_AUD_LEHSxGPD*microsim.init.alc.gpd),
+                           exp(B_AUD_LEHS + B_AUD_GPD*(microsim.init.alc.gpd/14) + B_AUD_LEHSxGPD*(microsim.init.alc.gpd/14)),
                            ifelse(microsim.init.education=="SomeC",
-                                  exp(B_AUD_SomeC + B_AUD_GPD*microsim.init.alc.gpd + B_AUD_SomeCxGPD*microsim.init.alc.gpd),
-                                  ifelse(microsim.init.education=="College",
-                                         exp(B_AUD_GPD*microsim.init.alc.gpd), NA))),
+                                  exp(B_AUD_SomeC + B_AUD_GPD*(microsim.init.alc.gpd/14) + B_AUD_SomeCxGPD*(microsim.init.alc.gpd/14)),
+                                  exp(B_AUD_GPD*(microsim.init.alc.gpd/14)))),
            RR_AUD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS",
-                           exp(AUD_FD_LEHS + AUD_FD*microsim.init.alc.gpd + AUD_LEHSxFD*microsim.init.alc.gpd),
+                           exp(AUD_FD_LEHS + AUD_FD + AUD_LEHSxFD),
                            ifelse(formerdrinker==1 & microsim.init.education=="SomeC",
-                                  exp(AUD_FD_SomeC + AUD_FD*microsim.init.alc.gpd + AUD_SomeCxFD*microsim.init.alc.gpd),
+                                  exp(AUD_FD_SomeC + AUD_FD + AUD_SomeCxFD),
                                   ifelse(formerdrinker==1 & microsim.init.education=="College",
-                                         exp(AUD_FD*microsim.init.alc.gpd), RR_AUD))))
+                                         exp(AUD_FD), RR_AUD))))
       return(data)
 }
    
@@ -91,5 +90,5 @@ AUDInteraction <- function(data,lhs){
 
 
 # test for exploring the RR dose response curve
-#test <- data %>% dplyr::select(microsim.init.sex, microsim.init.education, microsim.init.alc.gpd, RR_AUD) %>% distinct()
+#test <- basepop %>% dplyr::select(microsim.init.sex, microsim.init.education, microsim.init.alc.gpd, RR_AUD) %>% distinct()
 #ggplot(test, aes(x=microsim.init.alc.gpd, y=RR_AUD)) + geom_point() + facet_grid(cols=vars(microsim.init.education), rows=vars(microsim.init.sex), scales="free")

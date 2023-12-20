@@ -17,7 +17,7 @@ CirrhosisAllInteraction <- function(data,lhs){
     B_LIVER_SomeC <- as.numeric(lhs["B_LIVER_SomeC"])
     B_LIVER_GPD <- as.numeric(lhs["B_LIVER_GPD"])
     B_LIVER_LEHSxGPD <- as.numeric(lhs["B_LIVER_LEHSxGPD"])
-    B_LIVER_SomeCxGPD_MEN <- as.numeric(lhs["B_LIVER_SomeCxGPD"])
+    B_LIVER_SomeCxGPD <- as.numeric(lhs["B_LIVER_SomeCxGPD"])
   
   # B_LIVER_LEHS_MEN <- as.numeric(lhs["B_LIVER_LEHS_MEN"])
   # B_LIVER_SomeC_MEN <- as.numeric(lhs["B_LIVER_SomeC_MEN"])
@@ -49,14 +49,13 @@ CirrhosisAllInteraction <- function(data,lhs){
                                 exp(B_LIVER_LEHS + B_LIVER_GPD*microsim.init.alc.gpd + B_LIVER_LEHSxGPD*microsim.init.alc.gpd),
                                 ifelse(microsim.init.education=="SomeC",
                                       exp(B_LIVER_SomeC + B_LIVER_GPD*microsim.init.alc.gpd + B_LIVER_SomeCxGPD*microsim.init.alc.gpd),
-                                      ifelse(microsim.init.education=="College",
-                                             exp(B_LIVER_GPD*microsim.init.alc.gpd), NA))),
+                                      exp(B_LIVER_GPD*microsim.init.alc.gpd))),
            RR_LVDC = ifelse(formerdrinker==1 & microsim.init.education=="LEHS", 
-                                  exp(LIVER_FD_LEHS + LIVER_FD*microsim.init.alc.gpd + LIVER_LEHSxFD*microsim.init.alc.gpd),
+                                  exp(LIVER_FD_LEHS + LIVER_FD + LIVER_LEHSxFD),
                                   ifelse(formerdrinker==1 & microsim.init.education=="SomeC",
-                                         exp(LIVER_FD_SomeC + LIVER_FD*microsim.init.alc.gpd + LIVER_SomeCxFD*microsim.init.alc.gpd),
+                                         exp(LIVER_FD_SomeC + LIVER_FD + LIVER_SomeCxFD),
                                          ifelse(formerdrinker==1 & microsim.init.education=="College",
-                                                exp(LIVER_FD*microsim.init.alc.gpd), RR_LVDC))))
+                                                exp(LIVER_FD), RR_LVDC))))
   return(data)
 }
 
