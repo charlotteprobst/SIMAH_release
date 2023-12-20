@@ -21,6 +21,29 @@ generate_population <- function(TPs, sizepop){
   return(population1)
 }
 
+generate_population_race_sex_interaction <- function(TPs, sizepop, race, sex){
+  race <- race
+  sex <- sex
+  age <- unique(TPs$age)
+  
+  samplecats <- expand.grid(race=race,sex=sex,age=age) %>% 
+    mutate(samplecats = paste(race, sex,age, sep="_"))
+  samplecats <- samplecats$samplecats
+  sampleprobs <- rep(1/length(samplecats), times=length(samplecats))
+  
+  population1 <- data.frame(sample(samplecats, sizepop, replace=T, prob=sampleprobs))
+  names(population1)[1] <- "cats"
+  population1 <- population1 %>% separate(cats, into=c("race","sex","age"), sep="_") %>% 
+    mutate(id = 1:nrow(population1)) %>%
+    select(id, race=race,sex=sex,age=age) %>% 
+    mutate(age=18,
+           state="LEHS",
+           cat = paste(race=race,sex=sex,age=age, "STATEFROM", state, sep="_")) %>%
+    dplyr::select(-state) %>%
+    
+    return(population1)
+}
+
 simulate_population <- function(population, TPs, timeperiod){
   if(timeperiod=="1999-2005"){
     minyear <- 1999

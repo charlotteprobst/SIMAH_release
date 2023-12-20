@@ -17,10 +17,12 @@ setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 source("SIMAH_code/education_transitions/2021/functions/0_transition_population_2021.R")
 
-TPs <- read.csv("SIMAH_workplace/education_transitions/2021/model 5 2012_2018 as reference category/TPs/annual_education_TPs_model_5_alt_ref_cats.csv")
+TPs <- read.csv("SIMAH_workplace/education_transitions/2021/model 5 2012_2018 as reference category/TPs/annual_education_TPs_model_5_alt_ref_cats_black_men_detail.csv")
 
 # Generate a column of transition
 TPs <- TPs %>% mutate(
+  race="black", 
+  sex=0,
   StateFrom = case_when(
   StateFrom == "State 1" ~ "LEHS",
   StateFrom == "State 2" ~ "SomeC1",
@@ -42,11 +44,10 @@ TPs_allowed <- TPs %>% filter(Transition=="LEHS->LEHS"|Transition=="LEHS->HS"|
                               Transition=="SomeC1->SomeC1"|Transition=="SomeC1->SomeC2"|
                               Transition=="SomeC2->SomeC2"|Transition=="SomeC2->SomeC3"|
                               Transition=="SomeC3->SomeC3"|Transition=="SomeC3->College"|
-                              Transition=="College->College")
+                              Transition=="College->College") 
+write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/2021/model 5 2012_2018 as reference category/TPs/TPs_allowed_2021_model5_alt_ref_cats_black_men.csv")
 
-write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/TPs_allowed_2021_model5_alt_ref_cats.csv")
-
-population <- generate_population(TPs, 1000000) # population starts all aged 18.
+population <- generate_population_race_sex_interaction(TPs, 1000000, "black", 0) # population starts all aged 18.
 
 # Simulate the population forward based on the model with a time covariate covering all years 
 simulatedpop2005 <- simulate_population(population, TPs, "1999-2005") 
@@ -71,19 +72,6 @@ education_at_26 <- output %>%
 education_at_26$education <- factor(education_at_26$education,
                                     levels = c("LEHS", "SomeC1", "SomeC2", "SomeC3", "College"))
 
-# by age 26 where have people ended up (by race and sex)
-education_at_26_race_sex <- output %>%
-  filter(age == "26") %>%
-  group_by(period, sex, race, education) %>%
-  summarise(Nperperiod = n()) %>%
-  group_by(period, sex, race) %>%
-  mutate(Percentage = (Nperperiod / sum(Nperperiod)) * 100)
-
-# Define the order of education levels
-education_at_26_race_sex$education <- factor(education_at_26_race_sex$education,
-                                    levels = c("LEHS", "SomeC1", "SomeC2", "SomeC3", "College"))
-
-
 # Generate plots
 
 # Generate a colour blind friendly pallete:
@@ -102,22 +90,10 @@ ggplot(education_at_26, aes(x = period, y = Percentage, fill = education)) +
 # Plotting stacked bar chart
 ggplot(education_at_26, aes(x = period, y = Percentage, fill = education)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Percentage of simulated individuals,  in each education group by age 26",
+  labs(title = "Percentage of simulated Black males in each education category, by age 26",
        x = "Time period used to model simulated individuals",
        y = "Percentage") +
   scale_fill_manual(values=cbPalette) +  
   theme_minimal() +
   theme(legend.position = "bottom") 
-ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked.png", dpi=300, width = 12, height = 7)
-
-# Plotting separate plots for each sex and race combination using facet_grid
-ggplot(education_at_26_race_sex, aes(x = period, y = Percentage, fill = education)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Percentage of simulated individuals,  in each education group by age 26+",
-       x = "Time period used to model simulated individuals",
-       y = "Percentage") +
-  scale_fill_brewer(palette = "Set2") +  # Adjust fill colors as needed
-  theme_minimal() +
-  facet_grid(sex ~ race)  # Creating a grid of plots for each combination of sex and race
-ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_sex_race_stacked.png", dpi=300, width = 12, height = 7)
-
+ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked_black_men.png", dpi=300, width = 12, height = 7)

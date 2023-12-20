@@ -25,6 +25,7 @@ white <- data %>% filter(racefinal2=="white")
 black <- data %>% filter(racefinal2=="black")
 hispanic <- data %>% filter(racefinal2=="hispanic")
 other <- data %>% filter(racefinal2=="other")
+black_men <- data %>% filter(racefinal2=="black", sex==0)
 
 # Load MSM Models 
 modelt5 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_alt_ref_cats.RDS")
@@ -51,8 +52,9 @@ modelt5_TPs_men <- extractTPs_basic(modelt5_men, 1) # interaction for sex (men o
 modelt5_TPs_women <- extractTPs_basic(modelt5_women, 1) # interaction for sex (women only)
 modelt5_TPs_white <- extractTPs_basic(modelt5_white, 1) # interaction for race (white only)
 modelt5_TPs_black <- extractTPs_basic(modelt5_black, 1) # interaction for race (black only)
-modelt5_TPs_hispanic <- extractTPs_basic(modelt5_hispanic, 1) # interaction for hispanic (hispanic only)
-modelt5_TPs_other <- extractTPs_basic(modelt5_other, 1) # interaction for other (other only)
+modelt5_TPs_hispanic <- extractTPs_basic(modelt5_hispanic, 1) # interaction for race (hispanic only)
+modelt5_TPs_other <- extractTPs_basic(modelt5_other, 1) # interaction for race (other only)
+modelt5_TPs_black_men <- extractTPs_basic(modelt5_black_men, 1) # interaction for race and sex (Black men only)
 
 # Save results
 write_csv(modelt5_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats.csv")
@@ -62,6 +64,7 @@ write_csv(modelt5_TPs_white, "SIMAH_workplace/education_transitions/2021/annual_
 write_csv(modelt5_TPs_black, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black.csv")
 write_csv(modelt5_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_hispanic.csv")
 write_csv(modelt5_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_other.csv")
+write_csv(modelt5_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_men.csv")
 
 ##################################################################
 
@@ -89,6 +92,9 @@ hispanic$time_1 <- cut(hispanic$year,
 other$time_1 <- cut(other$year,
                     breaks=c(0,2005,2011,2018, 2021),
                     labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+black_men$time_1 <- cut(black_men$year,
+                        breaks=c(0,2005,2011,2018, 2021),
+                        labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
 
 combo_2 <- expand.grid(timevary = unique(data$time_1), agecat = unique(data$agecat), sex = unique(data$sex), racefinal2=unique(data$racefinal2))
 combo_2_men <- expand.grid(timevary = unique(men$time_1), agecat = unique(men$agecat), racefinal2=unique(men$racefinal2))
@@ -97,6 +103,7 @@ combo_2_white <- expand.grid(timevary = unique(white$time_1), agecat = unique(wh
 combo_2_black <- expand.grid(timevary = unique(black$time_1), agecat = unique(black$agecat), sex=unique(black$sex))
 combo_2_hispanic <- expand.grid(timevary = unique(hispanic$time_1), agecat = unique(hispanic$agecat), sex=unique(hispanic$sex))
 combo_2_other <- expand.grid(timevary = unique(other$time_1), agecat = unique(other$agecat), sex=unique(other$sex))
+combo_2_black_men <- expand.grid(timevary = unique(black_men$time_1), agecat = unique(black_men$agecat))
 
 modelt5_TPs_detail <- extractTP_incl_time(modelt5, combo_2)
 modelt5_TPs_men_detail <- extractTP_interaction_sex(modelt5_men,combo_2_men)
@@ -105,6 +112,7 @@ modelt5_TPs_white_detail <- extractTP_interaction_race(modelt5_white,combo_2_whi
 modelt5_TPs_black_detail <- extractTP_interaction_race(modelt5_black,combo_2_black)
 modelt5_TPs_hispanic_detail <- extractTP_interaction_race(modelt5_hispanic,combo_2_hispanic)
 modelt5_TPs_other_detail <- extractTP_interaction_race(modelt5_other,combo_2_other)
+modelt5_TPs_black_men_detail <- extractTP_interaction_race_sex(modelt5_black_men,combo_2_black_men)
 
 # Save results
 write_csv(modelt5_TPs_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats.csv")
@@ -114,6 +122,7 @@ write_csv(modelt5_TPs_white_detail, "SIMAH_workplace/education_transitions/2021/
 write_csv(modelt5_TPs_black_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_detail.csv")
 write_csv(modelt5_TPs_hispanic_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_hispanic_detail.csv")
 write_csv(modelt5_TPs_other_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_other_detail.csv")
+write_csv(modelt5_TPs_black_men_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_men_detail.csv")
 
 ########################################
 # Hazard ratios
