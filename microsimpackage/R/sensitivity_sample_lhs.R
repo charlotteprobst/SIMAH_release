@@ -168,7 +168,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
                          "LIVER_FD_LEHS","LIVER_FD_SomeC","LIVER_FD","LIVER_LEHSxFD","LIVER_SomeCxFD")
   #names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD_LEHS","B_AUD_SomeC","B_AUD_GPD","B_AUD_LEHSxGPD","B_AUD_SomeCxGPD",
-                        "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_FD_LEHS","AUD_FD_SomeC")
+                        "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_LEHSxFD","AUD_SomeCxFD")
   #names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   #names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
   names(prior$IHD) <- c("B_IHD_LEHS", "B_IHD_SomeC", "B_IHD_CAT1", "B_IHD_CAT2", "B_IHD_CAT3", "B_IHD_CAT4",
