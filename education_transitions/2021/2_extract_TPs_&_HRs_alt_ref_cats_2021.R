@@ -57,45 +57,34 @@ modelt5_TPs_other <- extractTPs_basic(modelt5_other, 1) # interaction for race (
 modelt5_TPs_black_men <- extractTPs_basic(modelt5_black_men, 1) # interaction for race and sex (Black men only)
 
 # Save results
-write_csv(modelt5_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats.csv")
-write_csv(modelt5_TPs_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_men.csv")
-write_csv(modelt5_TPs_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_women.csv")
-write_csv(modelt5_TPs_white, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_white.csv")
-write_csv(modelt5_TPs_black, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black.csv")
-write_csv(modelt5_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_hispanic.csv")
-write_csv(modelt5_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_other.csv")
-write_csv(modelt5_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_men.csv")
+# write_csv(modelt5_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats.csv")
+# write_csv(modelt5_TPs_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_men.csv")
+# write_csv(modelt5_TPs_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_women.csv")
+# write_csv(modelt5_TPs_white, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_white.csv")
+# write_csv(modelt5_TPs_black, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black.csv")
+# write_csv(modelt5_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_hispanic.csv")
+# write_csv(modelt5_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_other.csv")
+# write_csv(modelt5_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_men.csv")
 
 ##################################################################
 
-# Extract TPs for specific groups
-
-##### include covariates for time period (for models 5 & 6)
-data$time_1 <- cut(data$year,
-                       breaks=c(0,2005,2011,2018, 2021),
-                       labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-men$time_1 <- cut(men$year,
-                  breaks=c(0,2005,2011,2018, 2021),
-                  labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-women$time_1 <- cut(women$year,
-                  breaks=c(0,2005,2011,2018, 2021),
-                  labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-white$time_1 <- cut(white$year,
-                  breaks=c(0,2005,2011,2018, 2021),
-                  labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-black$time_1 <- cut(black$year,
-                    breaks=c(0,2005,2011,2018, 2021),
-                    labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-hispanic$time_1 <- cut(hispanic$year,
-                  breaks=c(0,2005,2011,2018, 2021),
-                  labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-other$time_1 <- cut(other$year,
-                    breaks=c(0,2005,2011,2018, 2021),
-                    labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
-black_men$time_1 <- cut(black_men$year,
+# Cut 'year' variable into four time periods ('time_1') 
+cutYearIntoIntervals <- function(dataset) {
+  dataset$time_1 <- cut(dataset$year,
                         breaks=c(0,2005,2011,2018, 2021),
                         labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+  return(dataset)
+}
 
+data <- cutYearIntoIntervals(data)
+men <- cutYearIntoIntervals(women)
+white <- cutYearIntoIntervals(white)
+black <- cutYearIntoIntervals(black)
+hispanic <- cutYearIntoIntervals(hispanic)
+other <- cutYearIntoIntervals(other)
+black_men <- cutYearIntoIntervals(black_men)
+
+# Extract all possible combos of individuals to transition
 combo_2 <- expand.grid(timevary = unique(data$time_1), agecat = unique(data$agecat), sex = unique(data$sex), racefinal2=unique(data$racefinal2))
 combo_2_men <- expand.grid(timevary = unique(men$time_1), agecat = unique(men$agecat), racefinal2=unique(men$racefinal2))
 combo_2_women <- expand.grid(timevary = unique(women$time_1), agecat = unique(women$agecat), racefinal2=unique(women$racefinal2))
