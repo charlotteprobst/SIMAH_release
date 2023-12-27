@@ -71,6 +71,14 @@ data_3 <- data_2 %>%
   group_by(intersections) %>%
   mutate(mean_observed_grams = mean(alc_daily_g_capped_200))
 
+# Prep data for use with Mlwin
+model_data <- data_3 %>%
+  mutate(cons=1) %>% 
+  arrange(intersections, NHISPID)
+
+model_data$age_diaz <- droplevels(model_data$age_diaz)
+
+model_data$YEAR <- as.factor(model_data$YEAR)
 # Save
 saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.rds")
 
@@ -87,19 +95,18 @@ group_sizes <- temp %>%
   distinct(intersections, .keep_all = TRUE) %>% 
   dplyr::select(intersectional_names, count) 
 
-# Prep data for use with Mlwin
-model_data <- data_3 %>%
-  mutate(cons=1) %>% 
-  arrange(intersections, NHISPID)
-
-model_data$age_diaz <- droplevels(model_data$age_diaz)
-
-model_data$YEAR <- as.factor(model_data$YEAR)
-
 # Generate reference table with intersectional names & mean observed grams
 intersections_reference <- model_data %>%
   group_by(intersectional_names) %>% 
   distinct(intersections, intersectional_names, mean_observed_grams)
+
+# Generate reference table with intersectional names & mean observed grams for the year 2009 only
+intersections_reference_2009 <- model_data %>%
+  filter(YEAR==2009) %>%
+  group_by(intersections) %>%
+  mutate(count_2009=n(),
+         mean_observed_grams_2009 = mean(alc_daily_g_capped_200))%>% 
+  distinct(intersections, intersectional_names, count_2009, mean_observed_grams_2009)
 
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
@@ -138,28 +145,7 @@ full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/in
 
 ##### CHECK MODELLING ASSUMPTIONS
 
-## Null model
-# # Histogram of residuals
-# hist(residuals(null_grams))
-# # Heteroskedasticity of residuals
-# plot(fitted(null_grams), resid(null_grams))
-# abline(h = 0, lty = 2, col = "red")
-# # QQ plot
-# qqnorm(residuals(null_grams))
-# qqline(residuals(null_grams), col = "steelblue", lwd = 2)
-# 
-# ## Full model
-# hist(residuals(full_grams))
-# # Heteroskedasticity of residuals
-# plot(fitted(full_grams), resid(full_grams))
-# abline(h = 0, lty = 2, col = "red")
-# # QQ plot
-# qqnorm(residuals(full_grams))
-# qqline(residuals(full_grams), col = "steelblue", lwd = 2)
-
-
-## Null model
-## Level 1 residuals
+## Null model, level 1 residuals
 hist(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
 plot(null_grams["residual"][["lev_1_resi_est_Intercept"]])
@@ -167,7 +153,7 @@ abline(h = 0, lty = 2, col = "red")
 # QQ plot
 qqnorm(null_grams["residual"][["lev_1_resi_est_Intercept"]])
 qqline(null_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
-## Level 2 residuals
+## Null model, level 2 residuals
 hist(null_grams["residual"][["lev_2_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
 plot(null_grams["residual"][["lev_2_resi_est_Intercept"]])
@@ -176,8 +162,7 @@ abline(h = 0, lty = 2, col = "red")
 qqnorm(null_grams["residual"][["lev_2_resi_est_Intercept"]])
 qqline(null_grams["residual"][["lev_2_resi_est_Intercept"]], col = "steelblue", lwd = 2)
 
-### Full model
-## Level 1 residuals
+### Full model, level 1 residuals
 hist(full_grams["residual"][["lev_1_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
 plot(full_grams["residual"][["lev_1_resi_est_Intercept"]])
@@ -185,7 +170,7 @@ abline(h = 0, lty = 2, col = "red")
 # QQ plot
 qqnorm(full_grams["residual"][["lev_1_resi_est_Intercept"]])
 qqline(full_grams["residual"][["lev_1_resi_est_Intercept"]], col = "steelblue", lwd = 2)
-## Level 2 residuals
+## Full model, level 2 residuals
 hist(full_grams["residual"][["lev_2_resi_est_Intercept"]])
 # Heteroskedasticity of residuals
 plot(full_grams["residual"][["lev_2_resi_est_Intercept"]])
@@ -413,10 +398,17 @@ write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace
 
 ##### Explore face validity of estimates
 
-# Compare mean observed and estimated in a table
+# Compare mean observed (overall) and estimated in a table
 temp <- mdata_results %>% dplyr::select(intersectional_names, count, mean_observed_grams, estmn) %>%
-  mutate(difference = estmn - mean_observed_grams)
+  mutate(difference = estmn - mean_observed_grams,
+         percent_difference = abs(difference/estmn*100))
 write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
+
+# Compare mean observed (2009 observed only) and estimated in a table
+temp_2009 <- mdata_results %>% left_join(., intersections_reference_2009) %>%
+  dplyr::select(intersectional_names, count_2009, mean_observed_grams_2009, estmn) %>%
+  mutate(difference = estmn - mean_observed_grams_2009)
+write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only - 2009.csv")
 
 # Compare mean and observed grams in a plot
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
@@ -438,4 +430,46 @@ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality
 ggplot(temp, aes(x=difference, y=count)) + geom_point() +
   ggtitle("Correlation between group size and the difference between observed and estimated grams")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/count_vs_difference_grams_drinkers_2009_GL_constant.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+### New versions of plots to make more interpretable
+
+# Observed vs estimated grams:  
+# 1) on log scale 
+temp_log <- mdata_results %>%
+  mutate(log_observed_mean_all_years = log(mean_observed_grams),
+         log_estimated_mean_2009 = log(estmn))
+ggplot(temp_log, aes(x=log_observed_mean_all_years, y=log_estimated_mean_2009)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  ggtitle("Comparisson of (log) observed and estimated daily grams, 108 intersectional groups")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_constant_log.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 2) as residuals plot (plot of difference between observed & estimate)
+ggplot(temp, aes(x=intersectional_names, y=difference)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = NULL, y = "Estimated minus observed grams") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(-30,30) +
+  ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_centered_zero.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3) difference versus group size
+ggplot(temp, aes(x=count, y=difference)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = "group size", y = "Estimated minus observed grams") +
+  ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_centered_zero_counts_x_axis.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3) percent difference (percentage of total estimated grams) versus group size
+ggplot(temp, aes(x=count, y=percent_difference)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = "group size", y = "percent difference") +
+  ggtitle("Difference between mean observed and estimated grams, as a percentage of estimate")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_percent_difference.png", 
        dpi=300, width=33, height=19, units="cm")
