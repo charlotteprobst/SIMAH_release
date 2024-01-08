@@ -18,8 +18,8 @@ options(dplyr.summarise.inform = FALSE)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
-WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
 # WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
