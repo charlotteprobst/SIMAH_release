@@ -54,7 +54,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 200
+nsamples <- 10
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 rm(model)
 
@@ -93,12 +93,12 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% 
                    policy=0, percentreduction=0.1, year_policy, inflation_factors,
                    age_inflated,
                    update_base_rate,
-                   minyear=2000, maxyear=2019, output="demographics")
+                   minyear=2000, maxyear=2010, output="demographics")
 }
 
 # save the output 
 Output <- do.call(rbind,Output)
-write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_inflated_allyears.csv", row.names=F)
+write.csv(Output, "SIMAH_workplace/microsim/2_output_data/education_calibration/prior_range_inflated_year2005-fixed.csv", row.names=F)
 
 # # plot the data compared to target
 # data <- Output %>%

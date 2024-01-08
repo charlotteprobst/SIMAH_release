@@ -31,7 +31,6 @@ Samples1 <- Sample_Probs(model, nsamples, "1999-2019", 30, original,inflated)
 # estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 estimates <- Samples1[[2]]
 
-
 # probs <- rbind(Samples1[[1]], Samples2[[1]], Samples3[[1]])
 probs <- Samples1[[1]]
 

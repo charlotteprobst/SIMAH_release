@@ -9,7 +9,7 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_dat
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-data <- read_csv(paste0(DataDirectory, "/prior_range_inflated_allyears-2005.csv")) %>% 
+data <- read_csv(paste0(DataDirectory, "/prior_range_inflated_year2005-fixed.csv")) %>% 
   mutate(AGECAT = cut(microsim.init.age,
                       breaks=c(0,24,34,44,54,64,79),
                       labels=c("18-24","25-34","35-44","45-54",
@@ -104,7 +104,7 @@ targets <- left_join(targets, newpsid)
 data <- left_join(data,targets) %>% 
   mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
 
-ggplot(data=subset(data, SEX=="Women" & AGECAT=="18-24"), 
+ggplot(data=subset(data, SEX=="Men" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
   geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +

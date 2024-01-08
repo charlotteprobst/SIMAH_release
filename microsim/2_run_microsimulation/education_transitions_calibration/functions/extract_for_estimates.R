@@ -6,9 +6,11 @@ extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fi
     covariates <- list(sex=combination$sex, agecat=combination$age, racefinal2=combination$race)
     x <- model
     covlist <- msm.parse.covariates(x, covariates, x$qcmodel)
+    
     ni <- x$qmodel$npars
     nc <- length(covlist)
     se <- lse <- fixed <- numeric(ni)
+  
     Qmatrices <- setupQ(estimates)
     logest <- Qmatrices[[1]]
     for (j in seq_len(nc)) {
@@ -21,7 +23,7 @@ extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fi
     plist[[paste(i)]] <- p
     plist[[paste(i)]] <- data.frame(unclass(plist[[paste(i)]]))
     plist[[paste(i)]]$StateFrom <- 1:nrow(plist[[paste(i)]])
-    plist[[paste(i)]] <- plist[[paste(i)]] %>% pivot_longer(cols=X1:X5,
+    plist[[paste(i)]] <- plist[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,
                                                             names_to="StateTo", values_to="prob") %>% 
       mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
                                  endsWith(StateTo,"2") ~ "State 2",

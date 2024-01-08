@@ -12,6 +12,13 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
   # adjust the covariance matrix - first estimate standard deviations 
   
   samples <- mvrnorm(n=nsamples, estimates, covmat)
+
+  # now make prior for hispanic black samples 
+  samples[,29] <- samples[,25]
+  samples[,30] <- samples[,26]
+  samples[,31] <- samples[,27]
+  samples[,32] <- samples[,28]
+  
   x <- model
   sex <- c(0,1)
   race <- c("white","black","hispanic","other")

@@ -39,7 +39,8 @@ Q <- rbind( c(0.08, 0.08, 0, 0, 0),
 data$agecat <- ifelse(data$age==18, "18",
                         ifelse(data$age==19, "19",
                                ifelse(data$age==20, "20",
-                                      ifelse(data$age>=21 & data$age<=25, "21-25","26+"))))
+                                      ifelse(data$age==21, "21",
+                                      ifelse(data$age>=22 & data$age<=25, "22-25","26+")))))
 
 data <- data %>% filter(year<=2019)
 data <- data[order(data$newID, data$year),]
@@ -55,15 +56,14 @@ Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=data)
 #        c(0, 0, 0, 0, 0.1),
 #        c(0, 0, 0, 0.1, 0))
 
-model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
+modelnew <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                                    center=FALSE,
                                    covariates=~agecat + sex + racefinal2,
-                        # control=list(trace=1, fnscale=2543177, maxit=200),
-             # opt.method="BFGS",
-             est.initprobs = TRUE)
+                        control=list(trace=1, fnscale=2543177, maxit=200))
 model
+AIC(model, modelnew)
 
-saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005.RDS")
+saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_altrace.RDS")
 
 
 # saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
