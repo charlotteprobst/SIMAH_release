@@ -34,7 +34,7 @@ library(jtools)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230926
+DATE <- 20240108
 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
 
@@ -67,14 +67,34 @@ sub <- out1 %>% select(State, SunSalesPolicy)
 pdat <- left_join(data, sub) %>%
   
   # select random subsample (for testing)
-  # sample_frac(0.001) %>% 
+  #sample_frac(0.01) %>% 
   
   # calculate ALCCAT3 variables
   mutate(alccat3 = ifelse(sex_recode == "Men" & gramsperday > 0 & gramsperday <= 60, 0,
                           ifelse(sex_recode == "Men" & gramsperday > 60, 1,
                                  ifelse(sex_recode == "Women" & gramsperday > 0 & gramsperday <= 40, 0,
                                         ifelse(sex_recode == "Women" & gramsperday > 40, 1, 
-                                               ifelse(gramsperday == 0, NA, NA))))))
+                                               ifelse(gramsperday == 0, NA, NA)))))) %>%
+
+#### CHECK PARALLEL TREND ASSUMPTION FOR DD MODEL 
+  filter() %>%
+  mutate(group = ifelse(SunSalesPolicy == "Sunday sales were never banned", "0 Control (no ban)", 
+                        ifelse(SunSalesPolicy == "Sunday sales were always banned", "0 Control (ban)", 
+                               ifelse(SunSalesPolicy == "Sunday sales ban was repealed", paste0("1 ", State), NA))))
+
+stat <- pdat %>% filter(gramsperday > 0) %>% group_by(group, YEAR) %>%
+  summarise(gramsperday = mean(gramsperday))
+
+#library("ggnewscale") 
+#library("viridis")
+
+ggplot() + 
+  geom_smooth(data = stat[!stat$group %like% "Control",], aes(x = YEAR, y = gramsperday, group = group, color = group), se = F) +
+  scale_color_viridis(discrete = TRUE) + 
+  new_scale_color() + 
+  geom_smooth(data = stat[stat$group %like% "Control",], aes(x = YEAR, y = gramsperday, group = group, color = group), se = F) +
+  scale_color_manual(values = c("#941100", "#FF2600")) + 
+  theme_bw()
 
 # --------------------------------------------------------------------------------------
 
