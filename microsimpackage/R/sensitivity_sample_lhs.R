@@ -24,7 +24,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 1.033184,  0.3418635), #LIVER_FD SD  0.3418635
         c("qnorm", -0.6348783,  0.380269), #LIVER_LEHSxFD SD  0.380269
         c("qnorm", 0.3418635, 0.4293024)), #LIVER_SomeCxFD SD 0.4293024
-        
+
         # c("qnorm", 0.6805684, 0.1226193), #B_LIVER_LEHS_MEN SD 0.1226193
         # c("qnorm", 0.3594212, 0.1369978), #B_LIVER_SomeC_MEN SD 0.1369978
         # c("qnorm", 0.7436502, 0.1632077), #B_LIVER_LEHS_WOMEN SD 0.1632077
@@ -36,9 +36,9 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         # c("qnorm", 0.001099395, 0.0009428886), #B_LIVER_LEHSxGPD_WOMEN SD 0.0009428886
         # c("qnorm",  0.004390348, 0.001320722), #B_LIVER_SomeCxGPD_WOMEN SD 0.001320722
 
-      # HLVDC <- list(
-      #   c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 SD 0.00071320
-      #   c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2 SD 0.00000872
+      HLVDC <- list(
+        c("qnorm", 0.02603471, 0.00071320), #BHEPATITIS1 SD 0.00071320
+        c("qnorm", -0.00008898, 0.00000872)), #BHEPATITIS2 SD 0.00000872
 
       AUD <- list(
         c("qnorm", 0.78732035, 0.114789), #B_AUD_LEHS SD 0.114789
@@ -51,7 +51,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 1.73342389,  0.498620239), #AUD_FD SD  0.498620239
         c("qnorm", -0.94160854,  0.5626876), #AUD_LEHSxFD SD  0.5626876
         c("qnorm", -1.3470736, 0.65711184)), #AUD_SomeCxFD SD 0.65711184
-        
+
         # c("qnorm", 0.8109302, 0.2989031), #B_AUD_LEHS_MEN SD 0.2989031
         # c("qnorm", 0.577175, 0.2689286), #B_AUD_SomeC_MEN SD 0.2689286
         # c("qnorm", 0.7857264, 0.5431378), #B_AUD_LEHS_WOMEN SD 0.5431378
@@ -72,19 +72,19 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         # c("qnorm", -1.660731, 0.799871), #AUD_SomeCxFD_MEN SD 0.799871
         # c("qnorm", -0.6348783,  1.052252), #AUD_LEHSxFD_WOMEN SD  1.052252
         # c("qnorm",  -0.7985077, 1.239748)), #AUD_SomeCxFD_WOMEN SD 1.239748
- 
-      # IJ <- list(
-      #   c("qnorm", 0.01100787, 0.0032), #BIJ MEN SD 0.0032
-      #   c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
-      #   c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
-      #   c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
-      # 
-      # DM <- list(
-      #   c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
-      #   c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
-      #   c("qnorm", 0.04322303 , 0.01065573), #DM2 WOMEN SD 0.01065573
-      #   c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
-      #   c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
+
+      IJ <- list(
+        c("qnorm", 0.01100787, 0.0032), #BIJ MEN SD 0.0032
+        c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
+        c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
+        c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
+      #
+      DM <- list(
+        c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
+        c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
+        c("qnorm", 0.04322303 , 0.01065573), #DM2 WOMEN SD 0.01065573
+        c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
+        c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
 
       #CHECK THIS
       IHD <- list(
@@ -105,7 +105,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.0861777,  0.09770211), #IHD_FD SD  0.09770211
         c("qnorm", -0.03045921,  0.1077588), #IHD_LEHSxFD SD  0.1077588
         c("qnorm", 0.09531018, 0.1232587)), #IHD_SomeCxFD SD 0.1232587
-        
+
         # c("qnorm", 0.1655144, 0.07338828), #B_IHD_LEHS_MEN SD 0.07338828
         # c("qnorm", 0.3148107, 0.09054446), #B_IHD_SomeC_MEN SD 0.09054446
         # c("qnorm", 0.2926696, 0.08164473), #B_IHD_LEHS_WOMEN SD 0.08164473
@@ -134,26 +134,26 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         # c("qnorm", 0.1988509, 0.1017286), #IHD_SomeCxFD_MEN SD 0.1017286
         # c("qnorm", 0.4054651,  0.09788906), #IHD_LEHSxFD_WOMEN SD  0.09788906
         # c("qnorm", 0.05826891, 0.1327894)), #IHD_SomeCxFD_WOMEN SD 0.1327894
-        
-      # ISTR <- list(
-      #   c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389
-      #   c("qnorm", -0.083381609, 0.02775583), #ISTR2 SD 0.02775583
-      #   c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521
-      #   c("qnorm", 0.131028262, 0.05792282), #ISTR4 SD 0.05792282
-      #   c("qnorm", 0.00, 0.00)), #ISTR FORMER DRINKERS SD 0.00
-      # 
-      # HYPHD <- list(
-      #   c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
-      #   c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
-      #   c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
-      # 
-      # MVACC <- list(
-      #   c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
-      #   c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
-      # 
-      # UIJ <- list(
-      #   c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
-      #   c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
+
+      ISTR <- list(
+        c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389
+        c("qnorm", -0.083381609, 0.02775583), #ISTR2 SD 0.02775583
+        c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521
+        c("qnorm", 0.131028262, 0.05792282), #ISTR4 SD 0.05792282
+        c("qnorm", 0.00, 0.00)), #ISTR FORMER DRINKERS SD 0.00
+      #
+      HYPHD <- list(
+        c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
+        c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
+        c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
+      #
+      MVACC <- list(
+        c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
+        c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
+      #
+      UIJ <- list(
+        c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
+        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
 
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
@@ -162,23 +162,23 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       )
 
   # name the disease parameters
-  names(prior) <- c("LVDC", "AUD", "IHD", "ALL")
-  #names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
+  # names(prior) <- c("LVDC", "AUD", "IHD", "ALL")
+  names(prior) <- c("LVDC", "HLVDC", "AUD", "IJ", "DM", "IHD", "ISTR", "HYPHD", "MVACC", "UIJ", "ALL")
   names(prior$LVDC) <- c("B_LIVER_LEHS","B_LIVER_SomeC","B_LIVER_GPD","B_LIVER_LEHSxGPD","B_LIVER_SomeCxGPD",
                          "LIVER_FD_LEHS","LIVER_FD_SomeC","LIVER_FD","LIVER_LEHSxFD","LIVER_SomeCxFD")
-  #names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
+  names(prior$HLVDC) <- c("B_HEPATITIS1","B_HEPATITIS2")
   names(prior$AUD) <- c("B_AUD_LEHS","B_AUD_SomeC","B_AUD_GPD","B_AUD_LEHSxGPD","B_AUD_SomeCxGPD",
                         "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_LEHSxFD","AUD_SomeCxFD")
-  #names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
-  #names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
+  names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
+  names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
   names(prior$IHD) <- c("B_IHD_LEHS", "B_IHD_SomeC", "B_IHD_CAT1", "B_IHD_CAT2", "B_IHD_CAT3", "B_IHD_CAT4",
                         "B_IHD_LEHSxCAT1", "B_IHD_LEHSxCAT2", "B_IHD_LEHSxCAT3", "B_IHD_LEHSxCAT4",
                         "B_IHD_SomeCxCAT1", "B_IHD_SomeCxCAT2", "B_IHD_SomeCxCAT3", "B_IHD_SomeCxCAT4",
                         "IHD_FD", "IHD_LEHSxFD","IHD_SomeCxFD")
-  #names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
-  #names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
-  #names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
-  #names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
+  names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
+  names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
+  names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
+  names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
 
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
