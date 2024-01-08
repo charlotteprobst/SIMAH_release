@@ -42,8 +42,7 @@ model <- "SIMAH"
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "mortality"
 
-# whether we want SES interaction effects for liver cirrhosis 
-# note this is a temporary variable and may change to a more general SES interaction flag 
+# whether we want SES interaction effects   
 sesinteraction <- 1
 
 # do you want policy effects switched on? at the moment this is binary but 
