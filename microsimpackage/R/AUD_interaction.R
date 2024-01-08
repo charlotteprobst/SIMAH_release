@@ -5,6 +5,7 @@
 #' @export
 #' @examples
 #' AUD including SES interaction effects
+#' Results given in standard drinks per day
 AUDInteraction <- function(data,lhs){
   data$microsim.init.alc.gpd <- ifelse(data$microsim.init.alc.gpd>=150, 150,
                                        data$microsim.init.alc.gpd)
