@@ -7,7 +7,8 @@ setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/waves")
 
-targets <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated_educsex.csv") %>% 
+targets <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated_educsex.csv") %>%
+  filter(age_gp!="80") %>% 
   rename(YEAR=year, SEX=sex, EDUC=edclass, RACE=race) %>% 
   mutate(SEX= ifelse(SEX==1, "Men","Women")) %>% 
   group_by(YEAR, SEX, EDUC, RACE) %>% 
@@ -20,24 +21,23 @@ targets <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated_educsex
 # read in output from final wave
 output <- read_csv(paste0(DataDirectory, "/output-1.csv"))
 
-# read in implausibility from final wave 
-implausibility <- read_csv(paste0(DataDirectory, "/implausibility-9.csv"))
-
-output <- left_join(output, implausibility)
-
 summary_output <- output %>% 
-  mutate(SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
+  mutate(AGECAT = cut(microsim.init.age,
+                             breaks=c(0,24,34,44,54,64,79),
+                             labels=c("18-24","25-34","35-44","45-54",
+                                      "55-64","65-79")),
+        SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
         RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                       "OTH"="Other")) %>% 
   rename(EDUC=microsim.init.education, YEAR=year) %>% 
-  group_by(YEAR, samplenum, seed, SEX,RACE,
+  group_by(YEAR, samplenum, seed, AGECAT, SEX,RACE,
            EDUC) %>% 
   summarise(n=sum(n)) %>% 
   ungroup() %>% 
-  group_by(YEAR, samplenum, SEX, EDUC,RACE) %>% 
+  group_by(YEAR, samplenum, AGECAT, SEX, EDUC,RACE) %>% 
   summarise(n=mean(n)) %>% 
   ungroup() %>% 
-  group_by(YEAR, samplenum, SEX,RACE) %>% 
+  group_by(YEAR, samplenum, AGECAT, SEX,RACE) %>% 
   mutate(propsimulation=n/sum(n), YEAR=as.integer(YEAR)) %>% 
   dplyr::select(-n) %>% drop_na()
 
@@ -51,14 +51,15 @@ implausibility_new <- summary_output %>%
   summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SEtarget)) %>% 
   ungroup() %>% 
   group_by(samplenum) %>% 
-  summarise(implausibility_new = mean(implausibility)) %>% 
+  summarise(implausibility_new = max(implausibility)) %>% 
   ungroup() %>% 
-  mutate(percentile=ntile(implausibility, 500))
+  mutate(percentile=ntile(implausibility_new, 500))
 
 summary_output <- left_join(summary_output, implausibility_new)
 
 best <- summary_output %>% 
-  filter(percentile==1) %>% 
+  # filter(percentile==1) %>% 
+  filter(samplenum==4) %>% 
   pivot_longer(propsimulation:proptarget)
   
 ggplot(data=best, 
@@ -71,22 +72,24 @@ ggplot(data=best,
   theme(legend.position = "bottom",
         legend.title=element_blank()) + 
   xlab("Year") +
+  ggtitle("all ages") + 
   scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
+ggsave(paste0(DataDirectory, "/best_allages.png"), dpi=300, width=33, height=19, units="cm")
 
 # plot range for final wave
 
-ggplot(data=subset(outputsummary, SEX=="Women" & AGECAT=="18-24" & wave==9), 
-       aes(x=as.numeric(YEAR), y=prop, colour=as.factor(samplenum))) + 
+ggplot(data=subset(summary_output, SEX=="Men"), 
+       aes(x=as.numeric(YEAR), y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
-  geom_line(aes(x=YEAR,y=target), colour="darkblue",linewidth=1) +
+  geom_line(aes(x=YEAR,y=proptarget), colour="darkblue",linewidth=1) +
   # geom_line(aes(x=YEAR,y=PSID_new), colour="purple",linewidth=1, linetype="dashed") +
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
-  ggtitle("Women, 18-24 model fit 2005-2019") + 
+  ggtitle("Women, all ages") + 
   xlab("Year") + ylim(0,1)
 
-ggsave(paste0(DataDirectory, "/plot_prior_women_allyears2005.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/plot_prior_allages_men.png"), dpi=300, width=33, height=19, units="cm")
 
 pct_diff <- outputsummary %>% filter(wave==5) %>% 
   filter(percentile==1) %>% 

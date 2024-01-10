@@ -24,7 +24,12 @@ for(i in 1:length(implausibility)){
 implausibility <- do.call(rbind,implausibility) 
 
 ggplot(implausibility, aes(y=implausibility)) + geom_boxplot() + 
-  facet_grid(cols=vars(wave))
+  facet_grid(cols=vars(wave)) + 
+  theme_bw() + 
+  theme(axis.text.x=element_blank())
+getwd()
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/implausibility_summary.png",
+       dpi=300, width=33, height=19, units="cm")
 
 summary <- implausibility %>% group_by(wave) %>% 
   summarise(mean = mean(implausibility),
@@ -70,21 +75,23 @@ outputsummary <- left_join(outputsummary, implausibility)
 # plot the best fitting model from the best wave
 best <- outputsummary %>% filter(wave==9) %>% 
   filter(percentile==1) %>% 
-  pivot_longer(prop:target)
+  pivot_longer(prop:target) %>% 
+  filter(AGECAT=="35-44" | AGECAT=="45-54")
 
-ggplot(data=subset(best, AGECAT=="18-24" & samplenum==4), 
+ggplot(data=subset(best, SEX=="Men" & samplenum==4), 
        aes(x=as.numeric(YEAR), y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
   # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
-  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
+  facet_grid(cols=vars(RACE), rows=vars(AGECAT)) + 
   scale_linetype_manual(values=c("dotdash","solid"), labels=c("simulation","target")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
         legend.title=element_blank()) + 
-  ggtitle("age 18-24") + 
+  # ggtitle("age 18-24") + 
   xlab("Year") +
   scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
-
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/best_setting35+.png",
+       dpi=300, width=33, height=19, units="cm")
 # plot range for final wave
 
 ggplot(data=subset(outputsummary, SEX=="Women" & AGECAT=="18-24" & wave==9), 
@@ -95,10 +102,10 @@ ggplot(data=subset(outputsummary, SEX=="Women" & AGECAT=="18-24" & wave==9),
   facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
   theme_bw() + 
   theme(legend.position = "none") + 
-  ggtitle("Women, 18-24 model fit 2005-2019") + 
+  ggtitle("Women, 18-24") + 
   xlab("Year") + ylim(0,1)
-
-ggsave(paste0(DataDirectory, "/plot_prior_women_allyears2005.png"), dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/posterior_women.png",
+       dpi=300, width=33, height=19, units="cm")
 
 pct_diff <- outputsummary %>% filter(wave==5) %>% 
   filter(percentile==1) %>% 
