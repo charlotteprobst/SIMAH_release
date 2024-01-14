@@ -1,6 +1,7 @@
 #' Samples parameters using a latin hypercube space filling design, or takes point estimates.
 #'
 #' This function generates a latin hypercube for a set number of parameters
+#' Disease outcomes with significant interaction effect: LVDC, AUD, IHD 
 #' @param
 #' PE refers to point estimates.  When set to 1, sample point estimates, otherwsie sample from latin hypercube.
 #' @keywords latin hypercube
@@ -78,7 +79,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.04919477 , 0.0221), #BIJ WOMEN SD 0.0221
         c("qnorm", 0.3929201, 0.1620372), #IJ FORMER DRINKERS MEN SD 0.1620372
         c("qnorm", 0.5068176, 0.3721027)),#IJ FORMER DRINKERS WOMEN SD 0.3721027
-      #
+      
       DM <- list(
         c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
         c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
@@ -86,7 +87,6 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
         c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
 
-      #CHECK THIS
       IHD <- list(
         c("qnorm", 0.2468601, 0.05558992), #B_IHD_LEHS SD 0.05558992
         c("qnorm", 0.2623643, 0.06485565), #B_IHD_SomeC SD 0.06485565
@@ -141,20 +141,30 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.076961041, 0.03311521), #ISTR3 SD 0.03311521
         c("qnorm", 0.131028262, 0.05792282), #ISTR4 SD 0.05792282
         c("qnorm", 0.00, 0.00)), #ISTR FORMER DRINKERS SD 0.00
-      #
+      
       HYPHD <- list(
         c("qnorm", 0.0055863, 0.0008473), #HYPHD MEN SD 0.0008473
         c("qnorm", 0.0069739, 0.0025082), #HYPHD WOMEN SD 0.0025082
         c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
-      #
+      
       MVACC <- list(
-        c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
-        c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
-      #
+        c("qnorm", -0.261364764, 0.134600189), #MVACC1 MEN SD 0.134600189
+        c("qnorm", -0.544727175, 0.229576937), #MVACC2 MEN SD 0.229576937
+        c("qnorm", 0.357674444, 0.207168144), #MVACC3 MEN SD 0.207168144
+        c("qnorm", -0.235722334, 0.158593933), #MVACC1 WOMEN SD 0.158593933
+        c("qnorm", 0.31481074, 0.433702775), #MVACC2 WOMEN SD 0.433702775
+        c("qnorm", -0.0618754, 0.1883335758), #MVACC FORMER DRINKERS MEN SD 0.1883335758
+        c("qnorm", 0.26236426, 0.28251579)), #MVACC FORMER DRINKERS WOMEN SD 0.28251579
+      
       UIJ <- list(
-        c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
-        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
-
+        c("qnorm", -0.116533816, 0.09879663), #UIJ1 MEN SD 0.09879663
+        c("qnorm", 0.371563556, 0.158103223), #UIJ2 MEN SD 0.158103223
+        c("qnorm", 0.732367894, 0.167293723), #UIJ3 MEN SD 0.167293723
+        c("qnorm", -0.162518929, 0.092421667), #UIJ1 WOMEN SD 0.092421667
+        c("qnorm", 0.751416089, 0.205669471), #UIJ2 WOMEN SD 0.205669471
+        c("qnorm", 0.086177696, 0.1321283), #UIJ FORMER DRINKERS MEN SD 0.1321283
+        c("qnorm", 0.0953101798, 0.14890646)), #UIJ FORMER DRINKERS WOMEN SD 0.14890646
+      
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
         c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
@@ -177,8 +187,10 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
                         "IHD_FD", "IHD_LEHSxFD","IHD_SomeCxFD")
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
-  names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
-  names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
+  names(prior$MVACC) <- c("B_MVACC1_MEN", "B_MVACC2_MEN", "B_MVACC3_MEN", "B_MVACC1_WOMEN", "B_MVACC2_WOMEN", 
+                          "MVACC_FORMERDRINKER_MEN", "MVACC_FORMERDRINKER_WOMEN")
+  names(prior$UIJ) <- c("B_UIJ1_MEN", "B_UIJ2_MEN", "B_UIJ3_MEN", "B_UIJ1_WOMEN", "B_UIJ2_WOMEN", 
+                        "UIJ_FORMERDRINKER_MEN", "UIJ_FORMERDRINKER_WOMEN")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
 
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
