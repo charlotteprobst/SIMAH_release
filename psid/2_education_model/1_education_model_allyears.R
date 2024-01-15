@@ -66,7 +66,7 @@ model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
 model
 AIC(model)
 
-saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-24.RDS")
+saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-24interaction.RDS")
 
 
 # saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
