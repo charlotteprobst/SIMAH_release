@@ -44,7 +44,7 @@ if(policy==1 & y ==year_policy){
 
 # save a population summary
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
-  
+
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
 # DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
@@ -125,7 +125,8 @@ for (disease in diseases) {
            inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
                                      ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
     group_by(cat) %>%
-    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
+    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor),
+              !!paste0("yll_", disease) := sum(!!sym(paste0("yll_", disease))/inflation_factor))
 }
 
 DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
@@ -191,6 +192,8 @@ if(updatingalcohol==1){
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
   basepop$totransition <-  NULL
+  basepop$prop_former_drinker <- NULL
+  basepop$n <- NULL
 }
 
 #delete anyone over 79
@@ -255,6 +258,11 @@ if(output=="mortality" & !is.null(diseases)){
   # add former drinkers and lifetime abstainers to this summary TODO
   Summary <- list(CatSummary, MeanSummary)
 }
+# formerdrinkers <- list()
+# for(i in 1:length(PopPerYear)){
+#   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%
+#     ungroup() %>% mutate(prop=n/sum(n))
+# }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
 return(list(Summary))
