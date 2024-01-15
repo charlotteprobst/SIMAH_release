@@ -35,6 +35,8 @@ set.seed(42)
 # WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+dir.create(OutputDirectory)
 
 # load in microsim R package
 setwd(paste(WorkingDirectory))
@@ -54,13 +56,13 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 500
+nsamples <- 10
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 # rm(model)
 
 # save samples 
-saveRDS(transitionsList, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/transitionsList-1",".RDS"))
-write.csv(estimates, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/sampled_markov-1", ".csv"), row.names=F)
+saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1",".RDS"))
+write.csv(estimates, paste0(OutputDirectory, "/sampled_markov-1", ".csv"), row.names=F)
 
 # set to 1 if running on local machine 
 registerDoParallel(10)
@@ -77,9 +79,13 @@ num_waves <- 20
 
 improvement_threshold <- 0.005
 
-targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/target_data.csv") %>% 
-  dplyr::select(YEAR, SEX, AGECAT, EDUC, RACE, prop, SE) %>% 
-  rename(target=prop)
+targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>% 
+  group_by(YEAR, AGECAT, RACE, SEX) %>% 
+  mutate(target=TPop/sum(TPop),
+         SE=sqrt(target*(1-target)/sum(OrigSample))) %>% 
+  dplyr::select(-c(TPop:OrigSample))
+
+
 prev_mean_implausibility <- 100
 
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/calculate_implausibility_education.R")
@@ -109,11 +115,11 @@ while(wave <= num_waves){
                      minyear=2000, maxyear=2019, output="demographics")}
   
   Output <- do.call(rbind,Output)
-  write.csv(Output, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/output-",wave, ".csv"), row.names=F)
+  write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
   
   # calculate and save implausibility values 
   implausibility <- calculate_implausibility_education(Output, targets)
-  write.csv(implausibility, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/implausibility-",wave, ".csv"), row.names=F)
+  write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   
   new_mean_implausibility <- mean(implausibility$implausibility)
   max_implausibility <- max(implausibility$implausibility)
@@ -136,8 +142,8 @@ while(wave <= num_waves){
   wave <- wave + 1
   
   # save the new TPs and the estimates
-  saveRDS(transitionsList, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/transitionsList-",wave,".RDS",sep=""))
-  write.csv(estimates, paste0("SIMAH_workplace/microsim/2_output_data/education_calibration/waves/sampled_markov-",wave, ".csv"), row.names=F)
+  saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-",wave,".RDS",sep=""))
+  write.csv(estimates, paste0(OutputDirectory, "/sampled_markov-",wave, ".csv"), row.names=F)
   
   
 }

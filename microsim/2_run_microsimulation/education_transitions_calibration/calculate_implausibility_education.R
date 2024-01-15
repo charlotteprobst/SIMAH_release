@@ -23,7 +23,7 @@ calculate_implausibility_education <- function(data, targets){
     mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
   
   implausibility <- data %>% 
-    filter(AGECAT=="18-24") %>%
+    # filter(AGECAT=="18-24") %>%
     filter(YEAR<=2019) %>% 
     group_by(YEAR, samplenum, SEX,AGECAT, RACE, EDUC) %>% 
     summarise(implausibility = abs(prop-target)/sqrt(SE)) %>% 

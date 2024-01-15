@@ -14,15 +14,15 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
   samples <- mvrnorm(n=nsamples, estimates, covmat)
 
   # now make prior for hispanic black samples 
-  samples[,29] <- samples[,25]
-  samples[,30] <- samples[,26]
-  samples[,31] <- samples[,27]
-  samples[,32] <- samples[,28]
+  # samples[,29] <- samples[,25]
+  # samples[,30] <- samples[,26]
+  # samples[,31] <- samples[,27]
+  # samples[,32] <- samples[,28]
   
   x <- model
   sex <- c(0,1)
   race <- c("white","black","hispanic","other")
-  age <- c("18","19","20","21-25","26+")
+  age <- c("18","19","20","21","22-24")
   # every age sex race combination
   combinations <- expand.grid(age,sex,race)
   names(combinations) <- c("age","sex","race")

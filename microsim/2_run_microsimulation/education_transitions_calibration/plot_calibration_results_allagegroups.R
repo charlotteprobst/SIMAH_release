@@ -5,27 +5,35 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/waves")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
 
-targets <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2021_updated_educsex.csv") %>%
-  filter(age_gp!="80") %>% 
-  rename(YEAR=year, SEX=sex, EDUC=edclass, RACE=race) %>% 
-  mutate(SEX= ifelse(SEX==1, "Men","Women")) %>% 
-  group_by(YEAR, SEX, EDUC, RACE) %>% 
-  summarise(n=sum(TPop)) %>% 
-  ungroup() %>% 
-  group_by(YEAR, SEX, RACE) %>% 
-  mutate(proptarget=n/sum(n),
-         SEtarget = sqrt(proptarget*(1-proptarget)/sum(n))) %>% dplyr::select(-n)
+targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>% 
+  mutate(AGECAT = cut(AGE,
+                      breaks=c(0,18,19,20,21,22,23,24,34,44,54,64,79),
+                      labels=c("18","19","20","21","22","23","24","25-34",
+                               "35-44","45-54","55-64","65-79"))) %>% 
+  mutate_at(vars(YEAR, AGECAT, RACE, SEX, EDUC), as.factor) %>% 
+  group_by(YEAR, AGECAT, RACE, SEX, EDUC, .drop=FALSE) %>% 
+  summarise(TPop=sum(TPop),
+            OrigSample = sum(OrigSample)) %>% 
+  group_by(YEAR, AGECAT, RACE, SEX) %>% 
+  mutate(proptarget=TPop/sum(TPop),
+         SE=sqrt(proptarget*(1-proptarget)/sum(OrigSample)),
+         YEAR= as.integer(as.character(YEAR))) %>% 
+  mutate_at(vars(AGECAT, RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-1.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-1-1.csv"))
 
 summary_output <- output %>% 
   mutate(AGECAT = cut(microsim.init.age,
-                             breaks=c(0,24,34,44,54,64,79),
-                             labels=c("18-24","25-34","35-44","45-54",
-                                      "55-64","65-79")),
+                      breaks=c(0,18,19,20,21,22,23,24,34,44,54,64,79),
+                      labels=c("18","19","20","21","22","23","24","25-34",
+                               "35-44","45-54","55-64","65-79")),
+    # AGECAT = cut(microsim.init.age,
+    #                          breaks=c(0,24,34,44,54,64,79),
+    #                          labels=c("18-24","25-34","35-44","45-54",
+    #                                   "55-64","65-79")),
         SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
         RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                       "OTH"="Other")) %>% 
@@ -47,8 +55,10 @@ summary_output <- left_join(summary_output, targets)
 
 # recalculate implausibility 
 implausibility_new <- summary_output %>% 
-  group_by(samplenum, YEAR, SEX, EDUC, RACE) %>% 
-  summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SEtarget)) %>% 
+  group_by(samplenum, YEAR, AGECAT, SEX, EDUC, RACE) %>% 
+  mutate(proptarget=ifelse(proptarget==0, 0.001, proptarget),
+         SE = ifelse(SE==0, 0.001, SE)) %>% 
+  summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SE)) %>% 
   ungroup() %>% 
   group_by(samplenum) %>% 
   summarise(implausibility_new = max(implausibility)) %>% 
@@ -58,11 +68,11 @@ implausibility_new <- summary_output %>%
 summary_output <- left_join(summary_output, implausibility_new)
 
 best <- summary_output %>% 
-  # filter(percentile==1) %>% 
-  filter(samplenum==4) %>% 
-  pivot_longer(propsimulation:proptarget)
+  filter(percentile==1) %>%
+  # filter(samplenum==4) %>% 
+  pivot_longer(c(propsimulation,proptarget))
   
-ggplot(data=best, 
+ggplot(data=subset(best, AGECAT=="18"), 
        aes(x=as.numeric(YEAR), y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
   # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
@@ -78,7 +88,7 @@ ggsave(paste0(DataDirectory, "/best_allages.png"), dpi=300, width=33, height=19,
 
 # plot range for final wave
 
-ggplot(data=subset(summary_output, SEX=="Men"), 
+ggplot(data=subset(summary_output, SEX=="Women" & AGECAT=="18-24"), 
        aes(x=as.numeric(YEAR), y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
   geom_line(aes(x=YEAR,y=proptarget), colour="darkblue",linewidth=1) +

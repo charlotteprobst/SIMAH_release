@@ -18,15 +18,13 @@ source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibrat
 # model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")
 # model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3_sophie.RDS")
 
-model <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005.RDS")
+model <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-24.RDS")
 # model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes.RDS")
 
-original <- 9064
-inflated <- 2057084
+original <- 4838
+inflated <- 1117098
 
-Samples1 <- Sample_Probs(model, nsamples, "1999-2019", 30, original,inflated)
-# Samples2 <- Sample_Probs(model2, nsamples, "2007-2013", 1, 2769,915752)
-# Samples3 <- Sample_Probs(model3, nsamples, "2014-2019", 1, 2365,772327)
+Samples1 <- Sample_Probs(model, nsamples, "1999-2019", 1, original,inflated)
 
 # estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 estimates <- Samples1[[2]]
