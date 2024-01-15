@@ -15,16 +15,23 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
     prior <- list(
       LVDC <- list(
-        c("qnorm", 0.70650753, 0.100516439), #B_LIVER_LEHS SD 0.100516439
-        c("qnorm", 0.396895157, 0.1060469776), #B_LIVER_SomeC SD 0.1060469776
-        c("qnorm", 0.00319489, 0.00038145156), #B_LIVER_GPD SD 0.00038145156
-        c("qnorm", 0, 0.000459183797), #B_LIVER_LEHSxGPD SD 0.000459183797
-        c("qnorm",  0.002297359, 0.000610840), #B_LIVER_SomeCxGPD SD 0.000610840
+        c("qnorm", 0.7646768, 0.1055486), #B_LIVER_LEHS SD 0.1055486
+        c("qnorm", 0.4490353, 0.1127937), #B_LIVER_SomeC SD 0.1127937
+        c("qnorm", 0.06381951, 0.007754167), #B_LIVER_GPD SD 0.007754167
+        c("qnorm", 0.000099995, 0.008875784), #B_LIVER_LEHSxGPD SD 0.008875784
+        c("qnorm",  0.04468652, 0.01209888), #B_LIVER_SomeCxGPD SD 0.01209888
         c("qnorm", 0.7793249, 0.2074557), #LIVER_FD_LEHS SD 0.2074557
         c("qnorm", 0.5364934, 0.2380034), #LIVER_FD_SomeC SD 0.2380034
         c("qnorm", 1.033184,  0.3418635), #LIVER_FD SD  0.3418635
         c("qnorm", -0.6348783,  0.380269), #LIVER_LEHSxFD SD  0.380269
         c("qnorm", 0.3418635, 0.4293024)), #LIVER_SomeCxFD SD 0.4293024
+      
+        #results including former drinkers in continuous grams per day
+        # c("qnorm", 0.70650753, 0.100516439), #B_LIVER_LEHS SD 0.100516439
+        # c("qnorm", 0.396895157, 0.1060469776), #B_LIVER_SomeC SD 0.1060469776
+        # c("qnorm", 0.00319489, 0.00038145156), #B_LIVER_GPD SD 0.00038145156
+        # c("qnorm", 0, 0.000459183797), #B_LIVER_LEHSxGPD SD 0.000459183797
+        # c("qnorm",  0.002297359, 0.000610840), #B_LIVER_SomeCxGPD SD 0.000610840
 
         # c("qnorm", 0.6805684, 0.1226193), #B_LIVER_LEHS_MEN SD 0.1226193
         # c("qnorm", 0.3594212, 0.1369978), #B_LIVER_SomeC_MEN SD 0.1369978
