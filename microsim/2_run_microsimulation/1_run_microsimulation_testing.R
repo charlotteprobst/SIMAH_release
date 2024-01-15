@@ -18,8 +18,8 @@ options(dplyr.summarise.inform = FALSE)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
-WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-#WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
+WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
 # WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
@@ -48,10 +48,11 @@ lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2003
+maxyear <- 2005
 
 Output <- list()
 updatingeducation <- 0
+
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,
@@ -62,23 +63,23 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2003, output="mortality")
+                           minyear=2000, maxyear=2005, output="mortality")
 
 alcohol_type <- "categorical"
 
 # Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
 
 if(output_type=="demographics"){
-summary <- summarise_education_output(Output, SelectedState, DataDirectory)
+  summary <- summarise_education_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="alcohol"){
   if(alcohol_type=="categorical"){
-summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
-}else if(alcohol_type=="continuous"){
-summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
-}
+    summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
+  }else if(alcohol_type=="continuous"){
+    summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
+  }
 }else if(output_type=="mortality"){
-summary1 <- summarise_mortality_output(Output[[1]], SelectedState, DataDirectory, diseases, 2010)
-summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
+  summary1 <- summarise_mortality_output(Output[[1]], SelectedState, DataDirectory, diseases, 2010)
+  summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
 }
 # data frame containing mortality outputs
 summary_mortality <- summary[[1]]
@@ -88,3 +89,4 @@ summary[[2]]
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
        width=33, height=19, units="cm")
+
