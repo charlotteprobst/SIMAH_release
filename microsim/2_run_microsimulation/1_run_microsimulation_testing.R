@@ -59,11 +59,11 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            migration_rates,
                            updatingalcohol, alcohol_transitions,
                            catcontmodel, Hep, drinkingdistributions,
-                           base_counts, diseases, lhs, liverinteraction,
+                           base_counts, diseases, lhs, sesinteraction,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2005, output="demographics")
+                           minyear=2000, maxyear=2005, output="mortality")
 
 alcohol_type <- "categorical"
 
