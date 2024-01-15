@@ -43,6 +43,9 @@ modelt5_white_women <- readRDS("SIMAH_workplace/education_transitions/2021/final
 modelt5_black_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_black_women_alt_ref_cats.RDS")
 modelt5_hispanic_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_hispanic_women_alt_ref_cats.RDS")
 modelt5_other_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_other_women_alt_ref_cats.RDS")
+modelt5_interaction_race <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_interaction_race.RDS")
+modelt5_interaction_sex <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_interaction_sex.RDS")
+
 
 # Extract TPs
 
@@ -55,6 +58,8 @@ modelt5_TPs_black <- extractTPs_basic(modelt5_black, 1) # interaction for race (
 modelt5_TPs_hispanic <- extractTPs_basic(modelt5_hispanic, 1) # interaction for race (hispanic only)
 modelt5_TPs_other <- extractTPs_basic(modelt5_other, 1) # interaction for race (other only)
 modelt5_TPs_black_men <- extractTPs_basic(modelt5_black_men, 1) # interaction for race and sex (Black men only)
+modelt5_TPs_interaction_race <- extractTPs_basic(modelt5_interaction_race, 1) 
+modelt5_TPs_interaction_sex <- extractTPs_basic(modelt5_interaction_sex, 1) 
 
 # Save results
 # write_csv(modelt5_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats.csv")
@@ -65,6 +70,8 @@ modelt5_TPs_black_men <- extractTPs_basic(modelt5_black_men, 1) # interaction fo
 # write_csv(modelt5_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_hispanic.csv")
 # write_csv(modelt5_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_other.csv")
 # write_csv(modelt5_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_alt_ref_cats_black_men.csv")
+# write_csv(modelt5_TPs_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_interaction_race.csv")
+# write_csv(modelt5_TPs_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_5_interaction_sex.csv")
 
 ##################################################################
 
@@ -131,7 +138,8 @@ modelt5_HRs_white_women <- predict_HRs(modelt5_white_women)
 modelt5_HRs_black_women <- predict_HRs(modelt5_black_women)
 modelt5_HRs_hispanic_women <- predict_HRs(modelt5_hispanic_women)
 modelt5_HRs_other_women <- predict_HRs(modelt5_other_women)
-
+modelt5_HRs_interaction_race <- predict_HRs(modelt5_interaction_race)
+modelt5_HRs_interaction_sex <- predict_HRs(modelt5_interaction_sex)
 
 # Adjust the CIs to reflect the true (rather than replicated) population size
 modelt5_HRs_adjusted <- adjust_CIs(modelt5, "1999-2009", data)
@@ -149,6 +157,8 @@ modelt5_HRs_adjusted_white_women <- adjust_CIs(modelt5_white_women, "1999-2009",
 modelt5_HRs_adjusted_black_women <- adjust_CIs(modelt5_black_women, "1999-2009", data)
 modelt5_HRs_adjusted_hispanic_women <- adjust_CIs(modelt5_hispanic_women, "1999-2009", data)
 modelt5_HRs_adjusted_other_women <- adjust_CIs(modelt5_other_women, "1999-2009", data)
+modelt5_HRs_adjusted_interaction_race <- adjust_CIs(modelt5_interaction_race, "1999-2009", data)
+modelt5_HRs_adjusted_interaction_sex <- adjust_CIs(modelt5_interaction_sex, "1999-2009", data)
 
 write_csv(modelt5_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_alt_ref_cats.csv")
 write_csv(modelt5_HRs_adjusted_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_alt_ref_cats_men.csv")
@@ -165,3 +175,5 @@ write_csv(modelt5_HRs_adjusted_white_women, "SIMAH_workplace/education_transitio
 write_csv(modelt5_HRs_adjusted_black_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_alt_ref_cats_black_women.csv")
 write_csv(modelt5_HRs_adjusted_hispanic_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_alt_ref_cats_hispanic_women.csv")
 write_csv(modelt5_HRs_adjusted_other_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_alt_ref_cats_other_women.csv")
+write_csv(modelt5_HRs_adjusted_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_interaction_race.csv")
+write_csv(modelt5_HRs_adjusted_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model5_interaction_sex.csv")

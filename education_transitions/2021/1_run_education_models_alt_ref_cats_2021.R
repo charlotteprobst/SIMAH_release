@@ -41,6 +41,20 @@ modelt5 <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
 
 saveRDS(modelt5, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_alt_ref_cats.RDS")
 
+# Run a model with an interaction term for race
+modelt5_interaction_race <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
+               center=FALSE,
+               covariates=~agecat + sex + racefinal2 + timevary + racefinal2*timevary,
+               control=list(trace=1, fnscale=271181, maxit=200))
+saveRDS(modelt5_interaction_race, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_interaction_race.RDS")
+
+# Run a model with an interaction term for sex
+modelt5_interaction_sex <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
+                                center=FALSE,
+                                covariates=~agecat + sex + racefinal2 + timevary + sex*timevary,
+                                control=list(trace=1, fnscale=271181, maxit=200))
+saveRDS(modelt5_interaction_sex, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_interaction_sex.RDS")
+
 # Run separate models for each SEX group to enable interactions (based on model 5)
 
 sex_data <- data
