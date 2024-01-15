@@ -70,16 +70,16 @@ alcohol_type <- "categorical"
 # Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
 
 if(output_type=="demographics"){
-summary <- summarise_education_output(Output, SelectedState, DataDirectory)
+  summary <- summarise_education_output(Output, SelectedState, DataDirectory)
 }else if(output_type=="alcohol"){
   if(alcohol_type=="categorical"){
-summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
-}else if(alcohol_type=="continuous"){
-summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
-}
+    summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
+  }else if(alcohol_type=="continuous"){
+    summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
+  }
 }else if(output_type=="mortality"){
-summary1 <- summarise_mortality_output(Output[[1]], SelectedState, DataDirectory, diseases, 2010)
-summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
+  summary1 <- summarise_mortality_output(Output[[1]], SelectedState, DataDirectory, diseases, 2010)
+  summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
 }
 # data frame containing mortality outputs
 summary_mortality <- summary[[1]]
@@ -89,3 +89,4 @@ summary[[2]]
 # save a copy of the plot
 ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
        width=33, height=19, units="cm")
+

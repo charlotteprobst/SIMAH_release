@@ -33,7 +33,8 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC","IJ","MVACC","AUD")
+# if interaction is switch on we can only model the available interactions for: LVDC, AUD, IHD
+diseases <- c("LVDC","AUD","IHD","DM", "MVACC", "IJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -41,9 +42,8 @@ model <- "SIMAH"
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "mortality"
 
-# whether we want SES interaction effects for liver cirrhosis 
-# note this is a temporary variable and may change to a more general SES interaction flag 
-liverinteraction <- 0
+# whether we want SES interaction effects   
+sesinteraction <- 1
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
@@ -120,7 +120,11 @@ n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
 PE <- 1
-lhs <- sample_lhs(n_samples, PE)
+if(sesinteraction==1){
+  lhs <- sensitivity_sample_lhs(n_samples, PE)
+}else if(sesinteraction==0){
+  lhs <- sample_lhs(n_samples, PE)
+}
 
 samples <- do.call(rbind,lhs)
 

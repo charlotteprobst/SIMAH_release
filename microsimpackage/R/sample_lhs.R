@@ -44,12 +44,25 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.029170, 0.034375)), #DM FORMER DRINKERS WOMEN SD 0.034375
 
       IHD <- list(
-        c("qnorm", 0, 0), #IHD1 SD 0.00
-        c("qnorm", -0.051293294, 0.122015927), #IHD2 SD 0.122015927
-        c("qnorm", 0.039220713, 0.128415981), #IHD3 SD 0.128415981
-        c("qnorm", 0.067658648, 0.131539114), #IHD4 SD 0.131539114
-        c("qnorm", 0.139761942, 0.145289088), #IHD5 SD 0.145289088
-        c("qnorm", 0.371563556, 0.150731717)), #IHD FORMER DRINKERS SD 0.150731717
+        #age-specific formula beta estimates:
+        # c("qnorm", 0, 0), #IHD1 SD 0.00
+        # c("qnorm", -0.051293294, 0.122015927), #IHD2 SD 0.122015927
+        # c("qnorm", 0.039220713, 0.128415981), #IHD3 SD 0.128415981
+        # c("qnorm", 0.067658648, 0.131539114), #IHD4 SD 0.131539114
+        # c("qnorm", 0.139761942, 0.145289088), #IHD5 SD 0.145289088
+        # c("qnorm", 0.371563556, 0.150731717)), #IHD FORMER DRINKERS SD 0.150731717
+        c("qnorm", 0.2151113, 0.1117997), #IHD1 MEN SD 0.1117997
+        c("qnorm", -0.1508229, 0.07424866), #IHD2 MEN SD 0.07424866
+        c("qnorm", -0.1743534, 0.07603185), #IHD3 MEN SD 0.07603185
+        c("qnorm", -0.1165338, 0.07667997), #IHD4 MEN SD 0.07667997
+        c("qnorm", 0.0295588, 0.0862533), #IHD5 MEN SD 0.0862533
+        c("qnorm", -0.04082199, 0.1207367), #IHD1 WOMEN SD 0.00
+        c("qnorm", -0.210721, 0.103435), #IHD2 WOMEN SD 0.103435
+        c("qnorm", -0.04082199, 0.1207367), #IHD3 WOMEN SD 0.1207367
+        c("qnorm", 0.0295588, 0.141823), #IHD4 WOMEN SD 0.141823
+        c("qnorm", 0.07696104, 0.2151188), #IHD5 WOMEN SD 0.2151188
+        c("qnorm", 0.3148107, 0.10191197), #IHD FORMER DRINKERS MEN SD 0.10191197
+        c("qnorm", 0.1988509, 0.12977504)), #IHD FORMER DRINKERS WOMEN SD 0.12977503
 
       ISTR <- list(
         c("qnorm", -0.105360516, 0.02837389), #ISTR1 SD 0.02837389
@@ -64,12 +77,28 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         c("qnorm", 0.048790, 0.1083886)), #HYPHD FORMER DRINKERS SD 0.1083886
 
       MVACC <- list(
-        c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
-        c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
+        #WHO formula beta estimates
+        # c("qnorm", 0.00299550897979837, 0.00050867822), #MVACC SD 0.00050867822
+        # c("qnorm", 0.00, 0.00)), #MVACC FORMER DRINKERS SD 0.00
+        c("qnorm", -0.261364764, 0.134600189), #MVACC1 MEN SD 0.134600189
+        c("qnorm", -0.544727175, 0.229576937), #MVACC2 MEN SD 0.229576937
+        c("qnorm", 0.357674444, 0.207168144), #MVACC3 MEN SD 0.207168144
+        c("qnorm", -0.235722334, 0.158593933), #MVACC1 WOMEN SD 0.158593933
+        c("qnorm", 0.31481074, 0.433702775), #MVACC2 WOMEN SD 0.433702775
+        c("qnorm", -0.0618754, 0.1883335758), #MVACC FORMER DRINKERS MEN SD 0.1883335758
+        c("qnorm", 0.26236426, 0.28251579)), #MVACC FORMER DRINKERS WOMEN SD 0.28251579
 
       UIJ <- list(
-        c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
-        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
+        #WHO formula beta estimates
+        # c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
+        # c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
+        c("qnorm", -0.116533816, 0.09879663), #UIJ1 MEN SD 0.09879663
+        c("qnorm", 0.371563556, 0.158103223), #UIJ2 MEN SD 0.158103223
+        c("qnorm", 0.732367894, 0.167293723), #UIJ3 MEN SD 0.167293723
+        c("qnorm", -0.162518929, 0.092421667), #UIJ1 WOMEN SD 0.092421667
+        c("qnorm", 0.751416089, 0.205669471), #UIJ2 WOMEN SD 0.205669471
+        c("qnorm", 0.086177696, 0.1321283), #UIJ FORMER DRINKERS MEN SD 0.1321283
+        c("qnorm", 0.0953101798, 0.14890646)), #UIJ FORMER DRINKERS WOMEN SD 0.14890646
 
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
@@ -85,11 +114,14 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL","AUD_FORMERDRINKER_MEN","AUD_FORMERDRINKER_WOMEN")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
-  names(prior$IHD) <- c("B_IHD1", "B_IHD2", "B_IHD3", "B_IHD4", "B_IHD5", "IHD_FORMERDRINKER")
+  names(prior$IHD) <- c("B_IHD1_MEN", "B_IHD2_MEN", "B_IHD3_MEN", "B_IHD4_MEN", "B_IHD5_MEN", 
+                        "B_IHD1_WOMEN", "B_IHD2_WOMEN", "B_IHD3_WOMEN", "B_IHD4_WOMEN", "B_IHD5_WOMEN", "IHD_FORMERDRINKER_MEN", "IHD_FORMERDRINKER_WOMEN")
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
-  names(prior$MVACC) <- c("B_MVACC", "MVACC_FORMERDRINKER")
-  names(prior$UIJ) <- c("B_UIJ", "UIJ_FORMERDRINKER")
+  names(prior$MVACC) <- c("B_MVACC1_MEN", "B_MVACC2_MEN", "B_MVACC3_MEN", "B_MVACC1_WOMEN", "B_MVACC2_WOMEN", 
+                          "MVACC_FORMERDRINKER_MEN", "MVACC_FORMERDRINKER_WOMEN")
+  names(prior$UIJ) <- c("B_UIJ1_MEN", "B_UIJ2_MEN", "B_UIJ3_MEN", "B_UIJ1_WOMEN", "B_UIJ2_WOMEN", 
+                        "UIJ_FORMERDRINKER_MEN", "UIJ_FORMERDRINKER_WOMEN")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
 
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)

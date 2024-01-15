@@ -21,7 +21,7 @@ run_microsim_alt(
   base_counts,
   diseases,
   lhs,
-  liverinteraction,
+  sesinteraction,
   policy = 0,
   percentreduction = 0.1,
   year_policy,
