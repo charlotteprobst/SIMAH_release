@@ -15,6 +15,7 @@ sample_lhs
 }
 \details{
 This function generates a latin hypercube for a set number of parameters
+Disease outcomes with significant interaction effect: LVDC, AUD, IHD
 }
 \keyword{hypercube}
 \keyword{latin}

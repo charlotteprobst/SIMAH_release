@@ -23,10 +23,15 @@ simulate_mortality <- function(data = basepop, diseases){
                !!risk_expr := !!risk_expr + !!prev_risk_expr)
 
     }
-    if(max(data[ , paste(risk_expr)])>1){
-    # if(any(data[, paste(risk_expr), drop = FALSE], na.rm = TRUE) > 1){
-      print(paste("Warning:", risk_expr, "exceeds 1!"))
-    }
+
+    max_risk <- max(data[,paste(risk_expr)])
+    print(paste(max_risk, risk_expr))
+
+    # if(max_risk>1){
+    # # # if(any(data[, paste(risk_expr), drop = FALSE], na.rm = TRUE) > 1){
+    #   print(paste("Warning:", risk_expr, "exceeds 1!"))
+    # }
+
   }
 
   data$prob <- runif(nrow(data))

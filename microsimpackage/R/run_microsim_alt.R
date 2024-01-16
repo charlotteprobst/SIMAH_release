@@ -12,12 +12,12 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          updatingeducation, education_transitions,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
-                         catcontmodel, Hep, drinkingdistributions,
+                         catcontmodel, drinkingdistributions,
                          base_counts, diseases, lhs, sesinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="demographics"){
+                         minyear=2000, maxyear=2005, output="mortality"){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
@@ -105,8 +105,9 @@ if(y == 2000){
 }
 
 # update the base rate based on lhs file
-# if(update_base_rate==1){
-#   rates <- update_base_rate(rates, lhs, y)
+if(update_base_rate==1){
+  rates <- update_base_rate(rates, lhs, y)
+}
 
 basepop <- left_join(basepop, rates, by=c("cat"))
 
