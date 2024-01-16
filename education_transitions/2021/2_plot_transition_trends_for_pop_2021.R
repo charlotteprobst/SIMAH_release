@@ -17,7 +17,7 @@ setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
 source("SIMAH_code/education_transitions/2021/functions/0_transition_population_2021.R")
 
-TPs <- read.csv("SIMAH_workplace/education_transitions/2021/model 5 2012_2018 as reference category/TPs/annual_education_TPs_model_5_alt_ref_cats.csv")
+TPs <- read.csv("SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6.csv")
 
 # Generate a column of transition
 TPs <- TPs %>% mutate(
@@ -44,20 +44,23 @@ TPs_allowed <- TPs %>% filter(Transition=="LEHS->LEHS"|Transition=="LEHS->HS"|
                               Transition=="SomeC3->SomeC3"|Transition=="SomeC3->College"|
                               Transition=="College->College")
 
-write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/TPs_allowed_2021_model5_alt_ref_cats.csv")
+write.csv(TPs_allowed, "SIMAH_workplace/education_transitions/TPs_allowed_2021_model6.csv")
 
 population <- generate_population(TPs, 1000000) # population starts all aged 18.
 
 # Simulate the population forward based on the model with a time covariate covering all years 
-simulatedpop2005 <- simulate_population(population, TPs, "1999-2005") 
-simulatedpop2011 <- simulate_population(population, TPs, "2006-2011") 
+# simulatedpop2005 <- simulate_population(population, TPs, "1999-2005") 
+# simulatedpop2011 <- simulate_population(population, TPs, "2006-2011") 
 simulatedpop2018 <- simulate_population(population, TPs, "2012-2018")  
 simulatedpop2021 <- simulate_population(population, TPs, "2019-2021") 
 
-simulatedpop_all_years <- rbind(simulatedpop2005, simulatedpop2011) %>%
-  rbind(., simulatedpop2018) %>% 
-  rbind(., simulatedpop2021)
-output <- simulatedpop_all_years
+# simulatedpop_all_years <- rbind(simulatedpop2005, simulatedpop2011) %>%
+#   rbind(., simulatedpop2018) %>% 
+#   rbind(., simulatedpop2021)
+# output <- simulatedpop_all_years
+
+simulatedpop_two_periods <- rbind(simulatedpop2018, simulatedpop2021)
+output <- simulatedpop_two_periods
 
 # by age 26 where have people ended up (overall)
 education_at_26 <- output %>%
@@ -102,22 +105,19 @@ ggplot(education_at_26, aes(x = period, y = Percentage, fill = education)) +
 # Plotting stacked bar chart
 ggplot(education_at_26, aes(x = period, y = Percentage, fill = education)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Percentage of simulated individuals,  in each education group by age 26",
-       x = "Time period used to model simulated individuals",
+  labs(x = "Time period",
        y = "Percentage") +
+  theme(plot.caption = element_text(hjust=0)) +
   scale_fill_manual(values=cbPalette) +  
-  theme_minimal() +
-  theme(legend.position = "bottom") 
-ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked.png", dpi=300, width = 12, height = 7)
+  theme(legend.position = "right") 
+ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked_model6.png", dpi=300, width = 12, height = 7)
 
 # Plotting separate plots for each sex and race combination using facet_grid
 ggplot(education_at_26_race_sex, aes(x = period, y = Percentage, fill = education)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Percentage of simulated individuals,  in each education group by age 26+",
-       x = "Time period used to model simulated individuals",
+  labs(x = "Time period",
        y = "Percentage") +
-  scale_fill_brewer(palette = "Set2") +  # Adjust fill colors as needed
-  theme_minimal() +
-  facet_grid(sex ~ race)  # Creating a grid of plots for each combination of sex and race
+  scale_fill_manual(values=cbPalette) + 
+  facet_grid(~race)  # Creating a grid of plots for each combination of sex and race
 ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_sex_race_stacked.png", dpi=300, width = 12, height = 7)
 
