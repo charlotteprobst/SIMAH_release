@@ -17,7 +17,9 @@ source("SIMAH_code/education_transitions/2021/functions/0_setup_education_model_
 # Read in prepped model data
 data <- read_rds("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
 
-# Prep data for model 5
+### RUN MODELS COVERING WHOLE TIME, WITH A COVARIATE FOR THE TIME PERIOD
+
+### BASED ON FOUR TIME PERIODS
 datat5 <- data
 datat5$timevary <- cut(data$year,
                      breaks=c(0,2005,2011,2018, 2021),
@@ -25,7 +27,7 @@ datat5$timevary <- cut(data$year,
 # Relevel the 'timevary' variable to set "2012-2018" as the reference category
 datat5$timevary <- relevel(datat5$timevary, ref = "2012-2018")
 
-# specify model
+# specify models
 
 Q <- rbind( c(0.5, 0.5, 0, 0, 0),
             c(0, 0.5, 0.5, 0, 0),
@@ -223,3 +225,29 @@ model_names <- c("No interactions", "Men", "Women", "White", "Black", "Hispanic"
                  "White men", "Black men", "Hispanic men", "Other men",
                  "White women", "Black women", "Hispanic women", "Other women")
 AIC_comparison_table <- data.frame(Model = model_names, AIC = AIC_values)
+
+
+#### BASED ON TWO TIME PERIODS ONLY 
+
+# 2007-2018 & 2019-2021
+datat5_main <- data %>% filter(year>=2006) %>% ungroup()
+datat5_main$timevary <- cut(datat5_main$year,
+                            breaks=c(0, 2019, 2021),
+                            labels=c("2007-2018", "2019-2021"))
+# Relevel the 'timevary' variable to set "2006-2018" as the reference category
+datat5_main$timevary <- relevel(datat5_main$timevary, ref = "2007-2018")
+
+# remove anyone with only one year of data- this gives an error in MSM 
+datat5_main_observations_over_1 <- datat5_main %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
+  filter(totalobservations>1) 
+
+Q5_main <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat5_main)
+modelt5_main <- msm(educNUM~year, newID, data=datat5_main, qmatrix=Q5_main,
+                    center=FALSE,
+                    covariates=~agecat + sex + racefinal2 + timevary,
+                    control=list(trace=1, fnscale=271181, maxit=200))
+
+saveRDS(modelt5_main, "SIMAH_workplace/education_transitions/2021/final_models/modelt5_main.RDS")
+
+
+
