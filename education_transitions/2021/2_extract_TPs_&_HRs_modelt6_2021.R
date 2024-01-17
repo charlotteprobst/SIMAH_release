@@ -139,7 +139,7 @@ modelt6_HRs_other_men <- predict_HRs(modelt6_other_men)
 modelt6_HRs_white_women <- predict_HRs(modelt6_white_women)
 modelt6_HRs_black_women <- predict_HRs(modelt6_black_women)
 modelt6_HRs_hispanic_women <- predict_HRs(modelt6_hispanic_women)
-# modelt6_HRs_other_women <- predict_HRs(modelt6_other_women) 
+modelt6_HRs_other_women <- predict_HRs(modelt6_other_women) 
 modelt6_HRs_interaction_race <- predict_HRs(modelt6_interaction_race)
 modelt6_HRs_interaction_sex <- predict_HRs(modelt6_interaction_sex)
 
