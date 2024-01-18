@@ -20,7 +20,10 @@ rm(list = ls())
 
 library(tidyverse)
 library(dplyr)
+library(grid)
+library(Matrix)
 library(survey)
+library(openxlsx)
 
 # --------------------------------------------------------------------------------------
 
@@ -29,7 +32,7 @@ library(survey)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20240112
+DATE <- 20240118
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -44,7 +47,7 @@ data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
 pdat <- data %>%
   
   # select random subsample (for testing)
-  # sample_frac(0.001) %>%
+  #sample_frac(0.001) %>%
   
   # prepare data
   mutate_at(c("race_eth", "sex_recode", "education_summary", "marital_status", 
@@ -153,13 +156,13 @@ out.drink.m <- as.data.frame(coef(summary(drinkstatus.m))) %>%
   mutate(estimate = exp(Estimate), 
          conf.low = exp(Estimate - 1.96*`Std. Error`),
          conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
-  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.drink.w <- as.data.frame(coef(summary(drinkstatus.w))) %>% 
   mutate(estimate = exp(Estimate), 
          conf.low = exp(Estimate - 1.96*`Std. Error`),
          conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
-  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.drink <- merge(out.drink.m, out.drink.w, by = "term", all = T, suffix = c(".men", ".women"))
 
@@ -175,23 +178,19 @@ out.gpd.w <- as.data.frame(coef(summary(gpd.w))) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.gpd <- merge(out.gpd.m, out.gpd.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients)")
-out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients)")
-out.gpdexp <- merge(out.gpdexp.m, out.gpdexp.w, by = "term", all = T, suffix = c(".men", ".women"))
-
 out.alccat.m <- as.data.frame(coef(summary(alccat.m))) %>% 
   mutate(estimate = exp(Estimate), 
          conf.low = exp(Estimate - 1.96*`Std. Error`),
          conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
-  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.alccat.w <- as.data.frame(coef(summary(alccat.w))) %>% 
   mutate(estimate = exp(Estimate), 
          conf.low = exp(Estimate - 1.96*`Std. Error`),
          conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
-  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.alccat <- merge(out.alccat.m, out.alccat.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
+list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "CategoryIII" = out.alccat)
 write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_SA_SVY_output_svyglm.xlsx"), rowNames = FALSE)
