@@ -1,4 +1,5 @@
 ## Education transitions analysis to 2021
+# Model 6.  Model with a covariate for time period (2012-2018; 2019-2021)
 
 # Setup
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
@@ -19,14 +20,26 @@ source("SIMAH_code/education_transitions/2021/functions/0_transition_population_
 
 # Load model data
 data <- readRDS("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
-data <- data %>% filter(year>=2012)
-men <- data %>% filter(sex==0)
-women <- data %>% filter(sex==1)
-white <- data %>% filter(racefinal2=="white")
-black <- data %>% filter(racefinal2=="black")
-hispanic <- data %>% filter(racefinal2=="hispanic")
-other <- data %>% filter(racefinal2=="other")
-black_men <- data %>% filter(racefinal2=="black", sex==0)
+
+datat6 <- data %>% filter(year>=2012) 
+datat6$timevary <- cut(datat6$year,
+                         breaks=c(0,2018, 2021),
+                         labels=c("2012-2018", "2019-2021"))
+
+men <- datat6 %>% filter(sex==0)
+women <- datat6 %>% filter(sex==1)
+white <- datat6 %>% filter(racefinal2=="white")
+black <- datat6 %>% filter(racefinal2=="black")
+hispanic <- datat6 %>% filter(racefinal2=="hispanic")
+other <- datat6 %>% filter(racefinal2=="other")
+white_men <- datat6 %>% filter(racefinal2=="white", sex==0)
+black_men <- datat6 %>% filter(racefinal2=="black", sex==0)
+hispanic_men <- datat6 %>% filter(racefinal2=="hispanic", sex==0)
+other_men <- datat6 %>% filter(racefinal2=="other", sex==0)
+white_women <- datat6 %>% filter(racefinal2=="white", sex==1)
+black_women <- datat6 %>% filter(racefinal2=="black", sex==1)
+hispanic_women <- datat6 %>% filter(racefinal2=="hispanic", sex==1)
+other_women <- datat6 %>% filter(racefinal2=="other", sex==1)
 
 # Load MSM Models of interest
 modelt6 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/covid_modelt6.RDS")
@@ -76,32 +89,15 @@ write_csv(modelt6_TPs_interaction_sex, "SIMAH_workplace/education_transitions/20
 
 ##################################################################
 
-# Cut 'year' variable into two time periods 
-cutYearIntoIntervals <- function(dataset) {
-  dataset$time_1 <- cut(dataset$year,
-                        breaks=c(0,2018, 2021),
-                        labels=c("2012-2018", "2019-2021"))
-  return(dataset)
-}
-
-data <- cutYearIntoIntervals(data)
-men <- cutYearIntoIntervals(men)
-women <- cutYearIntoIntervals(women)
-white <- cutYearIntoIntervals(white)
-black <- cutYearIntoIntervals(black)
-hispanic <- cutYearIntoIntervals(hispanic)
-other <- cutYearIntoIntervals(other)
-black_men <- cutYearIntoIntervals(black_men)
-
 # Extract all possible combos of individuals to transition
-combo_2 <- expand.grid(timevary = unique(data$time_1), agecat = unique(data$agecat), sex = unique(data$sex), racefinal2=unique(data$racefinal2))
-combo_2_men <- expand.grid(timevary = unique(men$time_1), agecat = unique(men$agecat), racefinal2=unique(men$racefinal2))
-combo_2_women <- expand.grid(timevary = unique(women$time_1), agecat = unique(women$agecat), racefinal2=unique(women$racefinal2))
-combo_2_white <- expand.grid(timevary = unique(white$time_1), agecat = unique(white$agecat), sex=unique(white$sex))
-combo_2_black <- expand.grid(timevary = unique(black$time_1), agecat = unique(black$agecat), sex=unique(black$sex))
-combo_2_hispanic <- expand.grid(timevary = unique(hispanic$time_1), agecat = unique(hispanic$agecat), sex=unique(hispanic$sex))
-combo_2_other <- expand.grid(timevary = unique(other$time_1), agecat = unique(other$agecat), sex=unique(other$sex))
-combo_2_black_men <- expand.grid(timevary = unique(black_men$time_1), agecat = unique(black_men$agecat))
+combo_2 <- expand.grid(timevary = unique(datat6$timevary), agecat = unique(datat6$agecat), sex = unique(datat6$sex), racefinal2=unique(datat6$racefinal2))
+combo_2_men <- expand.grid(timevary = unique(men$timevary), agecat = unique(men$agecat), racefinal2=unique(men$racefinal2))
+combo_2_women <- expand.grid(timevary = unique(women$timevary), agecat = unique(women$agecat), racefinal2=unique(women$racefinal2))
+combo_2_white <- expand.grid(timevary = unique(white$timevary), agecat = unique(white$agecat), sex=unique(white$sex))
+combo_2_black <- expand.grid(timevary = unique(black$timevary), agecat = unique(black$agecat), sex=unique(black$sex))
+combo_2_hispanic <- expand.grid(timevary = unique(hispanic$timevary), agecat = unique(hispanic$agecat), sex=unique(hispanic$sex))
+combo_2_other <- expand.grid(timevary = unique(other$timevary), agecat = unique(other$agecat), sex=unique(other$sex))
+combo_2_black_men <- expand.grid(timevary = unique(black_men$timevary), agecat = unique(black_men$agecat))
 
 modelt6_TPs_detail <- extractTP_incl_time(modelt6, combo_2)
 modelt6_TPs_men_detail <- extractTP_interaction_sex(modelt6_men,combo_2_men)
@@ -144,23 +140,23 @@ modelt6_HRs_interaction_race <- predict_HRs(modelt6_interaction_race)
 modelt6_HRs_interaction_sex <- predict_HRs(modelt6_interaction_sex)
 
 # Adjust the CIs to reflect the true (rather than replicated) population size
-modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2012-2021", data)
-modelt6_HRs_adjusted_men <- adjust_CIs(modelt6_men, "2012-2021", data)
-modelt6_HRs_adjusted_women <- adjust_CIs(modelt6_women, "2012-2021", data)
-modelt6_HRs_adjusted_white <- adjust_CIs(modelt6_white, "2012-2021", data)
-modelt6_HRs_adjusted_black <- adjust_CIs(modelt6_black, "2012-2021", data)
-modelt6_HRs_adjusted_hispanic <- adjust_CIs(modelt6_hispanic, "2012-2021", data)
-modelt6_HRs_adjusted_other <- adjust_CIs(modelt6_other, "2012-2021", data)
-modelt6_HRs_adjusted_white_men <- adjust_CIs(modelt6_white_men, "2012-2021", data)
-modelt6_HRs_adjusted_black_men <- adjust_CIs(modelt6_black_men, "2012-2021", data)
-modelt6_HRs_adjusted_hispanic_men <- adjust_CIs(modelt6_hispanic_men, "2012-2021", data)
-modelt6_HRs_adjusted_other_men <- adjust_CIs(modelt6_other_men, "2012-2021", data)
-modelt6_HRs_adjusted_white_women <- adjust_CIs(modelt6_white_women, "2012-2021", data)
-modelt6_HRs_adjusted_black_women <- adjust_CIs(modelt6_black_women, "2012-2021", data)
-modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2012-2021", data)
-modelt6_HRs_adjusted_other_women <- adjust_CIs(modelt6_other_women, "2012-2021", data)
-modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2012-2021", data)
-modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2012-2021", data)
+modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2012-2021", datat6)
+modelt6_HRs_adjusted_men <- adjust_CIs(modelt6_men, "2012-2021", men)
+modelt6_HRs_adjusted_women <- adjust_CIs(modelt6_women, "2012-2021", women)
+modelt6_HRs_adjusted_white <- adjust_CIs(modelt6_white, "2012-2021", white)
+modelt6_HRs_adjusted_black <- adjust_CIs(modelt6_black, "2012-2021", black)
+modelt6_HRs_adjusted_hispanic <- adjust_CIs(modelt6_hispanic, "2012-2021", hispanic)
+modelt6_HRs_adjusted_other <- adjust_CIs(modelt6_other, "2012-2021", other)
+modelt6_HRs_adjusted_white_men <- adjust_CIs(modelt6_white_men, "2012-2021", white_men)
+modelt6_HRs_adjusted_black_men <- adjust_CIs(modelt6_black_men, "2012-2021", black_men)
+modelt6_HRs_adjusted_hispanic_men <- adjust_CIs(modelt6_hispanic_men, "2012-2021", hispanic_men)
+modelt6_HRs_adjusted_other_men <- adjust_CIs(modelt6_other_men, "2012-2021", other_men)
+modelt6_HRs_adjusted_white_women <- adjust_CIs(modelt6_white_women, "2012-2021", white_women)
+modelt6_HRs_adjusted_black_women <- adjust_CIs(modelt6_black_women, "2012-2021", black_women)
+modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2012-2021", hispanic_women)
+modelt6_HRs_adjusted_other_women <- adjust_CIs(modelt6_other_women, "2012-2021", other_women)
+modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2012-2021", datat6)
+modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2012-2021", datat6)
 
 write_csv(modelt6_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6.csv")
 write_csv(modelt6_HRs_adjusted_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_men.csv")

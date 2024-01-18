@@ -18,11 +18,6 @@ source("SIMAH_code/education_transitions/2021/functions/0_setup_education_model_
 #### SCRIPT CAN BE STARTED FROM HERE IF REWEIGHTED DATA WITH IDS EXISTS ####
 data <- read_csv("SIMAH_workplace/education_transitions/2021/data_to_model/new_PSID_weighted_IDs_2021.csv")
 
-# Prep data using setup_markov_model_formodel function from the 1_setup_markov_model_2021.R script.
-# (re-codes education/race, drops individuals with one year of data, drops anyone who transitions backwards etc.)
-
-data <- setup_education_model_2021(data)
-
 data$agecat <- ifelse(data$age==18, "18",
                         ifelse(data$age==19, "19",
                                ifelse(data$age==20, "20",
@@ -31,14 +26,9 @@ data$agecat <- ifelse(data$age==18, "18",
 # Convert 'agecat' to a factor with specified levels
 data$agecat <- factor(data$agecat, levels = c("18", "19", "20", "21-25", "26+"))
 
-# Save prepped model data
-write_rds(data, "SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
-
-################################################################################################################
-# Read in prepped data
-data <- read_rds("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
-
 ##### Set-up an individual model for each time period
+# NB. Need to prep the data for each different model type using setup_education_model function 
+# (re-codes education/race, drops individuals with one year of data, scales age data, drops anyone who transitions backwards etc.)
 
 Q <- rbind( c(0.5, 0.5, 0, 0, 0),
             c(0, 0.5, 0.5, 0, 0),
@@ -46,11 +36,12 @@ Q <- rbind( c(0.5, 0.5, 0, 0, 0),
             c(0, 0, 0, 0.5, 0.5),
             c(0, 0, 0, 0, 0.5))
 
-# 1999-2005
+# MODEL 1: 1999-2005
 datat1 <- data %>% filter(year<=2005)
-datat1 <- data[order(datat1$newID, datat1$year),]
-length(unique(datat1$uniqueID))
-length(unique(datat1$newID))
+datat1 <- setup_education_model_2021(datat1)
+datat1 <- datat1[order(datat1$newID, datat1$year),]
+length(unique(datat1$uniqueID)) # 4617
+length(unique(datat1$newID)) # 1146668
 # remove anyone with only one year of data- this gives an error in MSM 
 datat1 <- datat1 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
@@ -61,9 +52,10 @@ modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q1,
                                    covariates=~agecat + sex + racefinal2,
                         control=list(trace=1, fnscale=271181, maxit=200))
 
-# 2005-2013
+# MODEL 2: 2005-2013
 datat2 <- data %>% filter(year<=2013 & year>=2005)
-datat2 <- data[order(datat2$newID, datat2$year),]
+datat2 <- setup_education_model_2021(datat2)
+datat2 <- datat2[order(datat2$newID, datat2$year),]
 length(unique(datat2$uniqueID))
 length(unique(datat2$newID))
 datat2 <- datat2 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -75,9 +67,10 @@ modelt2 <- msm(educNUM~year, newID, data=datat2, qmatrix=Q2,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
 
-# 2013-2018
+# MODEL 3: 2013-2018
 datat3 <- data %>% filter(year>=2013)
-datat3 <- data[order(datat3$newID, datat3$year),]
+datat3 <- setup_education_model_2021(datat3)
+datat3 <- datat3[order(datat3$newID, datat3$year),]
 length(unique(datat3$uniqueID))
 length(unique(datat3$newID))
 datat3 <- datat3 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -89,9 +82,10 @@ modelt3 <- msm(educNUM~year, newID, data=datat3, qmatrix=Q3,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
 
-# 2019-2021
+# MODEL 4: 2019-2021
 datat4 <- data %>% filter(year>=2019 & year<=2021)
-datat4 <- data[order(datat4$newID, datat4$year),]
+datat4 <- setup_education_model_2021(datat4)
+datat4 <- datat4[order(datat4$newID, datat4$year),]
 length(unique(datat4$uniqueID))
 length(unique(datat4$newID))
 datat4 <- datat4 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
@@ -105,11 +99,17 @@ modelt4 <- msm(educNUM~year, newID, data=datat4, qmatrix=Q,
 
 ##### One combined model with a covariate for time period
 
-# Four time periods
+# MODEL 5: Covariate for time period, with four time periods
 datat5 <- data
-datat5$timevary <- cut(data$year,
+datat5 <- setup_education_model_2021(datat5)
+datat5$timevary <- cut(datat5$year,
                      breaks=c(0,2005,2011,2018, 2021),
                      labels=c("1999-2005","2006-2011","2012-2018", "2019-2021"))
+datat5 <- datat5[order(datat5$newID, datat5$year),]
+length(unique(datat5$uniqueID))
+length(unique(datat5$newID))
+datat5 <- datat5 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
+  filter(totalobservations>1) 
 # Relevel the 'timevary' variable to set "2012-2018" as the reference category
 datat5$timevary <- relevel(datat5$timevary, ref = "2012-2018")
 
@@ -119,15 +119,17 @@ modelt5 <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
                covariates=~agecat + sex + racefinal2 + timevary,
                control=list(trace=1, fnscale=271181, maxit=200))
 
-# Two time periods (narrow 'pre-covid' time period)
+# MODEL 6: Covariate for time period, two time periods (narrow 'pre-covid' time period)
 datat6 <- data %>% filter(year >= 2012)
+datat6 <- setup_education_model_2021(datat6)
 datat6$timevary <- cut(datat6$year,
                        breaks=c(0,2018, 2021),
                        labels=c("2012-2018", "2019-2021"))
-# remove anyone with only one year of data- this gives an error in MSM 
+datat6 <- datat6[order(datat6$newID, datat6$year),]
+length(unique(datat6$uniqueID)) # 7249
+length(unique(datat6$newID)) # 1666272
 datat6 <- datat6 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
-# Relevel the 'timevary' variable to set "2012-2018" as the reference category
 datat6$timevary <- relevel(datat6$timevary, ref = "2012-2018")
 
 Q6 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat6)
@@ -139,10 +141,13 @@ modelt6 <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
 
 # Two time periods (broader 'pre-covid' time period) 
 datat7 <- data %>% filter(year>=2006) 
+datat7 <- setup_education_model_2021(datat7)
 datat7$timevary <- cut(datat7$year,
                             breaks=c(0, 2019, 2021),
                             labels=c("2007-2018", "2019-2021"))
-# remove anyone with only one year of data- this gives an error in MSM 
+datat7 <- datat7[order(datat7$newID, datat7$year),]
+length(unique(datat7$uniqueID))
+length(unique(datat7$newID))
 datat7 <- datat7 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1)
 # Relevel the 'timevary' variable to set "2007-2018" as the reference category
@@ -203,7 +208,7 @@ modelt6_women <- msm(educNUM~year, newID, data=women, qmatrix=Q_women,
 saveRDS(modelt6_men, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_men.RDS")
 saveRDS(modelt6_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_women.RDS")
 
-## Run separate models for each race group to enable interactions (based on model 5)
+## Run separate models for each race group to enable interactions 
 race_data <- datat6
 
 # White
@@ -324,4 +329,20 @@ saveRDS(modelt6_white_women, "SIMAH_workplace/education_transitions/2021/final_m
 saveRDS(modelt6_black_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_black_women.RDS")
 saveRDS(modelt6_hispanic_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_hispanic_women.RDS")
 saveRDS(modelt6_other_women, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_other_women.RDS")
+
+
+###### Run models treating age as continuous rather than categorical
+
+# Model 6
+
+
+
+
+
+# Model 6 with an interaction for race
+modelt6_interaction_race_age_cont <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
+                                center=FALSE,
+                                covariates=~sex + agescaled + agesqscaled + racefinal2 + timevary + racefinal2*timevary,
+                                control=list(trace=1, fnscale=271181, maxit=200))
+saveRDS(modelt6_interaction_race_age_cont, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race_age_cont.RDS")
 
