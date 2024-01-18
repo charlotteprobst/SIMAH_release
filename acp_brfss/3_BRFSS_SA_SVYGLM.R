@@ -29,7 +29,7 @@ library(survey)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230926
+DATE <- 20240112
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -81,19 +81,19 @@ svydat <- svydesign(ids = ~X_PSU, strata = ~interaction(X_STSTR, YEAR),
 
 drinkstatus.m <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary + 
                         drinkculture + controlstate + z.unemp.rate +
-                        race_eth + marital_status + age_gr + sampling + State,
+                        race_eth + marital_status + age_gr + sampling + YEAR*State,
                       design = subset(svydat, sex_recode == "Men"),
                       family = quasibinomial(link = "logit"))
-#broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE)
+#summary(drinkstatus.m)
 
 # WOMEN 
 
 drinkstatus.w <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary + 
                           drinkculture + controlstate + z.unemp.rate +
-                          race_eth + marital_status + age_gr + sampling + State,
+                          race_eth + marital_status + age_gr + sampling + YEAR*State,
                         design = subset(svydat, sex_recode == "Women"),
                         family = quasibinomial(link = "logit"))
-#broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE)
+#summary(drinkstatus.w)
 
 # --------------------------------------------------------------------------------------
 
@@ -105,19 +105,19 @@ drinkstatus.w <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary +
 
 gpd.m <- svyglm(gpd_log ~ sunsalesban_di*education_summary + 
                   drinkculture + controlstate + z.unemp.rate +
-                  race_eth + marital_status + age_gr + sampling + State,
+                  race_eth + marital_status + age_gr + sampling + YEAR*State,
                 design = subset(svydat, sex_recode == "Men" & gramsperday > 0),
                 family = gaussian(link = "identity"))
-#broom.mixed::tidy(gpd.m, conf.int = TRUE, exponentiate = FALSE)
+#summary(gpd.m)
 
 # WOMEN
 
 gpd.w <- svyglm(gpd_log ~ sunsalesban_di*education_summary + 
                   drinkculture + controlstate + z.unemp.rate +
-                  race_eth + marital_status + age_gr + sampling + State,
+                  race_eth + marital_status + age_gr + sampling + YEAR*State,
                 design = subset(svydat, sex_recode == "Women" & gramsperday > 0),
                 family = gaussian(link = "identity"))
-#broom.mixed::tidy(gpd.w, conf.int = TRUE, exponentiate = FALSE)
+#summary(gpd.w)
 
 # --------------------------------------------------------------------------------------
 
@@ -129,19 +129,19 @@ gpd.w <- svyglm(gpd_log ~ sunsalesban_di*education_summary +
 
 alccat.m <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
                      drinkculture + controlstate + z.unemp.rate +
-                     race_eth + marital_status + age_gr + sampling + State,
+                     race_eth + marital_status + age_gr + sampling + YEAR*State,
                    design = subset(svydat, sex_recode == "Men" & gramsperday > 0),
                    family = quasibinomial(link = "logit"))
-#broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE)
+#summary(alccat.m)
 
 # WOMEN
 
 alccat.w <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
                      drinkculture + controlstate + z.unemp.rate +
-                     race_eth + marital_status + age_gr + sampling + State,
+                     race_eth + marital_status + age_gr + sampling + YEAR*State,
                    design = subset(svydat, sex_recode == "Women" & gramsperday > 0),
                    family = quasibinomial(link = "logit"))
-#broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE)
+#summary(alccat.w)
 
 # --------------------------------------------------------------------------------------
 
@@ -149,27 +149,49 @@ alccat.w <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
 # EXPORT: TABLE
 # ----------------------------------------------------------------
 
-out.drink.m <- broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink.w <- broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink <- left_join(out.drink.m, out.drink.w, by = join_by(term), suffix = c(".men", ".women"))
+out.drink.m <- as.data.frame(coef(summary(drinkstatus.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink.w <- as.data.frame(coef(summary(drinkstatus.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink <- merge(out.drink.m, out.drink.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.gpd.m <- broom.mixed::tidy(gpd.m, conf.int = TRUE, exponentiate = FALSE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.gpd.w <- broom.mixed::tidy(gpd.w, conf.int = TRUE, exponentiate = FALSE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.gpd <- left_join(out.gpd.m, out.gpd.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpd.m <- as.data.frame(coef(summary(gpd.m))) %>% 
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.gpd.w <- as.data.frame(coef(summary(gpd.w))) %>% 
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.gpd <- merge(out.gpd.m, out.gpd.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients)")
 out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients)")
-out.gpdexp <- left_join(out.gpdexp.m, out.gpdexp.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpdexp <- merge(out.gpdexp.m, out.gpdexp.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.alccat.m <- broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat.w <- broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE) %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat <- left_join(out.alccat.m, out.alccat.w, by = join_by(term), suffix = c(".men", ".women"))
+out.alccat.m <- as.data.frame(coef(summary(alccat.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat.w <- as.data.frame(coef(summary(alccat.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat <- merge(out.alccat.m, out.alccat.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
 write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSS_SA_SVY_output_svyglm.xlsx"), rowNames = FALSE)

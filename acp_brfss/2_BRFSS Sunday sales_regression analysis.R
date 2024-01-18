@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20231026
+DATE <- 20240112
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -74,7 +74,10 @@ ggdesign <- theme_bw() +
 col1 <- c("#B5C95A", "#1D9A6C", "#0A2F51")
 
 #label_education <- c("low", "medium", "high")
-label_ban <- c("Ban", "No Ban")
+label_ban <- c("No Ban", "Ban")
+
+# SAFE MEMORY
+control.compute=list(save.memory=TRUE)
 
 # ----------------------------------------------------------------
 # DRINKING ALCOHOL VS. ABSTAINING: MIXED-EFFECT MODELS
@@ -82,32 +85,19 @@ label_ban <- c("Ban", "No Ban")
 
 # MEN
 
-drinkstatus.m <- glmer(drinkingstatus ~ sunsalesban_di*education_summary + 
+drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
+                         race_eth + marital_status + age_gr + YEAR*State,
                         data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
-summary(drinkstatus.m)
-broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
+#summary(drinkstatus.m)
 
-# SECULAR TREND
-#tseries::adf.test(residuals(drinkstatus.m)) # p = .01 -> stationarity
-
-res <- residuals(drinkstatus.m)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(alc.prev = mean(as.numeric(res)))
-
-#ggplot(data = resAGG, aes(x = V1, y = alc.prev)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
-  # OK => continue with one-level model without secular trend
 
 # MARGINAL MEANS
 # https://strengejacke.github.io/ggeffects/articles/technical_differencepredictemmeans.html
 
-margins <- ggemmeans(drinkstatus.m, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(drinkstatus.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.DS.M <- 
@@ -122,31 +112,17 @@ IA.DS.M <-
 
 # WOMEN 
 
-drinkstatus.w <- glmer(drinkingstatus ~ sunsalesban_di*education_summary + 
+drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
+                         race_eth + marital_status + age_gr + YEAR*State,
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
-summary(drinkstatus.w)
-broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
-
-# SECULAR TREND
-#tseries::adf.test(residuals(drinkstatus.w)) # p = .01 -> stationarity
-
-res <- residuals(drinkstatus.w)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(alc.prev = mean(as.numeric(res)))
-
-#ggplot(data = resAGG, aes(x = V1, y = alc.prev)) + geom_smooth() + facet_wrap(vars(V3)) 
-# no unique pattern across states
-# OK => continue with one-level model without secular trend
+#summary(drinkstatus.w)
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(drinkstatus.w, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(drinkstatus.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.DS.W <- 
@@ -171,31 +147,18 @@ ggplot(pdat[pdat$gramsperday > 0,], aes(x = log(gramsperday))) + geom_histogram(
 pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 
 # MEN
-# svyglm for survey weights plus margins but no random intercept -> probably best model! https://www.rdocumentation.org/packages/survey/versions/4.2-1/topics/svyglm
 
-gpd.m <- lme(gpd_log ~ sunsalesban_di*education_summary + 
+gpd.m <- glm(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr, random = ~1|State, 
+               race_eth + marital_status + age_gr + State,
              data = pdat[pdat$sex_recode == "Men",])
-summary(gpd.m)
-
-# CHECK SECULAR TREND
-#tseries::adf.test(residuals(gpd.m)) # p = .01 -> stationarity
-
-res <- residuals(gpd.m)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(gpd = mean(as.numeric(res)))
-
-#ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+#summary(gpd.m)
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.GPD.M <- 
@@ -211,28 +174,17 @@ IA.GPD.M <-
 
 # WOMEN
 
-gpd.w <- lme(gpd_log ~ sunsalesban_di*education_summary + 
+gpd.w <- glm(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr, random = ~1|State, 
+               race_eth + marital_status + age_gr + YEAR*State, 
              data = pdat[pdat$sex_recode == "Women",])
-summary(gpd.w)
+#summary(gpd.w)
 
-# CHECK SECULAR TREND
-#tseries::adf.test(residuals(gpd.w)) # p = .01 -> stationarity
-
-res <- residuals(gpd.w)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(gpd = mean(as.numeric(res)))
-
-#ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
 # MARGINAL MEANS 
 
-margins <- ggemmeans(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.GPD.W <- 
@@ -258,30 +210,17 @@ pdat <- pdat %>% filter(gramsperday > 0) %>%
 
 # MEN
 
-alccat.m <- glmer(alccat3 ~ sunsalesban_di*education_summary + 
+alccat.m <- glm(alccat3 ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
+                         race_eth + marital_status + age_gr + State,
                        data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
-summary(alccat.m)
-broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
-
-# CHECK SECULAR TREND
-#tseries::adf.test(residuals(alccat.m)) # p = .01 -> stationarity
-
-res <- residuals(alccat.m)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(gpd = mean(as.numeric(res)))
-
-#ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+#summary(alccat.m)
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(alccat.m, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(alccat.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.ALCCAT.M <- 
@@ -298,30 +237,17 @@ IA.ALCCAT.M <-
 
 # WOMEN
 
-alccat.w <- glmer(alccat3 ~ sunsalesban_di*education_summary + 
+alccat.w <- glm(alccat3 ~ sunsalesban_di*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + (1 | State),
+                    race_eth + marital_status + age_gr + State,
                   data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
-summary(alccat.w)
-broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
-
-# CHECK SECULAR TREND
-#tseries::adf.test(residuals(alccat.w)) # p = .01 -> stationarity
-
-res <- residuals(alccat.w)
-res <- as.data.table(cbind(pdat$YEAR, res, pdat$State))
-
-resAGG <- res %>% group_by(V1, V3) %>% 
-  summarise(gpd = mean(as.numeric(res)))
-
-ggplot(data = resAGG, aes(x = V1, y = gpd)) + geom_smooth() + facet_wrap(vars(V3)) 
-  # no unique pattern across states
+#summary(alccat.w)
 
 # MARGINAL MEANS 
 
-margins <- ggemmeans(alccat.w, terms = c("education_summary", "sunsalesban_di")) %>% 
-  mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
-         group = factor(group, levels = c("ban", "no ban")))
+margins <- ggeffect(alccat.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
 
 # INTERACTION PLOT
 IA.ALCCAT.W <- 
@@ -350,33 +276,49 @@ ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_BRFSS_INTERACT_ALT.jpg"), dp
 # EXPORT: TABLE
 # ----------------------------------------------------------------
 
-out.drink.m <- broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink.w <- broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink <- left_join(out.drink.m, out.drink.w, by = join_by(term), suffix = c(".men", ".women"))
+out.drink.m <- as.data.frame(coef(summary(drinkstatus.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink.w <- as.data.frame(coef(summary(drinkstatus.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink <- merge(out.drink.m, out.drink.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 out.gpd.m <- as.data.frame(coef(summary(gpd.m))) %>% 
-  mutate(conf.low = Value - 1.96*Std.Error,
-         conf.high = Value + 1.96*Std.Error) %>%
-  rownames_to_column(var = "term") %>% rename("estimate" = "Value", "p.value" = "p-value") %>%
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.gpd.w <- as.data.frame(coef(summary(gpd.w))) %>% 
-  mutate(conf.low = Value - 1.96*Std.Error,
-         conf.high = Value + 1.96*Std.Error) %>%
-  rownames_to_column(var = "term") %>% rename("estimate" = "Value", "p.value" = "p-value") %>%
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
-out.gpd <- left_join(out.gpd.m, out.gpd.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpd <- merge(out.gpd.m, out.gpd.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients$fixed)) %>% rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients$fixed)")
-out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients$fixed)) %>% rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients$fixed)")
-out.gpdexp <- left_join(out.gpdexp.m, out.gpdexp.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients)")
+out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients)")
+out.gpdexp <- merge(out.gpdexp.m, out.gpdexp.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.alccat.m <- broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat.w <- broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat <- left_join(out.alccat.m, out.alccat.w, by = join_by(term), suffix = c(".men", ".women"))
+out.alccat.m <- as.data.frame(coef(summary(alccat.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat.w <- as.data.frame(coef(summary(alccat.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat <- merge(out.alccat.m, out.alccat.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
-write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSSraw_output_glmer.xlsx"), rowNames = FALSE)
+write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSSraw_output_glm.xlsx"), rowNames = FALSE)

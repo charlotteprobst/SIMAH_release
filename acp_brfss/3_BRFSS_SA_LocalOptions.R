@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20230925
+DATE <- 20240112
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -73,19 +73,19 @@ pdat <- data %>%
 
 # MEN
 
-drinkstatus.m <- glmer(drinkingstatus ~ sunsalesban_exloc*education_summary + 
+drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
+                         race_eth + marital_status + age_gr + YEAR*State,
                        data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
-#broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
+#summary(drinkstatus.m)
 
 # WOMEN 
 
-drinkstatus.w <- glmer(drinkingstatus ~ sunsalesban_exloc*education_summary + 
+drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + (1 | State),
+                         race_eth + marital_status + age_gr + YEAR*State,
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
-#broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
+#summary(drinkstatus.w)
 
 # --------------------------------------------------------------------------------------
 
@@ -97,19 +97,18 @@ pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 
 # MEN
 
-gpd.m <-  lme(gpd_log ~ sunsalesban_exloc*education_summary + 
+gpd.m <- glm(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr,  random = ~1|State, 
-             data = pdat[pdat$sex_recode == "Men"],
-             method = "ML") # due to convergence error set to ML
+               race_eth + marital_status + age_gr + YEAR, 
+             data = pdat[pdat$sex_recode == "Men",])
 #summary(gpd.m)
 
 # WOMEN
 
-gpd.w <- lme(gpd_log ~ sunsalesban_exloc*education_summary + 
+gpd.w <- glm(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr, random = ~1|State, 
-             data = pdat[pdat$sex_recode == "Women"])
+               race_eth + marital_status + age_gr + YEAR, 
+             data = pdat[pdat$sex_recode == "Women",])
 #summary(gpd.w)
 
 # --------------------------------------------------------------------------------------
@@ -126,21 +125,21 @@ pdat <- pdat %>% filter(gramsperday > 0) %>%
 
 # MEN
 
-alccat.m <- glmer(alccat3 ~ sunsalesban_exloc*education_summary + 
+alccat.m <- glm(alccat3 ~ sunsalesban_exloc*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + (1 | State),
+                    race_eth + marital_status + age_gr + YEAR,
                   data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
-#broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
+#summary(alccat.m)
 
 # --------------------------------------------------------------------------------------
 
 # WOMEN
 
-alccat.w <- glmer(alccat3 ~ sunsalesban_exloc*education_summary + 
+alccat.w <- glm(alccat3 ~ sunsalesban_exloc*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + (1 | State),
+                    race_eth + marital_status + age_gr + YEAR,
                   data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
-#broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed")
+#summary(alccat.w)
 
 # --------------------------------------------------------------------------------------
 
@@ -148,33 +147,49 @@ alccat.w <- glmer(alccat3 ~ sunsalesban_exloc*education_summary +
 # EXPORT: TABLE
 # ----------------------------------------------------------------
 
-out.drink.m <- broom.mixed::tidy(drinkstatus.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink.w <- broom.mixed::tidy(drinkstatus.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.drink <- left_join(out.drink.m, out.drink.w, by = join_by(term), suffix = c(".men", ".women"))
+out.drink.m <- as.data.frame(coef(summary(drinkstatus.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink.w <- as.data.frame(coef(summary(drinkstatus.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.drink <- merge(out.drink.m, out.drink.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 out.gpd.m <- as.data.frame(coef(summary(gpd.m))) %>% 
-  mutate(conf.low = Value - 1.96*Std.Error,
-         conf.high = Value + 1.96*Std.Error) %>%
-  rownames_to_column(var = "term") %>% rename("estimate" = "Value", "p.value" = "p-value") %>%
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
 out.gpd.w <- as.data.frame(coef(summary(gpd.w))) %>% 
-  mutate(conf.low = Value - 1.96*Std.Error,
-         conf.high = Value + 1.96*Std.Error) %>%
-  rownames_to_column(var = "term") %>% rename("estimate" = "Value", "p.value" = "p-value") %>%
+  mutate(conf.low = Estimate - 1.96*`Std. Error`,
+         conf.high = Estimate + 1.96*`Std. Error`) %>%
+  rownames_to_column(var = "term") %>% rename("estimate" = "Estimate", "p.value" = `Pr(>|t|)`) %>%
   select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
-out.gpd <- left_join(out.gpd.m, out.gpd.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpd <- merge(out.gpd.m, out.gpd.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients$fixed)) %>% rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients$fixed)")
-out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients$fixed)) %>% rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients$fixed)")
-out.gpdexp <- left_join(out.gpdexp.m, out.gpdexp.w, by = join_by(term), suffix = c(".men", ".women"))
+out.gpdexp.m <- as.data.frame(exp(gpd.m$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.m$coefficients)")
+out.gpdexp.w <- as.data.frame(exp(gpd.w$coefficients)) %>% tibble::rownames_to_column(var = "term") %>% rename("exp.estimate" = "exp(gpd.w$coefficients)")
+out.gpdexp <- merge(out.gpdexp.m, out.gpdexp.w, by = "term", all = T, suffix = c(".men", ".women"))
 
-out.alccat.m <- broom.mixed::tidy(alccat.m, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat.w <- broom.mixed::tidy(alccat.w, conf.int = TRUE, exponentiate = TRUE, effects = "fixed") %>% 
-  select(term, estimate, conf.low, conf.high, p.value)
-out.alccat <- left_join(out.alccat.m, out.alccat.w, by = join_by(term), suffix = c(".men", ".women"))
+out.alccat.m <- as.data.frame(coef(summary(alccat.m))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat.w <- as.data.frame(coef(summary(alccat.w))) %>% 
+  mutate(estimate = exp(Estimate), 
+         conf.low = exp(Estimate - 1.96*`Std. Error`),
+         conf.high = exp(Estimate + 1.96*`Std. Error`)) %>%
+  rownames_to_column(var = "term") %>% rename("p.value" = `Pr(>|z|)`) %>%
+  select(c("term", "estimate", "conf.low", "conf.high", "p.value"))
+out.alccat <- merge(out.alccat.m, out.alccat.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
-write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_SA_LOCOPT_output_glmer.xlsx"), rowNames = FALSE)
+write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_SA_LOCOPT_output_glm.xlsx"), rowNames = FALSE)

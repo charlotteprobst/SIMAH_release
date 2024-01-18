@@ -74,9 +74,10 @@ pdat <- left_join(data, sub) %>%
                           ifelse(sex_recode == "Men" & gramsperday > 60, 1,
                                  ifelse(sex_recode == "Women" & gramsperday > 0 & gramsperday <= 40, 0,
                                         ifelse(sex_recode == "Women" & gramsperday > 40, 1, 
-                                               ifelse(gramsperday == 0, NA, NA)))))) %>%
+                                               ifelse(gramsperday == 0, NA, NA))))))
 
 # --------------------------------------------------------------------------------------
+
 
 # ----------------------------------------------------------------
 # SET SURVEY DESIGN
