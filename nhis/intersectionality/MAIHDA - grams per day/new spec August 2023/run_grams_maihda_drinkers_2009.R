@@ -90,6 +90,14 @@ intersections_reference <- model_data %>%
   group_by(intersectional_names) %>% 
   distinct(intersections, intersectional_names, mean_observed_grams)
 
+# Generate reference table with intersectional names & mean observed grams for the year 2009 only
+intersections_reference_2009 <- model_data %>%
+  filter(YEAR==2009) %>%
+  group_by(intersections) %>%
+  mutate(count_2009=n(),
+         mean_observed_grams_2009 = mean(alc_daily_g_capped_200))%>% 
+  distinct(intersections, intersectional_names, count_2009, mean_observed_grams_2009)
+
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
                           (1 | intersections) + 
@@ -396,12 +404,21 @@ mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_drinkers_2009.csv")
 
 ##### Explore face validity of estimates
+
+# Compare mean observed (overall) and estimated in a table
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) %>%
   mutate(difference = estmn - mean_observed_grams)
 write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
+
+# Compare mean observed (2009 observed only) and estimated in a table
+temp_2009 <- mdata_results %>% left_join(., intersections_reference_2009) %>%
+  dplyr::select(intersectional_names, count_2009, mean_observed_grams_2009, estmn) %>%
+  mutate(difference = estmn - mean_observed_grams_2009)
+
+# Compare mean and observed grams in a plot
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  ggtitle("Comparisson of observed and estimated daily grams, 108 intersectional groups")
+  ggtitle("Comparisson of observed and estimated daily grams")
  ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_uncorrected_eij.png", 
        dpi=300, width=33, height=19, units="cm")
 # Interpretation: Positive correlation but generally estimates are lower than observed. 
@@ -428,7 +445,7 @@ ggplot(temp_log, aes(x=log_observed_mean_all_years, y=log_estimated_mean_2009)) 
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_uncorrected_log.png", 
        dpi=300, width=33, height=19, units="cm")
 
-# 2) as residuals plot (plot of difference between observed & estimate)
+# 2a) as residuals plot (plot of difference between observed (all years) & estimate (2009))
 ggplot(temp, aes(x=intersectional_names, y=difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
@@ -436,13 +453,16 @@ ggplot(temp, aes(x=intersectional_names, y=difference)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ylim(-30,30) +
   ggtitle("Difference between mean observed (all years) and estimated (2009) grams - uncorrected eij")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_uncorrected_centered_zero.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed (all years) vs estimated (2009) grams_drinkers_uncorrected_centered_zero.png", 
        dpi=300, width=33, height=19, units="cm")
 
-ggplot(temp, aes(x=count, y=difference)) + 
+# 2b) as residuals plot (plot of difference between observed (2009) & estimate (2009))
+ggplot(temp_2009, aes(x=intersectional_names, y=difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
-  labs(x = "group size", y = "Estimated minus observed grams") +
-  ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_centered_zero_counts_x_axis.png", 
+  labs(x = NULL, y = "Estimated minus observed grams") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(-30,30) +
+  ggtitle("Difference between mean observed (2009) and estimated (2009) grams - uncorrected eij")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed (2009) vs estimated (2009) grams_drinkers_2009_uncorrected_centered_zero.png", 
        dpi=300, width=33, height=19, units="cm")

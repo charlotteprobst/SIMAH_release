@@ -25,6 +25,7 @@ data_2 <- data_1 %>%
   mutate(intersection_ID = cur_group_id()) %>%
   mutate(Intersection = as.character(paste(SEX, age_diaz, race_6_cats, education_3_cats)))
 
+# Full sample
 # Check intersectional group sizes
 temp <- data_2 %>% 
   group_by(Intersection) %>%
@@ -35,4 +36,19 @@ group_sizes <- temp %>%
 group_sizes$percent <- group_sizes$count/sum(group_sizes$count)*100 
 group_sizes <- group_sizes %>% arrange(desc(percent))
 
-write.csv(group_sizes, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/intersectional group sizes main.csv")
+write.csv(group_sizes, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/intersectional group sizes full sample.csv")
+
+# Drinkers only
+
+# Check intersectional group sizes
+temp_drinkers <- data_2 %>% 
+  filter(ALCSTAT1 == "Current drinker") %>%
+  group_by(Intersection) %>%
+  mutate(count=n())
+
+group_sizes_drinkers <- temp_drinkers %>% 
+  distinct(Intersection, count) 
+group_sizes_drinkers$percent <- group_sizes_drinkers$count/sum(group_sizes_drinkers$count)*100 
+group_sizes_drinkers <- group_sizes_drinkers %>% arrange(desc(percent))
+
+write.csv(group_sizes_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/intersectional group sizes drinkers.csv")

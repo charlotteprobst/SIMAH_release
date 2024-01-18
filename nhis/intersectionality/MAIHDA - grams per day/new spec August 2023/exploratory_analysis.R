@@ -51,9 +51,9 @@ race_5_cats <- data_2 %>% group_by(race_5_cats) %>% count %>% ungroup() %>% muta
 race_6_cats <- data_2 %>% group_by(race_6_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100, Characteristic=paste(race_6_cats))
 edu <- data_2 %>% group_by(education_3_cats) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100, Characteristic=paste(education_3_cats))
 
-new_spec_demographics <- bind_rows(age_diaz,sex, race_6_cats, edu) %>% select(Characteristic, n, percent)
-saveRDS(new_spec_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/full_sample_demographics.RDS")
-write.csv(new_spec_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/full_sample_demographics.csv")
+new_spec_demographics <- bind_rows(age_diaz,sex, race_6_cats, edu) %>% dplyr::select(Characteristic, n, percent)
+saveRDS(new_spec_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_sample_demographics.RDS")
+write.csv(new_spec_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_sample_demographics.csv")
 
 # Drinkers only
 data_2 %>% filter(ALCSTAT1 == "Current drinker") %>% count()
@@ -66,9 +66,9 @@ drinkers_edu <- data_2 %>% filter(ALCSTAT1 == "Current drinker") %>% group_by(ed
 drinkers_decade <- data_2 %>% filter(ALCSTAT1 == "Current drinker") %>% group_by(decade) %>% count %>% ungroup() %>% mutate(percent=n/sum(n)*100, Characteristic=paste(decade))
 
 drinkers_demographics <- bind_rows(drinkers_age_diaz,drinkers_sex, drinkers_race_6_cats, drinkers_edu) %>% 
-  select(Characteristic, n, percent)
-saveRDS(drinkers_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/drinkers_demographics.RDS")
-write.csv(drinkers_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/drinkers_demographics.csv")
+  dplyr::select(Characteristic, n, percent)
+saveRDS(drinkers_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinkers_demographics.RDS")
+write.csv(drinkers_demographics, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinkers_demographics.csv")
 
 # Compare median & IQR of average consumption for full sample and drinkers only (median as data skewed)
 data_2 %>% summarise(median(alc_daily_g), IQR(alc_daily_g))
@@ -85,7 +85,7 @@ data_2 %>%
   ylab("% of total sex") +
   ylim(0,100) +
   ggtitle("Differences in drinking status by sex")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinking_status_by_sex.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinking_status_by_sex.png", dpi=300, width=33, height=19, units="cm")
 
 data_2 %>%
   group_by(race_6_cats) %>%
@@ -98,7 +98,7 @@ data_2 %>%
   ylim(0,100) +
   theme(axis.text.x = element_text(size=10)) +
   ggtitle("Differences in drinking status by Race and Ethnicity")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinking_status_by_race_6_cats.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinking_status_by_race_6_cats.png", dpi=300, width=33, height=19, units="cm")
 
 nhis_alc_clean %>%
   group_by(education_3_cats) %>%
@@ -111,7 +111,7 @@ nhis_alc_clean %>%
   theme(axis.text.x = element_text(size=10)) +
   ylim(0,100) +
   ggtitle("Differences in drinking status by education")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinking_status_by_education_3_cats.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinking_status_by_education_3_cats.png", dpi=300, width=33, height=19, units="cm")
 
 nhis_alc_clean %>%
   group_by(age_diaz) %>%
@@ -124,12 +124,13 @@ nhis_alc_clean %>%
   theme(axis.text.x = element_text(size=10), title=element_text(size=14)) +
   ylim(0,100) +
   ggtitle("Differences in drinking status by age group")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/drinking_status_by_age_diaz.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drinking_status_by_age.png", dpi=300, width=33, height=19, units="cm")
 
 # Average consumption, grouped by sociodemographic factors
 
 # AGE & SEX
 data_2 %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
   group_by(SEX, AGE) %>%
   summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
   ggplot(aes(x=AGE, y= mean_alc_daily_g, color = SEX)) + geom_point() +
@@ -137,10 +138,11 @@ data_2 %>%
   scale_y_continuous(breaks=seq(0,20,1)) +
   geom_line() +
   ggtitle("mean daily grams of alcohol for drinkers, by age and sex")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_age_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_age_and_sex_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
 
 data_2 %>%
   group_by(SEX, age_3_cats) %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
   summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
   ggplot(aes(x=age_3_cats, y=mean_alc_daily_g, colour=SEX)) +
   facet_grid(. ~ SEX) +
@@ -148,10 +150,11 @@ data_2 %>%
   geom_segment( aes(x=age_3_cats, xend=age_3_cats, y=0, yend=mean_alc_daily_g))+
   theme(axis.text.x = element_text(size = 8), legend.position = "none") +
   ggtitle("mean daily grams of alcohol for drinkers, by age group 3 cats") 
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_age_3_cats.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_age_3_cats_drinkers_only_18.png", dpi=300, width=33, height=19, units="cm")
 
 data_2 %>%
   group_by(SEX, age_diaz) %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
   summarise(mean_alc_daily_g = mean(alc_daily_g)) %>%
   ggplot(aes(x=age_diaz, y=mean_alc_daily_g, colour=SEX)) +
   facet_grid(. ~ SEX) +
@@ -159,28 +162,30 @@ data_2 %>%
   geom_segment( aes(x=age_diaz, xend=age_diaz, y=0, yend=mean_alc_daily_g))+
   theme(axis.text.x = element_text(size = 8), legend.position = "none") +
   ggtitle("mean daily grams of alcohol for drinkers, by age") 
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_age_diaz.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_age_3_cats_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
 
 # Race
 data_2 %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
   group_by(race_6_cats) %>%
   ggplot(aes(x = race_6_cats, y = alc_daily_g_capped_200, colour = race_6_cats)) +            
   geom_boxplot()+
   ylim(0,50) +
   theme(axis.text.x=element_blank()) +
-  ggtitle("mean grams of alcohol per day, by Race and Ethnicity")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_race_6_cats.png", dpi=300, width=33, height=19, units="cm")
+  ggtitle("mean grams of alcohol per day, by Race and Ethnicity, drinkers only")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_race_6_cats_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
 
 # Education
 data_2 %>%
   group_by(education_3_cats) %>%
+  filter(ALCSTAT1 == "Current drinker") %>%
   ggplot(aes(x = as.factor(education_3_cats), y = alc_daily_g_capped_200, colour = education_3_cats)) +            
   geom_boxplot() +
   xlab("educational status") +
   ylim(0,50)
   theme(axis.text.x=element_blank()) +
-  ggtitle("mean grams of alcohol per day, by education status")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_SES_3_cats.png", dpi=300, width=33, height=19, units="cm")
+  ggtitle("mean grams of alcohol per day, by education status, drinkers only")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_SES_3_cats_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
 
 # Sexual orientation
 data_2 %>%
@@ -189,8 +194,8 @@ data_2 %>%
   ggplot(aes(x = SEXORIEN, y = alc_daily_g, colour=SEXORIEN)) +            
   geom_boxplot()+
   ylim(0,50) +
-  ggtitle("mean grams of alcohol per day, by sexual orientation")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_sex_orien.png", dpi=300, width=33, height=19, units="cm")
+  ggtitle("mean grams of alcohol per day, by sexual orientation, full sample")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/alc_daily_g_by_sex_orien_full_sample.png", dpi=300, width=33, height=19, units="cm")
 
 # Year
 data_2 %>%
@@ -200,7 +205,7 @@ data_2 %>%
   geom_point(size=3) +
   geom_line() +
   ggtitle("mean grams of alcohol per day, by year and sex")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_year.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/alc_daily_g_by_year_full_sample.png", dpi=300, width=33, height=19, units="cm")
 
 # Table of drinking status by intersectional group
 drink_status_table <- data_2 %>%
@@ -210,10 +215,10 @@ drink_status_table <- data_2 %>%
   mutate(percent=n/sum(n)*100)
 
 drink_status_wider <- drink_status_table %>% 
-  pivot_wider(names_from = ALCSTAT1, values_from = c(n, percent), values_fill = 0) %>%
-write.csv(drink_status_wider, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/drink_status_table.csv")
+  pivot_wider(names_from = ALCSTAT1, values_from = c(n, percent), values_fill = 0) 
+write.csv(drink_status_wider, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drink_status_table.csv")
 
 drink_status_highest_5 <- drink_status_wider %>% ungroup %>% slice_max(`percent_Current drinker`, n = 5)
 drink_status_lowest_5 <- drink_status_wider %>% ungroup %>% slice_min(`percent_Current drinker`, n = 5)
 drink_status_fives <- rbind(drink_status_highest_5, drink_status_lowest_5)
-write.csv(drink_status_fives, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/drink_status_fives.csv")
+write.csv(drink_status_fives, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/drink_status_fives.csv")

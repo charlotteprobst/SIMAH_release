@@ -205,15 +205,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers.csv")
+saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/model coefficients and variance_grams_drinkers.rds")
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/model coefficients and variance_grams_drinkers.csv")
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_drinkers.csv")
+write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/VPC_table_grams_drinkers.csv")
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -375,18 +375,18 @@ mdata_results <- mdata_results %>%
   mutate_if(is.numeric, round, 1)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.csv")
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_grams_drinkers_2009_GL_constant.rds")
+write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124//mdata_results_grams_drinkers_2009_GL_constant.csv")
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_GL_constant.rds")
+mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_grams_drinkers_2009_GL_constant.rds")
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_drinkers_2009_GL_constant.csv")
+write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_estimates_drinkers_2009_GL_constant.csv")
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -394,7 +394,7 @@ mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 
 mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_drinkers_2009_GL_constant.csv")
+write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_interactions_drinkers_2009_GL_constant.csv")
 
 ##### Explore face validity of estimates
 
@@ -402,58 +402,77 @@ write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace
 temp <- mdata_results %>% dplyr::select(intersectional_names, count, mean_observed_grams, estmn) %>%
   mutate(difference = estmn - mean_observed_grams,
          percent_difference = abs(difference/estmn*100))
-write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
+write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers only.csv")
 
 # Compare mean observed (2009 observed only) and estimated in a table
 temp_2009 <- mdata_results %>% left_join(., intersections_reference_2009) %>%
   dplyr::select(intersectional_names, count_2009, mean_observed_grams_2009, estmn) %>%
   mutate(difference = estmn - mean_observed_grams_2009)
-write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only - 2009.csv")
+write.csv(temp_2009, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers only - 2009.csv")
 
 # Compare mean and observed grams in a plot
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
- ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_constant.png", 
+  ggtitle("Comparisson of observed (all years) and estimated (for 2009) daily grams")
+ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed (all years) vs estimated (2009) grams - drinkers only.png", 
        dpi=300, width=33, height=19, units="cm")
 # Interpretation: Positive correlation but generally estimates are higher than observed. 
+ 
+# Compare mean and observed grams in a plot
+ggplot(temp_2009, aes(x=mean_observed_grams_2009, y=estmn)) + geom_point() + 
+   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+   ggtitle("Comparisson of observed (2009) and estimated (for 2009) daily grams")
+ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed (2009 only) vs estimated grams - drinkers only.png", 
+        dpi=300, width=33, height=19, units="cm")
  
 # Compare the ranking of intersectional groups based on observed and estimated grams
 temp$rank_observed_grams <-rank(temp$mean_observed_grams)
 temp$rank_estimated_grams <-rank(temp$estmn)
 ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() + 
-ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_drinkers_2009_GL_constant.png", 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+ggtitle("Comparisson of observed (all years) vs estimated (2009) drinking 'rank'")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed (all years) rank vs estimated (2009) rank grams - drinkers only.png", 
        dpi=300, width=33, height=19, units="cm")
 
 # Explore the correlation between group size and the difference between observed and estimated grams
 ggplot(temp, aes(x=difference, y=count)) + geom_point() +
   ggtitle("Correlation between group size and the difference between observed and estimated grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/count_vs_difference_grams_drinkers_2009_GL_constant.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/group_count vs difference (all years v 2009) grams.png", 
        dpi=300, width=33, height=19, units="cm")
 
 ### New versions of plots to make more interpretable
 
 # Observed vs estimated grams:  
-# 1) on log scale 
+# 1) on log scale, observed data from all years
 temp_log <- mdata_results %>%
   mutate(log_observed_mean_all_years = log(mean_observed_grams),
          log_estimated_mean_2009 = log(estmn))
 ggplot(temp_log, aes(x=log_observed_mean_all_years, y=log_estimated_mean_2009)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   ggtitle("Comparisson of (log) observed and estimated daily grams, 108 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_constant_log.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_constant_log.png", 
        dpi=300, width=33, height=19, units="cm")
 
-# 2) as residuals plot (plot of difference between observed & estimate)
+# 2a) as residuals plot (plot of difference between observed & estimate)
 ggplot(temp, aes(x=intersectional_names, y=difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(x = NULL, y = "Estimated minus observed grams") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ylim(-30,30) +
-  ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_centered_zero.png", 
+  ggtitle("Difference between mean observed (all years) and estimated (2009) grams - corrected eij")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_all_years_GL_centered_zero.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 2b) as residuals plot (plot of difference between observed & estimate)
+ggplot(temp_2009, aes(x=intersectional_names, y=difference)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = NULL, y = "Estimated minus observed grams") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(-30,30) +
+  ggtitle("Difference between mean observed (2009) and estimated (2009) grams - corrected eij")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_centered_zero.png", 
        dpi=300, width=33, height=19, units="cm")
 
 # 3) difference versus group size
@@ -462,7 +481,7 @@ ggplot(temp, aes(x=count, y=difference)) +
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(x = "group size", y = "Estimated minus observed grams") +
   ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_centered_zero_counts_x_axis.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_centered_zero_counts_x_axis.png", 
        dpi=300, width=33, height=19, units="cm")
 
 # 3) percent difference (percentage of total estimated grams) versus group size
@@ -471,5 +490,5 @@ ggplot(temp, aes(x=count, y=percent_difference)) +
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(x = "group size", y = "percent difference") +
   ggtitle("Difference between mean observed and estimated grams, as a percentage of estimate")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_GL_percent_difference.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_percent_difference.png", 
        dpi=300, width=33, height=19, units="cm")

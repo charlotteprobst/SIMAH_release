@@ -366,13 +366,11 @@ raw_means_per_group_capped <- nhis_alc_clean %>%
   summarise(mean = mean(alc_daily_g_capped_200)) # max 26 grams
 
 ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + 
-  geom_histogram(bins=400) + 
-  xlim(0,201) + 
-  ylim(0,30000) + 
+  geom_histogram() + 
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
 ggtitle("Raw distribution of daily grams alcohol, capped, all sample adults")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/assumptions/raw_distribution_daily_grams.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/raw_distribution_daily_grams_full_sample.png", dpi=300, width=33, height=19, units="cm")
 
 ## TRANSFORM ALC DAILY GRAMS
 
@@ -397,11 +395,11 @@ mean_log_grams <- nhis_alc_clean %>%
   summarise(mean = mean(capped_daily_grams_log))
 
 # Distribution plot 
-ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=200) + 
+ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
   ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/assumptions/transformed_distribution_daily_grams.png", dpi=300, width=33, height=19, units="cm")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/transformed_distribution_daily_grams_full_sample.png", dpi=300, width=33, height=19, units="cm")
 
 ## SAVE CLEANED DATA
 
@@ -418,3 +416,23 @@ nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>% 
    write_csv("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
 
+## READ IN CLEANED DATA
+nhis_alc_clean <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+nhis_alc_clean_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.RDS")
+
+# View raw and transformed distributions for drinkers only
+
+ggplot(nhis_alc_clean_drinkers, aes(x=alc_daily_g_capped_200), y) + 
+  geom_histogram() + 
+  xlim(0,201) + 
+  ylim(0,30000) + 
+  xlab("Daily grams of alcohol") +
+  ylab("Frequency") +
+  ggtitle("Raw distribution of daily grams alcohol, capped, drinkers only")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/raw_distribution_daily_grams_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+
+ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
+  ggtitle("Distribution of estimated daily grams post transformation, drinkers only")+ 
+  xlab("Daily grams of alcohol, post transformation") +
+  ylab("Frequency")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/transformed_distribution_daily_grams_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
