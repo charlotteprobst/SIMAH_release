@@ -35,18 +35,18 @@ setupQ <- function(estimates){
       start_index <- start_index + 1
     }
   }
-  
-  Qmatrices[[10]][1,1] <- -abs(estimates[1])
-  Qmatrices[[10]][1,2] <- abs(estimates[1])
+  length(Qmatrices)
+  Qmatrices[[length(Qmatrices)]][1,1] <- -abs(estimates[1])
+  Qmatrices[[length(Qmatrices)]][1,2] <- abs(estimates[1])
 
-  Qmatrices[[10]][2,2] <- -abs(estimates[2])
-  Qmatrices[[10]][2,3] <- abs(estimates[2])
+  Qmatrices[[length(Qmatrices)]][2,2] <- -abs(estimates[2])
+  Qmatrices[[length(Qmatrices)]][2,3] <- abs(estimates[2])
   
-  Qmatrices[[10]][3,3] <- -abs(estimates[3])
-  Qmatrices[[10]][3,4] <- abs(estimates[3])
+  Qmatrices[[length(Qmatrices)]][3,3] <- -abs(estimates[3])
+  Qmatrices[[length(Qmatrices)]][3,4] <- abs(estimates[3])
   
-  Qmatrices[[10]][4,4] <- -abs(estimates[4])
-  Qmatrices[[10]][4,5] <- abs(estimates[4])
+  Qmatrices[[length(Qmatrices)]][4,4] <- -abs(estimates[4])
+  Qmatrices[[length(Qmatrices)]][4,5] <- abs(estimates[4])
   
   return(Qmatrices)
 }

@@ -100,11 +100,17 @@ death_counts <- load_death_counts(model, proportion, SelectedState, DataDirector
 migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
 
 # load in the education transition rates
+# fix educational attainment at baseline 
+source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/fix_initial_education.R")
+basepop$YEAR <- 2000
+basepop <- fix_initial_education(basepop)
+brfss <- fix_initial_education(brfss)
 list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
 education_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
+basepop$YEAR <- NULL
 # load in alcohol transition rates
 #### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
 list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)

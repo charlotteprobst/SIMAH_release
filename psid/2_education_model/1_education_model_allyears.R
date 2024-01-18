@@ -22,7 +22,7 @@ data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs_20
 
 # # setup the datasets for both time periods
 data <- data %>% filter(year>=2005 & year<=2019)
-data <- data %>% filter(age<=24)
+data <- data %>% filter(age<=34)
 
 data <- setup_markov_model_formodel(data)
 
@@ -40,7 +40,7 @@ data$agecat <- ifelse(data$age==18, "18",
                         ifelse(data$age==19, "19",
                                ifelse(data$age==20,  "20",
                                       ifelse(data$age==21, "21",
-                                      ifelse(data$age>=22, "22-24",NA)))))
+                                      ifelse(data$age>=22 & data$age<=24, "22-24","25+")))))
 data$birthyear <- data$year - data$age
 data$cohort <- ifelse(data$birthyear < 1990, "<1990",
                       ifelse(data$birthyear>=1990, ">1990",NA))
@@ -59,14 +59,17 @@ Q <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=data)
 #        c(0, 0, 0, 0, 0.1),
 #        c(0, 0, 0, 0.1, 0))
 
+data$agecat <- as.factor(data$agecat)
+data$racefinal2 <- as.factor(data$racefinal2)
+
 model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
                                    center=FALSE,
-                                   covariates=~agecat + sex*racefinal2,
-                        control=list(trace=1, fnscale=2543177, maxit=200))
+                                   covariates=~agecat + sex + racefinal2,
+                        control=list(trace=1, fnscale=5577458, maxit=200))
 model
 AIC(model)
 
-saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-24interaction.RDS")
+saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-34.RDS")
 
 
 # saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")

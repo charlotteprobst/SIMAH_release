@@ -18,11 +18,11 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
                               "55-64","65-79"))
          
          ) %>% 
-  mutate_at(vars(YEAR, RACE, SEX, EDUC), as.factor) %>% 
-  group_by(YEAR, RACE, SEX, EDUC, .drop=FALSE) %>% 
+  mutate_at(vars(YEAR, RACE, AGECAT, SEX, EDUC), as.factor) %>% 
+  group_by(YEAR, RACE, SEX, AGECAT, EDUC, .drop=FALSE) %>% 
   summarise(TPop=sum(TPop),
             OrigSample = sum(OrigSample)) %>% 
-  group_by(YEAR, RACE, SEX) %>% 
+  group_by(YEAR, RACE, AGECAT, SEX) %>% 
   mutate(proptarget=TPop/sum(TPop),
          SE=sqrt(proptarget*(1-proptarget)/sum(OrigSample)),
          YEAR= as.integer(as.character(YEAR))) %>% 
@@ -44,14 +44,14 @@ summary_output <- output %>%
         RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                       "OTH"="Other")) %>% 
   rename(EDUC=microsim.init.education, YEAR=year) %>% 
-  group_by(YEAR, samplenum, seed, SEX,RACE,
+  group_by(YEAR, samplenum, seed, SEX,RACE,AGECAT,
            EDUC) %>% 
   summarise(n=sum(n)) %>% 
   ungroup() %>% 
-  group_by(YEAR, samplenum, SEX, EDUC,RACE) %>% 
+  group_by(YEAR, samplenum, SEX, EDUC,RACE,AGECAT) %>% 
   summarise(n=mean(n)) %>% 
   ungroup() %>% 
-  group_by(YEAR, samplenum, SEX,RACE) %>% 
+  group_by(YEAR, samplenum, SEX,RACE,AGECAT) %>% 
   mutate(propsimulation=n/sum(n), YEAR=as.integer(YEAR)) %>% 
   dplyr::select(-n) %>% drop_na()
 
@@ -61,12 +61,12 @@ summary_output <- left_join(summary_output, targets)
 
 # recalculate implausibility 
 implausibility_new <- summary_output %>% 
-  group_by(samplenum, YEAR, SEX, EDUC, RACE) %>% 
+  group_by(samplenum, YEAR, SEX, EDUC, RACE, AGECAT) %>% 
   mutate(proptarget=ifelse(proptarget==0, 0.001, proptarget),
          SE = ifelse(SE==0, 0.001, SE)) %>% 
   summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SE)) %>% 
   ungroup() %>% 
-  group_by(samplenum) %>% 
+  group_by(samplenum, EDUC, RACE, AGECAT) %>% 
   summarise(implausibility_new = max(implausibility)) %>% 
   ungroup() %>% 
   mutate(percentile=ntile(implausibility_new, 500))
@@ -100,7 +100,7 @@ ggsave(paste0(DataDirectory, "/best_allages_inflated.png"), dpi=300, width=33, h
 
 # plot range for final wave
 
-ggplot(data=subset(summary_output, SEX=="Women" & AGECAT=="18-24"), 
+ggplot(data=subset(summary_output, SEX=="Women" & AGECAT=="25-34"), 
        aes(x=as.numeric(YEAR), y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
   geom_line(aes(x=YEAR,y=proptarget), colour="darkblue",linewidth=1) +

@@ -140,8 +140,8 @@ basepop <- basepop %>% dplyr::select(-c(cat,prob))
 # transition education for individuals aged 34 and under
 if(updatingeducation==1){
   print("updating education")
-  totransition <- basepop %>% filter(microsim.init.age<=24)
-  tostay <- basepop %>% filter(microsim.init.age>24)
+  totransition <- basepop %>% filter(microsim.init.age<=34)
+  tostay <- basepop %>% filter(microsim.init.age>34)
   totransition <- setup_education(totransition,y)
   totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
   totransition$microsimnewED <- totransition$newED

@@ -60,3 +60,14 @@ ggplot(data=error, aes(x=age, y=diff)) + geom_line(stat="identity") +
   scale_x_continuous("age", labels = as.character(changes$age), breaks = changes$age) + 
   theme_bw() + 
   theme(text = element_text(size=16))
+
+quantifysomec <- alldata %>% 
+  filter(educNUM>=2 & educNUM<=4) %>% 
+  mutate(someceducation = ifelse(educNUM==2, "SomeC1",
+                                 ifelse(educNUM==3, "SomeC2",
+                                        ifelse(educNUM==4, "SomeC3", NA)))) %>% 
+  group_by(age,someceducation) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(age) %>% 
+  mutate(prop=n/sum(n)) %>% filter(age>=18)

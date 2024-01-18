@@ -56,7 +56,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
-nsamples <- 10
+nsamples <- 300
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
 # rm(model)
 
@@ -75,7 +75,7 @@ options(future.fork.multithreading.enable = FALSE)
 sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
 # sampleseeds <- sampleseeds %>% filter(samplenum<=2)
 
-num_waves <- 20
+num_waves <- 10
 
 improvement_threshold <- 0.005
 

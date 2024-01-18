@@ -10,7 +10,8 @@ setup_education <- function(basepop,y){
   basepop$agecat <- ifelse(basepop$microsim.init.age==18, "18",
                            ifelse(basepop$microsim.init.age==19, "19",
                                   ifelse(basepop$microsim.init.age==20, "20",
-                                         ifelse(basepop$microsim.init.age==21, "21", "22-24"))))
+                                         ifelse(basepop$microsim.init.age==21, "21",
+                                                ifelse(basepop$microsim.init.age>=22 & basepop$microsim.init.age<=24, "22-24","25+")))))
   basepop$state <- ifelse(basepop$microsimnewED=="LEHS", 1,
                           ifelse(basepop$microsimnewED=="SomeC1",2,
                                  ifelse(basepop$microsimnewED=="SomeC2",3,
