@@ -26,7 +26,7 @@ setup_education_model_2021 <- function(data){
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$racefinal2 <- as.factor(data$racefinal2)
-  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
+#  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data <- data.frame(data)
   data <- as.data.frame(lapply(data, unlist))
 # scale the data so that all on the same scale for the models
