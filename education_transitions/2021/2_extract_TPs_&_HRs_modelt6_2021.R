@@ -59,7 +59,8 @@ modelt6_hispanic_women <- readRDS("SIMAH_workplace/education_transitions/2021/fi
 modelt6_other_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_other_women.RDS")
 modelt6_interaction_race <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race.RDS")
 modelt6_interaction_sex <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_sex.RDS")
-
+modelt6_cont <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_cont.RDS")
+modelt6_interaction_race_age_cont <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race_age_cont.RDS")
 
 # Extract TPs
 
@@ -73,7 +74,9 @@ modelt6_TPs_hispanic <- extractTPs_basic(modelt6_hispanic, 1) # interaction for 
 modelt6_TPs_other <- extractTPs_basic(modelt6_other, 1) # interaction for race (other only)
 modelt6_TPs_black_men <- extractTPs_basic(modelt6_black_men, 1) # interaction for race and sex (Black men only)
 modelt6_TPs_interaction_race <- extractTPs_basic(modelt6_interaction_race, 1) 
-modelt6_TPs_interaction_sex <- extractTPs_basic(modelt6_interaction_sex, 1) 
+modelt6_TPs_interaction_sex <- extractTPs_basic(modelt6_interaction_sex, 1)
+modelt6_TPs_cont <- extractTPs_basic(modelt6_cont, 1)
+modelt6_TPs_interaction_race_age_cont <- extractTPs_basic(modelt6_interaction_race_age_cont, 1)
 
 # Save results
 write_csv(modelt6_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6.csv")
@@ -86,7 +89,8 @@ write_csv(modelt6_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_
 write_csv(modelt6_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_men.csv")
 write_csv(modelt6_TPs_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_race.csv")
 write_csv(modelt6_TPs_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_sex.csv")
-
+write_csv(modelt6_TPs_cont,"SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_cont.csv")
+write_csv(modelt6_TPs_interaction_race_age_cont, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_race_age_cont.csv")
 ##################################################################
 
 # Extract all possible combos of individuals to transition
@@ -120,7 +124,6 @@ write_csv(modelt6_TPs_black_men_detail, "SIMAH_workplace/education_transitions/2
 
 ########################################
 # Hazard ratios
-
 modelt6_HRs <- predict_HRs(modelt6)
 modelt6_HRs_men <- predict_HRs(modelt6_men)
 modelt6_HRs_women <- predict_HRs(modelt6_women)
@@ -138,6 +141,8 @@ modelt6_HRs_hispanic_women <- predict_HRs(modelt6_hispanic_women)
 modelt6_HRs_other_women <- predict_HRs(modelt6_other_women) 
 modelt6_HRs_interaction_race <- predict_HRs(modelt6_interaction_race)
 modelt6_HRs_interaction_sex <- predict_HRs(modelt6_interaction_sex)
+modelt6_HRs_interaction_race_age_cont <- predict_HRs(modelt6_interaction_race_age_cont)
+modelt6_HRs_cont <- predict_HRs(modelt6_cont)
 
 # Adjust the CIs to reflect the true (rather than replicated) population size
 modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2012-2021", datat6)
@@ -157,6 +162,8 @@ modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2012-
 modelt6_HRs_adjusted_other_women <- adjust_CIs(modelt6_other_women, "2012-2021", other_women)
 modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2012-2021", datat6)
 modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2012-2021", datat6)
+modelt6_HRs_adjusted_interaction_race_age_cont <- adjust_CIs(modelt6_interaction_race_age_cont, "2012-2021", datat6)
+modelt6_HRs_adjusted_cont <- adjust_CIs(modelt6_cont, "2012-2021", datat6)
 
 write_csv(modelt6_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6.csv")
 write_csv(modelt6_HRs_adjusted_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_men.csv")
@@ -175,3 +182,5 @@ write_csv(modelt6_HRs_adjusted_hispanic_women, "SIMAH_workplace/education_transi
 write_csv(modelt6_HRs_adjusted_other_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_other_women.csv")
 write_csv(modelt6_HRs_adjusted_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_interaction_race.csv")
 write_csv(modelt6_HRs_adjusted_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_interaction_sex.csv")
+write_csv(modelt6_HRs_adjusted_interaction_race_age_cont, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_interaction_race_age_cont.csv")
+write_csv(modelt6_HRs_adjusted_cont, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_cont.csv")

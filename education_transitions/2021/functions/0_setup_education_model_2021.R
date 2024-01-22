@@ -9,8 +9,8 @@ setup_education_model_2021 <- function(data){
   
 # remove anyone with only one year of data- this gives an error in MSM 
   data <- data %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
-    filter(totalobservations>1) %>% mutate(sex=factor(sex),
-                                           sex=ifelse(sex=="female",1,0))
+    filter(totalobservations>1) 
+  # %>% mutate(sex=factor(sex), sex=ifelse(sex=="female",1,0))
 # all data needs to be ordered by ID then year
   data <- as.data.frame(lapply(data, unlist))
   data <- data[order(data$newID, data$year),]
@@ -26,7 +26,7 @@ setup_education_model_2021 <- function(data){
   data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2)
   data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2)
   data$racefinal2 <- as.factor(data$racefinal2)
-#  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
+  data$racefinal2 <- relevel(data$racefinal2, ref = "white")
   data <- data.frame(data)
   data <- as.data.frame(lapply(data, unlist))
 # scale the data so that all on the same scale for the models

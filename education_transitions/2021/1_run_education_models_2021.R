@@ -126,8 +126,8 @@ datat6$timevary <- cut(datat6$year,
                        breaks=c(0,2018, 2021),
                        labels=c("2012-2018", "2019-2021"))
 datat6 <- datat6[order(datat6$newID, datat6$year),]
-length(unique(datat6$uniqueID)) # 7249
-length(unique(datat6$newID)) # 1666272
+length(unique(datat6$uniqueID)) # 6607
+length(unique(datat6$newID)) # 1542884
 datat6 <- datat6 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
 datat6$timevary <- relevel(datat6$timevary, ref = "2012-2018")
