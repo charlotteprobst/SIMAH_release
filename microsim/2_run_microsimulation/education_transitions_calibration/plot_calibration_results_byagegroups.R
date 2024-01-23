@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-1_inflatedsamples.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-6.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
@@ -66,7 +66,7 @@ implausibility_new <- summary_output %>%
          SE = ifelse(SE==0, 0.001, SE)) %>% 
   summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SE)) %>% 
   ungroup() %>% 
-  group_by(samplenum, EDUC, RACE, AGECAT) %>% 
+  group_by(samplenum) %>% 
   summarise(implausibility_new = max(implausibility)) %>% 
   ungroup() %>% 
   mutate(percentile=ntile(implausibility_new, 500))
@@ -83,7 +83,7 @@ best$upper <- best$value + (1.96*best$SE)
 best$lower <- ifelse(best$name=="propsimulation",NA, best$lower)
 best$upper <- ifelse(best$name=="propsimulation",NA, best$upper)
 
-ggplot(data=best, 
+ggplot(data=subset(best, AGECAT=="65-79"),
        aes(x=as.numeric(YEAR), y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
   # geom_ribbon(aes(ymin=lower, ymax=upper, colour=as.factor(EDUC), fill=as.factor(EDUC))) + 
