@@ -401,13 +401,15 @@ write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace
 # Compare mean observed (overall) and estimated in a table
 temp <- mdata_results %>% dplyr::select(intersectional_names, count, mean_observed_grams, estmn) %>%
   mutate(difference = estmn - mean_observed_grams,
+         abs_difference = abs(difference),
          percent_difference = abs(difference/estmn*100))
 write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers only.csv")
 
 # Compare mean observed (2009 observed only) and estimated in a table
 temp_2009 <- mdata_results %>% left_join(., intersections_reference_2009) %>%
   dplyr::select(intersectional_names, count_2009, mean_observed_grams_2009, estmn) %>%
-  mutate(difference = estmn - mean_observed_grams_2009)
+  mutate(difference = estmn - mean_observed_grams_2009,
+         abs_difference = abs(difference))
 write.csv(temp_2009, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers only - 2009.csv")
 
 # Compare mean and observed grams in a plot
@@ -443,14 +445,30 @@ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality
 ### New versions of plots to make more interpretable
 
 # Observed vs estimated grams:  
-# 1) on log scale, observed data from all years
-temp_log <- mdata_results %>%
+# 1a) on log scale, observed data from all years
+temp_log <- mdata_results %>% left_join(., intersections_reference_2009) %>%
   mutate(log_observed_mean_all_years = log(mean_observed_grams),
-         log_estimated_mean_2009 = log(estmn))
+         log_observed_mean_2009 = log(mean_observed_grams_2009),
+         log_estimated_mean_2009 = log(estmn),
+         difference = log_estimated_mean_2009 - log_observed_mean_all_years,
+         abs_difference = abs(difference),
+         difference_2009 = log_estimated_mean_2009 - log_observed_mean_2009,
+         abs_difference_2009 = abs(difference_2009))
 ggplot(temp_log, aes(x=log_observed_mean_all_years, y=log_estimated_mean_2009)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  ggtitle("Comparisson of (log) observed and estimated daily grams, 108 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_constant_log.png", 
+  ggtitle("Comparisson of log observed (all years) and estimated (2009) daily grams, 108 intersectional groups") +
+  xlim(range(c(temp_log$log_observed_mean_all_years, temp_log$log_estimated_mean_2009))) +
+  ylim(range(c(temp_log$log_observed_mean_all_years, temp_log$log_estimated_mean_2009)))
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/copmarisson of log observed (all years) vs estimated (2009) grams_drinkers_2009_GL.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 1a) on log scale, observed data from 2009
+ggplot(temp_log, aes(x=log_observed_mean_2009, y=log_estimated_mean_2009)) + geom_point() + 
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  ggtitle("Comparisson of log observed (2009) and estimated (2009) daily grams, 108 intersectional groups") +
+  xlim(c(-4, 4)) +
+  ylim(c(-4, 4))
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/copmarisson of log observed (2009) vs estimated (2009) grams_drinkers_2009_GL.png", 
        dpi=300, width=33, height=19, units="cm")
 
 # 2a) as residuals plot (plot of difference between observed & estimate)
@@ -464,7 +482,7 @@ ggplot(temp, aes(x=intersectional_names, y=difference)) +
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_all_years_GL_centered_zero.png", 
        dpi=300, width=33, height=19, units="cm")
 
-# 2b) as residuals plot (plot of difference between observed & estimate)
+# 2b) as residuals plot (plot of difference between observed & estimate, 2009 only)
 ggplot(temp_2009, aes(x=intersectional_names, y=difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
@@ -475,16 +493,53 @@ ggplot(temp_2009, aes(x=intersectional_names, y=difference)) +
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_centered_zero.png", 
        dpi=300, width=33, height=19, units="cm")
 
-# 3) difference versus group size
-ggplot(temp, aes(x=count, y=difference)) + 
+# 2c) as residuals plot on log scale (plot of difference between observed & estimate)
+ggplot(temp_log, aes(x=intersectional_names, y=difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
-  labs(x = "group size", y = "Estimated minus observed grams") +
-  ggtitle("Difference between mean observed (all years) and estimated (2009) grams")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_centered_zero_counts_x_axis.png", 
+  labs(x = NULL, y = "Estimated minus observed grams") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(-30,30) +
+  ggtitle("Difference between mean observed (all years) and estimated (2009) grams - corrected eij - on log scale")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed(all years) vs estimated(2009), drinkers GL centered zero log sclae.png", 
        dpi=300, width=33, height=19, units="cm")
 
-# 3) percent difference (percentage of total estimated grams) versus group size
+# 2d) as residuals plot on log scale (plot of difference between observed & estimate, 2009 v 2009)
+ggplot(temp_log, aes(x=intersectional_names, y=difference_2009)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(x = NULL, y = "Estimated minus observed grams") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylim(-30,30) +
+  ggtitle("Difference between mean observed (2009) and estimated (2009) grams - corrected eij - on log scale")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed(2009) vs estimated(2009), drinkers GL centered zero log sclae.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3a) difference versus group size
+ggplot(temp, aes(x=count, y=abs_difference)) + 
+  geom_point() + 
+  labs(x = "group size", y = "Difference between observed and estimated (absolute)") +
+  ggtitle("Absolute difference between mean observed (all years) and estimated (2009) grams")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/difference vs group size absolute values.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3b) difference versus group size on log scale
+ggplot(temp_log, aes(x=count, y=abs_difference)) + 
+  geom_point() + 
+  labs(x = "group size", y = "Absolute difference") +
+  ggtitle("Difference between mean observed (all years) and estimated (2009) grams, log scale")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/difference vs group size absolute values, log scale.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3c) difference versus group size on log scale, 2009
+ggplot(temp_log, aes(x=count, y=abs_difference_2009)) + 
+  geom_point() + 
+  labs(x = "group size", y = "Absolute difference") +
+  ggtitle("Difference between mean observed (2009) and estimated (2009) grams, log scale")
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/difference vs group size absolute values, log scale, 2009 v 2009.png", 
+       dpi=300, width=33, height=19, units="cm")
+
+# 3d) percent difference (percentage of total estimated grams) versus group size
 ggplot(temp, aes(x=count, y=percent_difference)) + 
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
@@ -492,3 +547,23 @@ ggplot(temp, aes(x=count, y=percent_difference)) +
   ggtitle("Difference between mean observed and estimated grams, as a percentage of estimate")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/observed vs estimated grams_drinkers_2009_GL_percent_difference.png", 
        dpi=300, width=33, height=19, units="cm")
+
+# Test correlation between group size and differences
+cor(temp$count, temp$abs_difference) # 0.04 i.e., no correlation
+cor(temp_2009$count_2009, temp_2009$abs_difference, use = "pairwise.complete.obs") # -0.1, some slight negative correlation
+cor(temp_log$count, temp_log$abs_difference_2009, use = "pairwise.complete.obs") # - 0.1, some slight negative correlation
+
+# 4) Histogram of the differences - would expect this to be positively skewed as the observed and predicted means are also positively skewed
+hist(temp$mean_observed_grams)
+moments::skewness(temp$mean_observed_grams) # 2.2 (skewness > 0 indicates positive skew)
+hist(temp$estmn)
+moments::skewness(temp$estmn) # 1.2
+hist(temp$difference)
+moments::skewness(temp$difference) # 1.5
+mean(temp$difference) # 3
+hist(temp_log$difference)
+moments::skewness(temp_log$difference) # 2
+mean(temp_log$difference) # 0.3
+
+
+
