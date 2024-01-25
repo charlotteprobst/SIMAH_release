@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-1_18-34.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
@@ -74,7 +74,7 @@ implausibility_new <- summary_output %>%
 summary_output <- left_join(summary_output, implausibility_new)
 
 best <- summary_output %>% 
-  filter(percentile==1) %>%
+  # filter(percentile==1) %>%
   # filter(samplenum==4) %>% 
   pivot_longer(c(propsimulation,proptarget))
 
@@ -83,20 +83,21 @@ best$upper <- best$value + (1.96*best$SE)
 best$lower <- ifelse(best$name=="propsimulation",NA, best$lower)
 best$upper <- ifelse(best$name=="propsimulation",NA, best$upper)
 
-ggplot(data=best, 
-       aes(x=as.numeric(YEAR), y=value, colour=as.factor(EDUC), linetype=as.factor(name))) + 
+best$EDUC <- factor(best$EDUC, levels=c("LEHS","SomeC","College"))
+
+ggplot(data=subset(best, SEX=="Women"),
+       aes(x=as.numeric(YEAR), y=value, colour=as.factor(samplenum), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
   # geom_ribbon(aes(ymin=lower, ymax=upper, colour=as.factor(EDUC), fill=as.factor(EDUC))) + 
   # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
-  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
-  scale_linetype_manual(values=c("dotdash","solid"), labels=c("simulation","target")) + 
+  facet_grid(cols=vars(RACE), rows=vars(EDUC)) + 
+  scale_linetype_manual(values=c("solid","dotdash"), labels=c("simulation","target")) + 
   theme_bw() + 
-  theme(legend.position = "bottom",
-        legend.title=element_blank()) + 
-  xlab("Year") +
+  theme(legend.position = "none") + 
+  xlab("Year") + ylab("Proportion in education category") + 
   ggtitle("all ages") + 
   scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
-ggsave(paste0(DataDirectory, "/best_allages_inflated.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/range_final_wave.png"), dpi=300, width=33, height=19, units="cm")
 
 # plot range for final wave
 

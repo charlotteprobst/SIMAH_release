@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-6.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
@@ -54,7 +54,8 @@ summary_output <- output %>%
   group_by(YEAR, samplenum, SEX,RACE,AGECAT) %>% 
   mutate(propsimulation=n/sum(n), YEAR=as.integer(YEAR)) %>% 
   dplyr::select(-n) %>% drop_na()
-
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newage/posterior_men_byage.png",
+       dpi=300, width=33, height=19, units="cm")
 summary_output <- left_join(summary_output, targets)
 
 # summary_output <- left_join(summary_output, implausibility)
@@ -74,9 +75,29 @@ implausibility_new <- summary_output %>%
 summary_output <- left_join(summary_output, implausibility_new)
 
 best <- summary_output %>% 
-  filter(percentile==1) %>%
+  # filter(percentile==1) %>%
   # filter(samplenum==4) %>% 
-  pivot_longer(c(propsimulation,proptarget))
+  group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>% 
+  summarise(min = min(propsimulation),
+            max = max(propsimulation),
+            proptarget = mean(proptarget))
+
+ggplot(data=subset(best, SEX=="Women"), 
+       aes(x=as.numeric(YEAR), colour=as.factor(EDUC))) + 
+  # geom_line(linewidth=1) + 
+  geom_ribbon(aes(ymin=min, ymax=max, colour=as.factor(EDUC), fill=as.factor(EDUC)),
+              alpha=0.5) + 
+  geom_line(aes(x=YEAR,y=proptarget,colour=as.factor(EDUC)), linewidth=1,
+            linetype="dashed") +
+  # geom_line(aes(x=YEAR,y=PSID_new), colour="purple",linewidth=1, linetype="dashed") +
+  facet_grid(cols=vars(RACE), rows=vars(AGECAT)) + 
+  theme_bw() + 
+  theme(legend.title=element_blank(),
+        legend.position="bottom") +
+  ggtitle("Women - posterior distribution") + 
+  xlab("Year") + ylim(0,1)
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newage/posterior_women_byage.png",
+       dpi=300, width=33, height=19, units="cm")
 
 best$lower <- best$value - (1.96*best$SE)
 best$upper <- best$value + (1.96*best$SE)
