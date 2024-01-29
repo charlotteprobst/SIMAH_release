@@ -84,7 +84,7 @@ svydat <- svydesign(ids = ~X_PSU, strata = ~interaction(X_STSTR, YEAR),
 
 drinkstatus.m <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary + 
                         drinkculture + controlstate + z.unemp.rate +
-                        race_eth + marital_status + age_gr + sampling + YEAR*State,
+                        race_eth + marital_status + age_gr + sampling + State,
                       design = subset(svydat, sex_recode == "Men"),
                       family = quasibinomial(link = "logit"))
 #summary(drinkstatus.m)
@@ -93,7 +93,7 @@ drinkstatus.m <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary +
 
 drinkstatus.w <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary + 
                           drinkculture + controlstate + z.unemp.rate +
-                          race_eth + marital_status + age_gr + sampling + YEAR*State,
+                          race_eth + marital_status + age_gr + sampling + State,
                         design = subset(svydat, sex_recode == "Women"),
                         family = quasibinomial(link = "logit"))
 #summary(drinkstatus.w)
@@ -108,7 +108,7 @@ drinkstatus.w <- svyglm(drinkingstatus ~ sunsalesban_di*education_summary +
 
 gpd.m <- svyglm(gpd_log ~ sunsalesban_di*education_summary + 
                   drinkculture + controlstate + z.unemp.rate +
-                  race_eth + marital_status + age_gr + sampling + YEAR*State,
+                  race_eth + marital_status + age_gr + sampling + State,
                 design = subset(svydat, sex_recode == "Men" & gramsperday > 0),
                 family = gaussian(link = "identity"))
 #summary(gpd.m)
@@ -117,7 +117,7 @@ gpd.m <- svyglm(gpd_log ~ sunsalesban_di*education_summary +
 
 gpd.w <- svyglm(gpd_log ~ sunsalesban_di*education_summary + 
                   drinkculture + controlstate + z.unemp.rate +
-                  race_eth + marital_status + age_gr + sampling + YEAR*State,
+                  race_eth + marital_status + age_gr + sampling + State,
                 design = subset(svydat, sex_recode == "Women" & gramsperday > 0),
                 family = gaussian(link = "identity"))
 #summary(gpd.w)
@@ -132,7 +132,7 @@ gpd.w <- svyglm(gpd_log ~ sunsalesban_di*education_summary +
 
 alccat.m <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
                      drinkculture + controlstate + z.unemp.rate +
-                     race_eth + marital_status + age_gr + sampling + YEAR*State,
+                     race_eth + marital_status + age_gr + sampling + State,
                    design = subset(svydat, sex_recode == "Men" & gramsperday > 0),
                    family = quasibinomial(link = "logit"))
 #summary(alccat.m)
@@ -141,7 +141,7 @@ alccat.m <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
 
 alccat.w <- svyglm(alccat3 ~ sunsalesban_di*education_summary +
                      drinkculture + controlstate + z.unemp.rate +
-                     race_eth + marital_status + age_gr + sampling + YEAR*State,
+                     race_eth + marital_status + age_gr + sampling + State,
                    design = subset(svydat, sex_recode == "Women" & gramsperday > 0),
                    family = quasibinomial(link = "logit"))
 #summary(alccat.w)

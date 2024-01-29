@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20240112
+DATE <- 20240129
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -63,7 +63,7 @@ pdat <- data %>%
   mutate(education_summary = factor(education_summary, levels = c("College", "SomeC", "LEHS")),
          sunsalesban_exloc = factor(ifelse(sunsalesban_exloc == 1, "ban", ifelse(sunsalesban_exloc == 0, "no ban", NA)),
                                     levels = c("no ban", "ban")),
-         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate))) # across the total sample
+         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate)))
 
 # --------------------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ pdat <- data %>%
 
 drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + YEAR*State,
+                         race_eth + marital_status + age_gr + State,
                        data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 #summary(drinkstatus.m)
 
@@ -83,7 +83,7 @@ drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_exloc*education_summary +
 
 drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_exloc*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + YEAR*State,
+                         race_eth + marital_status + age_gr + State,
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
 #summary(drinkstatus.w)
 
@@ -99,7 +99,7 @@ pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 
 gpd.m <- glm(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr + YEAR, 
+               race_eth + marital_status + age_gr + State, 
              data = pdat[pdat$sex_recode == "Men",])
 #summary(gpd.m)
 
@@ -107,7 +107,7 @@ gpd.m <- glm(gpd_log ~ sunsalesban_exloc*education_summary +
 
 gpd.w <- glm(gpd_log ~ sunsalesban_exloc*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr + YEAR, 
+               race_eth + marital_status + age_gr + State, 
              data = pdat[pdat$sex_recode == "Women",])
 #summary(gpd.w)
 
@@ -127,7 +127,7 @@ pdat <- pdat %>% filter(gramsperday > 0) %>%
 
 alccat.m <- glm(alccat3 ~ sunsalesban_exloc*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + YEAR,
+                    race_eth + marital_status + age_gr + State,
                   data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 #summary(alccat.m)
 
@@ -137,7 +137,7 @@ alccat.m <- glm(alccat3 ~ sunsalesban_exloc*education_summary +
 
 alccat.w <- glm(alccat3 ~ sunsalesban_exloc*education_summary + 
                     drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + YEAR,
+                    race_eth + marital_status + age_gr + State,
                   data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
 #summary(alccat.w)
 

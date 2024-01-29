@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20240112
+DATE <- 20240129
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -57,7 +57,7 @@ pdat <- data %>%
   mutate(education_summary = factor(education_summary, levels = c("College", "SomeC", "LEHS")),
          sunsalesban_di = factor(ifelse(sunsalesban_di == 1, "ban", ifelse(sunsalesban_di == 0, "no ban", NA)),
                                  levels = c("no ban", "ban")),
-         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate))) # across the total sample
+         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate))) 
 
 # --------------------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ control.compute=list(save.memory=TRUE)
 
 drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + YEAR*State,
+                         race_eth + marital_status + age_gr + State,
                         data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 #summary(drinkstatus.m)
 
@@ -114,7 +114,7 @@ IA.DS.M <-
 
 drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + YEAR*State,
+                         race_eth + marital_status + age_gr + State,
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
 #summary(drinkstatus.w)
 
@@ -141,8 +141,8 @@ IA.DS.W <-
 # DAILY ALCOHOL CONSUMPTION: MIXED-EFFECT MODELS
 # ----------------------------------------------------------------
 
-ggplot(pdat[pdat$gramsperday > 0,], aes(x = gramsperday)) + geom_histogram()
-ggplot(pdat[pdat$gramsperday > 0,], aes(x = log(gramsperday))) + geom_histogram()
+#ggplot(pdat[pdat$gramsperday > 0,], aes(x = gramsperday)) + geom_histogram()
+#ggplot(pdat[pdat$gramsperday > 0,], aes(x = log(gramsperday))) + geom_histogram()
 
 pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 
@@ -176,7 +176,7 @@ IA.GPD.M <-
 
 gpd.w <- glm(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr + YEAR*State, 
+               race_eth + marital_status + age_gr + State, 
              data = pdat[pdat$sex_recode == "Women",])
 #summary(gpd.w)
 

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------
 # ----------------------------------------------------------------
 ## Project: SIMAH  
-## Title: Sensitivity analysis 1 BRFSS Sunday sales ban
+## Title: Main analysis BRFSS Sunday sales ban
 ## State: all US states
 ## Author: Carolin Kilian
 ## Start Date: 07/05/2023
@@ -34,7 +34,7 @@ library(ggpubr)
 # ----------------------------------------------------------------
 
 setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
-DATE <- 20240129
+DATE <- 20240112
 
 # BRFSS 
 data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
@@ -45,34 +45,39 @@ data <- as.data.frame(readRDS("acp_brfss/20230925_brfss_clean.RDS"))
 # PREPARE DATA
 # ----------------------------------------------------------------
 
-# exclude States that had no ban during entire study period
-
-select_states <- data %>% 
-  group_by(State, YEAR, sunsalesban_di) %>% summarise() %>%
-  group_by(State) %>% 
-  mutate(policy.total = sum(sunsalesban_di),
-         SunSalesPolicy = ifelse(policy.total == 0, "Sunday sales were never banned",
-                                 ifelse(policy.total == 19, "Sunday sales were always banned", 
-                                        ifelse(policy.total > 0 & policy.total < 19, "Sunday sales ban was repealed", NA)))) %>% 
-  filter(SunSalesPolicy == "Sunday sales were never banned") %>% pull(State) %>% unique
-
 # define age groups and factor variables, z-standardize unemplyoment rate
 pdat <- data %>%
   
-  filter(!State %in% select_states) %>% 
-  
   # select random subsample (for now)
-  # sample_frac(0.1) %>% 
+  #sample_frac(0.1) %>% 
   
   # prepare data
   mutate_at(c("race_eth", "sex_recode", "education_summary", "marital_status", 
               "drinkingstatus", "controlstate", "drinkculture", "sunsalesban", "State"), as.factor) %>%
   mutate(education_summary = factor(education_summary, levels = c("College", "SomeC", "LEHS")),
-         sunsalesban_exloc = factor(ifelse(sunsalesban_exloc == 1, "ban", ifelse(sunsalesban_exloc == 0, "no ban", NA)),
-                                    levels = c("no ban", "ban")),
-         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate)))
+         sunsalesban_di = factor(ifelse(sunsalesban_di == 1, "ban", ifelse(sunsalesban_di == 0, "no ban", NA)),
+                                 levels = c("no ban", "ban")),
+         z.unemp.rate = (log(unemp.rate) - mean(log(unemp.rate))) / sd(log(unemp.rate))) # across the total sample
 
 # --------------------------------------------------------------------------------------
+
+# set plot design
+
+ggdesign <- theme_bw() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 12), strip.text = element_text(size = 12),
+        axis.text = element_text(size = 12, color = "black"), 
+        axis.title.y = element_text(size = 12, color = "black"), 
+        legend.title = element_text(size = 12), legend.text = element_text(size = 12), 
+        axis.title.x = element_blank(), axis.ticks = element_blank())
+
+col1 <- c("#B5C95A", "#1D9A6C", "#0A2F51")
+
+#label_education <- c("low", "medium", "high")
+label_ban <- c("No Ban", "Ban")
+
+# SAFE MEMORY
+control.compute=list(save.memory=TRUE)
 
 # ----------------------------------------------------------------
 # DRINKING ALCOHOL VS. ABSTAINING: MIXED-EFFECT MODELS
@@ -82,17 +87,53 @@ pdat <- data %>%
 
 drinkstatus.m <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + State,
-                       data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
+                         race_eth + marital_status + age_gr + YEAR*State,
+                        data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 #summary(drinkstatus.m)
+
+
+# MARGINAL MEANS
+# https://strengejacke.github.io/ggeffects/articles/technical_differencepredictemmeans.html
+
+margins <- ggeffect(drinkstatus.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.DS.M <- 
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) +  
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  scale_x_discrete(label = label_ban) + 
+  labs(title = "\n", y = "\nEMM: any alcohol use\n") + ggdesign
+
+# --------------------------------------------------------------------------------------
 
 # WOMEN 
 
 drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_di*education_summary + 
                          drinkculture + controlstate + z.unemp.rate +
-                         race_eth + marital_status + age_gr + State,
+                         race_eth + marital_status + age_gr + YEAR*State,
                        data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
 #summary(drinkstatus.w)
+
+# MARGINAL MEANS 
+
+margins <- ggeffect(drinkstatus.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.DS.W <- 
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  scale_x_discrete(label = label_ban) + 
+  labs(title = "\n", y = "\nEMM: any alcohol use\n") + ggdesign
+
+#beep()
 
 # --------------------------------------------------------------------------------------
 
@@ -100,23 +141,60 @@ drinkstatus.w <- glm(drinkingstatus ~ sunsalesban_di*education_summary +
 # DAILY ALCOHOL CONSUMPTION: MIXED-EFFECT MODELS
 # ----------------------------------------------------------------
 
+ggplot(pdat[pdat$gramsperday > 0,], aes(x = gramsperday)) + geom_histogram()
+ggplot(pdat[pdat$gramsperday > 0,], aes(x = log(gramsperday))) + geom_histogram()
+
 pdat <- pdat %>% filter(gramsperday > 0) %>% mutate(gpd_log = log(gramsperday))
 
 # MEN
 
 gpd.m <- glm(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr + State, 
+               race_eth + marital_status + age_gr + State,
              data = pdat[pdat$sex_recode == "Men",])
 #summary(gpd.m)
+
+# MARGINAL MEANS 
+
+margins <- ggeffect(gpd.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.GPD.M <- 
+  ggplot(margins, aes(group, exp(predicted), color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
+
+#beep()
+
+# --------------------------------------------------------------------------------------
 
 # WOMEN
 
 gpd.w <- glm(gpd_log ~ sunsalesban_di*education_summary + 
                drinkculture + z.unemp.rate + controlstate + 
-               race_eth + marital_status + age_gr + State, 
+               race_eth + marital_status + age_gr + YEAR*State, 
              data = pdat[pdat$sex_recode == "Women",])
 #summary(gpd.w)
+
+# MARGINAL MEANS 
+
+margins <- ggeffect(gpd.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.GPD.W <- 
+  ggplot(margins, aes(group, exp(predicted), color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  labs(title = "\n", y = "\nEMM: average daily grams of pure alcohol*\n") + ggdesign
+
+#beep()
 
 # --------------------------------------------------------------------------------------
 
@@ -133,10 +211,29 @@ pdat <- pdat %>% filter(gramsperday > 0) %>%
 # MEN
 
 alccat.m <- glm(alccat3 ~ sunsalesban_di*education_summary + 
-                    drinkculture + controlstate + z.unemp.rate +
-                    race_eth + marital_status + age_gr + State,
-                  data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
+                         drinkculture + controlstate + z.unemp.rate +
+                         race_eth + marital_status + age_gr + State,
+                       data = pdat[pdat$sex_recode == "Men",], family = binomial(link = "logit"))
 #summary(alccat.m)
+
+# MARGINAL MEANS 
+
+margins <- ggeffect(alccat.m, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.ALCCAT.M <- 
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
+
+#beep()
+
+# --------------------------------------------------------------------------------------
 
 # WOMEN
 
@@ -146,7 +243,34 @@ alccat.w <- glm(alccat3 ~ sunsalesban_di*education_summary +
                   data = pdat[pdat$sex_recode == "Women",], family = binomial(link = "logit"))
 #summary(alccat.w)
 
+# MARGINAL MEANS 
+
+margins <- ggeffect(alccat.w, terms = c("education_summary", "sunsalesban_di")) %>% 
+  as.data.frame() %>% mutate(x = factor(x, levels = c("LEHS", "SomeC", "College")),
+         group = factor(group, levels = c("no ban", "ban")))
+
+# INTERACTION PLOT
+IA.ALCCAT.W <- 
+  ggplot(margins, aes(group, predicted, color = x, group = x)) +
+  geom_point(size = 4, shape = 18) + geom_line(linetype = "dashed") + 
+  scale_x_discrete(label = label_ban) + 
+  scale_color_manual(values = col1, name = "education", labels = c("low", "medium", "high")) + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1L)) +
+  labs(title = "\n", y = "\nEMM: any hazardous alcohol use*\n") + ggdesign
+
+#beep()
+
 # --------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# EXPORT: FIGURE
+# ----------------------------------------------------------------
+
+ggarrange(IA.DS.M, IA.GPD.M, IA.ALCCAT.M, IA.DS.W, IA.GPD.W, IA.ALCCAT.W,
+          labels = c("1A: MEN", "2A: MEN", "3A: MEN", "1B: WOMEN", "2B: WOMEN", "3B: WOMEN"),
+          ncol = 3, nrow = 2, common.legend = TRUE, legend="bottom")
+
+ggsave(paste0("acp_brfss/outputs/figures/", DATE, "_BRFSS_INTERACT_ALT.jpg"), dpi = 300, width = 12, height = 8)
 
 # ----------------------------------------------------------------
 # EXPORT: TABLE
@@ -197,4 +321,4 @@ out.alccat.w <- as.data.frame(coef(summary(alccat.w))) %>%
 out.alccat <- merge(out.alccat.m, out.alccat.w, by = "term", all = T, suffix = c(".men", ".women"))
 
 list_out <- list("AlcUse" = out.drink, "GPD" = out.gpd, "GPDexp" = out.gpdexp, "CategoryIII" = out.alccat)
-write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_SA_SubSampStates_output_glm.xlsx"), rowNames = FALSE)
+write.xlsx(list_out, file = paste0("acp_brfss/outputs/", DATE, "_BRFSSraw_output_glm.xlsx"), rowNames = FALSE)
