@@ -16,7 +16,6 @@ run_microsim_alt(
   updatingalcohol,
   alcohol_transitions,
   catcontmodel,
-  Hep,
   drinkingdistributions,
   base_counts,
   diseases,
@@ -30,7 +29,7 @@ run_microsim_alt(
   update_base_rate,
   minyear = 2000,
   maxyear = 2005,
-  output = "demographics"
+  output = "mortality"
 )
 }
 \description{

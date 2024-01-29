@@ -4,7 +4,7 @@
 #' @keywords cirrhosis all type pathway interaction effects
 #' @export
 #' @examples
-#' LC all type pathway pathway including SES interaction effects (alcohol use as continuous)
+#' LC all type pathway pathway including SES interaction effects (alcohol use as continuous displayed in the unit of 20 grams per day)
 CirrhosisAllInteraction <- function(data,lhs){
   data <- data %>%
     mutate(ageCAT = cut(microsim.init.age,
@@ -46,10 +46,10 @@ CirrhosisAllInteraction <- function(data,lhs){
 
     data <- data %>%
     mutate(RR_LVDC = ifelse(microsim.init.education=="LEHS",
-                                exp(B_LIVER_LEHS + B_LIVER_GPD*microsim.init.alc.gpd + B_LIVER_LEHSxGPD*microsim.init.alc.gpd),
+                                exp(B_LIVER_LEHS + B_LIVER_GPD*(microsim.init.alc.gpd/20) + B_LIVER_LEHSxGPD*(microsim.init.alc.gpd/20)),
                                 ifelse(microsim.init.education=="SomeC",
-                                      exp(B_LIVER_SomeC + B_LIVER_GPD*microsim.init.alc.gpd + B_LIVER_SomeCxGPD*microsim.init.alc.gpd),
-                                      exp(B_LIVER_GPD*microsim.init.alc.gpd))),
+                                      exp(B_LIVER_SomeC + B_LIVER_GPD*(microsim.init.alc.gpd/20) + B_LIVER_SomeCxGPD*(microsim.init.alc.gpd/20)),
+                                      exp(B_LIVER_GPD*(microsim.init.alc.gpd/20)))),
            RR_LVDC = ifelse(formerdrinker==1 & microsim.init.education=="LEHS", 
                                   exp(LIVER_FD_LEHS + LIVER_FD + LIVER_LEHSxFD),
                                   ifelse(formerdrinker==1 & microsim.init.education=="SomeC",

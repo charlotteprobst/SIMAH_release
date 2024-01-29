@@ -16,7 +16,7 @@ Calculates RR of liver cirrhosis through all type pathway - with SES interaction
 }
 \examples{
 all type pathway pathway including SES interaction
-LC all type pathway pathway including SES interaction effects (alcohol use as continuous)
+LC all type pathway pathway including SES interaction effects (alcohol use as continuous displayed in the unit of 20 grams per day)
 }
 \keyword{all}
 \keyword{cirrhosis}

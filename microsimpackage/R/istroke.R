@@ -19,7 +19,7 @@ ISTR <- function(data,lhs){
   B_ISTR4 <- as.numeric(lhs["B_ISTR4"])
   ISTR_FORMERDRINKER <- as.numeric(lhs["ISTR_FORMERDRINKER"])
   data <- data %>%
-    mutate(RR_ISTR = ifelse(microsim.init.alc.gpd<= 1.3, exp(B_ISTR1), 
+    mutate(RR_ISTR = ifelse(microsim.init.alc.gpd<= 12, exp(B_ISTR1), 
                             ifelse(microsim.init.alc.gpd<=24, exp(B_ISTR2), 
                                    ifelse(microsim.init.alc.gpd<=48, exp(B_ISTR3), exp(B_ISTR4)))),
             RR_ISTR = ifelse(formerdrinker==1, exp(ISTR_FORMERDRINKER), RR_ISTR))

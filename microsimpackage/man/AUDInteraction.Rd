@@ -11,6 +11,7 @@ Calculates RR of AUD - with SES interaction effects
 }
 \examples{
 AUD including SES interaction effects
+Results given in standard drinks per day (14 grams per day)
 }
 \keyword{AUD}
 \keyword{effects}
