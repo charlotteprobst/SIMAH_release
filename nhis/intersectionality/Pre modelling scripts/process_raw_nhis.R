@@ -39,18 +39,18 @@ options(scipen = 100)
 ddi <- read_ipums_ddi("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
 data <- read_ipums_micro(ddi)
 
-# Exclude those aged <18 as not asked about alcohol; exclude years 2019 and 2020 as missing critical info (No alc Qs in 2019; No ALC5UPYR in 2020; No EDUC & Income in 2019/20)
+# Exclude years after 2018 as Qs not asked in 2019 and drinking likely to have changed in 2020 due to pandemic
+# No alc Qs in 2019; No ALC5UPYR in 2020)
 nhis_subset <- data %>%
       dplyr::select(YEAR, INTERVWMO, INTERVWYR, NHISPID, PERWEIGHT, SAMPWEIGHT, AGE, BIRTHYR, SEX, SEXORIEN, EDUCREC2, RACENEW, HISPYN, USBORN, CITIZEN, INCFAM97ON2, starts_with("ALC"), starts_with("MORT"), SMOKFREQNOW) %>%
- filter(AGE >=18) %>%
- filter(YEAR <=2018)  # n= 1,298,461
- 
-# Exclude individuals not in the adult sample (i.e. those with alc questions Not In Universe)
+ filter(YEAR <=2018)  # n= 1762659
+
+# Exclude individuals with alc questions Not In Universe (Universe = Sample adults aged 18+)
  nhis_subset <- nhis_subset %>%
-    filter(ALCSTAT1 != 0)
+    filter(ALCSTAT1 != 0) # 572339
  
 # Create data dictionary for reference
- dictionary <- labelled::generate_dictionary(nhis_subset)
+dictionary <- labelled::generate_dictionary(nhis_subset)
  
 # Zap labels from the dataframe to facilitate data manipulation 
 nhis_subset <- nhis_subset %>% zap_formats() %>% zap_labels()
@@ -436,3 +436,5 @@ ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogr
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
 ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/transformed_distribution_daily_grams_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+
+# NB. Sub-setting based on intersectional characteristics of interest occurs within MAIHDA scripts
