@@ -79,13 +79,14 @@ nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
 nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
                                                    levels = c(0,1,2,3),
                                                    labels = c("18-20", "21-24", "25-59","60+"))
-
+# Recode race into 5 categories
 nhis_subset_race <- recode_race_ethnicity(nhis_subset_age)
-nhis_subset_race <- recode_race_ethnicity_all(nhis_subset_race)
-
 nhis_subset_race$race_5_cats <- factor(nhis_subset_race$race_5_cats,
                     levels = c(1,2,3,4,5),
                     labels = c("Non-Hispanic White", "Non-Hispanic Black/African American", "Non-Hispanic Asian", "Non-Hispanic Other", "Hispanic"))
+
+# Recode race into 6 categories
+nhis_subset_race <- recode_race_ethnicity_all(nhis_subset_race)
 
 nhis_subset_sexorien <- recode_sexorien(nhis_subset_race)
 nhis_subset_sexorien$SEXORIEN <- factor(nhis_subset_sexorien$SEXORIEN,

@@ -43,7 +43,7 @@ data_0 <- data_drinkers %>% filter(age_diaz!="18-20")
 
 # Keep 6 selected race and ethnicity groups
 data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-                            race_ethnicity==7|race_ethnicity==3) 
+                            race_ethnicity==7|race_ethnicity==3) # 321,242
 
 # Convert race and ethnicity from numeric to categorical variable
 data_1$race_6_cats <- factor(data_1$race_ethnicity,
@@ -66,6 +66,7 @@ temp <- data_2 %>%
 group_sizes <- temp %>% distinct(intersections, .keep_all = TRUE)
 sum(group_sizes$count <= 20) # 3 groups with n<=20
 
+
 # Add a column of the observed mean grams per day for each intersection
 data_3 <- data_2 %>%
   group_by(intersections) %>%
@@ -87,6 +88,10 @@ saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 # Read in prepped data
 data_3 <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.rds")
 
+# Calculate overall mean grams for the sample of drinkers
+mean(data_3$alc_daily_g_capped_200)
+sd(data_3$alc_daily_g_capped_200)
+
 temp <- data_3 %>% 
   group_by(intersections) %>%
   mutate(count=n())
@@ -95,7 +100,7 @@ group_sizes <- temp %>%
   distinct(intersections, .keep_all = TRUE) %>% 
   dplyr::select(intersectional_names, count) 
 
-# Generate reference table with intersectional names & mean observed grams
+# Generate reference table with intersectional names & mean observed grams per intersection
 intersections_reference <- model_data %>%
   group_by(intersectional_names) %>% 
   distinct(intersections, intersectional_names, mean_observed_grams)

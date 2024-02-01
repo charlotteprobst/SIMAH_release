@@ -78,6 +78,10 @@ saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 # Read in model data
 data_3 <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
 
+# Calculate overall mean grams for the full sample
+mean(data_3$alc_daily_g_capped_200)
+sd(data_3$alc_daily_g_capped_200)
+
 # Prep data for use with Mlwin
 model_data <- data_3 %>%
   mutate(cons=1) %>% 

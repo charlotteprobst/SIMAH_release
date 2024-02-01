@@ -135,6 +135,11 @@ saveRDS(data_5, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 # Read in the data
 model_data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
 
+# count number of HEDs and calculate proportion of sample that are HEDs
+model_data %>% count(HED==1)
+model_data %>%
+  summarise(proportion_hed = mean(HED, na.rm = TRUE)*100)
+
 # Prep data for use with Mlwin
 model_data <- model_data %>%
   mutate(cons=1) %>% 
