@@ -47,7 +47,10 @@ recode_race_ethnicity_all <- function(data){
     race_ethnicity==3 ~ "NH AI/AN",
   race_ethnicity==8|race_ethnicity==9|race_ethnicity==10|race_ethnicity==11|
     race_ethnicity==12|race_ethnicity==13|race_ethnicity==14~ "Hispanic")
-  )
+  )%>%
+    mutate(
+      race_6_cats = factor(race_6_cats, levels = c("NH White", "NH Black", "NH Asian", "NH Multiple race", "NH AI/AN", "Hispanic"))
+    )
   return(data)
 }
 

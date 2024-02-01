@@ -41,16 +41,8 @@ data_0 <- data_drinkers %>% filter(age_diaz!="18-20")
 
 # Generate new race category variable
 
-# Keep 6 selected race and ethnicity groups
-data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-                            race_ethnicity==7|race_ethnicity==3) # 321,242
-
-# Convert race and ethnicity from numeric to categorical variable
-data_1$race_6_cats <- factor(data_1$race_ethnicity,
-                             levels = c(1,8,2,4,7,3),
-                             labels = c("White", "Hispanic White", 
-                                        "Black", "Asian", 
-                                        "Multiple race", "AI/AN"))
+# Keep only the 6 selected race and ethnicity groups
+data_1 <- data_0 %>% filter(!is.na(race_6_cats))
 
 # Generate intersections
 data_2 <- data_1 %>% 
@@ -134,8 +126,8 @@ intersections_reference_2009 <- model_data %>%
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers.rds")
+saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_grams_drinkers.rds")
+saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_grams_drinkers.rds")
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -144,9 +136,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers.rds")
-
+null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_grams_drinkers.rds")
+full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_grams_drinkers.rds")
 
 ##### CHECK MODELLING ASSUMPTIONS
 
@@ -252,11 +243,11 @@ mb_prepped <- dplyr::rename(mb_prepped,
                             b_female = "FP_SEXFemale",
                             b_adult = "FP_age_diaz25-59",
                             b_older_adult = "FP_age_diaz60+",
-                            b_Black = "FP_race_6_catsBlack",
-                            b_Asian = "FP_race_6_catsAsian",
-                            b_AI_AN = "FP_race_6_catsAI/AN",
-                            b_Hispanic = "FP_race_6_catsHispanic White",
-                            b_Multiple_race = "FP_race_6_catsMultiple race",
+                            b_Black = "FP_race_6_catsNH Black",
+                            b_Asian = "FP_race_6_catsNH Asian",
+                            b_AI_AN = "FP_race_6_catsNH AI/AN",
+                            b_Hispanic = "FP_race_6_catsHispanic",
+                            b_Multiple_race = "FP_race_6_catsNH Multiple race",
                             b_med = "FP_education_3_catssome college",
                             b_high = "FP_education_3_cats4+ years college",
                             b_2001 = "FP_YEAR2001",
@@ -319,11 +310,11 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + b_female*SEXFemale
                     + b_adult*`age_diaz25-59`
                     + b_older_adult*`age_diaz60+`  
-                    + b_Hispanic*`race_6_catsHispanic White`
-                    + b_Asian*`race_6_catsAsian`
-                    + b_AI_AN*`race_6_catsAI/AN`
-                    + b_Black*`race_6_catsBlack`
-                    + b_Multiple_race*`race_6_catsMultiple race`
+                    + b_Hispanic*`race_6_catsHispanic`
+                    + b_Asian*`race_6_catsNH Asian`
+                    + b_AI_AN*`race_6_catsNH AI/AN`
+                    + b_Black*`race_6_catsNH Black`
+                    + b_Multiple_race*`race_6_catsNH Multiple race`
                     + b_med*`education_3_catssome college`
                     + b_high*`education_3_cats4+ years college`
                     + b_2009*`YEAR2009`
@@ -335,11 +326,11 @@ mdata_prepped <- mdata_prepped %>% mutate(
                            + b_female*SEXFemale
                            + b_adult*`age_diaz25-59`
                            + b_older_adult*`age_diaz60+`  
-                           + b_Hispanic*`race_6_catsHispanic White`
-                           + b_Asian*`race_6_catsAsian`
-                           + b_AI_AN*`race_6_catsAI/AN`
-                           + b_Black*`race_6_catsBlack`
-                           + b_Multiple_race*`race_6_catsMultiple race`
+                           + b_Hispanic*`race_6_catsHispanic`
+                           + b_Asian*`race_6_catsNH Asian`
+                           + b_AI_AN*`race_6_catsNH AI/AN`
+                           + b_Black*`race_6_catsNH Black`
+                           + b_Multiple_race*`race_6_catsNH Multiple race`
                            + b_med*`education_3_catssome college`
                            + b_high*`education_3_cats4+ years college`
                            + b_2009*`YEAR2009`)*constant

@@ -38,18 +38,19 @@ data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersec
 # Drop individuals age <21
 data_0 <- data %>% filter(age_diaz!="18-20")
 
-# Generate new race category variable
-
-# Keep 6 selected race and ethnicity groups
-data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-                            race_ethnicity==7|race_ethnicity==3) 
-
-# Convert race and ethnicity from numeric to categorical variable
-data_1$race_6_cats <- factor(data_1$race_ethnicity,
-                             levels = c(1,8,2,4,7,3),
-                             labels = c("White", "Hispanic White", 
-                                        "Black", "Asian", 
-                                        "Multiple race", "AI/AN"))
+# Keep only the 6 selected race and ethnicity groups
+data_1 <- data_0 %>% filter(!is.na(race_6_cats))
+# 
+# # Keep 6 selected race and ethnicity groups
+# data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
+#                             race_ethnicity==7|race_ethnicity==3) 
+# 
+# # Convert race and ethnicity from numeric to categorical variable
+# data_1$race_6_cats <- factor(data_1$race_ethnicity,
+#                              levels = c(1,8,2,4,7,3),
+#                              labels = c("White", "Hispanic White", 
+#                                         "Black", "Asian", 
+#                                         "Multiple race", "AI/AN"))
 
 # Generate intersections
 data_2 <- data_1 %>% 

@@ -28,7 +28,7 @@ options(scipen=10)
 ################################################################# PRE PROCESSING
 
 # Read in data (full sample):
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.rds")
 
 # subset drinkers
 data_drinkers <- data %>% filter(ALCSTAT1=="Current drinker")
@@ -36,18 +36,18 @@ data_drinkers <- data %>% filter(ALCSTAT1=="Current drinker")
 # Drop individuals age <21
 data_0 <- data_drinkers %>% filter(age_diaz!="18-20")
 
-# Generate new race category variable
+# Keep only the 6 selected race and ethnicity groups
+data_1 <- data_0 %>% filter(!is.na(race_6_cats))
 
-# Keep 6 selected race and ethnicity groups
-data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-                            race_ethnicity==7|race_ethnicity==3) 
-
-# Convert race and ethnicity from numeric to categorical variable
-data_1$race_6_cats <- factor(data_1$race_ethnicity,
-                             levels = c(1,8,2,4,7,3),
-                             labels = c("White", "Hispanic White", 
-                                        "Black", "Asian", 
-                                        "Multiple race", "AI/AN"))
+# data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
+#                             race_ethnicity==7|race_ethnicity==3) 
+# 
+# # Convert race and ethnicity from numeric to categorical variable
+# data_1$race_6_cats <- factor(data_1$race_ethnicity,
+#                              levels = c(1,8,2,4,7,3),
+#                              labels = c("White", "Hispanic White", 
+#                                         "Black", "Asian", 
+#                                         "Multiple race", "AI/AN"))
 
 # Generate intersections
 data_2 <- data_1 %>% 
@@ -74,11 +74,11 @@ saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 #################################################################### MODELLING
 
 # Read in prepped data (drinkers only)
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.RDS")
+data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_drinkers.rds")
  
 # View the mean alc daily grams
-mean(data$alc_daily_g_capped_200) # 7.89
-median(data$alc_daily_g_capped_200) # 2.30
+mean(data$alc_daily_g_capped_200) # 7.9
+sd(data$alc_daily_g_capped_200) # 14.4
  
 ## Identify and remove outliers using z-scores #### Identify outliers based on z-score (using the log-transformed daily grams)
 
@@ -148,8 +148,8 @@ intersections_reference <- model_data %>%
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers_no_outliers_GL.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers_no_outliers_GL.rds")
+saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/null_grams_drinkers_no_outliers.rds")
+saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/full_grams_drinkers_no_outliers.rds")
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -158,8 +158,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_drinkers_no_outliers_GL.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_drinkers_no_outliers_GL.rds")
+null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/null_grams_drinkers_no_outliers.rds")
+full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/full_grams_drinkers_no_outliers.rds")
 
 
 ##### CHECK MODELLING ASSUMPTIONS
@@ -246,15 +246,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers_no_outliers_GL.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_drinkers_no_outliers_GL.csv")
+saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/model coefficients and variance grams drinkers_no_outliers.rds")
+write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/model coefficients and variance grams drinkersno_outliersno_outliers.csv")
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_drinkers_no_outliers_GL.csv")
+write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/VPC_table_grams_drinkersno_outliersno_outliers.csv")
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -288,11 +288,11 @@ mb_prepped <- dplyr::rename(mb_prepped,
                             b_female = "FP_SEXFemale",
                             b_adult = "FP_age_diaz25-59",
                             b_older_adult = "FP_age_diaz60+",
-                            b_Black = "FP_race_6_catsBlack",
-                            b_Asian = "FP_race_6_catsAsian",
-                            b_AI_AN = "FP_race_6_catsAI/AN",
-                            b_Hispanic = "FP_race_6_catsHispanic White",
-                            b_Multiple_race = "FP_race_6_catsMultiple race",
+                            b_Black = "FP_race_6_catsNH Black",
+                            b_Asian = "FP_race_6_catsNH Asian",
+                            b_AI_AN = "FP_race_6_catsNH AI/AN",
+                            b_Hispanic = "FP_race_6_catsHispanic",
+                            b_Multiple_race = "FP_race_6_catsNH Multiple race",
                             b_med = "FP_education_3_catssome college",
                             b_high = "FP_education_3_cats4+ years college",
                             b_2001 = "FP_YEAR2001",
@@ -355,11 +355,11 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + b_female*SEXFemale
                     + b_adult*`age_diaz25-59`
                     + b_older_adult*`age_diaz60+`  
-                    + b_Hispanic*`race_6_catsHispanic White`
-                    + b_Asian*`race_6_catsAsian`
-                    + b_AI_AN*`race_6_catsAI/AN`
-                    + b_Black*`race_6_catsBlack`
-                    + b_Multiple_race*`race_6_catsMultiple race`
+                    + b_Hispanic*`race_6_catsHispanic`
+                    + b_Asian*`race_6_catsNH Asian`
+                    + b_AI_AN*`race_6_catsNH AI/AN`
+                    + b_Black*`race_6_catsNH Black`
+                    + b_Multiple_race*`race_6_catsNH Multiple race`
                     + b_med*`education_3_catssome college`
                     + b_high*`education_3_cats4+ years college`
                     + b_2009*`YEAR2009`
@@ -371,11 +371,11 @@ mdata_prepped <- mdata_prepped %>% mutate(
                            + b_female*SEXFemale
                            + b_adult*`age_diaz25-59`
                            + b_older_adult*`age_diaz60+`  
-                           + b_Hispanic*`race_6_catsHispanic White`
-                           + b_Asian*`race_6_catsAsian`
-                           + b_AI_AN*`race_6_catsAI/AN`
-                           + b_Black*`race_6_catsBlack`
-                           + b_Multiple_race*`race_6_catsMultiple race`
+                           + b_Hispanic*`race_6_catsHispanic`
+                           + b_Asian*`race_6_catsNH Asian`
+                           + b_AI_AN*`race_6_catsNH AI/AN`
+                           + b_Black*`race_6_catsNH Black`
+                           + b_Multiple_race*`race_6_catsNH Multiple race`
                            + b_med*`education_3_catssome college`
                            + b_high*`education_3_cats4+ years college`
                            + b_2009*`YEAR2009`)*constant
@@ -407,12 +407,11 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.csv")
-
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/results_grams_drinkers_no_outliers.rds")
+write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/results_grams_drinkersno_outliers.csv")
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_drinkers_2009_no_outliers_GL_constant.rds")
+mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/results_grams_drinkers_no_outliers.rds")
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
@@ -421,7 +420,7 @@ mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>%
   dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_drinkers_2009_no_outliers_GL_constant.csv")
+write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/results_grams_drinkers_no_outliers.csv")
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -431,15 +430,15 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 
   dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_drinkers_2009_no_outliers_GL_constant.csv")
+write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/5_interactions_drinkers_grams_no_outliers.csv")
 
 ##### Explore face validity of estimates
 temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
-write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/drinkers clean/Table of mean observed vs estimated grams - drinkers only.csv")
+write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/Table of mean observed vs estimated grams - drinkers only_no_outliers.csv")
 ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
- ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_drinkers_2009_no_outliers_GL_constant.png", 
+ ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/observed vs estimated grams - drinkers_no_outliers.png", 
        dpi=300, width=33, height=19, units="cm")
 # Interpretation: Positive correlation but generally estimates are higher than observed. 
  
@@ -448,5 +447,5 @@ temp$rank_observed_grams <-rank(temp$mean_observed_grams)
 temp$rank_estimated_grams <-rank(temp$estmn)
 ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() + 
 ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_drinkers_2009_no_outliers_GL_constant.png", 
+ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/SA/observed rank vs estimated rank grams_drinkers_no_outliers.png", 
        dpi=300, width=33, height=19, units="cm")
