@@ -1,5 +1,5 @@
 ## Education transitions analysis to 2021
-# Model 6.  Model with a covariate for time period (2012-2018; 2019-2021)
+# Model 6.  Model with a covariate for time period (2013-2018; 2019-2021)
 
 # Setup
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
@@ -21,10 +21,10 @@ source("SIMAH_code/education_transitions/2021/functions/0_transition_population_
 # Load model data
 data <- readRDS("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
 
-datat6 <- data %>% filter(year>=2012) 
+datat6 <- data %>% filter(year>=2013) 
 datat6$timevary <- cut(datat6$year,
                          breaks=c(0,2018, 2021),
-                         labels=c("2012-2018", "2019-2021"))
+                         labels=c("2013-2018", "2019-2021"))
 
 men <- datat6 %>% filter(sex==0)
 women <- datat6 %>% filter(sex==1)
@@ -145,25 +145,25 @@ modelt6_HRs_interaction_race_age_cont <- predict_HRs(modelt6_interaction_race_ag
 modelt6_HRs_cont <- predict_HRs(modelt6_cont)
 
 # Adjust the CIs to reflect the true (rather than replicated) population size
-modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2012-2021", datat6)
-modelt6_HRs_adjusted_men <- adjust_CIs(modelt6_men, "2012-2021", men)
-modelt6_HRs_adjusted_women <- adjust_CIs(modelt6_women, "2012-2021", women)
-modelt6_HRs_adjusted_white <- adjust_CIs(modelt6_white, "2012-2021", white)
-modelt6_HRs_adjusted_black <- adjust_CIs(modelt6_black, "2012-2021", black)
-modelt6_HRs_adjusted_hispanic <- adjust_CIs(modelt6_hispanic, "2012-2021", hispanic)
-modelt6_HRs_adjusted_other <- adjust_CIs(modelt6_other, "2012-2021", other)
-modelt6_HRs_adjusted_white_men <- adjust_CIs(modelt6_white_men, "2012-2021", white_men)
-modelt6_HRs_adjusted_black_men <- adjust_CIs(modelt6_black_men, "2012-2021", black_men)
-modelt6_HRs_adjusted_hispanic_men <- adjust_CIs(modelt6_hispanic_men, "2012-2021", hispanic_men)
-modelt6_HRs_adjusted_other_men <- adjust_CIs(modelt6_other_men, "2012-2021", other_men)
-modelt6_HRs_adjusted_white_women <- adjust_CIs(modelt6_white_women, "2012-2021", white_women)
-modelt6_HRs_adjusted_black_women <- adjust_CIs(modelt6_black_women, "2012-2021", black_women)
-modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2012-2021", hispanic_women)
-modelt6_HRs_adjusted_other_women <- adjust_CIs(modelt6_other_women, "2012-2021", other_women)
-modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2012-2021", datat6)
-modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2012-2021", datat6)
-modelt6_HRs_adjusted_interaction_race_age_cont <- adjust_CIs(modelt6_interaction_race_age_cont, "2012-2021", datat6)
-modelt6_HRs_adjusted_cont <- adjust_CIs(modelt6_cont, "2012-2021", datat6)
+modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2013-2021", datat6)
+modelt6_HRs_adjusted_men <- adjust_CIs(modelt6_men, "2013-2021", men)
+modelt6_HRs_adjusted_women <- adjust_CIs(modelt6_women, "2013-2021", women)
+modelt6_HRs_adjusted_white <- adjust_CIs(modelt6_white, "2013-2021", white)
+modelt6_HRs_adjusted_black <- adjust_CIs(modelt6_black, "2013-2021", black)
+modelt6_HRs_adjusted_hispanic <- adjust_CIs(modelt6_hispanic, "2013-2021", hispanic)
+modelt6_HRs_adjusted_other <- adjust_CIs(modelt6_other, "2013-2021", other)
+modelt6_HRs_adjusted_white_men <- adjust_CIs(modelt6_white_men, "2013-2021", white_men)
+modelt6_HRs_adjusted_black_men <- adjust_CIs(modelt6_black_men, "2013-2021", black_men)
+modelt6_HRs_adjusted_hispanic_men <- adjust_CIs(modelt6_hispanic_men, "2013-2021", hispanic_men)
+modelt6_HRs_adjusted_other_men <- adjust_CIs(modelt6_other_men, "2013-2021", other_men)
+modelt6_HRs_adjusted_white_women <- adjust_CIs(modelt6_white_women, "2013-2021", white_women)
+modelt6_HRs_adjusted_black_women <- adjust_CIs(modelt6_black_women, "2013-2021", black_women)
+modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2013-2021", hispanic_women)
+modelt6_HRs_adjusted_other_women <- adjust_CIs(modelt6_other_women, "2013-2021", other_women)
+modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2013-2021", datat6)
+modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2013-2021", datat6)
+modelt6_HRs_adjusted_interaction_race_age_cont <- adjust_CIs(modelt6_interaction_race_age_cont, "2013-2021", datat6)
+modelt6_HRs_adjusted_cont <- adjust_CIs(modelt6_cont, "2013-2021", datat6)
 
 write_csv(modelt6_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6.csv")
 write_csv(modelt6_HRs_adjusted_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_men.csv")

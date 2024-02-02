@@ -107,17 +107,32 @@ ggplot(education_at_26, aes(x = period, y = Percentage, fill = education)) +
   geom_bar(stat = "identity", position = "stack") +
   labs(x = "Time period",
        y = "Percentage") +
-  theme(plot.caption = element_text(hjust=0)) +
+  theme(
+    text = element_text(size = 14),  
+    axis.title = element_text(size = 16),  
+    axis.text = element_text(size = 12),  
+    axis.title.x = element_text(size = 16),  
+    axis.title.y = element_text(size = 16),  
+    strip.text = element_text(size = 14),
+    plot.caption = element_text(hjust=0)) +
   scale_fill_manual(values=cbPalette) +  
   theme(legend.position = "right") 
-ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked_model6.png", dpi=300, width = 12, height = 7)
+ggsave("SIMAH_workplace/education_transitions/2021/Figure 2, stacked bar chart.png", dpi=300, width = 12, height = 7)
 
 # Plotting separate plots for each sex and race combination using facet_grid
 ggplot(education_at_26_race_sex, aes(x = period, y = Percentage, fill = education)) +
   geom_bar(stat = "identity", position = "stack") +
   labs(x = "Time period",
        y = "Percentage") +
+  theme(
+    text = element_text(size = 14),  
+    axis.title = element_text(size = 16),  
+    axis.text = element_text(size = 12),  
+    axis.title.x = element_text(size = 16),  
+    axis.title.y = element_text(size = 16),  
+    strip.text = element_text(size = 14)
+  ) +
   scale_fill_manual(values=cbPalette) + 
   facet_grid(~race)  # Creating a grid of plots for each combination of sex and race
-ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_sex_race_stacked.png", dpi=300, width = 12, height = 7)
+ggsave("SIMAH_workplace/education_transitions/2021/Figure 3, stacked bar chart, by race.png", dpi=300, width = 12, height = 7)
 

@@ -53,7 +53,7 @@ modelt1 <- msm(educNUM~year, newID, data=datat1, qmatrix=Q1,
                         control=list(trace=1, fnscale=271181, maxit=200))
 
 # MODEL 2: 2005-2013
-datat2 <- data %>% filter(year<=2013 & year>=2005)
+datat2 <- data %>% filter(year>=2005 & year<=2013)
 datat2 <- setup_education_model_2021(datat2)
 datat2 <- datat2[order(datat2$newID, datat2$year),]
 length(unique(datat2$uniqueID))
@@ -67,8 +67,8 @@ modelt2 <- msm(educNUM~year, newID, data=datat2, qmatrix=Q2,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
 
-# MODEL 3: 2013-2018
-datat3 <- data %>% filter(year>=2013)
+# MODEL 3: 2013-2018 (nb. model 1 in manuscript)
+datat3 <- data %>% filter(year>=2013 & year<=2018)
 datat3 <- setup_education_model_2021(datat3)
 datat3 <- datat3[order(datat3$newID, datat3$year),]
 length(unique(datat3$uniqueID))
@@ -82,7 +82,7 @@ modelt3 <- msm(educNUM~year, newID, data=datat3, qmatrix=Q3,
                covariates=~agecat + sex + racefinal2,
                control=list(trace=1, fnscale=271181, maxit=200))
 
-# MODEL 4: 2019-2021
+# MODEL 4: 2019-2021 (nb. model 2 in manuscript)
 datat4 <- data %>% filter(year>=2019 & year<=2021)
 datat4 <- setup_education_model_2021(datat4)
 datat4 <- datat4[order(datat4$newID, datat4$year),]
@@ -120,18 +120,18 @@ modelt5 <- msm(educNUM~year, newID, data=datat5, qmatrix=Q5,
                control=list(trace=1, fnscale=271181, maxit=200))
 
 # MODEL 6: Covariate for time period, two time periods (narrow 'pre-covid' time period)
-datat6 <- data %>% filter(year >= 2012)
+# (nb. model 3 in manuscript)
+datat6 <- data %>% filter(year >= 2013)
 datat6 <- setup_education_model_2021(datat6)
 datat6$timevary <- cut(datat6$year,
                        breaks=c(0,2018, 2021),
-                       labels=c("2012-2018", "2019-2021"))
+                       labels=c("2013-2018", "2019-2021"))
 datat6 <- datat6[order(datat6$newID, datat6$year),]
-length(unique(datat6$uniqueID)) # 6607
-length(unique(datat6$newID)) # 1542884
+length(unique(datat6$uniqueID)) # 7249
+length(unique(datat6$newID)) # 1666272
 datat6 <- datat6 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
-datat6$timevary <- relevel(datat6$timevary, ref = "2012-2018")
-
+datat6$timevary <- relevel(datat6$timevary, ref = "2013-2018")
 Q6 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat6)
 
 modelt6 <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
@@ -174,6 +174,7 @@ saveRDS(modelt6, "SIMAH_workplace/education_transitions/2021/final_models/covid_
 saveRDS(modelt7, "SIMAH_workplace/education_transitions/2021/final_models/covid_modelt7.RDS")
 
 # Run a model with an interaction term for race
+# (nb. model S1 in manuscript)
 modelt6_interaction_race <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
                                 center=FALSE,
                                 covariates=~agecat + sex + racefinal2 + timevary + racefinal2*timevary,
@@ -187,7 +188,7 @@ modelt6_interaction_sex <- msm(educNUM~year, newID, data=datat6, qmatrix=Q6,
                                control=list(trace=1, fnscale=271181, maxit=200))
 saveRDS(modelt6_interaction_sex, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_sex.RDS")
 
-# Run separate models for each sex group to enable interactions (based on model 6)
+# Run stratified models for each sex group (based on model 6)
 sex_data <- data %>% filter(year >= 2012)
 
 # Men
@@ -234,6 +235,7 @@ saveRDS(modelt6_women, "SIMAH_workplace/education_transitions/2021/final_models/
 race_data <- data %>% filter(year>=2012)
 
 # White
+# (nb. model 4a in manuscript)
 data_white <- race_data %>% filter(final_race_using_method_hierarchy=="white")
 white <- setup_education_model_2021(data_white)
 white$timevary <- cut(white$year,
@@ -253,6 +255,7 @@ modelt6_white <- msm(educNUM~year, newID, data=white, qmatrix=Q_white,
                    control=list(trace=1, fnscale=271181, maxit=200))
 
 # Black
+# (nb. model 4a in manuscript)
 data_black <- race_data %>% filter(final_race_using_method_hierarchy=="black")
 black <- setup_education_model_2021(data_black) # comment out line 29 of this function when using with models stratified by race
 black$timevary <- cut(black$year,
@@ -271,6 +274,7 @@ modelt6_black <- msm(educNUM~year, newID, data=black, qmatrix=Q_black,
                    control=list(trace=1, fnscale=271181, maxit=200))
 
 # Hispanic
+# (nb. model 4c in manuscript)
 data_hispanic <- race_data %>% filter(final_race_using_method_hierarchy=="hispanic")
 hispanic <- setup_education_model_2021(data_hispanic) # comment out line 29 of this function when using with models stratified by race
 hispanic$timevary <- cut(hispanic$year,
@@ -288,6 +292,7 @@ modelt6_hispanic <- msm(educNUM~year, newID, data=hispanic, qmatrix=Q_hispanic,
                      covariates=~agecat + sex + timevary,
                      control=list(trace=1, fnscale=271181, maxit=200))
 # Other
+# (nb. model 4d in manuscript)
 data_other <- race_data %>% filter(final_race_using_method_hierarchy=="other"| 
                                    final_race_using_method_hierarchy=="Asian/PI"|
                                    final_race_using_method_hierarchy=="Native")
