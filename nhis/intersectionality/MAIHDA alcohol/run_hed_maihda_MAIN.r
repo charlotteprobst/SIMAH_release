@@ -1,14 +1,16 @@
-##### Script to run the logistic MAIHDA and separate results into additive and interaction effects 
+##############################################################################
+# MAIHDA of HED - ALL
+# Script to run the logistic MAIHDA and separate results into additive and interaction effects 
 # Replicating the method of analysis undertaken in:
 # Axelsson Fisk, S., Mulinari, S., Wemrell, M., Leckie, G., Perez Vicente, R., Merlo, J. Chronic Obstructive Pulmonary Disease in Sweden: an intersectional multilevel analysis of individual heterogeneity and discriminatory accuracy
+##############################################################################
 
-# MAIN ANALYSIS
-# 6 race cats (White, Black, Hispanic, AI/AN, Asian, Multiple race)
-# 3 age cats (21-24; 25-59; 60+)
-# 2 gender cats 
-# 3 education cats
-# Controlling for survey year
-# 108 intersectional groups total 
+######################################################################## Set-up
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
 # Setup
 library(tidyverse)
@@ -25,17 +27,12 @@ library(stringr)
 library(boot)
 library(memisc)
 library(fastDummies)
-
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
-
-setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-
 options(scipen=10)
 
 ################################################################# PRE PROCESSING
-
 # Read in data (full sample):
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+data <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Drop individuals age <21
 data_0 <- data %>% filter(age_diaz!="18-20")
@@ -75,48 +72,34 @@ data_4 <- data_3 %>%
   dplyr::select(intersections, intersectional_names, NHISPID, ALCSTAT1, HED, numerator, denominator, proportion, 
                 age_diaz, SEX, race_6_cats, education_3_cats, YEAR)
 
-# Generate a summary table showing the proportion of HEDs by intersection
-summary_table <- data_4 %>%
-  filter(HED==1) %>%
-  dplyr::select(-c(ALCSTAT1)) %>%
-  distinct(intersections, .keep_all = TRUE)
-
-# Check if any groups with zero HEDs
-summary_table %>% 
-  ungroup() %>%
-  filter(proportion==1)%>%
-  distinct() # Nil	
-
-# Save
-saveRDS(data_4, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
-
-###################################################################### MODELLING
-
-##### RUN THE MAIHDA MODELS
-
-# Read in the data
-model_data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
-
 # count number of HEDs and calculate proportion of sample that are HEDs
-model_data %>% count(HED==1)
-model_data %>%
+data_4 %>% count(HED==1)
+data_4 %>%
   summarise(proportion_hed = mean(HED, na.rm = TRUE)*100) # 20.7
 
 # Generate reference table with intersectional names & proportion of observed HED per intersection
-intersections_reference <- model_data %>%
+intersections_reference <- data_4 %>%
   group_by(intersectional_names) %>%
   mutate(Observed_prop_HED = mean(HED, na.rm = TRUE),
          count=n()) %>%
   distinct(intersections, intersectional_names, count, Observed_prop_HED)
 
 # Prep data for use with Mlwin
-model_data <- model_data %>%
+model_data <- data_4 %>%
   mutate(cons=1) %>% 
   arrange(intersections, NHISPID)
-
 model_data$age_diaz <- droplevels(model_data$age_diaz)
-
 model_data$YEAR <- as.factor(model_data$YEAR)
+
+# Save
+saveRDS(model_data,  paste0(inputs, "hed_data_pre_maihda_main.rds"))
+
+###################################################################### MODELLING
+
+##### RUN THE MAIHDA MODELS
+
+# Read in the data
+model_data <- readRDS(paste0(inputs, "hed_data_pre_maihda_main.rds"))
 
 # null model
 (null_HED <- runMLwiN(logit(HED) ~ 1 + YEAR +
@@ -138,15 +121,14 @@ model_data$YEAR <- as.factor(model_data$YEAR)
                                                         resi.store=TRUE))))                                           
 
 # save the model objects
-saveRDS(null_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_MAIN.rds")
-saveRDS(full_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_MAIN.rds")
+saveRDS(null_HED, paste0(models, "null_HED_MAIN.rds"))
+saveRDS(full_HED, paste0(models, "full_HED_MAIN.rds"))
 
 ####################################################################### ANALYSIS
 
 # read in the model objects
-null_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_MAIN.rds")
-full_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_MAIN.rds")
-
+null_HED <- readRDS(paste0(models, "null_HED_MAIN.rds"))
+full_HED <- readRDS(paste0(models, "full_HED_MAIN.rds"))
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
 # comparing the null and full models
@@ -174,15 +156,15 @@ rownames(coefs_full) <- c("intercept_FE_2","female","age 25-59", "age 60+",
                                "strata_RE_2", "RP1_var_bcons_1")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_MAIN.rds")
-write.csv(coefs_table,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_MAIN.csv") 
+saveRDS(coefs_table, paste0(outputs, "HED all/HED model coefficients and variance_MAIN.rds"))
+write.csv(coefs_table,paste0(outputs, "HED all/HED model coefficients and variance_MAIN.csv")) 
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_HED_null <- print(VPC <- null_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + null_HED["RP"][["RP2_var_Intercept"]]))
 VPC_full_HED <- print(VPC <- full_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + full_HED["RP"][["RP2_var_Intercept"]]))
 VPC_table <- data.frame(Model = c("null", "main effects"),
                          VPC = c(VPC_HED_null, VPC_full_HED))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/hed_VPC_table_MAIN.csv")
+write.csv(VPC_table, paste0(outputs, "HED all/hed_VPC_table_MAIN.csv"))
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -321,10 +303,10 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_HED_MAIN.rds")
+saveRDS(mdata_results, paste0(outputs, "HED all/results_HED_MAIN.rds"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_HED_MAIN.rds")
+mdata_results <- readRDS(paste0(outputs, "HED all/mdata_results_HED_MAIN.rds"))
 
 # Summarise intersectional groups with the highest and lowest proportions of HEDs
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(pmn, n = 5) %>% 
@@ -333,7 +315,7 @@ mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(pmn, n = 5) %>%
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_estimates_HED_MAIN.csv")
+write.csv(mdata_overall, paste0(outputs, "HED all/mdata_5_estimates_HED_MAIN.csv"))
 
 # Summarise which intersectional groups have the largest differences in proportions,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -343,13 +325,14 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(pBmn, n = 5)
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_interactions_HED_MAIN.csv")
+write.csv(mdata_interactions, paste0(outputs, "HED all/mdata_5_interactions_HED_MAIN.csv"))
 
-# Generate a table comparing the observed & predicted proportion of heavy drinkers:
-obs_vs_est <- merge(summary_table, mdata_results)
-obs_vs_est <- obs_vs_est %>% dplyr::select(intersectional_names, numerator, denominator, proportion, pmn)
-obs_vs_est <- obs_vs_est %>% mutate(n = numerator + denominator, 
-                                    percentage=proportion*100,
-                                    difference=pmn-percentage)
-write.csv(obs_vs_est, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of observed vs estimated proportions HEDs - MAIN.csv")
-# Difference in observed and estimated range from 14% lower than the observed to 7% higher
+##### Explore face validity of estimates
+
+# Compare observed HED (overall) and estimated HED in a table
+temp <- mdata_results %>% dplyr::select(intersectional_names, Observed_prop_HED, pmn) %>%
+  mutate(Observed_prop_HED = Observed_prop_HED*100,
+         difference = pmn - Observed_prop_HED,
+         abs_difference = abs(difference),
+         percent_difference = abs(difference/pmn*100))
+write.csv(temp, paste0(outputs, "HED all/Mean observed vs estimated grams_HED_main.csv"))

@@ -9,7 +9,7 @@ inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
 models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
 outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
-# Read in necessary R packages & functions
+# Read in necessary R packages
 library(tidyverse)
 library(readr)
 library(tidyr)
@@ -20,7 +20,6 @@ library(bayesplot)
 library(coda)
 library(memisc)
 library("R2MLwiN")
-source(paste0(code, "functions/recode_race_ethnicity.R"))
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
 options(scipen=10)
 

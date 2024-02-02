@@ -1,11 +1,13 @@
-# MAIHDA of grams of alcohol per day - FULL SAMPLE
-
-# Spec 1: Original age cats, new race cats.
+##############################################################################
+# MAIHDA of grams of alcohol per day - Full sample
+##############################################################################
 
 ######################################################################## Set-up
-
-# Set wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
 # Read in necessary R packages & functions
 library(tidyverse)
@@ -18,22 +20,16 @@ library(bayesplot)
 library(coda)
 library(memisc)
 library("R2MLwiN")
-source("functions/recode_race_ethnicity.R")
-
+source(paste0(code, "functions/recode_race_ethnicity.R"))
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
-
-# set new wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-
 options(scipen=10)
-
 
 ################################################################# PRE PROCESSING
 
 ## FULL SAMPLE
 
 # Read in data (full sample):
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+data <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Drop individuals age <21
 data_0 <- data %>% filter(age_diaz!="18-20")
@@ -85,12 +81,12 @@ model_data$age_diaz <- droplevels(model_data$age_diaz)
 model_data$YEAR <- as.factor(model_data$YEAR)
 
 # Save
-saveRDS(model_data, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
+saveRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
 
 #################################################################### MODELLING
 
 # Read in model data
-model_data <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
+model_data <- readRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
 
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
@@ -113,8 +109,8 @@ model_data <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new s
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_grams_MAIN.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_grams_MAIN.rds")
+saveRDS(null_grams, paste0(models, "null_grams_MAIN.rds"))
+saveRDS(full_grams, paste0(models, "full_grams_MAIN.rds"))
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -123,8 +119,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_grams_MAIN.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_grams_MAIN.rds")
+null_grams <- readRDS(paste0(models, "null_grams_MAIN.rds"))
+full_grams <- readRDS(paste0(models, "full_grams_MAIN.rds"))
 
 ##### CHECK MODELLING ASSUMPTIONS
 
@@ -189,15 +185,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/model coefficients and variance_grams_MAIN.rds")
-write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/model coefficients and variance_grams_MAIN.csv")
+saveRDS(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.rds"))
+write.csv(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.csv"))
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/VPC_table_grams_MAIN.csv")
+write.csv(VPC_table, paste0(outputs, "grams all/VPC_table_grams_MAIN.csv"))
 
 ##### Extract data from relevant slots of s4 model object (BASED ON FULL MODEL)
 
@@ -347,18 +343,18 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_grams_MAIN.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_grams_MAIN.csv")
+saveRDS(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.rds"))
+write.csv(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.csv"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_grams_MAIN.rds")
+mdata_results <- readRDS(paste0(outputs, "grams all/results_grams_MAIN.rds"))
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_estimates_grams_MAIN.csv")
+write.csv(mdata_overall, paste0(outputs, "grams all/mdata_5_estimates_grams_MAIN.csv"))
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -366,7 +362,7 @@ mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 
 mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_interactions_grams_MAIN.csv")
+write.csv(mdata_interactions, paste0(outputs, "grams all/mdata_5_interactions_grams_MAIN.csv"))
 
 ##### Explore face validity of estimates
 
@@ -375,4 +371,4 @@ temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_gram
   mutate(difference = estmn - mean_observed_grams,
          abs_difference = abs(difference),
          percent_difference = abs(difference/estmn*100))
-write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - MAIN.csv")
+write.csv(temp, paste0(outputs, "grams all/mean observed vs estimated grams - MAIN.csv"))

@@ -1,10 +1,18 @@
-##### Script to run the logistic MAIHDA and separate results into additive and interaction effects 
+##############################################################################
+# MAIHDA of HED - DRINKERS
+# Script to run the logistic MAIHDA and separate results into additive and interaction effects 
 # Replicating the method of analysis undertaken in:
 # Axelsson Fisk, S., Mulinari, S., Wemrell, M., Leckie, G., Perez Vicente, R., Merlo, J. Chronic Obstructive Pulmonary Disease in Sweden: an intersectional multilevel analysis of individual heterogeneity and discriminatory accuracy
+##############################################################################
 
-# SPEC 3 - DRINKERS ONLY
+######################################################################## Set-up
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
-# Setup
+# Read in necessary R packages
 library(tidyverse)
 library(tidyr)
 library(dplyr)
@@ -19,17 +27,14 @@ library(stringr)
 library(boot)
 library(memisc)
 library(fastDummies)
-
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
-
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-
 options(scipen=10)
 
 ################################################################# PRE PROCESSING
 
 # Read in data (full sample):
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+data <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # subset drinkers
 data_drinkers <- data %>% filter(ALCSTAT1=="Current drinker")
@@ -71,42 +76,20 @@ data_4 <- data_3 %>%
   dplyr::select(intersections, intersectional_names, NHISPID, ALCSTAT1, HED, numerator, denominator, proportion, 
                 age_diaz, SEX, race_6_cats, education_3_cats, YEAR)
 
-# Generate a summary table showing the proportion of HEDs by intersection
-summary_table <- data_4 %>%
-  filter(HED==1) %>%
-  dplyr::select(-c(ALCSTAT1)) %>%
-  distinct(intersections, .keep_all = TRUE)
-
-# Check if any groups with zero HEDs
-summary_table %>% 
-  ungroup() %>%
-  filter(proportion==0)%>%
-  distinct() # Nil	
-
-# Save
-saveRDS(data_4, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_drinkers.rds")
-
-###################################################################### MODELLING
-
-##### RUN THE MAIHDA MODELS WITH DRINKERS ONLY
-
-# Read in the data
-model_data_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_drinkers.rds")
-
 # count number of HEDs and calculate proportion of sample that are HEDs
-model_data_drinkers %>% count(HED==1)
-model_data_drinkers %>%
+data_4 %>% count(HED==1)
+data_4 %>%
   summarise(proportion_hed = mean(HED, na.rm = TRUE)*100) # 33.3%
 
 # Generate reference table with intersectional names & proportion of observed HED per intersection
-intersections_reference <- model_data_drinkers %>%
+intersections_reference <- data_4 %>%
   group_by(intersectional_names) %>%
   mutate(Observed_prop_HED = mean(HED, na.rm = TRUE),
          count=n()) %>%
   distinct(intersections, intersectional_names, count, Observed_prop_HED)
 
 # Generate reference table with intersectional names & proportion of observed HED for the year 2009 only
-intersections_reference_2009 <- model_data_drinkers %>%
+intersections_reference_2009 <- data_4 %>%
   filter(YEAR==2009) %>%
   group_by(intersectional_names) %>%
   mutate(Observed_prop_HED_2009 = mean(HED, na.rm = TRUE),
@@ -114,13 +97,22 @@ intersections_reference_2009 <- model_data_drinkers %>%
   distinct(intersections, intersectional_names, count_2009, Observed_prop_HED_2009)
 
 # Prep data for use with Mlwin
-model_data_drinkers <- model_data_drinkers %>%
+model_data_drinkers <- data_4 %>%
   mutate(cons=1) %>%
   arrange(intersections, NHISPID)
 
 model_data_drinkers$age_diaz <- droplevels(model_data_drinkers$age_diaz)
-
 model_data_drinkers$YEAR <- as.factor(model_data_drinkers$YEAR)
+
+# Save
+saveRDS(model_data_drinkers, paste0(inputs, "hed_data_pre_maihda_drinkers.rds"))
+
+###################################################################### MODELLING
+
+##### RUN THE MAIHDA MODELS WITH DRINKERS ONLY
+
+# Read in the data
+model_data_drinkers <- readRDS(paste0(inputs, "hed_data_pre_maihda_drinkers.rds"))
 
 # null model
 (null_HED_drinkers <- runMLwiN(logit(HED) ~ 1 + 
@@ -144,12 +136,12 @@ model_data_drinkers$YEAR <- as.factor(model_data_drinkers$YEAR)
                                                       resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_HED_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_drinkers.rds")
-saveRDS(full_HED_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_drinkers.rds")
+saveRDS(null_HED_drinkers, paste0(models, "null_HED_drinkers.rds"))
+saveRDS(full_HED_drinkers, paste0(models, "full_HED_drinkers.rds"))
 
 ## read in the model objects
-null_HED_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_drinkers.rds")
-full_HED_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_drinkers.rds")
+null_HED_drinkers <- readRDS(paste0(models, "null_HED_drinkers.rds"))
+full_HED_drinkers <- readRDS(paste0(models, "full_HED_drinkers.rds"))
 
 coefs_null_drinkers <- getSummary(null_HED_drinkers)
 coefs_null_drinkers <- as.data.frame(coefs_null_drinkers[["coef"]])
@@ -171,16 +163,15 @@ rownames(coefs_full_drinkers) <- c("intercept_full","female","age 25-69", "age 7
                           "Year 2017", "Year 2018", "strata_RE_2", "RP1_var_bcons_1")
 
 coefs_table_drinkers <- rbind(coefs_null_drinkers, coefs_full_drinkers)
-saveRDS(coefs_table_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_drinkers.rds")
-write.csv(coefs_table_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_drinkers.csv")
-
+saveRDS(coefs_table_drinkers, paste0(outputs, "HED drinkers/HED model coefficients and variance_drinkers.rds"))
+write.csv(coefs_table_drinkers, paste0(outputs, "HED drinkers/HED model coefficients and variance_drinkers.csv"))
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_HED_null_drinkers <- print(VPC <- null_HED_drinkers["RP"][["RP2_var_Intercept"]]/(pi^2/3 + null_HED_drinkers["RP"][["RP2_var_Intercept"]]))
 VPC_full_HED_drinkers <- print(VPC <- full_HED_drinkers["RP"][["RP2_var_Intercept"]]/(pi^2/3 + full_HED_drinkers["RP"][["RP2_var_Intercept"]]))
 VPC_table_drinkers <- data.frame(Model = c("null", "main effects"),
                          VPC = c(VPC_HED_null_drinkers, VPC_full_HED_drinkers))
-write.csv(VPC_table_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/hed_VPC_table_drinkers.csv")
+write.csv(VPC_table_drinkers, paste0(outputs, "HED drinkers/hed_VPC_table_drinkers.csv"))
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -320,11 +311,10 @@ mdata_results_drinkers <- mdata_prepped_drinkers %>%
 mdata_results_drinkers <- inner_join(mdata_results_drinkers, intersections_reference)
 
 # save results
-saveRDS(mdata_results_drinkers, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_drinkers_HED.rds")
+saveRDS(mdata_results_drinkers, paste0(outputs, "HED drinkers/results_drinkers_HED.rds"))
 
 ##### SUMMARY RESULTS TABLES
-
-mdata_results_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_drinkers_HED.rds")
+mdata_results_drinkers <- readRDS(paste0(outputs, "HED drinkers/results_drinkers_HED.rds"))
 
 # Summarise intersectional groups with the highest and lowest proportions of HEDs
 mdata_max_5_overall <- mdata_results_drinkers %>% ungroup %>% slice_max(pmn, n = 5) %>% 
@@ -333,7 +323,7 @@ mdata_min_5_overall <- mdata_results_drinkers %>% ungroup %>% slice_min(pmn, n =
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_estimates_drinkers_HED.csv")
+write.csv(mdata_overall, paste0(outputs, "HED drinkers/mdata_5_estimates_drinkers_HED.csv"))
 
 # Summarise which intersectional groups have the largest differences in proportions,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -343,7 +333,7 @@ mdata_min_5_interactions <- mdata_results_drinkers %>% ungroup %>% slice_min(pBm
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_interactions_drinkers_HED.csv")
+write.csv(mdata_interactions, paste0(outputs, "HED drinkers/mdata_5_interactions_drinkers_HED.csv"))
 
 ##### Explore face validity of estimates
 
@@ -353,7 +343,7 @@ temp <- mdata_results_drinkers %>% dplyr::select(intersectional_names, Observed_
          difference = pmn - Observed_prop_HED,
          abs_difference = abs(difference),
          percent_difference = abs(difference/pmn*100))
-write.csv(temp, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers HED.csv")
+write.csv(temp, paste0(outputs, "HED drinkers/Mean observed vs estimated grams - drinkers HED.csv"))
 
 # Compare mean observed (2009 observed only) and estimated in a table
 temp_2009 <- mdata_results_drinkers %>% inner_join(., intersections_reference_2009) %>%
@@ -361,4 +351,3 @@ temp_2009 <- mdata_results_drinkers %>% inner_join(., intersections_reference_20
   mutate(Observed_prop_HED_2009 = Observed_prop_HED_2009*100,
          difference = pmn - Observed_prop_HED_2009,
          abs_difference = abs(difference))
-write.csv(temp_2009, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of mean observed vs estimated grams - drinkers only - 2009.csv")
