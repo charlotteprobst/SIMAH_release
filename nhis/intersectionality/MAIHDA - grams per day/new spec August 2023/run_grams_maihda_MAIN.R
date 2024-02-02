@@ -1,11 +1,13 @@
-# MAIHDA of grams of alcohol per day - FULL SAMPLE
-
-# Spec 1: Original age cats, new race cats.
+##############################################################################
+# MAIHDA of grams of alcohol per day - Full sample
+##############################################################################
 
 ######################################################################## Set-up
-
-# Set wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
 # Read in necessary R packages & functions
 library(tidyverse)
@@ -18,39 +20,22 @@ library(bayesplot)
 library(coda)
 library(memisc)
 library("R2MLwiN")
-source("functions/recode_race_ethnicity.R")
-
+source(paste0(code, "functions/recode_race_ethnicity.R"))
 options(MLwiN_path="C:/Program Files/MLwiN v3.05/")
-
-# set new wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-
 options(scipen=10)
-
 
 ################################################################# PRE PROCESSING
 
 ## FULL SAMPLE
 
 # Read in data (full sample):
-data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+data <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Drop individuals age <21
 data_0 <- data %>% filter(age_diaz!="18-20")
 
 # Keep only the 6 selected race and ethnicity groups
 data_1 <- data_0 %>% filter(!is.na(race_6_cats))
-# 
-# # Keep 6 selected race and ethnicity groups
-# data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-#                             race_ethnicity==7|race_ethnicity==3) 
-# 
-# # Convert race and ethnicity from numeric to categorical variable
-# data_1$race_6_cats <- factor(data_1$race_ethnicity,
-#                              levels = c(1,8,2,4,7,3),
-#                              labels = c("White", "Hispanic White", 
-#                                         "Black", "Asian", 
-#                                         "Multiple race", "AI/AN"))
 
 # Generate intersections
 data_2 <- data_1 %>% 
@@ -62,8 +47,7 @@ data_2 <- data_1 %>%
 temp <- data_2 %>% 
   group_by(intersections) %>%
   mutate(count=n())
-
-group_sizes <- temp %>% distinct(intersections, .keep_all = TRUE)
+group_sizes <- temp %>% distinct(intersections, count)
 sum(group_sizes$count <= 20) # 2 groups with n<=20
 
 # Add a column of the observed mean grams per day for each intersection
@@ -71,17 +55,22 @@ data_3 <- data_2 %>%
   group_by(intersections) %>%
   mutate(mean_observed_grams = mean(alc_daily_g_capped_200))
 
-# Save
-saveRDS(data_3, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
-
-#################################################################### MODELLING
-
-# Read in model data
-data_3 <- readRDS("SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/grams/grams_data_pre_maihda_main.rds")
-
 # Calculate overall mean grams for the full sample
 mean(data_3$alc_daily_g_capped_200)
 sd(data_3$alc_daily_g_capped_200)
+
+# Generate reference table with intersectional names & mean observed grams per intersection
+intersections_reference <- data_3 %>%
+  group_by(intersectional_names) %>% 
+  distinct(intersections, intersectional_names, mean_observed_grams)
+
+# Generate reference table with intersectional names & mean observed grams for the year 2009 only
+intersections_reference_2009 <- data_3 %>%
+  filter(YEAR==2009) %>%
+  group_by(intersections) %>%
+  mutate(count_2009=n(),
+         mean_observed_grams_2009 = mean(alc_daily_g_capped_200))%>% 
+  distinct(intersections, intersectional_names, count_2009, mean_observed_grams_2009)
 
 # Prep data for use with Mlwin
 model_data <- data_3 %>%
@@ -89,25 +78,15 @@ model_data <- data_3 %>%
   arrange(intersections, NHISPID)
 
 model_data$age_diaz <- droplevels(model_data$age_diaz)
-
 model_data$YEAR <- as.factor(model_data$YEAR)
 
-# Add a column with the number of people (n)
-model_data <- model_data %>%
-  group_by(intersections) %>% 
-  add_count() %>%
-  ungroup()
+# Save
+saveRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
 
-# Summarise the raw grams data
-grams_summary <- model_data %>% ungroup() %>% summarise(mean_raw = mean(alc_daily_g_capped_200),
-                         min_raw = min(alc_daily_g_capped_200), # 4.91grams
-                         max_raw = max(alc_daily_g_capped_200),
-                         mean_log = mean(capped_daily_grams_log),
-                         min_log = min(capped_daily_grams_log),
-                         max_log = max(capped_daily_grams_log))
+#################################################################### MODELLING
 
-# Generate reference table with intersectional names, n, and mean observed grams
-intersections_reference <- model_data %>% distinct(intersections, intersectional_names, mean_observed_grams, n)
+# Read in model data
+model_data <- readRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
 
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
@@ -130,8 +109,8 @@ intersections_reference <- model_data %>% distinct(intersections, intersectional
                                                           resi.store=TRUE))))
 
 # save the model objects
-saveRDS(null_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_MAIN.rds")
-saveRDS(full_grams, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_MAIN.rds")
+saveRDS(null_grams, paste0(models, "null_grams_MAIN.rds"))
+saveRDS(full_grams, paste0(models, "full_grams_MAIN.rds"))
 
 # Check convergence achieved
 summary(full_grams@chains[, "FP_Intercept"])
@@ -140,8 +119,8 @@ mcmc_trace(full_grams@chains)
 ##################################################################### ANALYSIS
 
 # Read in the model objects
-null_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/null_grams_MAIN.rds")
-full_grams <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/grams/full_grams_MAIN.rds")
+null_grams <- readRDS(paste0(models, "null_grams_MAIN.rds"))
+full_grams <- readRDS(paste0(models, "full_grams_MAIN.rds"))
 
 ##### CHECK MODELLING ASSUMPTIONS
 
@@ -206,15 +185,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-#saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.rds")
-#write.csv(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/model coefficients and variance_grams_MAIN.csv")
+saveRDS(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.rds"))
+write.csv(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.csv"))
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-# write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/VPC_table_grams_MAIN.csv")
+write.csv(VPC_table, paste0(outputs, "grams all/VPC_table_grams_MAIN.csv"))
 
 ##### Extract data from relevant slots of s4 model object (BASED ON FULL MODEL)
 
@@ -246,11 +225,11 @@ mb_prepped <- dplyr::rename(mb_prepped,
                             b_female = "FP_SEXFemale",
                             b_adult = "FP_age_diaz25-59",
                             b_older_adult = "FP_age_diaz60+",
-                            b_Black = "FP_race_6_catsBlack",
-                            b_Asian = "FP_race_6_catsAsian",
-                            b_AI_AN = "FP_race_6_catsAI/AN",
-                            b_Hispanic = "FP_race_6_catsHispanic White",
-                            b_Multiple_race = "FP_race_6_catsMultiple race",
+                            b_Black = "FP_race_6_catsNH Black",
+                            b_Asian = "FP_race_6_catsNH Asian",
+                            b_AI_AN = "FP_race_6_catsNH AI/AN",
+                            b_Hispanic = "FP_race_6_catsHispanic",
+                            b_Multiple_race = "FP_race_6_catsNH Multiple race",
                             b_med = "FP_education_3_catssome college",
                             b_high = "FP_education_3_cats4+ years college",
                             b_2001 = "FP_YEAR2001",
@@ -278,93 +257,32 @@ mb_prepped$iteration <- rep(c(1:100))
 # Store the value of the random effect, for each intersectional group, for each iteration
 
 # extract the residual chains
-
-# level 2 (strata)
 resi_chains_lev_2 <- full_grams@resi.chains$resi_lev2
 resi_chains_lev_2 <- as.data.frame(resi_chains_lev_2)
+
 # reformat
 mu_prepped <- resi_chains_lev_2
 mu_prepped$iteration <- 1:nrow(mu_prepped)
 mu_prepped <- pivot_longer(resi_chains_lev_2, u_0_1:u_0_108)
 mu_prepped$iteration <- rep(c(1:100), each = 108)
 
-# # # level 1 (individual)
-# resi_chains_lev_1 <- full_grams@resi.chains$resi_lev1
-# resi_chains_lev_1 <- as.data.frame(resi_chains_lev_1)
-# # reformat
-# mu_prepped_lev_1 <- resi_chains_lev_1
-# mu_prepped_lev_1$iteration <- 1:nrow(mu_prepped_lev_1)
-# mu_prepped_lev_1 <- pivot_longer(resi_chains_lev_1, u_0_1:u_0_108)
-# mu_prepped_lev_1$iteration <- rep(c(1:100), each = 108)
+# Generate a table with the intersectional groups to estimate for (i.e., year set to 2009 for all)
+# Convert all years to 0s, except for the "YEAR2009" column
+intersections_2009 <- intersections %>%
+  mutate_at(vars(starts_with("YEAR")), ~ 0) %>%
+  mutate(YEAR2009 = 1)
 
 ##### MERGE DATA, FIXED-PART PARAMETER AND RANDOM EFFECT CHAINS TOGETHER
 mdata_prepped <- inner_join(mb_prepped, mu_prepped, by = 'iteration') 
 mdata_prepped$name <- str_sub(mdata_prepped$name, 5) # rename intersection u_0_1 to 1 etc.
 mdata_prepped$name <- as.numeric(mdata_prepped$name)
 mdata_prepped <- dplyr::rename(mdata_prepped, intersections = name, u = value)
-mdata_prepped <- inner_join(mdata_prepped, intersections, by = 'intersections')
+mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersections')
 
+##### CALCULATE VALUES OF INTEREST (est = estA + estI)
 
-### Trialling addition of eijs
-# level_1_intercepts <- as.data.frame(full_grams@residual$lev_1_resi_est_Intercept)
-# test <- cbind(model_data, level_1_intercepts)
-# test2 <- test %>% group_by(intersectional_names) %>% mutate(
-#   average_eij = mean(`full_grams@residual$lev_1_resi_est_Intercept`)
-# ) 
-# test3 <- distinct(test2, intersectional_names, .keep_all = TRUE)
-# mdata_prepped_test <- inner_join(mdata_prepped, test3, by = 'intersections')
-# 
-# # Estimates including both additive and interaction effects and eij (trial):
-# mdata_prepped_test <- mdata_prepped_test %>% mutate(
-#   est = exp(b_cons*Intercept
-#             + b_female*SEXFemale
-#             + b_adult*`age_diaz25-59`
-#             + b_older_adult*`age_diaz60+`  
-#             + b_Hispanic*`race_6_catsHispanic White`
-#             + b_Asian*`race_6_catsAsian`
-#             + b_AI_AN*`race_6_catsAI/AN`
-#             + b_Black*`race_6_catsBlack`
-#             + b_Multiple_race*`race_6_catsMultiple race`
-#             + b_med*`education_3_catssome college`
-#             + b_high*`education_3_cats4+ years college`
-#             + b_2001*`YEAR2001`
-#             + b_2002*`YEAR2002`
-#             + b_2003*`YEAR2003`
-#             + b_2004*`YEAR2004`
-#             + b_2005*`YEAR2005`
-#             + b_2006*`YEAR2006`
-#             + b_2007*`YEAR2007`
-#             + b_2008*`YEAR2008`
-#             + b_2009*`YEAR2009`
-#             + b_2010*`YEAR2010`
-#             + b_2011*`YEAR2011`
-#             + b_2012*`YEAR2012`
-#             + b_2013*`YEAR2013`
-#             + b_2014*`YEAR2014`
-#             + b_2015*`YEAR2015`
-#             + b_2016*`YEAR2016`
-#             + b_2017*`YEAR2017`
-#             + b_2018*`YEAR2018`
-#             + u + average_eij)
-# )
-# 
-# # Calculate the mean, 2.5th and 97.5th percentiles of the MCMC chains
-# mdata_prepped_test <- mdata_prepped_test %>% 
-#   group_by(intersections) %>%
-#   mutate(estmn = mean(est),
-#          estlo = quantile(est,.25),
-#          esthi = quantile(est,.75))
-# 
-# # Drop chains and just keep their summaries (mean, 2.5th and 97.5th)
-# mdata_results_test <- mdata_prepped_test %>%
-#   dplyr::select(-"iteration", -"est", -contains(c("b_", "u_" ))) %>%
-#   distinct(intersections, .keep_all=TRUE)
-# 
-# # Merge with intersectional names reference table
-# mdata_results_eij <- inner_join(mdata_results_test, intersections_reference)
-
-
-##### CALCULATE VALUES OF INTEREST
+RP1_var_Intercept <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
+constant <- exp(0.5*RP1_var_Intercept)
 
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
@@ -372,32 +290,15 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + b_female*SEXFemale
                     + b_adult*`age_diaz25-59`
                     + b_older_adult*`age_diaz60+`  
-                    + b_Hispanic*`race_6_catsHispanic White`
-                    + b_Asian*`race_6_catsAsian`
-                    + b_AI_AN*`race_6_catsAI/AN`
-                    + b_Black*`race_6_catsBlack`
-                    + b_Multiple_race*`race_6_catsMultiple race`
+                    + b_Hispanic*`race_6_catsHispanic`
+                    + b_Asian*`race_6_catsNH Asian`
+                    + b_AI_AN*`race_6_catsNH AI/AN`
+                    + b_Black*`race_6_catsNH Black`
+                    + b_Multiple_race*`race_6_catsNH Multiple race`
                     + b_med*`education_3_catssome college`
                     + b_high*`education_3_cats4+ years college`
-                    + b_2001*`YEAR2001`
-                    + b_2002*`YEAR2002`
-                    + b_2003*`YEAR2003`
-                    + b_2004*`YEAR2004`
-                    + b_2005*`YEAR2005`
-                    + b_2006*`YEAR2006`
-                    + b_2007*`YEAR2007`
-                    + b_2008*`YEAR2008`
                     + b_2009*`YEAR2009`
-                    + b_2010*`YEAR2010`
-                    + b_2011*`YEAR2011`
-                    + b_2012*`YEAR2012`
-                    + b_2013*`YEAR2013`
-                    + b_2014*`YEAR2014`
-                    + b_2015*`YEAR2015`
-                    + b_2016*`YEAR2016`
-                    + b_2017*`YEAR2017`
-                    + b_2018*`YEAR2018`
-                    + u)
+                    + u)*constant
 )
 
 # Estimates including additive effects only:
@@ -406,34 +307,15 @@ mdata_prepped <- mdata_prepped %>% mutate(
                            + b_female*SEXFemale
                            + b_adult*`age_diaz25-59`
                            + b_older_adult*`age_diaz60+`  
-                           + b_Hispanic*`race_6_catsHispanic White`
-                           + b_Asian*`race_6_catsAsian`
-                           + b_AI_AN*`race_6_catsAI/AN`
-                           + b_Black*`race_6_catsBlack`
-                           + b_Multiple_race*`race_6_catsMultiple race`
+                           + b_Hispanic*`race_6_catsHispanic`
+                           + b_Asian*`race_6_catsNH Asian`
+                           + b_AI_AN*`race_6_catsNH AI/AN`
+                           + b_Black*`race_6_catsNH Black`
+                           + b_Multiple_race*`race_6_catsNH Multiple race`
                            + b_med*`education_3_catssome college`
                            + b_high*`education_3_cats4+ years college`
-                           + b_2001*`YEAR2001`
-                           + b_2002*`YEAR2002`
-                           + b_2003*`YEAR2003`
-                           + b_2004*`YEAR2004`
-                           + b_2005*`YEAR2005`
-                           + b_2006*`YEAR2006`
-                           + b_2007*`YEAR2007`
-                           + b_2008*`YEAR2008`
-                           + b_2009*`YEAR2009`
-                           + b_2010*`YEAR2010`
-                           + b_2011*`YEAR2011`
-                           + b_2012*`YEAR2012`
-                           + b_2013*`YEAR2013`
-                           + b_2014*`YEAR2014`
-                           + b_2015*`YEAR2015`
-                           + b_2016*`YEAR2016`
-                           + b_2017*`YEAR2017`
-                           + b_2018*`YEAR2018`
-                           )
+                           + b_2009*`YEAR2009`)*constant
 )
-
 
 # Grams attributable to interaction calculated as the difference between est and estA
 mdata_prepped <- mdata_prepped %>% 
@@ -461,52 +343,32 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.rds")
-write.csv(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.csv")
-
+saveRDS(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.rds"))
+write.csv(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.csv"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_results_grams_MAIN.rds")
+mdata_results <- readRDS(paste0(outputs, "grams all/results_grams_MAIN.rds"))
 
 # Summarise intersectional groups with the highest and lowest estimated grams
-mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
-mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi, mean_observed_grams)
+mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
+mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_estimates_MAIN.csv")
+write.csv(mdata_overall, paste0(outputs, "grams all/mdata_5_estimates_grams_MAIN.csv"))
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
-mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
-mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5) %>% 
-  dplyr::select(intersectional_names, estmn, estlo, esthi, estAmn, estAlo, estAhi, estImn, estIlo, estIhi)
+mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 5) 
+mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-# write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/grams/mdata_5_interactions_MAIN.csv")
+write.csv(mdata_interactions, paste0(outputs, "grams all/mdata_5_interactions_grams_MAIN.csv"))
 
 ##### Explore face validity of estimates
 
-# By intersection mean comparison
-mdata_mean_comparison <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn)
-
-# Compare the estimates for intersectional groups based on observed and estimated grams
-temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) 
-ggplot(temp, aes(x=mean_observed_grams, y=estmn)) + geom_point() + 
-  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  ggtitle("Comparisson of observed and estimated daily grams, 180 intersectional groups")
- ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed vs estimated grams_MAIN.png", 
-       dpi=300, width=33, height=19, units="cm")
-# Interpretation: Positive correlation but generally estimates are lower than observed. 
- 
-# Compare the ranking of intersectional groups based on observed and estimated grams
-temp$rank_observed_grams <-rank(temp$mean_observed_grams)
-temp$rank_estimated_grams <-rank(temp$estmn)
-ggplot(temp, aes(x=rank_observed_grams, y=rank_estimated_grams)) + geom_point() + 
-ggtitle("Comparisson of observed vs estimated drinking 'rank', 180 intersectional groups")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/plots/new spec August 2023/grams/observed rank vs estimated rank grams_MAIN.png", 
-       dpi=300, width=33, height=19, units="cm")
-
-
+# Compare mean observed (overall) and estimated in a table
+temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) %>%
+  mutate(difference = estmn - mean_observed_grams,
+         abs_difference = abs(difference),
+         percent_difference = abs(difference/estmn*100))
+write.csv(temp, paste0(outputs, "grams all/mean observed vs estimated grams - MAIN.csv"))
