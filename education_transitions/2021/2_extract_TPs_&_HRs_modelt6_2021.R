@@ -26,6 +26,7 @@ datat6$timevary <- cut(datat6$year,
                          breaks=c(0,2018, 2021),
                          labels=c("2013-2018", "2019-2021"))
 
+# Generate subsets of data
 men <- datat6 %>% filter(sex==0)
 women <- datat6 %>% filter(sex==1)
 white <- datat6 %>% filter(racefinal2=="white")
@@ -62,21 +63,19 @@ modelt6_interaction_sex <- readRDS("SIMAH_workplace/education_transitions/2021/f
 modelt6_cont <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_cont.RDS")
 modelt6_interaction_race_age_cont <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race_age_cont.RDS")
 
-# Extract TPs
-
-# all years (covariate for all time periods)
+# Extract TPs for all model 6 models (i.e., narrow time period covariate)
 modelt6_TPs <- extractTPs_basic(modelt6, 1)
-modelt6_TPs_men <- extractTPs_basic(modelt6_men, 1) # interaction for sex (men only)
-modelt6_TPs_women <- extractTPs_basic(modelt6_women, 1) # interaction for sex (women only)
-modelt6_TPs_white <- extractTPs_basic(modelt6_white, 1) # interaction for race (white only)
-modelt6_TPs_black <- extractTPs_basic(modelt6_black, 1) # interaction for race (black only)
-modelt6_TPs_hispanic <- extractTPs_basic(modelt6_hispanic, 1) # interaction for race (hispanic only)
-modelt6_TPs_other <- extractTPs_basic(modelt6_other, 1) # interaction for race (other only)
-modelt6_TPs_black_men <- extractTPs_basic(modelt6_black_men, 1) # interaction for race and sex (Black men only)
-modelt6_TPs_interaction_race <- extractTPs_basic(modelt6_interaction_race, 1) 
-modelt6_TPs_interaction_sex <- extractTPs_basic(modelt6_interaction_sex, 1)
-modelt6_TPs_cont <- extractTPs_basic(modelt6_cont, 1)
-modelt6_TPs_interaction_race_age_cont <- extractTPs_basic(modelt6_interaction_race_age_cont, 1)
+modelt6_TPs_men <- extractTPs_basic(modelt6_men, 1) # stratified - men only
+modelt6_TPs_women <- extractTPs_basic(modelt6_women, 1) # stratified - women only 
+modelt6_TPs_white <- extractTPs_basic(modelt6_white, 1) # stratified - white only
+modelt6_TPs_black <- extractTPs_basic(modelt6_black, 1) # stratified - black only
+modelt6_TPs_hispanic <- extractTPs_basic(modelt6_hispanic, 1) # stratified - hispanic only
+modelt6_TPs_other <- extractTPs_basic(modelt6_other, 1) # stratified - other only
+modelt6_TPs_black_men <- extractTPs_basic(modelt6_black_men, 1) # stratified - Black men only
+modelt6_TPs_interaction_race <- extractTPs_basic(modelt6_interaction_race, 1) # race interaction
+modelt6_TPs_interaction_sex <- extractTPs_basic(modelt6_interaction_sex, 1) # sex interaction
+modelt6_TPs_cont <- extractTPs_basic(modelt6_cont, 1) # age continuous
+modelt6_TPs_interaction_race_age_cont <- extractTPs_basic(modelt6_interaction_race_age_cont, 1) # race interaction and age continous
 
 # Save results
 write_csv(modelt6_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6.csv")
@@ -91,7 +90,6 @@ write_csv(modelt6_TPs_interaction_race, "SIMAH_workplace/education_transitions/2
 write_csv(modelt6_TPs_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_sex.csv")
 write_csv(modelt6_TPs_cont,"SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_cont.csv")
 write_csv(modelt6_TPs_interaction_race_age_cont, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_race_age_cont.csv")
-##################################################################
 
 # Extract all possible combos of individuals to transition
 combo_2 <- expand.grid(timevary = unique(datat6$timevary), agecat = unique(datat6$agecat), sex = unique(datat6$sex), racefinal2=unique(datat6$racefinal2))

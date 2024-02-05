@@ -1,4 +1,4 @@
-
+# Functions to extract basic TPs (i.e. prob for whole sample from one state to another)
 extractTPs_basic <- function(model, year) {
   
   table <- data.frame(print(pmatrix.msm(model, t=year, ci="norm")))
@@ -18,7 +18,6 @@ extractTPs_basic <- function(model, year) {
   
   return(table)
 }
-
 
 extractTPs_subgroups <- function(model,combo){
   probs <- list()

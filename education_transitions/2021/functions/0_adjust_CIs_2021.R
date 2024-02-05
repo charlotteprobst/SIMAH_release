@@ -31,9 +31,9 @@ adjust_CIs <- function(model, timeperiod, data){
       pivot_wider(names_from=Type, values_from=value) %>%
       group_by(Variable, Transition, time) %>%
       mutate(SE = (log(Upper) - log(Lower)) / 3.92,
-             SD = SE * sqrt(expandedsample),
+             SD = SE * sqrt(expandedsample), 
              estimate = round(Estimate, digits=2),
-             corrected_SE = SD / sqrt(origsample), 
+             corrected_SE = SD / sqrt(origsample), # use the original (non-inflated) sample size
              corrected_lower = log(Estimate) - (corrected_SE * 1.96),
              corrected_upper = log(Estimate) + (corrected_SE * 1.96),
              corrected_lower = round(exp(corrected_lower), digits=2),
