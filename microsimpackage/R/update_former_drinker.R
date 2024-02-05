@@ -7,7 +7,7 @@
 update_former_drinker <- function(data){
   # lifetime abstainer category that is being updated
   # then calculate the former drinker category
-  
+
 # Old method
 #   data <-
 #     data %>%
@@ -18,20 +18,22 @@ update_former_drinker <- function(data){
 #                                          formerdrinker)))))
 
 # New method
-  temp <- data %>% filter(microsim.init.drinkingstatus==0) %>% 
-    group_by(agecat, microsim.init.sex,formerdrinker) %>% 
-    tally %>% 
-    ungroup() %>% 
-    group_by(agecat, microsim.init.sex) %>% 
+  temp <- data %>% filter(microsim.init.drinkingstatus==0) %>%
+    group_by(agecat, microsim.init.sex,formerdrinker) %>%
+    tally %>%
+    ungroup() %>%
+    group_by(agecat, microsim.init.sex) %>%
     mutate(prop_former_drinker=n/sum(n))
 
   temp2 <- temp %>% filter(formerdrinker==1) %>%
     dplyr::select(-(formerdrinker))
-  
+
   temp3 <- left_join(data, temp2)
-  
+
+  temp3$prob <- runif(nrow(temp3))
+
   data <- temp3 %>% mutate(
-      formerdrinker = ifelse(newgpd==0 & runif(1)<=prop_former_drinker, 1, 0))
+      formerdrinker = ifelse(newgpd==0 & prob<=prop_former_drinker, 1, 0)) %>% dplyr::select(-prob)
 
   return(data)
 }
