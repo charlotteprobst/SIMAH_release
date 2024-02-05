@@ -28,13 +28,28 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
     pivot_wider(names_from=name, values_from=value)
 
     Diseases <- left_join(Diseases, death_counts)
-  
+
   Diseases <- Diseases %>%
     separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
     mutate(education = ifelse(education=="LEH", "LEHS",
                               ifelse(education=="Som","SomeC","College"))) %>%
     rename(popcount = n)
-  return(Diseases)
+
+
+  first <- paste0("mort_",diseases[1])
+  last <- paste0(tail(names(Diseases), n=1))
+
+  long_format <- Diseases %>% pivot_longer(all_of(first):all_of(last)) %>%
+    mutate(type =
+             case_when(grepl("mort", name) ~ "simulated",
+                       grepl("yll", name) ~ "yll", .default="observed"),
+           cause = gsub("yll_", "", name),
+           cause = gsub("mort_", "", cause)) %>%
+    dplyr::select(-name) %>%
+    pivot_wider(names_from=type, values_from=value) %>%
+    dplyr::select(year, sex, agecat, education, cause, popcount, simulated, observed, yll) %>%
+    rename(simulated_mortality_n = simulated, observed_mortality_n = observed)
+  return(long_format)
 
   # Summary <- do.call(rbind, DeathSummary) %>%
   #   mutate(agecat = as.factor(agecat),
