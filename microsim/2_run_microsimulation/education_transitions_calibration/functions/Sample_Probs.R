@@ -22,7 +22,7 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
   x <- model
   sex <- c(0,1)
   race <- c("white","black","hispanic","other")
-  age <- c("18","19","20","21","22-24","25+")
+  age <- c("18","19","20","21","22-24","25-29","30+")
   # every age sex race combination
   combinations <- expand.grid(age,sex,race)
   names(combinations) <- c("age","sex","race")

@@ -5,7 +5,7 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
 
 targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>% 
   mutate(AGECAT = cut(AGE,
@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-1.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,

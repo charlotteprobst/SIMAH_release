@@ -40,7 +40,8 @@ data$agecat <- ifelse(data$age==18, "18",
                         ifelse(data$age==19, "19",
                                ifelse(data$age==20,  "20",
                                       ifelse(data$age==21, "21",
-                                      ifelse(data$age>=22 & data$age<=24, "22-24","25+")))))
+                                      ifelse(data$age>=22 & data$age<=24, "22-24",
+                                             ifelse(data$age>=25 & data$age<=29, "25-29","30+"))))))
 data$birthyear <- data$year - data$age
 data$cohort <- ifelse(data$birthyear < 1990, "<1990",
                       ifelse(data$birthyear>=1990, ">1990",NA))
@@ -69,7 +70,7 @@ model <- msm(educNUM~year, newID, data=data, qmatrix=Q,
 model
 AIC(model)
 
-saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-34.RDS")
+saveRDS(model, "SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-34_agecats.RDS")
 
 
 # saveRDS(modelt2, "SIMAH_workplace/education_transitions/final_models/formodel_modelt2_sophie.RDS")

@@ -35,7 +35,7 @@ set.seed(42)
 # WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
 dir.create(OutputDirectory)
 
 # load in microsim R package
@@ -75,7 +75,7 @@ options(future.fork.multithreading.enable = FALSE)
 sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
 # sampleseeds <- sampleseeds %>% filter(samplenum<=2)
 
-num_waves <- 10
+num_waves <- 15
 
 improvement_threshold <- 0.005
 
@@ -112,7 +112,7 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2019, output="demographics")}
+                     minyear=2000, maxyear=2014, output="demographics")}
   
   Output <- do.call(rbind,Output)
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)

@@ -5,7 +5,7 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
 
 targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>% 
   mutate(AGECAT = cut(AGE,
@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-1.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
@@ -82,7 +82,7 @@ best <- summary_output %>%
             max = max(propsimulation),
             proptarget = mean(proptarget))
 
-ggplot(data=subset(best, SEX=="Women"), 
+ggplot(data=subset(best, SEX=="Men"), 
        aes(x=as.numeric(YEAR), colour=as.factor(EDUC))) + 
   # geom_line(linewidth=1) + 
   geom_ribbon(aes(ymin=min, ymax=max, colour=as.factor(EDUC), fill=as.factor(EDUC)),
@@ -90,7 +90,7 @@ ggplot(data=subset(best, SEX=="Women"),
   geom_line(aes(x=YEAR,y=proptarget,colour=as.factor(EDUC)), linewidth=1,
             linetype="dashed") +
   # geom_line(aes(x=YEAR,y=PSID_new), colour="purple",linewidth=1, linetype="dashed") +
-  facet_grid(cols=vars(RACE), rows=vars(AGECAT)) + 
+  facet_grid(cols=vars(AGECAT), rows=vars(RACE)) + 
   theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position="bottom") +
