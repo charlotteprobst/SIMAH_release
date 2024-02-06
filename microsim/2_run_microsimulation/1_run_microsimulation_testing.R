@@ -61,7 +61,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2001, output="mortality")
+                           minyear=2000, maxyear=2003, output="mortality")
 
 alcohol_type <- "categorical"
 
