@@ -99,7 +99,7 @@ ggplot(data=subset(best, SEX=="Men"),
   theme(legend.position = "none") + 
   xlab("Year") + ylab("Proportion in education category") + 
   ggtitle("all ages") + 
-  scale_y_continuous(labels=scales::percent, limits=c(0,1)) 
+  scale_y_continuous(labels=scales::percent, limits=c(0,1)) + geom_vline(xintercept=2014, linetype="dotted")
 ggsave(paste0(DataDirectory, "/range_final_wave.png"), dpi=300, width=33, height=19, units="cm")
 
 # plot range for final wave
