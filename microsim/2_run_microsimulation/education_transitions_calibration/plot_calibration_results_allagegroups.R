@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-1.csv"))
+output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
