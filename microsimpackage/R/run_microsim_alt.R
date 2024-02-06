@@ -125,18 +125,26 @@ for (disease in diseases) {
                                  "55-64","65-74","75-79")),
            inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
                                      ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
-    group_by(cat) %>%
+    group_by(ageCAT, microsim.init.sex, microsim.init.race, microsim.init.education) %>%
     summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor),
-              !!paste0("yll_", disease) := sum(!!sym(paste0("yll_", disease))/inflation_factor))
+              !!paste0("yll_", disease) := sum(!!sym(paste0("yll_", disease))/inflation_factor)) %>%
+    rename(agecat=ageCAT)
+
 }
 
-DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
+DiseaseSummary[[paste(y)]] <- basepop %>%
+  mutate(agecat = cut(microsim.init.age,
+               breaks=c(0,24,34,44,54,64,74,79),
+               labels=c("18-24","25-34","35-44", "45-54",
+                        "55-64","65-74","75-79"))) %>%
+  group_by(agecat, microsim.init.sex, microsim.init.race, microsim.init.education) %>% tally() %>%
   mutate(year=y)
 
 # now join together to make a diseases dataframe for that year
 for(disease in diseases){
   DiseaseSummary[[paste(y)]] <-
-    left_join(DiseaseSummary[[paste(y)]], summary_list[[paste0(disease)]], by=c("cat"))
+    left_join(DiseaseSummary[[paste(y)]], summary_list[[paste0(disease)]], by=c("agecat","microsim.init.sex",
+                                                                                "microsim.init.race","microsim.init.education"))
 }
 
 # now sample the correct proportion of those to be removed (due to inflated mortality rate)
@@ -266,5 +274,5 @@ if(output=="mortality" & !is.null(diseases)){
 # }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(list(Summary))
+return(Summary)
 }
