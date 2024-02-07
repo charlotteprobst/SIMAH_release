@@ -39,6 +39,7 @@ modelt5_black <- readRDS("SIMAH_workplace/education_transitions/2021/final_model
 modelt5_hispanic <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_hispanic.RDS")
 modelt5_other <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt5_other.RDS")
 modelt6 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/formodel_modelt6_newn.RDS")
+modelt3_2019 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/covid_modelt3_2019.RDS")
 
 # Extract TPs for moving between states, overall
 
@@ -60,6 +61,9 @@ modelt5_TPs_hispanic <- extractTPs_basic(modelt5_hispanic, 1) # plus interaction
 modelt5_TPs_other <- extractTPs_basic(modelt5_other, 1) # plus interaction for other (other only)
 # all years (covariate of 2012-2018 vs 2019-201)
 modelt6_TPs <- extractTPs_basic(modelt6, 1)
+# modelt3 with pre-covid period up to 2019
+modelt3_2019_TPs <- extractTPs_basic(modelt3_2019, 1)
+
 
 # Save results
 write_csv(modelt1_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_1999_2005.csv")
@@ -74,6 +78,7 @@ write_csv(modelt5_TPs_black, "SIMAH_workplace/education_transitions/2021/annual_
 write_csv(modelt5_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_all_years_a_hispanic.csv")
 write_csv(modelt5_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_all_years_a_other.csv")
 write_csv(modelt6_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_all_years_b.csv")
+write_csv(modelt3_2019_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_2012_2019.csv")
 
 ##################################################################
 
@@ -84,6 +89,7 @@ modelt1_TPs_detail <- extractTPs_subgroups(modelt1, combo)
 modelt2_TPs_detail <- extractTPs_subgroups(modelt2, combo)
 modelt3_TPs_detail <- extractTPs_subgroups(modelt3, combo)
 modelt4_TPs_detail <- extractTPs_subgroups(modelt4, combo)
+modelt3_2019_TPs_detail <- extractTPs_subgroups(modelt3_2019, combo) ## need to fix
 
 ##### include covariates for time period (for models 5 & 6)
 data$time_1 <- cut(data$year,
@@ -128,7 +134,7 @@ modelt5_TPs_white_detail <- extractTP_interaction_race(modelt5_white,combo_2_whi
 modelt5_TPs_black_detail <- extractTP_interaction_race(modelt5_black,combo_2_black)
 modelt5_TPs_hispanic_detail <- extractTP_interaction_race(modelt5_hispanic,combo_2_hispanic)
 modelt5_TPs_other_detail <- extractTP_interaction_race(modelt5_other,combo_2_other)
-# modelt6_TPs_detail <- extractTP_incl_time(modelt6, combo_3)
+# modelt6_TPs_detail <- extractTP_incl_time(modelt6, combo_3) fix
 
 # Save results
 write_csv(modelt1_TPs_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_1999_2005_detail.csv")
@@ -158,6 +164,7 @@ modelt5_HRs_black <- predict_HRs(modelt5_black)
 modelt5_HRs_hispanic <- predict_HRs(modelt5_hispanic)
 modelt5_HRs_other <- predict_HRs(modelt5_other)
 modelt6_HRs <- predict_HRs(modelt6)
+modeltt3_2019_HRs <- predict_HRs(modelt3_2019)
 
 # Adjust the CIs to reflect the true (rather than replicated) population size
 modelt1_HRs_adjusted <- adjust_CIs_2021(modelt1, "1999-2005", data)

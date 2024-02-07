@@ -25,7 +25,7 @@ extractTPs_subgroups <- function(model,combo){
     agecat <- combo$agecat[i]
     sex <- combo$sex[i]
     racefinal2 <- combo$racefinal2[i]
-    probs[[paste(i)]] <- pmatrix.msm(modelt1, covariates=list(agecat,sex,racefinal2))
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(agecat,sex,racefinal2))
     probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
     probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
     probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,
@@ -139,4 +139,26 @@ extractTP_interaction_race_sex <- function(model,combo){
   probs <- do.call(rbind,probs)
   return(probs)
 }
+
+
+extractTP_combo_time <- function(model,combo){
+  probs <- list()
+  for(i in 1:nrow(combo)){
+    timevary <- combo$timevary[i]
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(timevary))
+    probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
+    probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
+    probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,
+                                                            names_to="StateTo", values_to="prob") %>%
+      mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
+                                 endsWith(StateTo,"2") ~ "State 2",
+                                 endsWith(StateTo,"3") ~ "State 3",
+                                 endsWith(StateTo,"4") ~ "State 4",
+                                 endsWith(StateTo,"5") ~ "State 5")) %>%
+      mutate(time_period=timevary)
+  }
+  probs <- do.call(rbind,probs)
+  return(probs)
+}
+
 

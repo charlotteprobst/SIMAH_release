@@ -497,3 +497,44 @@ modelt6_interaction_race_age_cont <- msm(educNUM~year, newID, data=datat6, qmatr
                                 control=list(trace=1, fnscale=271181, maxit=200))
 saveRDS(modelt6_interaction_race_age_cont, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race_age_cont.RDS")
 
+#####################################################################################################
+#####################################################################################################
+# Re-run models but with the pre-covid time period at 2013-2019, rather than 2013-2018
+
+# MODEL 3_2019: 2013-2019 (
+datat3_2019 <- data %>% filter(year>=2013 & year<=2019)
+datat3_2019 <- setup_education_model_2021(datat3_2019)
+datat3_2019 <- datat3_2019[order(datat3_2019$newID, datat3_2019$year),]
+length(unique(datat3_2019$uniqueID))
+length(unique(datat3_2019$newID))
+datat3_2019 <- datat3_2019 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
+  filter(totalobservations>1) 
+
+Q3_2019 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat3_2019)
+modelt3_2019 <- msm(educNUM~year, newID, data=datat3_2019, qmatrix=Q3_2019,
+               center=FALSE,
+               covariates=~agecat + sex + racefinal2,
+               control=list(trace=1, fnscale=271181, maxit=200))
+
+saveRDS(modelt3_2019, "SIMAH_workplace/education_transitions/2021/final_models/covid_modelt3_2019.RDS")
+
+# MODEL 6 WITH INTERACTION TERM FOR RACE 
+datat6_2019 <- data %>% filter(year >= 2013 & year <=2019)
+datat6_2019 <- setup_education_model_2021(datat6_2019)
+datat6_2019$timevary <- cut(datat6_2019$year,
+                       breaks=c(0,2019, 2021),###### check this
+                       labels=c("2013-2019", "2019-2021"))
+datat6_2019 <- datat6_2019[order(datat6_2019$newID, datat6_2019$year),]
+length(unique(datat6_2019$uniqueID)) 
+length(unique(datat6_2019$newID)) 
+datat6_2019 <- datat6_2019 %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
+  filter(totalobservations>1) 
+datat6_2019$timevary <- relevel(datat6_2019$timevary, ref = "2013-2019")
+Q6_2019 <- crudeinits.msm(educNUM~year, newID, qmatrix=Q, data=datat6_2019)
+
+modelt6_interaction_race_2019 <- msm(educNUM~year, newID, data=datat6_2019, qmatrix=Q6_2019,
+                                center=FALSE,
+                                covariates=~agecat + sex + racefinal2 + timevary + racefinal2*timevary,
+                                control=list(trace=1, fnscale=271181, maxit=200))
+saveRDS(modelt6_interaction_race_2019, "SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race_2019.RDS")
+
