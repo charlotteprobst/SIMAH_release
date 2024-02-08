@@ -18,9 +18,8 @@ UIJ <- function(data,lhs){
   B_UIJ3_MEN <- as.numeric(lhs["B_UIJ3_MEN"])
   B_UIJ1_WOMEN <- as.numeric(lhs["B_UIJ1_WOMEN"])
   B_UIJ2_WOMEN <- as.numeric(lhs["B_UIJ2_WOMEN"])
-  UIJ_FORMERDRINKER_MEN <- as.numeric(lhs["UIJ_FORMERDRINKER_MEN"])
-  UIJ_FORMERDRINKER_WOMEN <- as.numeric(lhs["UIJ_FORMERDRINKER_WOMEN"])
-  
+  UIJ_FORMERDRINKER <- as.numeric(lhs["UIJ_FORMERDRINKER"])
+
   data <- data %>%
   mutate(RR_UIJ = ifelse(microsim.init.alc.gpd<=20 & microsim.init.sex=="m",
                          exp(B_UIJ1_MEN),
@@ -32,10 +31,7 @@ UIJ <- function(data,lhs){
                                               exp(B_UIJ1_WOMEN),
                                               ifelse(microsim.init.alc.gpd>20 & microsim.init.sex=="f",
                                                      exp(B_UIJ2_WOMEN), NA))))),
-         RR_UIJ = ifelse(formerdrinker==1 & microsim.init.sex=="m", 
-                         exp(UIJ_FORMERDRINKER_MEN), 
-                         ifelse(formerdrinker==1 & microsim.init.sex=="f",
-                                exp(UIJ_FORMERDRINKER_WOMEN), RR_UIJ)))
+         RR_UIJ = ifelse(formerdrinker==1 , exp(UIJ_FORMERDRINKER), RR_UIJ)))
   
   #WHO formula
   # B_UIJ <- as.numeric(lhs["B_UIJ"])

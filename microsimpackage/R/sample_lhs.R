@@ -93,13 +93,15 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
         #WHO formula beta estimates
         # c("qnorm", 0.00199800266267306, 0.000509186), #UIJ SD 0.000509186
         # c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
-        c("qnorm", -0.116533816, 0.09879663), #UIJ1 MEN SD 0.09879663
+        #Results for cat 1
+        #c("qnorm", -0.116533816, 0.09879663), #UIJ1 MEN SD 0.09879663
+        #c("qnorm", -0.162518929, 0.092421667), #UIJ1 WOMEN SD 0.092421667
+        c("qnorm", 0.00, 0.00), #UIJ1 MEN SD 0.00
         c("qnorm", 0.371563556, 0.158103223), #UIJ2 MEN SD 0.158103223
         c("qnorm", 0.732367894, 0.167293723), #UIJ3 MEN SD 0.167293723
-        c("qnorm", -0.162518929, 0.092421667), #UIJ1 WOMEN SD 0.092421667
+        c("qnorm", 0.00, 0.00), #UIJ1 WOMEN SD 0.00
         c("qnorm", 0.751416089, 0.205669471), #UIJ2 WOMEN SD 0.205669471
-        c("qnorm", 0.086177696, 0.1321283), #UIJ FORMER DRINKERS MEN SD 0.1321283
-        c("qnorm", 0.0953101798, 0.14890646)), #UIJ FORMER DRINKERS WOMEN SD 0.14890646
+        c("qnorm", 0.00, 0.00)), #UIJ FORMER DRINKERS SD 0.00
 
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
@@ -120,8 +122,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
   names(prior$MVACC) <- c("B_MVACC1", "B_MVACC2", "MVACC_FORMERDRINKER")
-  names(prior$UIJ) <- c("B_UIJ1_MEN", "B_UIJ2_MEN", "B_UIJ3_MEN", "B_UIJ1_WOMEN", "B_UIJ2_WOMEN", 
-                        "UIJ_FORMERDRINKER_MEN", "UIJ_FORMERDRINKER_WOMEN")
+  names(prior$UIJ) <- c("B_UIJ1_MEN", "B_UIJ2_MEN", "B_UIJ3_MEN", "B_UIJ1_WOMEN", "B_UIJ2_WOMEN", "UIJ_FORMERDRINKER")
   names(prior$ALL) <- c("BASERATEFACTOR_MEN","BASERATEFACTOR_WOMEN","BASERATE_YEAR")
 
   prior <- prior %>% keep(names(.) %in% c(DISEASES,"ALL")) # keep only the requested diseases (specified in model_settings)
