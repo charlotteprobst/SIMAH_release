@@ -33,8 +33,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-# if interaction is switch on we can only model the available interactions for: LVDC, AUD, IHD
-diseases <- c("LVDC","AUD","IHD","DM", "MVACC", "IJ")
+diseases <- c("LVDC","HLVDC","AUD","IHD","ISTR","HYPHD","DM", "MVACC", "IJ","UIJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -43,7 +42,7 @@ model <- "SIMAH"
 output_type <- "mortality"
 
 # whether we want SES interaction effects   
-sesinteraction <- 1
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios

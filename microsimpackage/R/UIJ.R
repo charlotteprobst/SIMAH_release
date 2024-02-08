@@ -31,7 +31,7 @@ UIJ <- function(data,lhs){
                                               exp(B_UIJ1_WOMEN),
                                               ifelse(microsim.init.alc.gpd>20 & microsim.init.sex=="f",
                                                      exp(B_UIJ2_WOMEN), NA))))),
-         RR_UIJ = ifelse(formerdrinker==1 , exp(UIJ_FORMERDRINKER), RR_UIJ)))
+         RR_UIJ = ifelse(formerdrinker==1 , exp(UIJ_FORMERDRINKER), RR_UIJ))
   
   #WHO formula
   # B_UIJ <- as.numeric(lhs["B_UIJ"])
