@@ -18,23 +18,21 @@ source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibratio
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/extract_for_estimates.R")
 
-model <- readRDS("SIMAH_workplace/nesarc/Models/msm3b.RDS")
+model <- read_rds("SIMAH_workplace/nesarc/Models/msm3b.RDS")
 
 # pmatrix.msm(model, covariates=list(female_wave1.factorWomen=1))
 data <- model$data$mf
 # model$call
 # unique(data$edu3.factor)
-Samples <- Sample_Probs(data, model, nsamples)
+
+original <- 34165
+inflated <- 341650
+
+Samples <- Sample_Probs(model, nsamples, "1999-2019", 10, original,inflated)
 
 estimates <- Samples[[2]]
 
 probs <- Samples[[1]]
-
-# exploring heterogeneity
-# var <- probs %>% group_by(StateFrom, StateTo, age, sex, race, educ) %>% 
-#   summarise(min = min(prob),
-#             max = max(prob),
-#             diff = abs(min-max))
 
 transitionsList <- list()
 for(i in 1:length(unique(estimates$SampleNum))){

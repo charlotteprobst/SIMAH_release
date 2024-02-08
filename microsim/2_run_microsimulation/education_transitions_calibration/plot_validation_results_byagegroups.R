@@ -5,7 +5,7 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
 
 targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>% 
   mutate(AGECAT = cut(AGE,
@@ -29,7 +29,7 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
 # read in output from final wave
-output <- read_csv(paste0(DataDirectory, "/output-9.csv"))
+output <- read_csv(paste0(DataDirectory, "/validation_output.csv"))
 
 summary_output <- output %>% 
   # mutate(AGECAT = cut(microsim.init.age,
@@ -54,20 +54,14 @@ summary_output <- output %>%
   group_by(YEAR, samplenum, SEX,RACE,AGECAT) %>% 
   mutate(propsimulation=n/sum(n), YEAR=as.integer(YEAR)) %>% 
   dplyr::select(-n) %>% drop_na()
-ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newage/posterior_men_byage.png",
-       dpi=300, width=33, height=19, units="cm")
-summary_output <- left_join(summary_output, targets)
 
-distance <- summary_output %>% 
-  dplyr::select(YEAR, samplenum, SEX, EDUC, RACE, AGECAT, propsimulation, proptarget) %>% 
-  # filter(split=="keep") %>% 
-  mutate(diff = abs(propsimulation-proptarget)) %>% 
-  filter(RACE!="Other")
+summary_output <- left_join(summary_output, targets)
 
 # summary_output <- left_join(summary_output, implausibility)
 
 # recalculate implausibility 
-implausibility_new <- summary_output %>% 
+implausibility_new_cal <- summary_output %>% 
+  filter(YEAR<=2014) %>% 
   group_by(samplenum, YEAR, SEX, EDUC, RACE, AGECAT) %>% 
   mutate(proptarget=ifelse(proptarget==0, 0.001, proptarget),
          SE = ifelse(SE==0, 0.001, SE)) %>% 
@@ -78,6 +72,9 @@ implausibility_new <- summary_output %>%
   ungroup() %>% 
   mutate(percentile=ntile(implausibility_new, 500))
 
+implausibility_new$split <- ifelse(implausibility_new$implausibility_new>=3, "reject","keep")
+summary(as.factor(implausibility_new$split))
+
 summary_output <- left_join(summary_output, implausibility_new)
 
 best <- summary_output %>% 
@@ -86,7 +83,8 @@ best <- summary_output %>%
   group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>% 
   summarise(min = min(propsimulation),
             max = max(propsimulation),
-            proptarget = mean(proptarget))
+            proptarget = mean(proptarget),
+            split = split) %>% filter(split=="keep")
 
 ggplot(data=subset(best, SEX=="Women"), 
        aes(x=as.numeric(YEAR), colour=as.factor(EDUC))) + 
@@ -101,9 +99,20 @@ ggplot(data=subset(best, SEX=="Women"),
   theme(legend.title=element_blank(),
         legend.position="bottom") +
   ggtitle("Women - posterior distribution") + 
+  geom_vline(xintercept=2014, linetype="dotted") + 
   xlab("Year") + ylim(0,1)
-ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newage/posterior_women_byage.png",
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30/validation_byage_women.png",
        dpi=300, width=33, height=19, units="cm")
+
+# work out maximum distance between target and simulation
+
+distance <- summary_output %>% 
+  dplyr::select(YEAR, samplenum, SEX, EDUC, RACE, AGECAT, propsimulation, proptarget, split) %>% 
+  filter(split=="keep") %>% 
+  mutate(diff = abs(propsimulation-proptarget)) %>% 
+  filter(RACE!="Other")
+  
+
 
 best$lower <- best$value - (1.96*best$SE)
 best$upper <- best$value + (1.96*best$SE)

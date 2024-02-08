@@ -28,6 +28,23 @@ targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibratio
          YEAR= as.integer(as.character(YEAR))) %>% 
   mutate_at(vars(RACE, SEX, EDUC), as.character)
 
+ggplot(data=targets,
+       aes(x=as.numeric(YEAR), y=proptarget, colour=as.factor(EDUC))) + 
+  geom_line(linewidth=1) + 
+  # geom_ribbon(aes(ymin=lower, ymax=upper, colour=as.factor(EDUC), fill=as.factor(EDUC))) + 
+  # geom_line(aes(x=YEAR,y=target, colour=as.factor(EDUC)), linetype="dashed",linewidth=1) + 
+  facet_grid(cols=vars(RACE), rows=vars(SEX)) + 
+  scale_linetype_manual(values=c("solid","dotdash"), labels=c("simulation","target")) + 
+  theme_bw() + 
+  theme(legend.position = "none") + 
+  xlab("Year") + ylab("Proportion in education category") + 
+  # ggtitle("Overall (all ages) - Women") + 
+  scale_y_continuous(labels=scales::percent, limits=c(0,1)) + geom_vline(xintercept=2014, linetype="dotted")
+ggsave(paste0(DataDirectory, "/targets.png"), dpi=300, width=33, height=19, units="cm")
+
+
+
+
 # read in output from final wave
 output <- read_csv(paste0(DataDirectory, "/validation_output.csv"))
 
@@ -60,7 +77,8 @@ summary_output <- left_join(summary_output, targets)
 # summary_output <- left_join(summary_output, implausibility)
 
 # recalculate implausibility 
-implausibility_new <- summary_output %>% 
+implausibility_new_cal <- summary_output %>% 
+  filter(YEAR<=2014) %>% 
   group_by(samplenum, YEAR, SEX, EDUC, RACE) %>% 
   mutate(proptarget=ifelse(proptarget==0, 0.001, proptarget),
          SE = ifelse(SE==0, 0.001, SE)) %>% 
@@ -88,7 +106,7 @@ best$upper <- ifelse(best$name=="propsimulation",NA, best$upper)
 
 best$EDUC <- factor(best$EDUC, levels=c("LEHS","SomeC","College"))
 
-ggplot(data=subset(best, SEX=="Men"),
+ggplot(data=subset(best, SEX=="Women"),
        aes(x=as.numeric(YEAR), y=value, colour=as.factor(samplenum), linetype=as.factor(name))) + 
   geom_line(linewidth=1) + 
   # geom_ribbon(aes(ymin=lower, ymax=upper, colour=as.factor(EDUC), fill=as.factor(EDUC))) + 
@@ -98,9 +116,9 @@ ggplot(data=subset(best, SEX=="Men"),
   theme_bw() + 
   theme(legend.position = "none") + 
   xlab("Year") + ylab("Proportion in education category") + 
-  ggtitle("all ages") + 
+  ggtitle("Overall (all ages) - Women") + 
   scale_y_continuous(labels=scales::percent, limits=c(0,1)) + geom_vline(xintercept=2014, linetype="dotted")
-ggsave(paste0(DataDirectory, "/range_final_wave.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(DataDirectory, "/validation_finalwave_women.png"), dpi=300, width=33, height=19, units="cm")
 
 # plot range for final wave
 
