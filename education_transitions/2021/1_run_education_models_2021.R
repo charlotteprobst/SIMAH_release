@@ -195,14 +195,14 @@ saveRDS(modelt6_interaction_sex, "SIMAH_workplace/education_transitions/2021/fin
 sex_data <- data %>% filter(year >= 2012)
 
 # Men
-data_men <- sex_data %>% filter(sex=="male")
+data_men <- sex_data %>% filter(sex==0)
 men <- setup_education_model_2021(data_men)
 men$timevary <- cut(men$year,
                        breaks=c(0,2018, 2021),
                        labels=c("2012-2018", "2019-2021"))
 men <- men[order(men$newID, men$year),]
-length(unique(men$uniqueID)) # 3496
-length(unique(men$newID)) # 866201
+length(unique(men$uniqueID)) 
+length(unique(men$newID))
 men <- men %>% ungroup() %>% group_by(newID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
 men$timevary <- relevel(men$timevary, ref = "2012-2018")
@@ -213,7 +213,7 @@ modelt6_men <- msm(educNUM~year, newID, data=men, qmatrix=Q_men,
                covariates=~agecat + racefinal2 + timevary,
                control=list(trace=1, fnscale=271181, maxit=200))
 # Women
-data_women <- sex_data %>% filter(sex=="female")
+data_women <- sex_data %>% filter(sex==1)
 women <- setup_education_model_2021(data_women)
 women$timevary <- cut(women$year,
                     breaks=c(0,2018, 2021),
@@ -323,7 +323,7 @@ saveRDS(modelt6_other, "SIMAH_workplace/education_transitions/2021/final_models/
 # Run stratified models for each intersection of sex AND race, to enable interactions 
 
 # White men
-data_white_men <- sex_data %>% filter(final_race_using_method_hierarchy=="white", sex=="male")
+data_white_men <- sex_data %>% filter(final_race_using_method_hierarchy=="white", sex==0)
 white_men <- setup_education_model_2021(data_white_men) # comment out line 29 of this function when using with models stratified by race
 white_men$timevary <- cut(white_men$year,
                       breaks=c(0,2018, 2021),
@@ -341,7 +341,7 @@ modelt6_white_men <- msm(educNUM~year, newID, data=white_men, qmatrix=Q_white_me
                          control=list(trace=1, fnscale=271181, maxit=200))
 
 # Black men
-data_black_men <- sex_data %>% filter(final_race_using_method_hierarchy=="black", sex=="male")
+data_black_men <- sex_data %>% filter(final_race_using_method_hierarchy=="black", sex==0)
 black_men <- setup_education_model_2021(data_black_men) # comment out line 29 of this function when using with models stratified by race
 black_men$timevary <- cut(black_men$year,
                           breaks=c(0,2018, 2021),

@@ -84,6 +84,7 @@ write_csv(modelt3_2019_TPs, "SIMAH_workplace/education_transitions/2021/annual_e
 
 # Extract TPs for specific groups
 combo <- expand.grid(agecat = unique(data$agecat), sex = unique(data$sex), racefinal2=unique(data$racefinal2))
+combo$sex <- ifelse(combo$sex==0, "male", "female")
 
 modelt1_TPs_detail <- extractTPs_subgroups(modelt1, combo)
 modelt2_TPs_detail <- extractTPs_subgroups(modelt2, combo)
