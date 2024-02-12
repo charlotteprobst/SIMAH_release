@@ -1,24 +1,23 @@
 Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflated){
   estimates <- model$estimates.t
   covmat <- model$covmat
+  # calculate the difference between the original and inflated sample sizes
   SEs <- diag(covmat)
   SDs <- SEs * sqrt(inflated)
   newSEs = SDs / (sqrt(original))
   # work out the magnitude of the difference 
   magnitude <- newSEs/SEs
+  # inflate the covariance matrix due to sample sized difference 
+  # based on magnitude of the difference calculated above 
   covmat <- covmat*magnitude
+  
+  # now further inflate the cov matrix - due to pre-calculated difference between ACS and PSID 
+  # this was estimated to be 30x difference but is an adjustable parameter above 
   covmat <- covmat*inflation
 
-  # adjust the covariance matrix - first estimate standard deviations 
-  
+  # now sample from multivariate normal distribution
   samples <- mvrnorm(n=nsamples, estimates, covmat)
 
-  # now make prior for hispanic black samples 
-  # samples[,29] <- samples[,25]
-  # samples[,30] <- samples[,26]
-  # samples[,31] <- samples[,27]
-  # samples[,32] <- samples[,28]
-  
   x <- model
   sex <- c(0,1)
   race <- c("white","black","hispanic","other")
@@ -27,7 +26,6 @@ Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflate
   combinations <- expand.grid(age,sex,race)
   names(combinations) <- c("age","sex","race")
   combinations <- data.frame(combinations)
-  options(digits=3)
   combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, sep="_")
   # plist <- list()
   # plist <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
