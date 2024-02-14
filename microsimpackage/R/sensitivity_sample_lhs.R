@@ -89,6 +89,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       
       DM <- list(
         c("qnorm", -0.002661, 0.001506), #DM MEN SD 0.001506
+        c("qnorm", 0.00, 0.00), #DM MEN OFF SD 0.00
         c("qnorm", -0.02561281 , 0.00446956), #DM1 WOMEN SD 0.00446956
         c("qnorm", 0.04322303 , 0.01065573), #DM2 WOMEN SD 0.01065573
         c("qnorm", 0.256114, 0.11839), #DM FORMER DRINKERS MEN SD 0.11839
@@ -182,7 +183,7 @@ sensitivity_sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$AUD) <- c("B_AUD_LEHS","B_AUD_SomeC","B_AUD_GPD","B_AUD_LEHSxGPD","B_AUD_SomeCxGPD",
                         "AUD_FD_LEHS","AUD_FD_SomeC","AUD_FD", "AUD_LEHSxFD","AUD_SomeCxFD")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
-  names(prior$DM) <- c("B_DM_MEN", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
+  names(prior$DM) <- c("B_DM_MEN", "B_DM_MEN_OFF", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
   names(prior$IHD) <- c("B_IHD_LEHS", "B_IHD_SomeC", "B_IHD_CAT1", "B_IHD_CAT2", "B_IHD_CAT3", "B_IHD_CAT4",
                         "B_IHD_LEHSxCAT1", "B_IHD_LEHSxCAT2", "B_IHD_LEHSxCAT3", "B_IHD_LEHSxCAT4",
                         "B_IHD_SomeCxCAT1", "B_IHD_SomeCxCAT2", "B_IHD_SomeCxCAT3", "B_IHD_SomeCxCAT4",

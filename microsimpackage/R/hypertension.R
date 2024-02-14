@@ -17,10 +17,14 @@ HYPHD <- function(data,lhs){
   B_HYPHD_WOMEN <- as.numeric(lhs["B_HYPHD_WOMEN"])
   HYPHD_FORMERDRINKER <- as.numeric(lhs["HYPHD_FORMERDRINKER"])
   data <- data %>%
-    mutate(RR_HYPHD = ifelse(microsim.init.sex=="m",
+    mutate(RR_HYPHD = ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd < 150,
                           exp(0 + B_HYPHD_MEN*microsim.init.alc.gpd),
-                          ifelse(microsim.init.sex=="f",
-                                 exp(0 + B_HYPHD_WOMEN*microsim.init.alc.gpd),NA)),
+                          ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd >= 150,
+                                 exp(0 + B_HYPHD_MEN*150),
+                          ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd < 150,
+                                 exp(0 + B_HYPHD_WOMEN*microsim.init.alc.gpd),
+                                 ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd >= 150,
+                                        exp(0 + B_HYPHD_WOMEN*150), NA)))),
            RR_HYPHD = ifelse(formerdrinker==1, exp(HYPHD_FORMERDRINKER), RR_HYPHD))
   return(data)
 }

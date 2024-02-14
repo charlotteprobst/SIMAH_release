@@ -20,8 +20,10 @@ MVACC <- function(data,lhs){
     data <- data %>%
       mutate(RR_MVACC = ifelse(microsim.init.alc.gpd<60,
                            exp(0 + B_MVACC1*microsim.init.alc.gpd),
-                              ifelse(microsim.init.alc.gpd>=60,
-                                       exp(B_MVACC1*microsim.init.alc.gpd + B_MVACC2), NA)),
+                              ifelse(microsim.init.alc.gpd>=60 & microsim.init.alc.gpd < 150,
+                                       exp(B_MVACC1*microsim.init.alc.gpd + B_MVACC2),
+                                     ifelse(microsim.init.alc.gpd>=150,
+                                            exp(B_MVACC1*150 + B_MVACC2),NA))),
              RR_MVACC = ifelse(formerdrinker==1, exp(MVACC_FORMERDRINKER), RR_MVACC))
   
   ### Code for NHIS results

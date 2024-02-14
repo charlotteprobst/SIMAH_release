@@ -77,7 +77,11 @@ if("IJ" %in% diseases==TRUE){
   basepop <- SUICIDE(basepop, lhs)
 }
 if("DM" %in% diseases==TRUE){
-  basepop <- DM(basepop, lhs)
+  if(DM_men=="off"){
+    basepop <- DM_menoff(basepop,lhs)
+  }else if(DM_men=="on"){
+    basepop <- DM(basepop,lhs)
+  }
 }
 if("IHD" %in% diseases==TRUE){
   if(sesinteraction==1){
