@@ -45,7 +45,7 @@ model <- "SIMAH"
 output_type <- "mortality"
 
 # whether we want SES interaction effects   
-sesinteraction <- 1
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
