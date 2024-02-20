@@ -18,14 +18,14 @@ AUD <- function(data,lhs){
   AUD_FORMERDRINKER_MEN <- as.numeric(lhs["AUD_FORMERDRINKER_MEN"])
   AUD_FORMERDRINKER_WOMEN <- as.numeric(lhs["AUD_FORMERDRINKER_WOMEN"])
   data <- data %>%
-    mutate(RR_AUD = ifelse(microsim.init.alc.gpd<100 & microsim.init.sex=="m",
+    mutate(RR_AUD = ifelse(microsim.init.alc.gpd<122.51 & microsim.init.sex=="m",
                        exp(0 + B_AUD1_MEN*microsim.init.alc.gpd),
-                       ifelse(microsim.init.alc.gpd>=100 & microsim.init.sex=="m",
-                              exp(0 + B_AUD1_MEN*100),
-                              ifelse(microsim.init.alc.gpd<100 & microsim.init.sex=="f",
+                       ifelse(microsim.init.alc.gpd>=122.51 & microsim.init.sex=="m",
+                              exp(0 + B_AUD1_MEN*122.51),
+                              ifelse(microsim.init.alc.gpd<114.12 & microsim.init.sex=="f",
                                      exp(0 + B_AUD1_ALL*microsim.init.alc.gpd),
-                                     ifelse(microsim.init.alc.gpd>=100 & microsim.init.sex=="f",
-                                            exp(0 + B_AUD1_ALL*100), NA)))),
+                                     ifelse(microsim.init.alc.gpd>=114.12 & microsim.init.sex=="f",
+                                            exp(0 + B_AUD1_ALL*114.12), NA)))),
           RR_AUD = ifelse(formerdrinker==1 & microsim.init.sex=="m",
                  exp(AUD_FORMERDRINKER_MEN),
                  ifelse(formerdrinker==1 & microsim.init.sex=="f",
