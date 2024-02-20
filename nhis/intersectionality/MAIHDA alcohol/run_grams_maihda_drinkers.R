@@ -283,8 +283,45 @@ mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersectio
 
 ##### CALCULATE VALUES OF INTEREST (est = estA + estI)
 
-RP1_var_Intercept <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
-constant <- exp(0.5*RP1_var_Intercept)
+## If assuming that exp(eij) is normally distributed:
+# RP1_var_Intercept <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
+# constant <- exp(0.5*RP1_var_Intercept)
+
+# If cannot assumme that exp(eij) is normally distributed, integrate using their actual distribution:
+
+# Step 1: Obtain an estimate for eij
+mdata_prepped <- mdata_prepped %>% mutate(
+  ln_yij = (b_cons 
++ b_female*SEXFemale
++ b_adult*`age_diaz25-59`
++ b_older_adult*`age_diaz60+`  
++ b_Hispanic*`race_6_catsHispanic`
++ b_Asian*`race_6_catsNH Asian`
++ b_AI_AN*`race_6_catsNH AI/AN`
++ b_Black*`race_6_catsNH Black`
++ b_Multiple_race*`race_6_catsNH Multiple race`
++ b_med*`education_3_catssome college`
++ b_high*`education_3_cats4+ years college`
++ b_2009*`YEAR2009`
++ u),
+
+eij = (ln_yij - b_cons + b_female*SEXFemale
++ b_adult*`age_diaz25-59`
++ b_older_adult*`age_diaz60+`  
++ b_Hispanic*`race_6_catsHispanic`
++ b_Asian*`race_6_catsNH Asian`
++ b_AI_AN*`race_6_catsNH AI/AN`
++ b_Black*`race_6_catsNH Black`
++ b_Multiple_race*`race_6_catsNH Multiple race`
++ b_med*`education_3_catssome college`
++ b_high*`education_3_cats4+ years college`
++ b_2009*`YEAR2009`
++ u),
+
+# Step 2: Obtain an estimate for the sum of the eij ...  E{exp(eij)|xj,uj}
+exp_eij = exp(eij),
+total_n = sum(group_sizes$count),
+constant = (1/total_n)*exp_eij) ######????
 
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
