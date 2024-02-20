@@ -288,40 +288,10 @@ mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersectio
 # constant <- exp(0.5*RP1_var_Intercept)
 
 # If cannot assumme that exp(eij) is normally distributed, integrate using their actual distribution:
+eij <- full_grams["residual"][["lev_1_resi_est_Intercept"]]
+constant <- mean(exp(eij))
 
-# Step 1: Obtain an estimate for eij
-mdata_prepped <- mdata_prepped %>% mutate(
-  ln_yij = (b_cons 
-+ b_female*SEXFemale
-+ b_adult*`age_diaz25-59`
-+ b_older_adult*`age_diaz60+`  
-+ b_Hispanic*`race_6_catsHispanic`
-+ b_Asian*`race_6_catsNH Asian`
-+ b_AI_AN*`race_6_catsNH AI/AN`
-+ b_Black*`race_6_catsNH Black`
-+ b_Multiple_race*`race_6_catsNH Multiple race`
-+ b_med*`education_3_catssome college`
-+ b_high*`education_3_cats4+ years college`
-+ b_2009*`YEAR2009`
-+ u),
-
-eij = (ln_yij - b_cons + b_female*SEXFemale
-+ b_adult*`age_diaz25-59`
-+ b_older_adult*`age_diaz60+`  
-+ b_Hispanic*`race_6_catsHispanic`
-+ b_Asian*`race_6_catsNH Asian`
-+ b_AI_AN*`race_6_catsNH AI/AN`
-+ b_Black*`race_6_catsNH Black`
-+ b_Multiple_race*`race_6_catsNH Multiple race`
-+ b_med*`education_3_catssome college`
-+ b_high*`education_3_cats4+ years college`
-+ b_2009*`YEAR2009`
-+ u),
-
-# Step 2: Obtain an estimate for the sum of the eij ...  E{exp(eij)|xj,uj}
-exp_eij = exp(eij),
-total_n = sum(group_sizes$count),
-constant = (1/total_n)*exp_eij) ######????
+eij_2 <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
 
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
@@ -388,10 +358,8 @@ mdata_results <- mdata_results %>%
                 estmn, estlo, esthi,
                 estAmn, estAlo, estAhi,
                 estImn, estIlo, estIhi) %>% 
-  mutate_if(is.numeric, round, 1)
-
-# Merge with intersectional names reference table
-mdata_results <- inner_join(mdata_results, intersections_reference)
+  mutate_if(is.numeric, round, 1) %>% mutate(
+    difference = estmn-mean_observed_grams)
 
 # save results
 saveRDS(mdata_results, paste0(outputs, "grams drinkers/results_grams_drinkers.rds"))
@@ -417,11 +385,10 @@ write.csv(mdata_interactions, paste0(outputs, "grams drinkers/mdata_5_interactio
 ##### Explore face validity of estimates
 
 # Compare mean observed (overall) and estimated in a table
-temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn) %>%
+temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_grams, estmn, count) %>%
   mutate(difference = estmn - mean_observed_grams,
          abs_difference = abs(difference),
          percent_difference = abs(difference/estmn*100))
-write.csv(temp, paste0(outputs, "grams drinkers/mean observed vs estimated grams - drinkers.csv"))
 
 # Compare mean observed (2009 observed only) and estimated in a table
 temp_2009 <- mdata_results %>% left_join(., intersections_reference_2009) %>%
@@ -458,7 +425,7 @@ ggplot(temp, aes(x=intersectional_names, y=difference)) +
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(x = NULL, y = "Estimated minus observed grams") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   ylim(-30,30) +
   ggtitle("Difference between mean observed (all years) and estimated (2009) grams - corrected eij")
 
@@ -476,11 +443,11 @@ ggplot(temp_log, aes(x=intersectional_names, y=difference)) +
   geom_point() + 
   geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
   labs(x = NULL, y = "Estimated minus observed grams") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   ylim(-30,30) +
   ggtitle("Difference between mean observed (all years) and estimated (2009) grams - corrected eij - on log scale")
-ggsave(paste0(outputs, "grams drinkers/observed(all years) vs estimated(2009), drinkers, log scale.png"), 
-       dpi=300, width=33, height=19, units="cm")
+# ggsave(paste0(outputs, "grams drinkers/observed(all years) vs estimated(2009), drinkers, log scale.png"), 
+#       dpi=300, width=33, height=19, units="cm")
 
 # 2d) as residuals plot on log scale (plot of difference between observed & estimate, 2009 v 2009)
 ggplot(temp_log, aes(x=intersectional_names, y=difference_2009)) + 
@@ -517,9 +484,9 @@ ggplot(temp, aes(x=count, y=percent_difference)) +
   ggtitle("Difference between mean observed and estimated grams, as a percentage of estimate")
 
 # Test correlation between group size and differences
-cor(temp$count, temp$abs_difference) # 0.04 i.e., no correlation
-cor(temp_2009$count_2009, temp_2009$abs_difference, use = "pairwise.complete.obs") # -0.1, some slight negative correlation
-cor(temp_log$count, temp_log$abs_difference_2009, use = "pairwise.complete.obs") # - 0.1, some slight negative correlation
+cor(temp$count, temp$abs_difference) 
+cor(temp_2009$count_2009, temp_2009$abs_difference, use = "pairwise.complete.obs") 
+cor(temp_log$count, temp_log$abs_difference_2009, use = "pairwise.complete.obs") 
 
 # 4) Histogram of the differences - would expect this to be positively skewed as the observed and predicted means are also positively skewed
 hist(temp$mean_observed_grams)
