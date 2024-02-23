@@ -35,7 +35,7 @@ set.seed(42)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/firstattempt")
 dir.create(OutputDirectory)
 
 # load in microsim R package
@@ -58,7 +58,7 @@ lhs <- lhs[[1]]
 
 # now sample parameters for the education transitions
 nsamples <- 10
-source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/extract_uncertainty.R")
+source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/extract_uncertainty.R")
 # rm(model)
 
 # save samples 
@@ -73,19 +73,23 @@ options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
-sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
+sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seed=1:2)
+sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
 # sampleseeds <- sampleseeds %>% filter(samplenum<=2)
 
 num_waves <- 15
 
 improvement_threshold <- 0.005
 
+source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/postprocess_alcohol.R")
+
+
 targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>% 
   group_by(YEAR, AGECAT, RACE, SEX) %>% 
   mutate(target=TPop/sum(TPop),
-         SE=sqrt(target*(1-target)/sum(OrigSample))) %>% 
+         SE=sqrt(target*(1-target)/sum(OrigSample)),
+         variance = (SE^2) * OrigSample) %>% 
   dplyr::select(-c(TPop:OrigSample))
-
 
 prev_mean_implausibility <- 100
 

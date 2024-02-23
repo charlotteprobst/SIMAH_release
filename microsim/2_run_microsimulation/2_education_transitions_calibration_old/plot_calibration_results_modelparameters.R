@@ -5,17 +5,41 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newage")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
 
-parameters <- read_csv(paste0(DataDirectory, "/sampled_markov-9.csv"))
+implausibility <- read_csv(paste0(DataDirectory, "/implausibility_validation.csv"))
 
-for(i in 1:length(final_TPs)){
-  final_TPs[[i]]$samplenum <- i
-  final_TPs[[i]]$probability <- c(0, diff(final_TPs[[i]]$cumsum))
-  # final_TPs[[i]]$probability <- ifelse(final_TPs[[i]]$probability<0, 0, final_TPs$probability)
+parameters <- read_csv(paste0(DataDirectory, "/sampled_markov-9.csv")) %>% 
+  rename(samplenum = SampleNum) %>% 
+  left_join(.,implausibility) %>% 
+  pivot_longer(qbase:qcov.39) %>% 
+  group_by(split, name) %>% 
+  summarise(min = min(value),
+            max = max(value),
+            mean = mean(value))
+
+parameters %>%
+  ggplot(aes(x = reorder(name, -mean), colour=split)) +
+  geom_linerange(aes(ymin = min, ymax = max, x = reorder(name,-mean), colour=split),
+                 size = 1.5, position=position_dodge(width=0.8)) +
+  geom_point(aes(y=max), position=position_dodge(width=0.8)) + 
+  geom_point(aes(y=min), position=position_dodge(width=0.8)) + 
+  coord_flip() +
+  theme_bw(base_size = 16) +
+  theme(axis.title.y = element_blank())
+
+
+
+TPs <- read_rds(paste0(DataDirectory, "/transitionsList-9.RDS"))
+
+for(i in 1:length(TPs)){
+  TPs[[i]]$samplenum <- i
+  TPs[[i]]$probability <- c(0, diff(TPs[[i]]$cumsum))
 }
 
-TPs <- do.call(rbind, final_TPs)
+TPs <- do.call(rbind, TPs)
+
+TPs <- left_join(TPs, implausibility)
 
 TPs_new <- TPs %>% 
   mutate(cat = gsub("1999-2019_","", cat),
@@ -25,7 +49,8 @@ TPs_new <- TPs %>%
                             grepl("20", cat) ~ "20",
                             grepl("21", cat) ~ "21",
                             grepl("22-24", cat) ~ "22-24",
-                            grepl("25+", cat) ~ "25+"),
+                            grepl("25-29", cat) ~ "25-29",
+                            grepl("30+", cat) ~ "30+"),
          sex = case_when(grepl("m", cat) ~ "Men",
                          grepl("f", cat) ~ "Women"),
          race = case_when(grepl("black", cat) ~ "Black",
@@ -35,19 +60,19 @@ TPs_new <- TPs %>%
          cat = substr(cat, 7,20),
          StateFrom = parse_number(cat),
          probability = ifelse(probability<0, 0, probability)) %>% ungroup() %>% 
-  dplyr::select(samplenum, StateFrom, StateTo,agecat, sex, race, probability)
+  dplyr::select(samplenum, StateFrom, StateTo,agecat, sex, race, probability,implausibility_new, split)
            
 # summarise the transition to going to college 
 gotocollege <- TPs_new %>% 
-  filter(StateFrom==1 & StateTo==2) %>% group_by(agecat, race, sex) %>% 
+  filter(StateFrom==1 & StateTo==2) %>% group_by(split, agecat, race, sex) %>% 
   summarise(min=min(probability), max=max(probability))
 
 gotocollege %>%
-  ggplot(aes(x = agecat)) +
-  geom_linerange(aes(ymin = min, ymax = max, x = agecat),
-                 size = 1.5) +
-  geom_point(aes(y=max)) + 
-  geom_point(aes(y=min)) + 
+  ggplot(aes(x = agecat, colour=split)) +
+  geom_linerange(aes(ymin = min, ymax = max, x = agecat, colour=split),
+                 size = 1.5, position=position_dodge(width=0.8)) +
+  geom_point(aes(y=max), position=position_dodge(width=0.8)) + 
+  geom_point(aes(y=min), position=position_dodge(width=0.8)) + 
   coord_flip() +
   theme_bw(base_size = 16) +
   theme(axis.title.y = element_blank()) + 

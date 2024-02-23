@@ -35,8 +35,8 @@ set.seed(42)
 # WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 WorkingDirectory <- "/home/cbuckley/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
-dir.create(OutputDirectory)
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se")
+# dir.create(OutputDirectory)
 
 # load in microsim R package
 setwd(paste(WorkingDirectory))
@@ -56,10 +56,10 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 lhs <- lhs[[1]]
 
 # read in the education transitions from the final wave of calibration
-transitionsList <- read_rds(paste0(OutputDirectory, "/transitionsList-9",".RDS"))
+transitionsList <- read_rds(paste0(OutputDirectory, "/transitionsList-10",".RDS"))
 
 # set to 1 if running on local machine 
-registerDoParallel(10)
+registerDoParallel(15)
 # registerDoSNOW(c1)
 # plan(multicore, workers=24)
 options(future.rng.onMisuse="ignore")
@@ -67,6 +67,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seeds=1:2)
+sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
 # sampleseeds <- sampleseeds %>% filter(samplenum<=2)
 
 targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>% 

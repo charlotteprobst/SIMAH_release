@@ -5,77 +5,28 @@ library(tidyverse)
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
 # WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se")
 
-targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>% 
-  mutate(AGECAT = cut(AGE,
-                      breaks=c(0,18,19,20,21,22,23,24,34,44,54,64,79),
-                      labels=c("18","19","20","21","22","23","24","25-34",
-                               "35-44","45-54","55-64","65-79")),
-         AGECAT = cut(AGE,
-                     breaks=c(0,24,34,44,54,64,79),
-                     labels=c("18-24","25-34","35-44","45-54",
-                              "55-64","65-79"))
-         
-         ) %>% 
-  mutate_at(vars(YEAR, RACE, AGECAT, SEX, EDUC), as.factor) %>% 
-  group_by(YEAR, RACE, SEX, AGECAT, EDUC, .drop=FALSE) %>% 
-  summarise(TPop=sum(TPop),
-            OrigSample = sum(OrigSample)) %>% 
-  group_by(YEAR, RACE, AGECAT, SEX) %>% 
-  mutate(proptarget=TPop/sum(TPop),
-         SE=sqrt(proptarget*(1-proptarget)/sum(OrigSample)),
-         YEAR= as.integer(as.character(YEAR))) %>% 
-  mutate_at(vars(RACE, SEX, EDUC), as.character)
+source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/calculate_implausibility_education.R")
+
+targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>% 
+  group_by(YEAR, AGECAT, RACE, SEX) %>% 
+  mutate(target=TPop/sum(TPop),
+         SE=sqrt(target*(1-target)/sum(OrigSample)),
+         variance = (SE^2) * OrigSample) %>% 
+  dplyr::select(-c(TPop:OrigSample))
 
 # read in output from final wave
 output <- read_csv(paste0(DataDirectory, "/validation_output.csv"))
 
-summary_output <- output %>% 
-  # mutate(AGECAT = cut(microsim.init.age,
-  #                     breaks=c(0,18,19,20,21,22,23,24,34,44,54,64,79),
-  #                     labels=c("18","19","20","21","22","23","24","25-34",
-  #                              "35-44","45-54","55-64","65-79")),
-    mutate(AGECAT = cut(microsim.init.age,
-                             breaks=c(0,24,34,44,54,64,79),
-                             labels=c("18-24","25-34","35-44","45-54",
-                                      "55-64","65-79")),
-        SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
-        RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
-                      "OTH"="Other")) %>% 
-  rename(EDUC=microsim.init.education, YEAR=year) %>% 
-  group_by(YEAR, samplenum, seed, SEX,RACE,AGECAT,
-           EDUC) %>% 
-  summarise(n=sum(n)) %>% 
-  ungroup() %>% 
-  group_by(YEAR, samplenum, SEX, EDUC,RACE,AGECAT) %>% 
-  summarise(n=mean(n)) %>% 
-  ungroup() %>% 
-  group_by(YEAR, samplenum, SEX,RACE,AGECAT) %>% 
-  mutate(propsimulation=n/sum(n), YEAR=as.integer(YEAR)) %>% 
-  dplyr::select(-n) %>% drop_na()
+implausibility <- calculate_implausibility_education(output, targets)
+implausibility$split <- ifelse(implausibility$implausibility>=3, "reject","keep")
 
-summary_output <- left_join(summary_output, targets)
-
-# summary_output <- left_join(summary_output, implausibility)
-
-# recalculate implausibility 
-implausibility_new_cal <- summary_output %>% 
-  filter(YEAR<=2014) %>% 
-  group_by(samplenum, YEAR, SEX, EDUC, RACE, AGECAT) %>% 
-  mutate(proptarget=ifelse(proptarget==0, 0.001, proptarget),
-         SE = ifelse(SE==0, 0.001, SE)) %>% 
-  summarise(implausibility = abs(proptarget-propsimulation)/sqrt(SE)) %>% 
-  ungroup() %>% 
-  group_by(samplenum) %>% 
-  summarise(implausibility_new = max(implausibility)) %>% 
-  ungroup() %>% 
-  mutate(percentile=ntile(implausibility_new, 500))
-
-implausibility_new$split <- ifelse(implausibility_new$implausibility_new>=3, "reject","keep")
-summary(as.factor(implausibility_new$split))
+summary(as.factor(implausibility_new_cal$split))
+write.csv(implausibility_new_cal, paste0(DataDirectory, "/implausibility_validation.csv"), row.names=F)
 
 summary_output <- left_join(summary_output, implausibility_new)
+summary_output <- left_join(summary_output, targets)
 
 best <- summary_output %>% 
   # filter(percentile==1) %>%
@@ -83,10 +34,9 @@ best <- summary_output %>%
   group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>% 
   summarise(min = min(propsimulation),
             max = max(propsimulation),
-            proptarget = mean(proptarget),
-            split = split) %>% filter(split=="keep")
+            proptarget = mean(target))
 
-ggplot(data=subset(best, SEX=="Women"), 
+ggplot(data=subset(best, SEX=="Men"), 
        aes(x=as.numeric(YEAR), colour=as.factor(EDUC))) + 
   # geom_line(linewidth=1) + 
   geom_ribbon(aes(ymin=min, ymax=max, colour=as.factor(EDUC), fill=as.factor(EDUC)),
@@ -98,10 +48,10 @@ ggplot(data=subset(best, SEX=="Women"),
   theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position="bottom") +
-  ggtitle("Women - posterior distribution") + 
+  ggtitle("Men - posterior distribution") + 
   geom_vline(xintercept=2014, linetype="dotted") + 
   xlab("Year") + ylim(0,1)
-ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/newagecat30/validation_byage_women.png",
+ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se/validation_men.png",
        dpi=300, width=33, height=19, units="cm")
 
 # work out maximum distance between target and simulation

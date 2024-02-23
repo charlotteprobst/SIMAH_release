@@ -30,6 +30,6 @@ msm.parse.covariates <- function(x, covariates, mod, consider.center=TRUE){
   }
   if (x$center && consider.center)
     for (i in 1:nc)
-      covlist[[mod$covlabels[i]]] <- covlist[[mod$covlabels[i]]] - mod$covmeans[i]            
+      covlist[[mod$covlabels[i]]] <- covlist[[mod$covlabels[i]]] - mod$covmeans[i]
     covlist
 }

@@ -13,20 +13,31 @@ calculate_implausibility_education <- function(data, targets){
              EDUC) %>% 
     summarise(n=sum(n)) %>% 
     ungroup() %>% 
-    group_by(YEAR, samplenum, SEX, AGECAT, EDUC,RACE) %>% 
-    summarise(n=mean(n)) %>% 
+    group_by(YEAR, samplenum, seed, SEX, AGECAT, RACE) %>% 
+    mutate(prop = n/sum(n))
+  
+  variance <- data %>% 
+    group_by(YEAR, samplenum, SEX, EDUC, RACE, AGECAT) %>% 
+    summarise(variance = var(prop)) %>% 
     ungroup() %>% 
-    group_by(YEAR, samplenum, SEX, AGECAT,RACE) %>% 
-    mutate(prop=n/sum(n), YEAR=as.integer(YEAR)) %>% 
-    dplyr::select(-n) %>% drop_na()
+    group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>% 
+    summarise(v_s = mean(variance))
+  
   data <- left_join(data,targets) %>% 
     mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
+  
+  data <- left_join(data, variance)
   
   implausibility <- data %>% 
     # filter(AGECAT=="18-24") %>%
     filter(YEAR<=2019) %>% 
     group_by(YEAR, samplenum, SEX,AGECAT, RACE, EDUC) %>% 
-    summarise(implausibility = abs(prop-target)/sqrt(SE)) %>% 
+    summarise(prop = mean(prop),
+              target = mean(target),
+              SE = mean(SE),
+              v_s = mean(v_s),
+              v_o = mean(variance),
+              implausibility = abs(prop-target)/sqrt(v_s+SE)) %>% 
     group_by(samplenum) %>% 
     summarise(implausibility=max(implausibility, na.rm=T)) %>% 
     ungroup() %>% 

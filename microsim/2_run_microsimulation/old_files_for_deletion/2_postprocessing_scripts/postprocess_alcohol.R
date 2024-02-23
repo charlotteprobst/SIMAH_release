@@ -14,10 +14,10 @@ target <- brfss %>% filter(YEAR>=2000) %>% filter(State==SelectedState) %>%
                        "50+"))
          # AlcCAT = ifelse(formerdrinker==1, "Former drinker", AlcCAT)
          ) %>%
-  group_by(YEAR, microsim.init.sex, microsim.init.education, AlcCAT) %>%
+  group_by(YEAR, agecat, microsim.init.sex, microsim.init.education, microsim.init.race, AlcCAT) %>%
   tally() %>% ungroup() %>% ungroup() %>% 
   mutate(totalpop=sum(n)) %>% 
-  group_by(YEAR, microsim.init.sex, microsim.init.education) %>%
+  group_by(YEAR, microsim.init.sex, microsim.init.education, microsim.init.race) %>%
   mutate(targetpercent=n/sum(n),
          sepercent = sqrt((targetpercent*(1-targetpercent))/sum(n)),
          lower_ci = targetpercent - (1.96*sepercent),

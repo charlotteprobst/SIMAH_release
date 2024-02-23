@@ -1,42 +1,30 @@
-# MSM model for education 
-library(splitstackshape)
-library(dplyr)
-library(msm)
-library(readr)
-library(tidyr)
-library(MASS)
-
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# setwd(WorkingDirectory)
-
-# how many samples to take from the prior? 
-nsamples <- 10
-
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msm_functions.R")
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/msmparsecovariates.R")
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Qmatrix_setup.R")
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/Sample_Probs.R")
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/functions/extract_for_estimates.R")
 
 model <- read_rds("SIMAH_workplace/nesarc/Models/msm3b.RDS")
 
-# pmatrix.msm(model, covariates=list(female_wave1.factorWomen=1))
-data <- model$data$mf
-# model$call
-# unique(data$edu3.factor)
+originalsample <- 34165
+inflatedsample <- 341650
 
-original <- 34165
-inflated <- 341650
+originalsample <- 1
+inflatedsample <- 1
 
-Samples <- Sample_Probs(model, nsamples, "1999-2019", 10, original,inflated)
+# first sample from the markov model to get nsamples new estimates
+samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, inflatedsample)
 
-estimates <- Samples[[2]]
+# every age sex race combination
+covariates <- data.frame(expand.grid(age7=c("18-20","21-25","26-29","30-39","40-49","50-64","65+"),
+                                     female_w1=c("Men","Women"),
+                                     race_w1 = c("White, non-Hispanic", "Black, non-Hispanic",
+                                                 "Other, non-Hispanic", "Hispanic"),
+                                     edu3 = c("Low","Med","High")))
+covariates$cat <- paste(covariates$age7, covariates$female_w1, covariates$race_w1, covariates$edu3, sep="_")
 
-probs <- Samples[[1]]
+probs <- convert_to_probability(samples, model, covariates)
+
+# convert to the correct format for using in modelling
 
 transitionsList <- list()
 for(i in 1:length(unique(estimates$SampleNum))){
-  transitionsList[[paste(i)]] <- probs %>% filter(SampleNum==i) %>% 
+  transitionsList[[paste(i)]] <- probs %>% filter(SampleNum==i) %>%
     mutate(sex = ifelse(sex=="Men", "m","f"),
            race = recode(race, "Black, non-Hispanic"="BLA",
                          "White, non-Hispanic"="WHI",
@@ -56,9 +44,9 @@ for(i in 1:length(unique(estimates$SampleNum))){
            StateTo=recode(StateTo, "1"="Non-drinker",
                             "2"="Low risk",
                             "3"="Medium risk", "4"="High risk"),
-           
-           cat = paste(age, sex, race, educ, StateFrom, sep="_")) %>% 
-    group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>% 
+
+           cat = paste(age, sex, race, educ, StateFrom, sep="_")) %>%
+    group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>%
     dplyr::select(cat, StateTo, cumsum)
 }
 
