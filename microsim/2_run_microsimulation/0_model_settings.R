@@ -33,7 +33,10 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("AUD","LVDC")
+diseases <- c("LVDC","HLVDC","AUD","IHD","ISTR","DM","HYPHD","MVACC", "IJ","UIJ")
+
+# DM: change to "on" if we want to model the DM men risk function, if "off" the RR for men=1
+DM_men <- "off"
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
@@ -41,9 +44,8 @@ model <- "SIMAH"
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "mortality"
 
-# whether we want SES interaction effects for liver cirrhosis 
-# note this is a temporary variable and may change to a more general SES interaction flag 
-liverinteraction <- 0
+# whether we want SES interaction effects   
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
@@ -100,17 +102,11 @@ death_counts <- load_death_counts(model, proportion, SelectedState, DataDirector
 migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
 
 # load in the education transition rates
-# fix educational attainment at baseline 
-source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/fix_initial_education.R")
-basepop$YEAR <- 2000
-basepop <- fix_initial_education(basepop)
-brfss <- fix_initial_education(brfss)
 list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
 education_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
-basepop$YEAR <- NULL
 # load in alcohol transition rates
 #### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
 list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)
@@ -126,7 +122,11 @@ n_samples <- 10
 
 # whether to just use the point estimate - for now this is set to 1
 PE <- 1
-lhs <- sample_lhs(n_samples, PE)
+if(sesinteraction==1){
+  lhs <- sensitivity_sample_lhs(n_samples, PE)
+}else if(sesinteraction==0){
+  lhs <- sample_lhs(n_samples, PE)
+}
 
 samples <- do.call(rbind,lhs)
 

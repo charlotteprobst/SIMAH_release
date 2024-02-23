@@ -12,12 +12,12 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          updatingeducation, education_transitions,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
-                         catcontmodel, Hep, drinkingdistributions,
-                         base_counts, diseases, lhs, liverinteraction,
+                         catcontmodel, drinkingdistributions,
+                         base_counts, diseases, lhs, sesinteraction,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2019, output="demographics"){
+                         minyear=2000, maxyear=2005, output="mortality"){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
@@ -31,9 +31,6 @@ names(lhs) <- names
 for(y in minyear:maxyear){
 print(y)
 
-# save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
-
 # apply policy effects
 if(policy==1 & year_policy>maxyear & y==minyear){
   print("policy is not within model time frame")
@@ -45,37 +42,53 @@ if(policy==1 & y ==year_policy){
   basepop <- update_alcohol_cat(basepop)
 }
 
+# save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
-DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
-                                              dead, cause) %>% mutate(year=y, seed=seed)
-# remove individuals due to death and remove columns no longer needed
-basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
+# DeathSummary[[paste(y)]] <- basepop %>% filter(dead==1) %>% dplyr::select(agecat, microsim.init.race, microsim.init.sex, microsim.init.education,
+#                                               dead, cause) %>% mutate(year=y, seed=seed)
+# # remove individuals due to death and remove columns no longer needed
+# basepop <- basepop %>% filter(dead==0) %>% dplyr::select(-c(dead, cause, overallrate))
 
-# simulate mortality from specific diseases
+# If diseases are specified in the disease vector, simulate mortality from those specific diseases
+if(!is.null(diseases)){
 print("simulating disease mortality")
 # disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
   basepop <- CirrhosisHepatitis(basepop,lhs)
 }
 if("LVDC" %in% diseases==TRUE){
-  if(liverinteraction==1){
+  if(sesinteraction==1){
     basepop <- CirrhosisAllInteraction(basepop,lhs)
-  }else if(liverinteraction==0){
+  }else if(sesinteraction==0){
     basepop <- CirrhosisAll(basepop,lhs)
   }
 }
 if("AUD" %in% diseases==TRUE){
-  basepop <- AUD(basepop,lhs)
+  if(sesinteraction==1){
+    basepop <- AUDInteraction(basepop,lhs)
+  }else if(sesinteraction==0){
+    basepop <- AUD(basepop,lhs)
+  }
 }
 if("IJ" %in% diseases==TRUE){
   basepop <- SUICIDE(basepop, lhs)
 }
 if("DM" %in% diseases==TRUE){
-  basepop <- DM(basepop, lhs)
+  if(DM_men=="off"){
+    basepop <- DM_menoff(basepop,lhs)
+  }else if(DM_men=="on"){
+    basepop <- DM(basepop,lhs)
+  }
 }
 if("IHD" %in% diseases==TRUE){
-  basepop <- IHD(basepop, lhs)
+  if(sesinteraction==1){
+    basepop <- IHDInteraction(basepop,lhs)
+  }else if(sesinteraction==0){
+    basepop <- IHD(basepop,lhs)
+  }
 }
 if("ISTR" %in% diseases==TRUE){
   basepop <- ISTR(basepop, lhs)
@@ -116,17 +129,26 @@ for (disease in diseases) {
                                  "55-64","65-74","75-79")),
            inflation_factor = ifelse(ageCAT %in% age_inflated[[1]], inflation_factors[1],
                                      ifelse(ageCAT %in% age_inflated[[2]], inflation_factors[2], NA))) %>%
-    group_by(cat) %>%
-    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor))
+    group_by(ageCAT, microsim.init.sex, microsim.init.race, microsim.init.education) %>%
+    summarise(!!paste0("mort_", disease) := sum(!!sym(paste0("mort_", disease))/inflation_factor),
+              !!paste0("yll_", disease) := sum(!!sym(paste0("yll_", disease))/inflation_factor)) %>%
+    rename(agecat=ageCAT)
+
 }
 
-DiseaseSummary[[paste(y)]] <- basepop %>% group_by(cat) %>% tally() %>%
+DiseaseSummary[[paste(y)]] <- basepop %>%
+  mutate(agecat = cut(microsim.init.age,
+               breaks=c(0,24,34,44,54,64,74,79),
+               labels=c("18-24","25-34","35-44", "45-54",
+                        "55-64","65-74","75-79"))) %>%
+  group_by(agecat, microsim.init.sex, microsim.init.race, microsim.init.education) %>% tally() %>%
   mutate(year=y)
 
 # now join together to make a diseases dataframe for that year
 for(disease in diseases){
   DiseaseSummary[[paste(y)]] <-
-    left_join(DiseaseSummary[[paste(y)]], summary_list[[paste0(disease)]], by=c("cat"))
+    left_join(DiseaseSummary[[paste(y)]], summary_list[[paste0(disease)]], by=c("agecat","microsim.init.sex",
+                                                                                "microsim.init.race","microsim.init.education"))
 }
 
 # now sample the correct proportion of those to be removed (due to inflated mortality rate)
@@ -136,6 +158,8 @@ for (disease in diseases) {
 }
 
 basepop <- basepop %>% dplyr::select(-c(cat,prob))
+
+}
 
 # transition education for individuals aged 34 and under
 if(updatingeducation==1){
@@ -151,7 +175,7 @@ if(updatingeducation==1){
                                                                ifelse(totransition$microsimnewED=="SomeC3","SomeC",
                                                                       ifelse(totransition$microsimnewED=="College","College",NA)
                                                                       ))))
-  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, cat, newED))
+  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED))
   basepop <- rbind(totransition, tostay)
 }
 
@@ -181,7 +205,8 @@ if(updatingalcohol==1){
   basepop$microsim.init.alc.gpd <- basepop$newgpd
   basepop$newgpd <- NULL
   basepop$totransition <-  NULL
-
+  basepop$prop_former_drinker <- NULL
+  basepop$n <- NULL
 }
 
 #delete anyone over 79
@@ -205,9 +230,11 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 # save output - depending on which was selected
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
-if(output=="mortality"){
+if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
+}else if(output=="mortality" & is.null(diseases)){
+    Summary <- 0
   }else if(output=="demographics"){
     # add seed to the output file here TODO
   for(i in 1:length(PopPerYear)){
@@ -245,7 +272,12 @@ if(output=="mortality"){
   # add former drinkers and lifetime abstainers to this summary TODO
   Summary <- list(CatSummary, MeanSummary)
 }
+# formerdrinkers <- list()
+# for(i in 1:length(PopPerYear)){
+#   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%
+#     ungroup() %>% mutate(prop=n/sum(n))
+# }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(list(Summary))
+return(Summary)
 }
