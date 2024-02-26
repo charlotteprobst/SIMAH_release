@@ -32,7 +32,6 @@ setwd("/Users/carolinkilian/Desktop/SIMAH_workplace/")
 DATE <- 20230925
 
 # BRFSS 
-#datBRFSS_alt <- data.table(readRDS("brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS"))
 datBRFSS <- data.table(readRDS("brfss/processed_data/ACP_brfss_full.RDS"))
 
 # POLICIES
