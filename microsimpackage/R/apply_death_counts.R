@@ -77,7 +77,8 @@ apply_death_counts <- function(basepop, death_counts, y, diseases){
     group_by(cat) %>%
     do(sample_causes(., rates=rates))
 
-  basepopremoved <-basepop %>% filter(!microsim.init.id %in% deaths$microsim.init.id)
+  basepopremoved <-basepop %>% filter(!microsim.init.id %in% deaths$microsim.init.id) %>%
+    dplyr::select(-cat)
 
 
 

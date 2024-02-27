@@ -68,18 +68,18 @@ while(wave <= num_waves){
     # change the education transitions for each iteration
     education_transitions <- transitionsList[[samplenum]]
     # execute the simulation with each setting
-    run_microsim_alt(seed=seed,samplenum=samplenum,basepop,brfss,
+    run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
                      migration_rates,
-                     updatingalcohol=0, alcohol_transitions,
-                     catcontmodel, Hep, drinkingdistributions,
-                     base_counts, diseases, lhs, liverinteraction,
+                     updatingalcohol, alcohol_transitions,
+                     catcontmodel, drinkingdistributions,
+                     base_counts, diseases, lhs, sesinteraction,
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     # for calibration min and maxyear are fixed at 2000 and 2014
-                     minyear=2000, maxyear=2002, output="demographics")}
+                     minyear=2000, maxyear=2005, output="demographics")
+    }
 
   Output <- do.call(rbind,Output)
   # save the output in the output directory

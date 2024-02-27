@@ -175,7 +175,7 @@ if(updatingeducation==1){
                                                                ifelse(totransition$microsimnewED=="SomeC3","SomeC",
                                                                       ifelse(totransition$microsimnewED=="College","College",NA)
                                                                       ))))
-  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED))
+  totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED,cat))
   basepop <- rbind(totransition, tostay)
 }
 

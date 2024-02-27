@@ -32,7 +32,7 @@ setup_education <- function(basepop,y){
   # basepop$cat <- paste(basepop$year, basepop$agecat, basepop$microsim.init.sex,
   #                      basepop$racecat,
   #                      "STATEFROM", basepop$state, sep="_")
-  basepop$cat <- paste(basepop$year, basepop$agecat, basepop$microsim.init.sex,
+  basepop$cat <- paste(basepop$agecat, basepop$microsim.init.sex,
                        basepop$racecat,
                        "STATEFROM", basepop$state, sep="_")
   basepop$racecat <- NULL

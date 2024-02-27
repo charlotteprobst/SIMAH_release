@@ -33,11 +33,7 @@ probs <- probs %>%
                              endsWith(StateTo,"4") ~ "State 4",
                              endsWith(StateTo,"5") ~ "State 5")) %>%
   separate(cov, into=c("age","sex","race"), sep="_") %>% 
-  mutate(sex=ifelse(sex=="0", "m","f"),
-         race = case_when(race=="black" ~ "BLA",
-                          race=="white" ~ "WHI",
-                          race=="hispanic" ~ "SPA",
-                          race=="other" ~ "OTH"))
+  mutate(sex=ifelse(sex=="0", "m","f"))
 
 transitionsList <- list()
 for(i in 1:length(unique(samples$samplenum))){

@@ -3,7 +3,6 @@
 #' @keywords microsimulation markov model
 #' @export
 #' @examples
-#' sample_from_markov
 sample_from_markov <- function(model, nsamples, inflation, originalsample,inflatedsample){
   estimates <- model$estimates
   covmat <- model$covmat

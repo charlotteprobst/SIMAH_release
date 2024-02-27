@@ -9,9 +9,6 @@ sample_from_markov(model, nsamples, inflation, originalsample, inflatedsample)
 \description{
 function to convert the covariates to the correct format for markov model calibration
 }
-\examples{
-sample_from_markov
-}
 \keyword{markov}
 \keyword{microsimulation}
 \keyword{model}
