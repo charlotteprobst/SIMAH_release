@@ -15,7 +15,7 @@ samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, infl
 #first specify the covariates for the model
 # every age sex race combination
 # note these have to be in exactly the same format of the covariates specified in the model
-# if unsure of this run model$covariates to check
+# if unsure of this run model$covariates to check and e.g. model$data$mf$sex
 covariates <- data.frame(expand.grid(agecat=c("18","19","20","21","22-24","25-29","30+"),
                                      sex=c(0,1),
                                      racefinal2=c("white","black","hispanic","other")))

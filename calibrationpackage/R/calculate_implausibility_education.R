@@ -41,7 +41,9 @@ calculate_implausibility_education <- function(data, targets){
               target = mean(target),
               SE = mean(SE),
               v_s = mean(v_s),
-              v_o = mean(variance),
+              # v_o = mean(variance),
+              # todo - check implausibility equation in Andrianakis paper
+              # should be SE^2?
               implausibility = abs(prop-target)/sqrt(v_s+SE)) %>%
     group_by(samplenum) %>%
     summarise(implausibility=max(implausibility, na.rm=T)) %>%

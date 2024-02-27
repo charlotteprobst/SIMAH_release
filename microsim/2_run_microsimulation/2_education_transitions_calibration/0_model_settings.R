@@ -41,7 +41,7 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("")
+diseases <- NULL
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"
