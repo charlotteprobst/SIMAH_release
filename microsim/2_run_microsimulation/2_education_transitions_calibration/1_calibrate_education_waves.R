@@ -58,7 +58,7 @@ source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
 while(wave <= num_waves){
   baseorig <- basepop
   Output <- list()
-  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %do% {
+  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
     print(i)
     # set seed and sample number for current iteration
     samplenum <- as.numeric(sampleseeds$samplenum[i])
