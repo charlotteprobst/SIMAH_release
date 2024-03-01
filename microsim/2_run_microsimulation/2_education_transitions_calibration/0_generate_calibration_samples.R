@@ -45,4 +45,5 @@ for(i in 1:length(unique(samples$samplenum))){
 
 # save samples - for wave 1 in Output Directory
 saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1",".RDS"))
+colnames(samples) <- make.unique(colnames(samples))
 write.csv(samples, paste0(OutputDirectory, "/sampled_markov-1", ".csv"), row.names=F)

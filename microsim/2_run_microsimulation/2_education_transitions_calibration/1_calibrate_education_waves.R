@@ -104,15 +104,43 @@ while(wave <= num_waves){
   # keep top 15% of samples 
   topsamples <- unique(subset(implausibility, percentile<=15)$samplenum)
   # now restrict the markov model samples based on the top fitting models
-  newsamples <- samples %>% filter(SampleNum %in% topsamples)
-
-  source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/resample_markov.R")
-
+  newsamples <- samples %>% filter(samplenum %in% topsamples)
+  
+  # now resample the new parameters for the markov model 
+  samples <- newsamples %>% dplyr::select(-c(samplenum)) %>% 
+    mutate_all(as.numeric)
+  estimates <- colMeans(samples)
+  cov <- cov(samples)
+  samples <- data.frame(mvrnorm(n=nsamples, estimates, cov))
+  
+  # now transform this into TPs
+  probs <- convert_to_probability(samples, model, covariates)
+  
+  # format for calibration - label categories and put into list format
+  probs <- probs %>% 
+    pivot_longer(cols=State.1:State.5,
+                 names_to="StateTo", values_to="prob") %>%
+    mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
+                               endsWith(StateTo,"2") ~ "State 2",
+                               endsWith(StateTo,"3") ~ "State 3",
+                               endsWith(StateTo,"4") ~ "State 4",
+                               endsWith(StateTo,"5") ~ "State 5")) %>%
+    separate(cov, into=c("age","sex","race"), sep="_") %>% 
+    mutate(sex=ifelse(sex=="0", "m","f"))
+  
+  transitionsList <- list()
+  for(i in 1:length(unique(samples$samplenum))){
+    transitionsList[[paste(i)]] <- probs %>% filter(samplenum==i) %>%
+      mutate(cat = paste(age, sex, race, "STATEFROM", StateFrom, sep="_")) %>%
+      group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>%
+      dplyr::select(cat, StateTo, cumsum)
+  }
+  
   prev_mean_implausibility <- new_mean_implausibility
   wave <- wave + 1
 
   # save the new TPs and the estimates that will be run in the next wave
   saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-",wave,".RDS",sep=""))
-  write.csv(estimates, paste0(OutputDirectory, "/sampled_markov-",wave, ".csv"), row.names=F)
+  write.csv(samples, paste0(OutputDirectory, "/sampled_markov-",wave, ".csv"), row.names=F)
 }
 
