@@ -1,5 +1,5 @@
 ############################################################################################
-# Compare the TPs from the existing education model (2005-2019) pre- and post- calibration,
+# Compare the pre-COVID TPs from the existing education model (2005-2019) pre- and post- calibration,
 # to the TPs generated with the new model (2005-2021 with a covariate for time period)
 ############################################################################################
 library(tidyverse)
@@ -34,19 +34,60 @@ New_TPs_2012_2018_only <- New_TPs_uncalibrated %>% filter(
   time_period=="2012-2018"
   ) %>% dplyr::select(-(time_period))
 
-New_TPs_under_21 <- New_TPs_2012_2018_only %>% filter(agecat==18| agecat==19| agecat==20)
-
 Original_TPs <- full_join(Original_TPs_wave_1_mean, Original_TPs_wave_10_mean) 
+
+########### Deal with conflicting age categories
+
+##### Option 1: Only compare individuals under age 21
+
 Original_TPs_under_21 <- Original_TPs %>% filter(agecat==18| agecat==19| agecat==20)
+New_TPs_under_21 <- New_TPs_2012_2018_only %>% filter(agecat==18| agecat==19| agecat==20)
 
 TPs_all_models_under_21 <- Original_TPs_under_21 %>% 
   inner_join(., New_TPs_under_21, by=c("agecat", "sex", "race", "StateFrom", "StateTo"))
 
-results <- TPs_all_models_under_21 %>% mutate(
+results_under_21 <- TPs_all_models_under_21 %>% mutate(
   abs_difference_wave1_v_covid = abs(mean_TP_wave_1 - TP_covid),
   abs_difference_wave10_v_covid = abs(mean_TP_wave_10 - TP_covid),
   abs_difference_wave1_v_wave10 = abs(mean_TP_wave_1 - mean_TP_wave_10)
 ) 
+results_under_21 <- results_under_21 %>% mutate_if(is.numeric, ~ round(., 2))
 
-results <- results %>% mutate_if(is.numeric, ~ round(., 2))
-write_csv(results, "SIMAH_workplace/education_transitions/2021/comparisson between original SIMAH TPs and new COVID TPs.csv")
+##### Option 2: Re-categorise age groups to align
+unique(Original_TPs$agecat) # 18;19; 20; 21; 22-24; 25-29; 30+
+unique(New_TPs_2012_2018_only$agecat) # 18; 19; 20; 21-25; 26+
+
+Original_TPs_age_matched <- Original_TPs %>% 
+  mutate(agecat_matched = ifelse(agecat == 18, "18",
+                                 ifelse(agecat == 19, "19",
+                                        ifelse(agecat == 20, "20", "21+"))))
+
+New_TPs_age_matched <- New_TPs_2012_2018_only %>% 
+  mutate(agecat_matched = ifelse(agecat == 18, "18",
+                                 ifelse(agecat == 19, "19",
+                                        ifelse(agecat == 20, "20", "21+"))))
+
+TPs_all_age_matched <- Original_TPs_age_matched %>% 
+  inner_join(., New_TPs_age_matched, by=c("agecat_matched", "sex", "race", "StateFrom", "StateTo"))
+
+results_age_matched <- TPs_all_age_matched %>% mutate(
+  abs_difference_wave1_v_covid = abs(mean_TP_wave_1 - TP_covid),
+  abs_difference_wave10_v_covid = abs(mean_TP_wave_10 - TP_covid),
+  abs_difference_wave1_v_wave10 = abs(mean_TP_wave_1 - mean_TP_wave_10)
+) 
+results_age_matched <- results_age_matched %>% mutate_if(is.numeric, ~ round(., 2))
+
+# Filter allowed TPs only
+
+allowed_results <- results_age_matched %>% dplyr::filter(StateFrom=="1" & (StateTo=="1"|StateTo=="2")|
+                                               StateFrom=="2" & (StateTo=="2"|StateTo=="3")|
+                                               agecat_matched!=18 & StateFrom=="3" & (StateTo=="3"|StateTo=="4")|
+                                               agecat_matched!=18 & agecat_matched!=19 & StateFrom=="4" & (StateTo=="4"|StateTo=="5")|
+                                               agecat_matched!=18 & agecat_matched!=19 & agecat_matched!=20 & (StateFrom=="5" & StateTo=="5"))
+
+
+
+###############################
+write_csv(results_under_21, "SIMAH_workplace/education_transitions/2021/comparisson between original SIMAH TPs and new COVID TPs (under21 only).csv")
+write_csv(results_age_matched, "SIMAH_workplace/education_transitions/2021/comparisson between original SIMAH TPs and new COVID TPs (age matched).csv")
+write_csv(allowed_results, "SIMAH_workplace/education_transitions/2021/comparisson between original SIMAH TPs and new COVID TPs (age matched & logical TPs only).csv")
