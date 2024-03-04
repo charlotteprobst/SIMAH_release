@@ -254,11 +254,12 @@ if(output=="mortality" & !is.null(diseases)){
                                                   microsim.init.race=as.factor(microsim.init.race),
                                                   microsim.init.education=as.factor(microsim.init.education),
                                                   agecat = cut(microsim.init.age,
-                                                                    breaks=c(0,20,25,29,39,49,64,100),
-                                                                    labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+                                                                    breaks=c(0,24,34,44,54,64,100),
+                                                                    labels=c("18-24","25-34","35-44","45-54",
+                                                                             "55-64","65+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education,
+    group_by(year, samplenum, seed, microsim.init.sex,microsim.init.race,agecat, microsim.init.education,
              AlcCAT, .drop=FALSE) %>% tally()
   MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                       samplenum=as.factor(samplenum),
@@ -279,5 +280,5 @@ if(output=="mortality" & !is.null(diseases)){
 # }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(Summary)
+return(CatSummary)
 }

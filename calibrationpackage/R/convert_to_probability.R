@@ -7,6 +7,7 @@
 #' sample_from_markov
 convert_to_probability <- function(samples, model, covariates){
 
+  samples$samplenum <- NULL
   sampleList <- as.list(as.data.frame(t(samples)))
   names(sampleList) <- 1:nrow(samples)
   # loop through each sample and covariate level to convert to a set of TPs

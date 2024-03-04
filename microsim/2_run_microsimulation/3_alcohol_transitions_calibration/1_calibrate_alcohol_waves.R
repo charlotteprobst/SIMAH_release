@@ -1,10 +1,9 @@
-# SIMAH project November 2021 
+# SIMAH project Feb 2024 
 
-# code for calibration of MSM model parameters to state-level education outputs 
-
-# first set up for microsimulation 
+# code to run calibration of MSM model parameters to national / state-level education output
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 gc()
+
 library(devtools)
 library(roxygen2)
 library(gatbxr)
@@ -22,134 +21,132 @@ library(data.table)
 library(gridExtra)
 library(doParallel)
 library(splitstackshape)
-
+library(msm)
 options(dplyr.summarise.inform = FALSE)
-# set seed for reproducibility - IMPORTANT - DO NOT CHANGE
-# note - this also needs to be ran straight after R has been opened
-set.seed(42)
 
-####EDIT ONLY BELOW HERE ### 
-###set working directory to the main "Microsimulation" folder in your directory 
-# WorkingDirectory <- "U:/SIMAH/"
-# WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-# WorkingDirectory <- "/home/cbuckley/"
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/firstattempt")
-dir.create(OutputDirectory)
+# WorkingDirectory <- "U:/SIMAH"
+# WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
+# WorkingDirectory <- "/home/cbuckley"
+WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
 
-# load in microsim R package
+# set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
 
 install("SIMAH_code/microsimpackage", dep=T)
-# install("SIMAH_code/calibratemicrosimpackage", dep=T)
+install("SIMAH_code/calibrationpackage", dep=T)
 
-####which geography -  needs to be written as USA, California, Minnesota, New York, Texas, Tennessee
-States <- c("California","Colorado","Florida","Indiana",
-            "Louisiana","Massachusetts","Michigan","Minnesota",
-            "Missouri","New York", "Oregon", "Pennsylvania",
-            "Tennessee","Texas","USA")
+library(microsimpackage)
+library(calibrationpackage)
 
-# for(s in States){
-SelectedState <- "USA"
+ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/3_alcohol_transitions_calibration/")
 
-source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
-lhs <- lhs[[1]]
+# read in all model settings
+source(paste0(ScriptDirectory, "/0_model_settings.R"))
 
-# now sample parameters for the education transitions
-nsamples <- 10
-source("SIMAH_code/microsim/2_run_microsimulation/alcohol_transitions_calibration/extract_uncertainty.R")
-# rm(model)
+# read in settings for calibration
+source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 
-# save samples 
-saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1",".RDS"))
-write.csv(estimates, paste0(OutputDirectory, "/sampled_markov-1", ".csv"), row.names=F)
+# load all microsim files
+source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
-# set to 1 if running on local machine 
-registerDoParallel(10)
-# registerDoSNOW(c1)
-# plan(multicore, workers=24)
-options(future.rng.onMisuse="ignore")
-options(future.globals.maxSize = 10000 * 1024^3)
-options(future.fork.multithreading.enable = FALSE)
+# set up samples for calibration for education transitions
+source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
 
-sampleseeds <- expand.grid(samplenum = 1:length(transitionsList), seed=1:2)
-sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
-# sampleseeds <- sampleseeds %>% filter(samplenum<=2)
-
-num_waves <- 15
-
-improvement_threshold <- 0.005
-
-source("SIMAH_code/microsim/2_run_microsimulation/2_postprocessing_scripts/postprocess_alcohol.R")
-
-
-targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>% 
-  group_by(YEAR, AGECAT, RACE, SEX) %>% 
-  mutate(target=TPop/sum(TPop),
-         SE=sqrt(target*(1-target)/sum(OrigSample)),
-         variance = (SE^2) * OrigSample) %>% 
-  dplyr::select(-c(TPop:OrigSample))
-
-prev_mean_implausibility <- 100
-
-source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/calculate_implausibility_education.R")
-wave <- 1
-rm(education_transitions)
+# parallel loop that runs the calibration process 
+# this loops through waves of calibration and runs all sampled settings
 
 while(wave <= num_waves){
   baseorig <- basepop
-  updatingalcohol <- 0
   Output <- list()
-  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE, .combine=rbind) %dopar% {
+  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
     print(i)
+    # set seed and sample number for current iteration
     samplenum <- as.numeric(sampleseeds$samplenum[i])
     seed <- as.numeric(sampleseeds$seed[i])
+    # reset the base population to the original pop for each calibration iteration
     basepop <- baseorig
-    education_transitions <- transitionsList[[samplenum]]
-    run_microsim_alt(seed=seed,samplenum=samplenum,basepop,brfss,
+    # change the alcohol model being run 
+    alcohol_transitions <- transitionsList[[samplenum]]
+    # change the education model - based on the prior calibrated models 
+    education_model_num <- as.numeric(sampleseeds$educationmodel[i])
+    education_transitions <- education_transitionsList[[education_model_num]]
+    # execute the simulation with each setting
+    run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
                      migration_rates,
-                     updatingalcohol=0, alcohol_transitions,
-                     catcontmodel, Hep, drinkingdistributions,
-                     base_counts, diseases, lhs, liverinteraction,
+                     updatingalcohol, alcohol_transitions,
+                     catcontmodel, drinkingdistributions,
+                     base_counts, diseases, lhs, sesinteraction,
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2014, output="demographics")}
-  
+                     minyear=2000, maxyear=2002, output="alcohol")
+    }
+
   Output <- do.call(rbind,Output)
+  # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
   
-  # calculate and save implausibility values 
-  implausibility <- calculate_implausibility_education(Output, targets)
+  # calculate the alcohol targets - modifiable
+  targets <- generate_targets_alcohol(brfss)
+
+  # calculate and save implausibility values
+  implausibility <- calculate_implausibility_alcohol(Output, targets)
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   
+  # calculate the difference between the old implausibility and new implausibility 
   new_mean_implausibility <- mean(implausibility$implausibility)
   max_implausibility <- max(implausibility$implausibility)
-  
+
   if(wave>1){
-    # check improvement % and stop if minimal improvement
+    # check improvement % and stop if minimal improvement (based on improvement threshold defined in settings)
     improvement <- abs(prev_mean_implausibility - new_mean_implausibility)/prev_mean_implausibility
     if(improvement < improvement_threshold | max_implausibility < 1) {
       break
     }
   }
-  
-  topsamples <- unique(subset(implausibility, percentile<=15)$samplenum)
-  # now subset the model estimates based on those
-  newestimates <- estimates %>% filter(SampleNum %in% topsamples)
-  
-  source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/resample_markov.R")
 
+  # keep top 15% of samples 
+  topsamples <- unique(subset(implausibility, percentile<=15)$samplenum)
+  # now restrict the markov model samples based on the top fitting models
+  newsamples <- samples %>% filter(samplenum %in% topsamples)
+  
+  # now resample the new parameters for the markov model 
+  samples <- newsamples %>% dplyr::select(-c(samplenum)) %>% 
+    mutate_all(as.numeric)
+  estimates <- colMeans(samples)
+  cov <- cov(samples)
+  samples <- data.frame(mvrnorm(n=nsamples, estimates, cov))
+  
+  # now transform this into TPs
+  probs <- convert_to_probability(samples, model, covariates)
+  
+  # format for calibration - label categories and put into list format
+  probs <- probs %>% 
+    pivot_longer(cols=State.1:State.5,
+                 names_to="StateTo", values_to="prob") %>%
+    mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
+                               endsWith(StateTo,"2") ~ "State 2",
+                               endsWith(StateTo,"3") ~ "State 3",
+                               endsWith(StateTo,"4") ~ "State 4",
+                               endsWith(StateTo,"5") ~ "State 5")) %>%
+    separate(cov, into=c("age","sex","race"), sep="_") %>% 
+    mutate(sex=ifelse(sex=="0", "m","f"))
+  
+  transitionsList <- list()
+  for(i in 1:length(unique(samples$samplenum))){
+    transitionsList[[paste(i)]] <- probs %>% filter(samplenum==i) %>%
+      mutate(cat = paste(age, sex, race, "STATEFROM", StateFrom, sep="_")) %>%
+      group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>%
+      dplyr::select(cat, StateTo, cumsum)
+  }
+  
   prev_mean_implausibility <- new_mean_implausibility
   wave <- wave + 1
-  
-  # save the new TPs and the estimates
+
+  # save the new TPs and the estimates that will be run in the next wave
   saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-",wave,".RDS",sep=""))
-  write.csv(estimates, paste0(OutputDirectory, "/sampled_markov-",wave, ".csv"), row.names=F)
-  
-  
+  write.csv(samples, paste0(OutputDirectory, "/sampled_markov-",wave, ".csv"), row.names=F)
 }
 
