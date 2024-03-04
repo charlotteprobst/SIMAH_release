@@ -291,8 +291,6 @@ mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersectio
 eij <- full_grams["residual"][["lev_1_resi_est_Intercept"]]
 constant <- mean(exp(eij))
 
-eij_2 <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
-
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
   est = exp(b_cons*Intercept
@@ -428,6 +426,8 @@ ggplot(temp, aes(x=intersectional_names, y=difference)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   ylim(-30,30) +
   ggtitle("Difference between mean observed (all years) and estimated (2009) grams - corrected eij")
+# ggsave(paste0(outputs, "grams drinkers/observed(all years) vs estimated(2009), drinkers.png"), 
+#       dpi=300, width=33, height=19, units="cm")
 
 # 2b) as residuals plot (plot of difference between observed & estimate, 2009 only)
 ggplot(temp_2009, aes(x=intersectional_names, y=difference)) + 
@@ -463,6 +463,8 @@ ggplot(temp, aes(x=count, y=abs_difference)) +
   geom_point() + 
   labs(x = "group size", y = "Difference between observed and estimated (absolute)") +
   ggtitle("Absolute difference between mean observed (all years) and estimated (2009) grams")
+ggsave(paste0(outputs, "grams drinkers/absolute difference between observed and estimated grams, by strata group size.png"),
+      dpi=300, width=33, height=19, units="cm")
 
 # 3b) difference versus group size on log scale
 ggplot(temp_log, aes(x=count, y=abs_difference)) + 
@@ -489,16 +491,21 @@ cor(temp_2009$count_2009, temp_2009$abs_difference, use = "pairwise.complete.obs
 cor(temp_log$count, temp_log$abs_difference_2009, use = "pairwise.complete.obs") 
 
 # 4) Histogram of the differences - would expect this to be positively skewed as the observed and predicted means are also positively skewed
+
+# observed
 hist(temp$mean_observed_grams)
 moments::skewness(temp$mean_observed_grams) # 2.2 (skewness > 0 indicates positive skew)
+# estimated
 hist(temp$estmn)
 moments::skewness(temp$estmn) # 1.2
-hist(temp$difference)
-moments::skewness(temp$difference) # 1.5
-mean(temp$difference) # 3
-hist(temp_log$difference)
-moments::skewness(temp_log$difference) # 2
-mean(temp_log$difference) # 0.3
+# difference
+hist(temp$abs_difference)
+moments::skewness(temp$abs_difference) # 2.9
+mean(temp$abs_difference) # 2.1
+# difference on log scale
+hist(temp_log$abs_difference)
+moments::skewness(temp_log$abs_difference) # 3.5
+mean(temp_log$abs_difference) # 0.19
 
 
 

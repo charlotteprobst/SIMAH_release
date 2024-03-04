@@ -81,12 +81,12 @@ model_data$age_diaz <- droplevels(model_data$age_diaz)
 model_data$YEAR <- as.factor(model_data$YEAR)
 
 # Save
-saveRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
+saveRDS(model_data, paste0(inputs,"grams_data_pre_maihda_fullsample.rds"))
 
 #################################################################### MODELLING
 
 # Read in model data
-model_data <- readRDS(paste0(inputs,"grams_data_pre_maihda_main.rds"))
+model_data <- readRDS(paste0(inputs,"grams_data_pre_maihda_fullsample.rds"))
 
 # Null model
 (null_grams <- runMLwiN(capped_daily_grams_log ~ 1 + YEAR +
@@ -185,15 +185,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.rds"))
-write.csv(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_MAIN.csv"))
+saveRDS(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_fullsample.rds"))
+write.csv(coefs_table, paste0(outputs, "grams all/model coefficients and variance_grams_fullsample.csv"))
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, paste0(outputs, "grams all/VPC_table_grams_MAIN.csv"))
+write.csv(VPC_table, paste0(outputs, "grams all/VPC_table_grams_fullsample.csv"))
 
 ##### Extract data from relevant slots of s4 model object (BASED ON FULL MODEL)
 
@@ -281,8 +281,13 @@ mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersectio
 
 ##### CALCULATE VALUES OF INTEREST (est = estA + estI)
 
-RP1_var_Intercept <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
-constant <- exp(0.5*RP1_var_Intercept)
+## If assuming that exp(eij) is normally distributed:
+# RP1_var_Intercept <- random_effects[rownames(random_effects) == "RP1_var_Intercept", "random_effects"]
+# constant <- exp(0.5*RP1_var_Intercept)
+
+# If cannot assumme that exp(eij) is normally distributed, integrate using their actual distribution:
+eij <- full_grams["residual"][["lev_1_resi_est_Intercept"]]
+constant <- mean(exp(eij))
 
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
@@ -343,18 +348,18 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.rds"))
-write.csv(mdata_results, paste0(outputs, "grams all/results_grams_MAIN.csv"))
+saveRDS(mdata_results, paste0(outputs, "grams all/results_grams_fullsample.rds"))
+write.csv(mdata_results, paste0(outputs, "grams all/results_grams_fullsample.csv"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS(paste0(outputs, "grams all/results_grams_MAIN.rds"))
+mdata_results <- readRDS(paste0(outputs, "grams all/results_grams_fullsample.rds"))
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, paste0(outputs, "grams all/mdata_5_estimates_grams_MAIN.csv"))
+write.csv(mdata_overall, paste0(outputs, "grams all/mdata_5_estimates_grams_fullsample.csv"))
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -362,7 +367,7 @@ mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 
 mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, paste0(outputs, "grams all/mdata_5_interactions_grams_MAIN.csv"))
+write.csv(mdata_interactions, paste0(outputs, "grams all/mdata_5_interactions_grams_fullsample.csv"))
 
 ##### Explore face validity of estimates
 
@@ -371,4 +376,4 @@ temp <- mdata_results %>% dplyr::select(intersectional_names, mean_observed_gram
   mutate(difference = estmn - mean_observed_grams,
          abs_difference = abs(difference),
          percent_difference = abs(difference/estmn*100))
-write.csv(temp, paste0(outputs, "grams all/mean observed vs estimated grams - MAIN.csv"))
+write.csv(temp, paste0(outputs, "grams all/mean observed vs estimated grams, fullsample.csv"))

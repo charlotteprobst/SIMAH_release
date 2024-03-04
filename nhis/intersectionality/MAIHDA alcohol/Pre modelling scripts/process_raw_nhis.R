@@ -1,7 +1,11 @@
 #### Set up
 
-# Set wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
+######################################################################## Set-up
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
 # Read in necessary R packages
 library(tidyverse)
@@ -12,21 +16,18 @@ library(ipumsr)     # load in data extracted from IPUMS website
 library(labelled)
 library(mice)
 
-# Clear environment
-rm(list = ls())
-
 # Source required functions
-source("functions/recode_to_NA_all.R")
-source("functions/remove_na.R")
-source("functions/generate_ALCSTAT.R")
-source("functions/assign_grams_alcohol.R")
-source("functions/recode_alc_cats.R")
-source("functions/recode_race_ethnicity.R")
-source("functions/recode_income.R")
-source("functions/recode_education.R")
-source("functions/recode_age.R")
-source("functions/recode_sexorien.R")
-source("functions/recode_cohort.R")
+source(paste0(code,"functions/recode_to_NA_all.R"))
+source(paste0(code,"functions/remove_na.R"))
+source(paste0(code,"functions/generate_ALCSTAT.R"))
+source(paste0(code,"functions/assign_grams_alcohol.R"))
+source(paste0(code,"functions/recode_alc_cats.R"))
+source(paste0(code,"functions/recode_race_ethnicity.R"))
+source(paste0(code,"functions/recode_income.R"))
+source(paste0(code,"functions/recode_education.R"))
+source(paste0(code,"functions/recode_age.R"))
+source(paste0(code,"functions/recode_sexorien.R"))
+source(paste0(code,"functions/recode_cohort.R"))
 
 # Set default theme for plots:
 theme_set(theme_bw(base_size = 12))
@@ -36,7 +37,7 @@ options(scipen = 100)
 
 #### Initial read in of raw data from IPUMS website
 #(Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021). Available at: https://doi.org/10.18128/D070.V7.1):
-ddi <- read_ipums_ddi("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
+ddi <- read_ipums_ddi(paste0(inputs, "/raw_data/nhis_00005.xml"))
 data <- read_ipums_micro(ddi)
 
 # Exclude years after 2018 as Qs not asked in 2019 and drinking likely to have changed in 2020 due to pandemic
@@ -56,12 +57,12 @@ dictionary <- labelled::generate_dictionary(nhis_subset)
 nhis_subset <- nhis_subset %>% zap_formats() %>% zap_labels()
  
 # Save the subset data
-saveRDS(nhis_subset, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
+saveRDS(nhis_subset, paste0(inputs, "nhis_subset.RDS"))
 
 ######### START FROM HERE IF PREVIOUSLY DOWNLOADED AND SAVED RAW IPUMS DATA
 
 # Read in the subset data
-nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
+nhis_subset <- readRDS(paste0(inputs,"nhis_subset.RDS"))
 
 # Look at feasibility of sample weights
 sum(nhis_subset$SAMPWEIGHT) # v large sample if using weights
@@ -371,7 +372,7 @@ ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) +
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
 ggtitle("Raw distribution of daily grams alcohol, capped, all sample adults")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/raw_distribution_daily_grams_full_sample.png", dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"analytic sample/raw_distribution_daily_grams_full_sample.png"), dpi=300, width=33, height=19, units="cm")
 
 ## TRANSFORM ALC DAILY GRAMS
 
@@ -381,7 +382,7 @@ nhis_alc_clean <- nhis_alc_clean %>%
 # Check new variable
 mean_new_grams <- nhis_alc_clean %>% 
   group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
-  summarise(mean = mean(new_grams)) # max 26.07 grams
+  summarise(mean = mean(new_grams)) # maximum mean is 26.07 grams
 
 # Check recommended lambda with boxcox
 b <- MASS::boxcox(lm(nhis_alc_clean$new_grams ~ 1))
@@ -400,26 +401,21 @@ ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram() +
   ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/transformed_distribution_daily_grams_full_sample.png", dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_full_sample.png"), dpi=300, width=33, height=19, units="cm")
 
 ## SAVE CLEANED DATA
 
 # Save full cleaned data
-saveRDS(nhis_alc_clean, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+saveRDS(nhis_alc_clean, paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Save subset of drinkers only 
 nhis_alc_clean %>%
   filter(ALCSTAT1=="Current drinker") %>%
-  saveRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.RDS")
-
-# Save as csv
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>% 
-   write_csv("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
+  saveRDS(paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
 
 ## READ IN CLEANED DATA
-nhis_alc_clean <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
-nhis_alc_clean_drinkers <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.RDS")
+nhis_alc_clean <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
+nhis_alc_clean_drinkers <- readRDS(paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
 
 # View raw and transformed distributions for drinkers only
 
@@ -430,12 +426,12 @@ ggplot(nhis_alc_clean_drinkers, aes(x=alc_daily_g_capped_200), y) +
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
   ggtitle("Raw distribution of daily grams alcohol, capped, drinkers only")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/raw_distribution_daily_grams_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"analytic sample/raw_distribution_daily_grams_drinkers_only.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
   ggtitle("Distribution of estimated daily grams post transformation, drinkers only")+ 
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
-ggsave("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/transformed_distribution_daily_grams_drinkers_only.png", dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_drinkers_only.png"), dpi=300, width=33, height=19, units="cm")
 
 # NB. Sub-setting based on intersectional characteristics of interest occurs within MAIHDA scripts
