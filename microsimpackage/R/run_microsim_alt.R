@@ -271,7 +271,8 @@ if(output=="mortality" & !is.null(diseases)){
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   # add former drinkers and lifetime abstainers to this summary TODO
-  Summary <- list(CatSummary, MeanSummary)
+  Summary <- CatSummary
+  # Summary <- list(CatSummary, MeanSummary)
 }
 # formerdrinkers <- list()
 # for(i in 1:length(PopPerYear)){
@@ -280,5 +281,5 @@ if(output=="mortality" & !is.null(diseases)){
 # }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(CatSummary)
+return(Summary)
 }

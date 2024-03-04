@@ -22,7 +22,7 @@ targets <- brfss %>%
                                      "WHI"="White","OTH"="Others"),
          microsim.init.education = factor(microsim.init.education,
                                           levels=c("LEHS","SomeC","College"))) %>%
-  dplyr::select(-n)
+  dplyr::select(-n) %>% drop_na()
 
 
 # loop to draw plots
