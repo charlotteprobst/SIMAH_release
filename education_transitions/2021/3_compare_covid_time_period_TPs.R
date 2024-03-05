@@ -13,17 +13,17 @@ TPs_2012_2021_model_covid_only <- TPs_2012_2021 %>% filter(
   time_period=="2019-2021"
 ) %>% dplyr::select(-(time_period))
 
-TPs_2012_2021_covid_mean <- TPs_2012_2021_model_covid_only %>% group_by(
-  age, sex, race, StateFrom, StateTo) %>% summarise(mean_TP_covariate = mean(prob))
-TPs_2019_2021_mean <- TPs_2019_2021 %>% group_by(
-  age, sex, race, StateFrom, StateTo) %>% summarise(mean_TP_seperate_model = mean(prob))
+TP_covariate <- TPs_2012_2021_model_covid_only %>% group_by(
+  age, sex, race, StateFrom, StateTo) %>% summarise(TP_covariate = prob)
+TP_separate_model <- TPs_2019_2021 %>% group_by(
+  age, sex, race, StateFrom, StateTo) %>% summarise(TP_seperate_model = prob)
 
 # Merge
-All_covid_TPs <- full_join(TPs_2012_2021_covid_mean, TPs_2019_2021_mean) 
+All_covid_TPs <- full_join(TP_covariate, TP_separate_model) 
 
 results <- All_covid_TPs %>% mutate(
-  difference = mean_TP_covariate - mean_TP_seperate_model,
-  abs_difference = abs(mean_TP_covariate - mean_TP_seperate_model)
+  difference = TP_covariate - TP_seperate_model,
+  abs_difference = abs(difference)
 ) 
 results <- results %>% mutate_if(is.numeric, ~ round(., 2))
 
