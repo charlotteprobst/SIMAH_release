@@ -29,9 +29,6 @@ prev_mean_implausibility <- 100
 wave <- 1
 
 # read in the targets
-targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%
-  group_by(YEAR, AGECAT, RACE, SEX) %>%
-  mutate(target=TPop/sum(TPop),
-         SE=sqrt(target*(1-target)/sum(OrigSample)),
-         variance = (SE^2) * OrigSample) %>%
-  dplyr::select(-c(TPop:OrigSample))
+targets <- read.csv("SIMAH_workplace/ACS/ACS_education_targets.csv") %>%
+  filter(STATE==SelectedState) %>% 
+  dplyr::select(-c(STATE, TPop, OrigSample))

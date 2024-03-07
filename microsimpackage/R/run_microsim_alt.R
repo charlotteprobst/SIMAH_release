@@ -162,7 +162,7 @@ basepop <- basepop %>% dplyr::select(-c(cat,prob))
 }
 
 # transition education for individuals aged 34 and under
-if(updatingeducation==1){
+if(updatingeducation==1 & y<2019){
   print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
@@ -178,6 +178,9 @@ if(updatingeducation==1){
   totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED,cat))
   basepop <- rbind(totransition, tostay)
 }
+
+# if(updatingeducation==1 & y>=2019){
+# }
 
 # update alcohol use categories
 if(updatingalcohol==1){

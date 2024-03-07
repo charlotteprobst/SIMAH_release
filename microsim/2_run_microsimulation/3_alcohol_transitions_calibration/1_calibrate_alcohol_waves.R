@@ -27,7 +27,7 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
 WorkingDirectory <- "/home/cbuckley"
-# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))

@@ -78,7 +78,7 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2002, output="demographics")
+                     minyear=2000, maxyear=2019, output="demographics")
     }
 
   Output <- do.call(rbind,Output)
