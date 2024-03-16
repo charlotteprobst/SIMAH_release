@@ -1,14 +1,26 @@
 # SIMAH project 2024 - script for generating samples from COVID markov model for calibration
+library(tidyverse)
+library(microsimpackage)
+library(MASS)
+library(msm)
+
+# Source calibration package files
+file_list <- list.files(path = "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/calibrationpackage/R/", pattern = "\\.R$", full.names = TRUE)
+for (file in file_list) {
+  source(file)
+}
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
 # Read in data used for model to extract length of the original and replicated samples
-data <- read_rds("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
-originalsample <- 
-infaltedsample <- 
+data <- readRDS("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
+originalsample <- 3925
+inflatedsample <- 958365
 
 # read in the model of interest
 model <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/covid_modelt4.RDS")
+
+nsamples <- 300
  
 # first sample from the markov model to get nsamples new estimates
 samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, inflatedsample)
@@ -18,7 +30,7 @@ samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, infl
 # every age sex race combination
 # note these have to be in exactly the same format of the covariates specified in the model
 # if unsure of this run model$covariates to check and e.g. model$data$mf$sex
-covariates <- data.frame(expand.grid(agecat=c("18","19","20","21","22-24","25-29","30+"),
+covariates <- data.frame(expand.grid(agecat=c("18","19","20","21-25","26+"),
                                      sex=c(0,1),
                                      racefinal2=c("white","black","hispanic","other")))
 covariates$cat <- paste(covariates$agecat, covariates$sex, covariates$racefinal2, sep="_")
@@ -46,6 +58,6 @@ for(i in 1:length(unique(samples$samplenum))){
 }
 
 # save samples - for wave 1 in Output Directory
-saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1",".RDS"))
+saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1-COVID",".RDS"))
 colnames(samples) <- make.unique(colnames(samples))
-write.csv(samples, paste0(OutputDirectory, "/sampled_markov-1", ".csv"), row.names=F)
+write.csv(samples, paste0(OutputDirectory, "/sampled_markov-1-COVID", ".csv"), row.names=F)
