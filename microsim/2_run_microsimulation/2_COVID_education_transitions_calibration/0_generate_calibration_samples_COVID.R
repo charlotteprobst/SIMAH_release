@@ -2,14 +2,14 @@
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
+# Read in data used for model to extract length of the original and replicated samples
+data <- read_rds("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
+originalsample <- 
+infaltedsample <- 
+
+# read in the model of interest
 model <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/covid_modelt4.RDS")
  
-# originalsample <- 9064
-# inflatedsample <- 2057084
-
-originalsample <- 1
-inflatedsample <- 1
-
 # first sample from the markov model to get nsamples new estimates
 samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, inflatedsample)
 
