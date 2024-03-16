@@ -7,7 +7,7 @@ recode_age <- function(data){
     # original age cats
     age_3_cats = dplyr::case_when(
       
-      AGE <=24 ~ 1, # Adolescents and young adults (18-24)
+      AGE <=24 ~ 1, # Adolescents and young adults (<24)
       AGE > 24 & AGE <=69 ~ 2, # Adults (25-69)
       AGE > 69 ~ 3), # Older adults (70-99)
     

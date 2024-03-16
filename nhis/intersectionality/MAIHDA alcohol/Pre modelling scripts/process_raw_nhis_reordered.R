@@ -64,32 +64,32 @@ saveRDS(nhis_subset, paste0(inputs, "nhis_subset.RDS"))
 # Read in the subset data
 nhis_subset <- readRDS(paste0(inputs,"nhis_subset.RDS"))
 
-# Look at feasibility of sample weights
-sum(nhis_subset$SAMPWEIGHT) # v large sample if using weights
-min(nhis_subset$SAMPWEIGHT) # could divide by 10 to make more manageable
-
 # Convert all types of NA to be consistent i.e. convert 'refused', 'not ascertained', 'don't know', 'inconsistent' and 'NIU' to NA
 nhis_subset_converted_NA <- recode_to_NA_all(nhis_subset)
 
-## Recategorise age, race, sexual orientation, income, education and birth cohort
+# Drop individuals aged <21
+nhis_21 <- nhis_subset_converted_NA %>% filter(AGE>=21) # 550,979
 
-nhis_subset_age <- recode_age(nhis_subset_converted_NA)
+# Recode race into 6 categories
+nhis_subset_race <- recode_race_ethnicity_all(nhis_21)
+
+# Keep only the 6 selected race and ethnicity groups
+nhis_subset_race_6 <- nhis_subset_race %>% filter(!is.na(race_6_cats)) # 550,183
+
+#Recode age
+nhis_subset_age <- recode_age(nhis_subset_race_6)
 nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
                                                  levels = c(1,2,3),
                                                  labels = c("18-24", "25-69", "70+"))
 nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
                                                    levels = c(0,1,2,3),
                                                    labels = c("18-20", "21-24", "25-59","60+"))
-# Recode race into 5 categories
-nhis_subset_race <- recode_race_ethnicity(nhis_subset_age)
-nhis_subset_race$race_5_cats <- factor(nhis_subset_race$race_5_cats,
-                    levels = c(1,2,3,4,5),
-                    labels = c("Non-Hispanic White", "Non-Hispanic Black/African American", "Non-Hispanic Asian", "Non-Hispanic Other", "Hispanic"))
+# Drop individuals aged <21
+nhis_21 <- nhis_subset_age %>% filter(AGE>=21) # 550,183
 
-# Recode race into 6 categories
-nhis_subset_race <- recode_race_ethnicity_all(nhis_subset_race)
+## Recategorise age, sexual orientation, income, education and birth cohort
 
-nhis_subset_sexorien <- recode_sexorien(nhis_subset_race)
+nhis_subset_sexorien <- recode_sexorien(nhis_subset_age)
 nhis_subset_sexorien$SEXORIEN <- factor(nhis_subset_sexorien$SEXORIEN,
                               levels = c(1,2),
                               labels = c("Heterosexual", "Homosexual/bisexual/something else"))
@@ -134,7 +134,7 @@ nhis_subset_recoded <- nhis_subset_decade
 
 # Review demographics of the sample adult subset (so can compare to overall population demographics)
 sample_adults_by_sex_race_age <- nhis_subset_recoded %>% 
-  count(SEX, age_3_cats, race_5_cats) %>%
+  count(SEX, age_3_cats, race_6_cats) %>%
   mutate(percent = n/sum(n)*100) %>%
   group_by(SEX) %>%
   arrange(desc(percent), .by_group = TRUE)
@@ -143,7 +143,7 @@ sample_adults_by_sex_race_age <- nhis_subset_recoded %>%
 
 # Overall
 nhis_subset_recoded %>%
-  dplyr::select(ALCSTAT1, age_3_cats, race_5_cats, SEX, education_3_cats, income) %>%
+  dplyr::select(ALCSTAT1, age_3_cats, race_6_cats, SEX, education_3_cats, income) %>%
   md.pattern(rotate.names = TRUE)
 
 # BY SEX
@@ -157,7 +157,7 @@ missing_data_sex <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_age = (Age_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100,
@@ -179,7 +179,7 @@ missing_data_age <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_edu = (Educ_NA/total_pop)*100, 
             perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
@@ -192,7 +192,7 @@ missing_data_age <- nhis_subset_recoded %>%
 
 # BY RACE
 missing_data_race <- nhis_subset_recoded %>% 
-  group_by(race_5_cats) %>%
+  group_by(race_6_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
             Age_NA = sum(is.na(AGE)), 
@@ -208,11 +208,11 @@ missing_data_race <- nhis_subset_recoded %>%
             perc_missing_income = (Income_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100,
             perc_missing_birth_year = (birth_year_NA/total_pop)*100) %>%
-  dplyr::select(race_5_cats, perc_missing_age, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_Alc_status) %>%
+  dplyr::select(race_6_cats, perc_missing_age, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_Alc_status) %>%
   unique()
 
 # BY SES
-nhis_subset_recoded %>% 
+missing_data_ses <- nhis_subset_recoded %>% 
   group_by(education_5_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
@@ -221,7 +221,7 @@ nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_age = (Age_NA/total_pop)*100,
             perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
@@ -243,7 +243,7 @@ missing_data_year <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_edu = (Educ_NA/total_pop)*100, 
             perc_missing_age = (Age_NA/total_pop)*100,
@@ -256,9 +256,9 @@ missing_data_year <- nhis_subset_recoded %>%
   unique()
 
 ## Review missing consumption patterns data for drinkers:
-nhis_subset_recoded %>% 
+drinkers_missing_consumption <- nhis_subset_recoded %>% 
   filter(ALCSTAT1==3) %>% 
-  group_by(SEX, age_3_cats, race_5_cats, education_3_cats) %>%
+  group_by(SEX, age_3_cats, race_6_cats, education_3_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
             ALC_AMT_NA = sum(is.na(ALCAMT)),
@@ -271,8 +271,7 @@ nhis_subset_recoded %>%
 
 ## Drop individuals missing essential data (education & alc status)
 edu_variables <- c("education_3_cats", "education_4_cats", "education_5_cats")
-nhis_subset_dropped_edu_na <- remove_na(nhis_subset_recoded, all_of(edu_variables))
-
+nhis_subset_dropped_edu_na <- remove_na(nhis_subset_recoded, all_of(edu_variables)) # 545,938
 nhis_subset_dropped_alcstat_na <- remove_na(nhis_subset_dropped_edu_na, "ALCSTAT1")
 
 ## Drop individuals who drink, but who are missing information on consumption patterns
@@ -353,9 +352,9 @@ nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
 
 # Check face validity of estimate:
-mean(nhis_alc_clean$alc_daily_g) # 4.9
+mean(nhis_alc_clean$alc_daily_g) # 5
 median(nhis_alc_clean$alc_daily_g) # 0.3
-mean(nhis_alc_clean$alc_daily_g_capped_200) # 4.8
+mean(nhis_alc_clean$alc_daily_g_capped_200) # 4.9
 median(nhis_alc_clean$alc_daily_g_capped_200) # 0.3
 
 # Check raw means by intersections
@@ -409,9 +408,10 @@ ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_full
 saveRDS(nhis_alc_clean, paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Save subset of drinkers only 
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>%
-  saveRDS(paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
+nhis_alc_clean_drinkers <- nhis_alc_clean %>%
+  filter(ALCSTAT1=="Current drinker") 
+
+saveRDS(nhis_alc_clean_drinkers, paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
 
 ## READ IN CLEANED DATA
 nhis_alc_clean <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
@@ -424,17 +424,16 @@ sum(nhis_alc_clean_drinkers$SAMPWEIGHT) # v large sample if using weights
 
 ggplot(nhis_alc_clean_drinkers, aes(x=alc_daily_g_capped_200), y) + 
   geom_histogram() + 
-  xlim(0,201) + 
-  ylim(0,30000) + 
+  ylim(0, 100000)+
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
-  ggtitle("Raw distribution of daily grams alcohol, capped, drinkers only")
-ggsave(paste0(outputs,"analytic sample/raw_distribution_daily_grams_drinkers_only.png"), dpi=300, width=33, height=19, units="cm")
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16))
+ggsave(paste0(outputs,"Cleaned tables for grams manuscript/Supplementary tables & figures/SF1. Raw distribution of daily grams.png"), dpi=300, width=33, height=19, units="cm")
 
 ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
-  ggtitle("Distribution of estimated daily grams post transformation, drinkers only")+ 
   xlab("Daily grams of alcohol, post transformation") +
-  ylab("Frequency")
-ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_drinkers_only.png"), dpi=300, width=33, height=19, units="cm")
-
-# NB. Sub-setting based on intersectional characteristics of interest occurs within MAIHDA scripts
+  ylab("Frequency")+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16))
+ggsave(paste0(outputs,"Cleaned tables for grams manuscript/Supplementary tables & figures/SF2. Log-transformed distribution of daily grams.png"), dpi=300, width=33, height=19, units="cm")

@@ -32,13 +32,13 @@ plot_data <- readRDS(paste0(outputs,"grams drinkers/results_grams_drinkers.rds")
 
 # Prep data for plotting
 plot_data <- plot_data %>%
-  mutate(sex=ifelse(grepl("Female",intersectional_names),"Female","Male"),
-         race=ifelse(grepl("Asian",intersectional_names),"NH Asian",
-                     ifelse(grepl("Black", intersectional_names),"NH Black",
-                            ifelse(grepl("AI/AN", intersectional_names), "NH AI/AN",
-                                ifelse(grepl("Multiple race", intersectional_names), "NH Multiple race",
-                                   ifelse(grepl("Hispanic", intersectional_names), "Hispanic","NH White"))))),
-         race=factor(race, levels=c("Hispanic", "NH AI/AN", "NH Asian","NH Black", "NH Multiple race", "NH White")),
+  mutate(sex=ifelse(grepl("Female",intersectional_names),"Women","Men"),
+         race=ifelse(grepl("Asian",intersectional_names),"Asian",
+                     ifelse(grepl("Black", intersectional_names),"Black",
+                            ifelse(grepl("AI/AN", intersectional_names), "AI/AN",
+                                ifelse(grepl("Multiple race", intersectional_names), "Multiple race",
+                                   ifelse(grepl("Hispanic", intersectional_names), "Hispanic","White"))))),
+         race=factor(race, levels=c("Hispanic", "AI/AN", "Asian","Black", "Multiple race", "White")),
          education=ifelse(grepl("high school", intersectional_names), "high school or less",
                           ifelse(grepl("some college", intersectional_names), "some college", "college+")),
          education=factor(education,levels=c("high school or less", "some college", "college+")),
@@ -47,7 +47,7 @@ plot_data <- plot_data %>%
 
 # Plots of predicted grams - separate for males and females
 male_grams <- plot_data %>%
-  filter(sex=="Male") 
+  filter(sex=="Men") 
 male_grams %>%
   ggplot(aes(x=education, y=estmn)) +
   geom_point(position=position_dodge(width=0.8)) +
@@ -65,7 +65,7 @@ ggsave(paste0(outputs,"grams drinkers/plot estimated grams males.png"), dpi=300,
 
 # Plot females
 female_grams <- plot_data %>%
-  filter(sex=="Female") 
+  filter(sex=="Women") 
 female_grams %>%
   ggplot(aes(x=education, y=estmn)) +
   geom_point(position=position_dodge(width=0.8)) +
@@ -81,47 +81,49 @@ female_grams %>%
   labs(y= "Estimated grams per day")
 ggsave(paste0(outputs,"grams drinkers/plot estimated grams females.png"), dpi=300, width=33, height=19, units="cm")
 
+# Create a colour blind friendly pallete
+
+# The palette with black:
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 # Plots of additive only versus total estimates
 male_grams_add_vs_mul <- plot_data %>%
-  filter(sex=="Male") %>%
+  filter(sex=="Men") %>%
   ggplot(aes(x=education)) +
-  geom_point(aes(y=estAmn), colour = "darkgrey", alpha = 0.5) +
+  geom_point(aes(y=estAmn), colour = "lightblue", alpha = 0.5) +
   geom_errorbar(aes(ymin = estAlo,
                     ymax = estAhi),
-                colour="darkgrey") +
-  geom_point(aes(y=estmn), colour = "black") +
+                colour="lightblue") +
+  geom_point(aes(y=estmn), colour = "darkblue") +
   geom_errorbar(aes(ymin = estlo,
                     ymax = esthi),
-                colour="black") +
+                colour="darkblue") +
   facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90))+
-  ggtitle("Average daily alcohol consumption by intersectional category: Men")+
-  labs(y= "Estimated grams per day") +
-  labs(caption = "Grey: estimate based on additive effects only  
-Black: Estimate based on additive & interaction effects")
+  theme(strip.background = element_rect(fill = "lightblue")) +
+  ggtitle("The influence of interaction effects on estimated alcohol consumption: Men")+
+  labs(y= "Estimated grams per day") 
   male_grams_add_vs_mul
 ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
   
 # Plots of additive only versus total estimates
 female_grams_add_vs_mul <- plot_data %>%
-  filter(sex=="Female") %>%
+  filter(sex=="Women") %>%
   ggplot(aes(x=education)) +
-  geom_point(aes(y=estAmn), colour = "grey") +
+  geom_point(aes(y=estAmn), colour = "lightblue") +
   geom_errorbar(aes(ymin = estAlo,
                     ymax = estAhi),
-                colour="grey") +
-  geom_point(aes(y=estmn), colour = "black") +
+                colour="lightblue") +
+  geom_point(aes(y=estmn), colour = "darkblue") +
   geom_errorbar(aes(ymin = estlo,
                     ymax = esthi),
-                colour = "black") +
+                colour = "darkblue") +
   facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
         axis.text.x = element_text(angle=90))+
-  ggtitle("Average daily alcohol consumption by intersectional category: Women")+
-  labs(y= "Estimated grams per day") +
-  labs(caption = "Grey: estimate based on additive effects only  
-Black: Estimate based on additive & interaction effects")
+  theme(strip.background = element_rect(fill = "lightblue")) +
+  ggtitle("The influence of interaction effects on estimated alcohol consumption: Women")
 female_grams_add_vs_mul
 ggsave(paste0(outputs,"grams drinkers/plot grams females, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
 
