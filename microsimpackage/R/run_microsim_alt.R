@@ -259,7 +259,7 @@ if(output=="mortality" & !is.null(diseases)){
                                                                              "55-64","65+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, seed, microsim.init.sex,microsim.init.race,agecat, microsim.init.education,
+    group_by(year, samplenum, seed, microsim.init.sex,microsim.init.race,microsim.init.age, microsim.init.education,
              AlcCAT, .drop=FALSE) %>% tally()
   MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                       samplenum=as.factor(samplenum),

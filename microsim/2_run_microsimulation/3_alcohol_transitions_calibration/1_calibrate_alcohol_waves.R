@@ -54,11 +54,10 @@ source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
 
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
-
 while(wave <= num_waves){
   baseorig <- basepop
   Output <- list()
-  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %dopar% {
+  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
     print(i)
     # set seed and sample number for current iteration
     samplenum <- as.numeric(sampleseeds$samplenum[i])
@@ -87,7 +86,7 @@ while(wave <= num_waves){
   Output <- do.call(rbind,Output)
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
-  # 
+  
   # # calculate the alcohol targets - modifiable
   # targets <- generate_targets_alcohol(brfss)
   # 
