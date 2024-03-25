@@ -17,7 +17,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="mortality"){
+                         minyear, maxyear, output){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
@@ -232,7 +232,10 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 # indicator of how aggregated the results should be? - in the vector of outputs
 
 if(output=="population"){
-  Summary <- basepop
+  Summary <- basepop %>%
+    group_by(microsim.init.sex, agecat, microsim.init.race, microsimnewED) %>%
+    summarize(count = n()) %>%
+    mutate(percentage = round(count / sum(count) * 100, 1))
 }else if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
