@@ -1,9 +1,8 @@
 # SIMAH project Feb 2024 
 
-# STEP 1. SAVE THE 300 DIFFERENT BASEPOPS IN 2019 TO SEE IF 
-# NEED TO KEEP ALL THROUGH THE COVID PERIOD
+# This script compares the proportion of people in each demographic group in the year 2019 
+# when using the final post-calibration versions of the education TPs for 2000-2019 (i.e. wave 10)
 
-# code to run calibration of MSM model parameters to national / state-level education output
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 gc()
 
@@ -27,8 +26,6 @@ library(splitstackshape)
 library(msm)
 options(dplyr.summarise.inform = FALSE)
 
-WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
-
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
 # WorkingDirectory <- "/home/cbuckley"
@@ -46,10 +43,10 @@ library(calibrationpackage)
 
 ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/2_COVID_education_transitions_calibration/")
 
-# read in all model settings
+# read in all model settings (with n_samples set to 30)
 source(paste0(ScriptDirectory, "/0_model_settings.R"))
 
-# read in settings for calibration
+# read in settings for calibration (with nsamples set to 30, reps set to 1)
 source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 
 # load all microsim files
@@ -86,26 +83,26 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
                      minyear=2000, maxyear=2019, output="population")
     }
 
-# Add identifier column to each data frame in the list
-  temp <- lapply(seq_along(Output), function(i) {
+# Add identifier for each list, reflecting the different samples used to generate the population
+temp <- lapply(seq_along(Output), function(i) {
     df <- Output[[i]]
     df$sample_ID <- i
     return(df)
   })
   
-  # Combine the data frames into one table
-  Combined_Output <- do.call(rbind, temp)
+# Combine the data frames into one table
+Combined_Output <- do.call(rbind, temp)
   
-  Comparissons <- Combined_Output %>% 
+# Compare the difference, between samples, of the % of people in each demographic group
+Combinations <- Combined_Output %>% 
     group_by(microsim.init.sex,agecat,microsim.init.race,microsimnewED) %>% 
     mutate(max_difference = max(percentage)-min(percentage))
   
 # Keep only the unique combinations and one max_difference value
-  unique_combinations <- Comparissons %>%
+unique_combinations <- Combinations %>%
     distinct(microsim.init.sex, agecat, microsim.init.race, microsimnewED, .keep_all = TRUE) %>%
     dplyr::select(microsim.init.sex, agecat, microsim.init.race, microsimnewED, max_difference)
   
-  
-# save the comparison table
+# save the results
 write.csv(unique_combinations, "SIMAH_workplace/education_transitions/2021/comparisson_of_populations_2019.csv", row.names=F) 
  
