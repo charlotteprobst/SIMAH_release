@@ -43,18 +43,16 @@ library(calibrationpackage)
 
 ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/2_COVID_education_transitions_calibration/")
 
-# read in all model settings (with n_samples set to 30)
+# read in all model settings (with n_samples set to the number of populations you want to compare)
 source(paste0(ScriptDirectory, "/0_model_settings.R"))
 
-# read in settings for calibration (with nsamples set to 30, reps set to 1)
+# read in settings for calibration (with nsamples set to 300, reps set to 1)
 source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 
 # load all microsim files
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # Run the simulation for each of the different sets of TP parameters saved from wave 10 of calibration
-# To start with just running 30 of them rather than all 300
-
   baseorig <- basepop
   Output <- list()
   Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
@@ -93,7 +91,7 @@ temp <- lapply(seq_along(Output), function(i) {
 # Combine the data frames into one table
 Combined_Output <- do.call(rbind, temp)
   
-# Compare the difference, between samples, of the % of people in each demographic group
+# Compare the difference, between samplhttp://127.0.0.1:43777/graphics/plot_zoom_png?width=1015&height=518es, of the % of people in each demographic group
 Combinations <- Combined_Output %>% 
     group_by(microsim.init.sex,agecat,microsim.init.race,microsimnewED) %>% 
     mutate(max_difference = max(percentage)-min(percentage))
@@ -104,5 +102,13 @@ unique_combinations <- Combinations %>%
     dplyr::select(microsim.init.sex, agecat, microsim.init.race, microsimnewED, max_difference)
   
 # save the results
-write.csv(unique_combinations, "SIMAH_workplace/education_transitions/2021/comparisson_of_populations_2019.csv", row.names=F) 
+write.csv(unique_combinations, "SIMAH_workplace/education_transitions/2021/comparisson_of_populations_2019_300_samples.csv", row.names=F) 
  
+# Plot
+# Assuming your dataframe is named df
+unique_combinations %>%
+  ggplot(aes(x = microsimnewED , y = max_difference, color = microsim.init.race)) +
+  geom_point() +
+  facet_grid(microsim.init.sex ~ agecat) +
+  labs(x = "Race", y = "Max Difference (%)", color = "Education", title = "Max difference across 300 populations") +
+  theme_minimal()
