@@ -487,7 +487,7 @@ n_distinct(all_data_filled$familyID)# 3,018 families
 n_distinct(all_data_filled$uniqueID)# 43,884 individuals
 
 # Save full cleaned data
-write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_psid_data_1999_2021.csv", row.names=F)
+write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_psid_data_1999_2021_050424.csv", row.names=F)
 
 # Filter to select only final variables
 PSID_data_cleaned <- all_data_filled %>% 
@@ -511,7 +511,7 @@ PSID_data_cleaned <- all_data_filled %>%
     "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
     # Psychological distress
     "kessler_score","distress_severe","distress_class"))
-write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv", row.names=F)
+write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021_050424.csv", row.names=F)
 
 
 
