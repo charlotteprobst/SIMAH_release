@@ -1,4 +1,4 @@
-# Plot LE decomposition results for 2019 to 2020 and 2020 to 2021 - change years accordingly when uploading and saving data
+# Plot LE decomposition results for 2018 to 2020 
 # by SES and race and ethnicity 
 # Project: SIMAH
 
@@ -12,23 +12,24 @@ setwd("C:/Users/yzhu/OneDrive - ARG/SIMAH project/Charlotte Probst/Life expectan
 
 # Graph results by sex and SES or by sex, ses, and race
 k.run <- "detail" # "ses" or "detail"
-k.pop_type <- "CPS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+k.pop_type <- "ACS" # "ACS", "ACS_pred" or "CPS". ACS Weights are treated separately below. 
+
 
 if(k.run == "detail") {
   if(k.pop_type=="ACS"){
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_detail_ACS.csv")
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_detail_ACS.csv")
   }else if(k.pop_type=="ACS_pred"){
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_detail_ACS_pred.csv")
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_detail_ACS_pred.csv")
   }else if (k.pop_type == "CPS") {
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_detail_CPS.csv")
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_detail_CPS.csv")
   }
 } else if (k.run == "ses") {
   if(k.pop_type=="ACS"){
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_ses_ACS.csv") # created in 2a_decomp_revised_SIMAH - only need to change this. Load either 2019-2020 or 2020-2021
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_ses_ACS.csv")
   }else if(k.pop_type=="ACS_pred"){
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_ses_ACS_pred.csv")
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_ses_ACS_pred.csv")
   }else if (k.pop_type == "CPS") {
-    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2020_2021_ses_CPS.csv")
+    dDecomp <- read.csv("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/Results_contrib_2019_2020_ses_CPS.csv")
   }
 }
 
@@ -123,9 +124,9 @@ color.vec <- c(rev(brewer.pal(infectious,"Blues"))[2:4],
                
                c("grey"))
 
-write.csv(dgathered, paste0("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/decomp_results_2021_",
+write.csv(dgathered, paste0("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/decomp_results_2020_", 
                             k.pop_type, "_", k.run, ".csv"))
-dgathered <- filter(dgathered, start_year == 2020) #change to 2019 if running 2019-2020 results
+dgathered <- filter(dgathered, start_year == 2019) 
 ## Plot showing changes in every year (will not be included in publication)
 dcomp_plot <- ggplot(data = dgathered, 
                      aes(x = Education, y = Contribution, fill = Cause_of_death)) +
@@ -151,7 +152,7 @@ if (k.run == "detail") {
 
 ggsave(plot = dcomp_plot, 
        filename =  
-         paste0("SIMAH_workplace/life_expectancy/3_graphs/2021_decomp/decomp_plot_2021_",
+         paste0("SIMAH_workplace/life_expectancy/3_graphs/2021_decomp/decomp_plot_2020_",
                 k.pop_type, "_",
                 k.run, ".jpeg"), 
        dpi=600, width=30, height=15, units="cm", device = "jpeg")
@@ -164,7 +165,7 @@ color.vec2 <- c("#90be6d", "#577590", "#4d908e", "#43aa8b", "#f9c74f", "#f94144"
 
 dcomp_plot <- ggplot(data = dgathered, 
                      aes(x = Education, y = Contribution, fill = Category)) +
-  geom_bar(position = position_stack(reverse = TRUE), stat = "identity") +
+  geom_bar(position = position_stack(reverse = T), stat = "identity") +
   scale_fill_manual("Cause of death", values = color.vec2)+ 
   facet_grid( rows = vars(Sex),  scales = "free")  + 
   coord_flip() +
@@ -179,10 +180,9 @@ dcomp_plot <- ggplot(data = dgathered,
         axis.text = element_text(size = 12),
         legend.position = "right") +
   ylab("Losses/gains in years of life expectancy") +
-  xlab("") 
-  #xlab("Contribution in years of life expectancy") 
+  xlab("") + 
   #scale_y_continuous(limits = c(-6.5, 5), breaks = seq(-6, 5, by = 1)) 
-  #scale_y_continuous(limits = c(-6.5, 2.5), breaks = seq(-6, 2.5, by = 1))
+  scale_y_continuous(limits = c(-6.5, 2.5), breaks = seq(-6, 2.5, by = 1))
 
 if (k.run == "detail") {
   dcomp_plot <- dcomp_plot + facet_grid(rows = vars(Sex, Race))
@@ -190,7 +190,7 @@ if (k.run == "detail") {
 dcomp_plot
 ggsave(plot = dcomp_plot, 
        filename =  
-         paste0("SIMAH_workplace/life_expectancy/3_graphs/2021_decomp/decomp_plot_2021_categories",
+         paste0("SIMAH_workplace/life_expectancy/3_graphs/2021_decomp/decomp_plot_2020_categories",
                 k.pop_type, "_",
                 k.run, ".jpeg"), 
        dpi=600, width=30, height=15, units="cm", device = "jpeg")
@@ -201,7 +201,7 @@ dcat <- dgathered %>%
   arrange(Contribution)
 
 
-write.csv(dcat, paste0("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/decomp_results_2021_", 
+write.csv(dcat, paste0("SIMAH_workplace/life_expectancy/2_out_data/2021_decomp/decomp_results_2020_", 
                        k.pop_type, "_", k.run, "_cat.csv"))
 
 https://www.youtube.com/watch?v=rBp3eYHrsfo 
