@@ -630,11 +630,18 @@ recode_alcohol <- function(data){
   
 # Estimate gpd (basic quantity/frequency approach)
   data <- data %>% 
-    mutate(gpd = (quantity*frequency*14)/30)
+    mutate(gpd_basic = (quantity*frequency*14)/30.4)
 
 # Estimate gpd (expanded approach)
-  data <- data %>%
-    mutate(gpd_exp_approach = (quantity*(frequency*12 - bingedrinkdays) + 5*bingedrinkdays*14)/365)
+  data <- data %>% mutate(
+    gpd = ifelse(
+    ((quantity<5 & sex=="male")|(quantity<4 & sex=="female")) & 
+      !is.na(bingedrinkdays) & 
+      bingedrinkdays!=0, 
+    ((quantity*(frequency*12 - bingedrinkdays) + 5*bingedrinkdays)*14)/365,
+    gpd_basic
+    )
+  )                       
  
   # Recoding to WHO alcohol categories
   data <- data %>%
@@ -697,19 +704,28 @@ process_alcohol_TAS <- function(data){
   bingedrinkdays_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
   names(bingedrinkdays_tas)[2:9] <- years
   bingedrinkdays_tas <- bingedrinkdays_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="bingedrinkdays")
-  bingedrinkdays_tas <- bingedrinkdays_tas %>% mutate(bingedrink_TAS = ifelse(
-    bingedrinkdays==998|bingedrinkdays==999|bingedrinkdays==0, NA, bingedrinkdays))
+  bingedrinkdays_tas <- bingedrinkdays_tas %>% mutate(
+    bingedrink_TAS = ifelse(
+    bingedrinkdays==998|bingedrinkdays==999|bingedrinkdays==0, NA, 
+    bingedrinkdays))
   
   # Combine all drinking variables into one dataset
   drinking <- left_join(ever_drink_tas, freq_drink_tas) %>% 
     left_join(., drinksperday_tas) %>% left_join(., bingedrinkdays_tas)
     
   # Estimate grams per day for an individual (basic formula)
-  drinking <- drinking %>%  mutate(gpd_TAS = (quantity_TAS*frequency_TAS*14)/30)
+  drinking <- drinking %>%  mutate(gpd_TAS_basic = (quantity_TAS*frequency_TAS*14)/30)
   
   # Estimate gpd (expanded approach)
-  drinking <- drinking %>%
-    mutate(gpd_TAS_exp_approach = (quantity*(frequency*12 - bingedrinkdays) + 5*bingedrinkdays*14)/365)
+drinking <- drinking %>% mutate(
+  gpd_TAS = ifelse(
+    ((quantity_TAS<5 & sex=="male")|(quantity_TAS<4 & sex=="female")) & 
+      !is.na(bingedrink_TAS) & 
+      bingedrink_TAS!=0, 
+    ((quantity_TAS*(frequency_TAS*12 - bingedrink_TAS) + 5*bingedrink_TAS)*14)/365,
+    gpd_TAS_basic
+  )
+)                  
 
   # Recode to WHO alcohol categories
   drinking <- drinking %>%

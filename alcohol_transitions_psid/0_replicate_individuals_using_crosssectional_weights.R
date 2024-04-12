@@ -7,20 +7,23 @@ library(dplyr)
 library(splitstackshape)
 
 # If running on local computer
-# setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-# data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv")
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv")
 
 # If running on the discomachine
-serverwd <- "/home/sophie/"
-setwd(serverwd)
-data <- read.csv("inputs/psid_data_1999_2021.csv")
+# serverwd <- "/home/sophie/"
+# setwd(serverwd)
+# data <- read.csv("inputs/psid_data_1999_2021.csv")
+
+# Filter only survey respondents
+data <- data %>% filter(relationship=="head")
 
 # Select variables of interest
 data_1 <- data %>% 
   filter(age>=18) %>%
-  drop_na(sex, education, age, final_race_using_method_hierarchy, total_fam_income) %>% 
-  dplyr::select(uniqueID, year, individualweight_cross.sectional,individualweight_longitudinal,
-                sex, age, education, gpd, gpd_TAS, final_race_using_method_hierarchy, total_fam_income) %>% 
+  drop_na(sex, education, age, final_race_using_method_hierarchy) %>% 
+  dplyr::select(uniqueID, year, individualweight_cross.sectional,
+                sex, age, education, gpd, final_race_using_method_hierarchy) %>% 
   distinct()
 
 # Unify sample weights (model can't cope with different weights per year)
@@ -40,7 +43,7 @@ individuals <- expandRows(individuals, "sampleweight")
 individuals$newID <- 1:nrow(individuals)
 individuals$newID <- as.numeric(individuals$newID)
 
-alldata <-  left_join(individuals, data_2, relationship = "many-to-many")
+alldata <-  merge(individuals, data_2)
 
 # check that there are no duplicate newIDs for different original IDs
 test <- alldata %>% group_by(newID,year) %>% tally()
