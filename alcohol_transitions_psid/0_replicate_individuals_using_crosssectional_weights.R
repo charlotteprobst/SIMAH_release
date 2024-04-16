@@ -5,48 +5,58 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(splitstackshape)
+library(data.table)
 
 # If running on local computer
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
-data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv")
+data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021_050424.csv")
 
 # If running on the discomachine
 # serverwd <- "/home/sophie/"
 # setwd(serverwd)
 # data <- read.csv("inputs/psid_data_1999_2021.csv")
 
-# Filter only survey respondents
-data <- data %>% filter(relationship=="head")
+# Filter only survey respondents & year >= 2005 
+data <- data %>% filter(relationship=="head", year>=2005) 
+
+sum(is.na(data$gpd)) # 5979
+data <- data %>% drop_na(gpd)
+
+# Generate a final alcohol category based on TAS and main survey data
+data <- data %>% mutate(final_alc_cat=if_else(is.na(AlcCAT_TAS), 
+                                              AlcCAT, 
+                                              AlcCAT_TAS))
 
 # Select variables of interest
-data_1 <- data %>% 
+data <- data %>% 
   filter(age>=18) %>%
-  drop_na(sex, education, age, final_race_using_method_hierarchy) %>% 
-  dplyr::select(uniqueID, year, individualweight_cross.sectional,
-                sex, age, education, gpd, final_race_using_method_hierarchy) %>% 
+  drop_na(sex, education, age, final_race_using_method_hierarchy) %>%
+  dplyr::select(uniqueID, year, relationship, individualweight_cross.sectional,
+                sex, age, education, final_alc_cat, gpd_basic, gpd, AlcCAT_TAS,
+                final_race_using_method_hierarchy) %>%
   distinct()
 
 # Unify sample weights (model can't cope with different weights per year)
-data_2 <- data_1 %>% group_by(uniqueID) %>% mutate(sampleweight = round(mean(individualweight_cross.sectional))) %>% 
+data <- data %>% group_by(uniqueID) %>% mutate(sampleweight = round(mean(individualweight_cross.sectional))) %>% 
   filter(sampleweight!=0)
 
 # Identify smallest sample weight
-min(data_2$sampleweight) # 45
+min(data$sampleweight) # 47
 
-# Divide by smallest sample weight (45) to get smaller (but still representative sample)
-data_2$sample_weight <- data_2$sampleweight/45
+# Divide by smallest sample weight (47) to get smaller (but still representative sample)
+data$sample_weight <- data$sampleweight/47
 
-# Replicate individuals according to their sample weight
-individuals <- data_2 %>% dplyr::select(uniqueID, sampleweight) %>% distinct()
-individuals <- expandRows(individuals, "sampleweight")
-# Allocate new IDs for each individual
-individuals$newID <- 1:nrow(individuals)
-individuals$newID <- as.numeric(individuals$newID)
+replicated_df <- data %>%
+  mutate(replicates = round(sampleweight)) %>%
+  uncount(replicates)
 
-alldata <-  merge(individuals, data_2)
+replicated_df$newID <- 1:nrow(replicated_df)
+replicated_df$newID <- as.numeric(replicated_df$newID)
 
 # check that there are no duplicate newIDs for different original IDs
-test <- alldata %>% group_by(newID,year) %>% tally()
+#test <- replicated_df %>% group_by(newID,year) %>% tally() # Too long to run
 
-write.csv(alldata, "outputs/new_PSID_weighted_IDs_2021.csv", row.names=F)
+install.packages("feather")
+library(feather)
+write_feather(replicated_df, "SIMAH_workplace/alcohol_transitions_psid/psid_data_2005_2021_replicated_for_alc_transitions.feather")
 
