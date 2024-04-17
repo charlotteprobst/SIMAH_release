@@ -41,9 +41,9 @@ data <- data %>%
   data <- data[order(data$uniqueID, data$year),]
   data$sex <- as.factor(data$sex)
   data$highestAlc <- data$final_alc_cat
-  source("SIMAH_code/alcohol_transitions_PSID/functions/0_identify_backward_alcohol_transitions.R")
-  backIDs <- getIDs(data) # Get the IDs of anyone who transitions backwards and remove those observations. 
-  data <- data[!data$uniqueID %in% backIDs,]
+  # source("SIMAH_code/alcohol_transitions_PSID/functions/0_identify_backward_alcohol_transitions.R")
+  # backIDs <- getIDs(data) # Get the IDs of anyone who transitions backwards and remove those observations. 
+  # data <- data[!data$uniqueID %in% backIDs,]
   data <- data %>% filter(age>=18)
   data$age <- round(data$age, digits=0)
   data$agesq <- data$age^2

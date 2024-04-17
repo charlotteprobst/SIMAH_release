@@ -16,10 +16,10 @@ data <- read.csv("SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021_050424.c
 # setwd(serverwd)
 # data <- read.csv("inputs/psid_data_1999_2021.csv")
 
-# Filter only survey respondents & year >= 2005 
-data <- data %>% filter(relationship=="head", year>=2005) 
+# Filter only survey respondents or people with TAS alc data & year >= 2005 
+data <- data %>% filter((relationship=="head"|!is.na(AlcCAT_TAS)) & year>=2005) 
 
-sum(is.na(data$gpd)) # 5979
+# Drop people with no alc data
 data <- data %>% drop_na(gpd)
 
 # Generate a final alcohol category based on TAS and main survey data
@@ -31,8 +31,8 @@ data <- data %>% mutate(final_alc_cat=if_else(is.na(AlcCAT_TAS),
 data <- data %>% 
   filter(age>=18) %>%
   drop_na(sex, education, age, final_race_using_method_hierarchy) %>%
-  dplyr::select(uniqueID, year, relationship, individualweight_cross.sectional,
-                sex, age, education, final_alc_cat, gpd_basic, gpd, AlcCAT_TAS,
+  dplyr::select(uniqueID, year, individualweight_cross.sectional,
+                sex, age, education, final_alc_cat, gpd, AlcCAT_TAS,
                 final_race_using_method_hierarchy) %>%
   distinct()
 

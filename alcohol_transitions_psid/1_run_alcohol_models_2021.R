@@ -32,7 +32,7 @@ data <- data %>% mutate(sex=factor(sex), sex=ifelse(sex=="female",1,0))
 data <- data %>% drop_na(gpd, education) # 109444
 
 # Drop anyone who is not either a head or who has reported alc via TAS
-data <- data %>% filter(relationship=="head"|!is.na(AlcCAT_TAS)) # 72,298
+# data <- data %>% filter(relationship=="head"|!is.na(AlcCAT_TAS)) # 72,298
 
 # Generate a final alcohol category based on TAS and main survey data
 data <- data %>% mutate(final_alc_cat=if_else(is.na(AlcCAT_TAS), 
@@ -50,18 +50,16 @@ saveRDS(data, "SIMAH_workplace/alcohol_transitions_psid/prepped_data_for_markov_
 # Cat 1, low risk
 # Cat 2: Medium risk
 # Cat 3: High risk
-Q <- rbind( c(0.5, 0.5, 0, 0),
-            c(0, 0.5, 0.5, 0),
-            c(0, 0, 0.5, 0.5),
-            c(0, 0, 0, 0.5))
-
+Q <- rbind(c(0.5, 0.25, 0, 0),
+             c(0.25, 0.5, 0.25, 0),
+             c(0, 0.25, 0.5, 0.25),
+             c(0, 0, 0.25, 0.5))
 
 # MODEL 1: 2005-2010
-datat1 <- data %>% filter(year>=2005 & year<=2010) # 22,571 observations
-length(unique(datat1$uniqueID)) # 9,622 individuals
+datat1 <- data %>% filter(year>=2005 & year<=2010) 
 datat1 <- setup_alcohol_model(datat1)
 datat1 <- datat1[order(datat1$uniqueID, datat1$year),] # Order data for msm package
-length(unique(datat1$uniqueID)) # Number of individuals 6,128
+length(unique(datat1$uniqueID)) # Number of individuals 11,375
 # length(unique(datat1$newID)) # Number of replicated individuals (currently not replicating)
 # remove anyone with only one year of data
 datat1 <- datat1 %>% ungroup() %>% group_by(uniqueID) %>% add_tally(name="totalobservations") %>% 
@@ -73,39 +71,39 @@ Q1 <- crudeinits.msm(final_alc_cat~year, subject=uniqueID, qmatrix=Q, data=datat
 modelt1 <- msm(final_alc_cat~year, uniqueID, data=datat1, qmatrix=Q1,
                                    center=FALSE,
                                    covariates=~age_cat + sex + race + education,
-                        control=list(trace=1, maxit=200))
+                        control=list(trace=1, maxit=1000, fnscale = 3000000))
 
 # MODEL 2: 2011-2019
 datat2 <- data %>% filter(year>=2011 & year<=2019)
 datat2 <- setup_alcohol_model(datat2)
 datat2 <- datat2[order(datat2$uniqueID, datat2$year),]
-length(unique(datat2$uniqueID))
 datat2 <- datat2 %>% ungroup() %>% 
   group_by(uniqueID) %>% 
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
+length(unique(datat2$uniqueID)) # 14,462
 
 Q2 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat2)
 modelt2 <- msm(final_alc_cat~year, uniqueID, data=datat2, qmatrix=Q2,
                center=FALSE,
                covariates=~age_cat + sex + race + education,
-               control=list(trace=1, maxit=200))
+               control=list(trace=1, maxit=1000, fnscale = 3000000))
 
 # MODEL 3: 2019-2021 
 datat3 <- data %>% filter(year>=2019 & year<=2021)
 datat3 <- setup_alcohol_model(datat3)
 datat3 <- datat3[order(datat3$uniqueID, datat3$year),]
-length(unique(datat3$uniqueID))
 datat3 <- datat3 %>% ungroup() %>% 
   group_by(uniqueID) %>% 
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
+length(unique(datat3$uniqueID)) # 10,721
 
 Q3 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat3)
 modelt3 <- msm(final_alc_cat~year, uniqueID, data=datat3, qmatrix=Q3,
                center=FALSE,
                covariates=~age_cat + sex + race + education,
-               control=list(trace=1, maxit=200))
+               control=list(trace=1, maxit=1000, fnscale = 3000))
 
 # MODEL 4: One combined model with a covariate for time period
 datat4 <- data %>% filter(year>=2005)
@@ -124,8 +122,10 @@ Q4 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat4)
 modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
                center=FALSE,
                covariates=~age_cat + sex + race + education + timevary,
-               control=list(trace=1, maxit=400))
-# Converged but "Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite."
+               control=list(trace=1, maxit=1000,fnscale = 96115))
+# Warning message:
+#   In msm(final_alc_cat ~ year, uniqueID, data = datat4, qmatrix = Q4,  :
+#            Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
 
 # Save all models
 saveRDS(modelt1, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
