@@ -56,7 +56,5 @@ replicated_df$newID <- as.numeric(replicated_df$newID)
 # check that there are no duplicate newIDs for different original IDs
 #test <- replicated_df %>% group_by(newID,year) %>% tally() # Too long to run
 
-install.packages("feather")
-library(feather)
-write_feather(replicated_df, "SIMAH_workplace/alcohol_transitions_psid/psid_data_2005_2021_replicated_for_alc_transitions.feather")
+write_rds(replicated_df, "SIMAH_workplace/alcohol_transitions_psid/psid_data_2005_2021_replicated_for_alc_transitions.rds")
 
