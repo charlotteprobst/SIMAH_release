@@ -3,18 +3,18 @@
 # setting up parallel settings for calibration
 # note that this is for use on HPC across multiple cores 
 # if running locally (which is not suggested) set to 1
-registerDoParallel(10)
+registerDoParallel(8)
 options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 300
+nsamples <- 10
 nreps <- 2
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
-sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
+sampleseeds$seed <- sample(1:1000, nrow(sampleseeds), replace=T)
 
 # maximum number of potential calibration waves
 num_waves <- 1
@@ -39,12 +39,12 @@ for(i in 1:length(education_transitionsList)){
 
 # add the education model to be run to the sampleseeds file 
 edmodels <- list()
-for(i in 1:nreps){
-edmodels[[paste(i)]] <- data.frame(education_model = sample(1:nsamples, replace=F))
+for(i in 1:ceiling(nrow(sampleseeds)/length(education_transitionsList))){
+edmodels[[paste(i)]] <- data.frame(education_model = sample(1:length(education_transitionsList), replace=F))
 }
 edmodels <- edmodels %>% bind_rows()
-sampleseeds$educationmodel <- edmodels$education_model
 
+sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
 
 # read in the targets
 # targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%

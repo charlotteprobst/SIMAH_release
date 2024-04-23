@@ -57,7 +57,7 @@ source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
 while(wave <= num_waves){
   baseorig <- basepop
   Output <- list()
-  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %dopar% {
     print(i)
     # set seed and sample number for current iteration
     samplenum <- as.numeric(sampleseeds$samplenum[i])
@@ -87,11 +87,13 @@ while(wave <= num_waves){
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
   
-  # # calculate the alcohol targets - modifiable
+  # # # calculate the alcohol targets - modifiable
   # targets <- generate_targets_alcohol(brfss)
   # 
-  # # calculate and save implausibility values
-  # implausibility <- calculate_implausibility_alcohol(Output, targets)
+  # output <- summarise_model_alcohol_output(Output)
+  # # 
+  # # # calculate and save implausibility values
+  # implausibility <- calculate_implausibility_alcohol(output, targets)
   # write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   # 
   # # calculate the difference between the old implausibility and new implausibility 
@@ -142,7 +144,7 @@ while(wave <= num_waves){
   # }
   # 
   # prev_mean_implausibility <- new_mean_implausibility
-  # wave <- wave + 1
+  wave <- wave + 1
   # 
   # # save the new TPs and the estimates that will be run in the next wave
   # saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-",wave,".RDS",sep=""))

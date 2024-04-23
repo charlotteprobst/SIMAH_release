@@ -184,9 +184,12 @@ if(updatingalcohol==1){
   print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   basepop <- basepop %>% ungroup() %>% mutate(
+    # agecat = cut(microsim.init.age,
+    #              breaks=c(0,20,25,29,39,49,64,100),
+    #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
     agecat = cut(microsim.init.age,
-                 breaks=c(0,20,25,29,39,49,64,100),
-                 labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+                 breaks=c(0,24,64,100),
+                 labels=c("18-24","25-64","65+")),
     cat = paste(agecat, microsim.init.sex,
                                       microsim.init.race, microsim.init.education,
                                       AlcCAT, sep="_"),

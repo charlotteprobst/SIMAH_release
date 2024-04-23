@@ -164,13 +164,17 @@ Q_allAges  <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded, qmatrix=
 Q_le90 <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded_le90, qmatrix=Q) # When age is continuous 
 
 
+nesarc_expanded$age3 <- cut(nesarc_expanded$age,
+                            breaks=c(0,24,64,100),
+                            labels=c("18-24","25-64","65+"))
 
+nesarc_expanded$race_w1 <- relevel(nesarc_expanded$race_w1, ref="Other, non-Hispanic")
 # MSM 3: All ages **************************************************************************************
 # MSM 3A: Age (3 categories)
 msm3a <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges, 
               center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000),
                   covariates = ~ female_w1 + age3 + edu3 + race_w1)
-        saveRDS(msm3a, paste0(models, "msm3a.RDS")) 
+        saveRDS(msm3a, paste0(models, "msm3a_relevel.RDS")) 
 
    
 # MSM 3B: Age (7 categories)
