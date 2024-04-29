@@ -60,12 +60,13 @@ combo <- expand.grid(agecat = unique(data$age_cat), sex = unique(data$sex), race
 
 model_2005_2010_TPs_detail <- extractTPs_subgroups(model_2005_2010, combo) 
 model_2011_2019_TPs_detail <- extractTPs_subgroups(model_2011_2019, combo)
+model_2019_2021_TPs_detail <- extractTPs_subgroups(model_2019_2021, combo)
 
 # Save results
 write_csv(model_2005_2010_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_TPs_detail.csv")
 write_csv(model_2011_2019_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_TPs_detail.csv")
+write_csv(model_2019_2021_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs_detail.csv")
 
-# CONTINUE FROM HERE
 
 ########################################
 # Hazard ratios

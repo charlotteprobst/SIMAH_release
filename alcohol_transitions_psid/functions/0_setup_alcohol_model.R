@@ -58,7 +58,7 @@ data <- data %>%
   data <- as.data.frame(lapply(data, unlist))
 # data$incomescaled <- as.numeric(scale(data$total_fam_income, center=T)) # income not in current dataset
   data <- data[order(data$uniqueID, data$year),]
-  datat1$final_alc_cat <- factor(datat1$final_alc_cat, levels = c(1, 2, 3, 4))
+  data$final_alc_cat <- factor(data$final_alc_cat, levels = c(1, 2, 3, 4))
   
   return(data)
 }

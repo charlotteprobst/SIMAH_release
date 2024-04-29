@@ -1,7 +1,6 @@
-# script to generate MSM alcohol models using PSID data
+# script to generate MSM model for education for education transitions paper
 library(splitstackshape)
 library(dplyr)
-library(msm)
 library(readr)
 library(tidyr)
 library(readxl)
@@ -9,6 +8,8 @@ library(doParallel)
 library(foreach)
 library(parallel)
 library(readxl)
+devtools::install_github('chjackson/msm')
+library(msm, lib.loc = "C:/Users/cmp21seb/AppData/Local/R/win-library/4.3")
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
@@ -32,14 +33,19 @@ data <- data %>% mutate(sex=factor(sex), sex=ifelse(sex=="female",1,0))
 data <- data %>% drop_na(gpd, education) # 109444
 
 # Drop anyone who is not either a head or who has reported alc via TAS
-# data <- data %>% filter(relationship=="head"|!is.na(AlcCAT_TAS)) # 72,298
+data <- data %>% filter(relationship=="head"|!is.na(AlcCAT_TAS)) # 72,298
 
 # Generate a final alcohol category based on TAS and main survey data
 data <- data %>% mutate(final_alc_cat=if_else(is.na(AlcCAT_TAS), 
                                               AlcCAT, 
                                               AlcCAT_TAS))
 
-saveRDS(data, "SIMAH_workplace/alcohol_transitions_psid/prepped_data_for_markov_alc.rds")
+# Unify sample weights (model can't cope with different weights per year)
+data <- data %>% group_by(uniqueID) %>% mutate(sampleweight = round(mean(individualweight_cross.sectional))) %>% 
+  filter(sampleweight!=0)
+
+# Identify smallest sample weight
+min(data$sampleweight) # 47
 
 ##### Set-up an individual model for each time period
 # NB. Need to prep the data for each different model type using setup_alcohol_model function 
@@ -59,7 +65,7 @@ Q <- rbind(c(0.5, 0.25, 0, 0),
 datat1 <- data %>% filter(year>=2005 & year<=2010) 
 datat1 <- setup_alcohol_model(datat1)
 datat1 <- datat1[order(datat1$uniqueID, datat1$year),] # Order data for msm package
-length(unique(datat1$uniqueID)) # Number of individuals 11,375
+length(unique(datat1$uniqueID)) # Number of individuals 
 # length(unique(datat1$newID)) # Number of replicated individuals (currently not replicating)
 # remove anyone with only one year of data
 datat1 <- datat1 %>% ungroup() %>% group_by(uniqueID) %>% add_tally(name="totalobservations") %>% 
@@ -71,6 +77,7 @@ Q1 <- crudeinits.msm(final_alc_cat~year, subject=uniqueID, qmatrix=Q, data=datat
 modelt1 <- msm(final_alc_cat~year, uniqueID, data=datat1, qmatrix=Q1,
                                    center=FALSE,
                                    covariates=~age_cat + sex + race + education,
+                                   subject.weights=datat1$sampleweight, 
                         control=list(trace=1, maxit=1000, fnscale = 3000000))
 
 # MODEL 2: 2011-2019
@@ -121,8 +128,8 @@ datat4$timevary <- relevel(datat4$timevary, ref = "2005-2010")
 Q4 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat4)
 modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
                center=FALSE,
-               covariates=~timevary,
-               control=list(trace=1, maxit=1000,fnscale = 10000))
+               covariates=~age_cat + sex + race + education + timevary,
+               control=list(trace=1, maxit=1000,fnscale = 96115))
 # Warning message:
 #   In msm(final_alc_cat ~ year, uniqueID, data = datat4, qmatrix = Q4,  :
 #            Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
