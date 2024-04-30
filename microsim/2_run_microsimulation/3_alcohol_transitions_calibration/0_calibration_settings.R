@@ -9,12 +9,12 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 10
+nsamples <- 20
 nreps <- 2
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
-sampleseeds$seed <- sample(1:1000, nrow(sampleseeds), replace=T)
+sampleseeds$seed <- sample(1:2000, nrow(sampleseeds), replace=F)
 
 # maximum number of potential calibration waves
 num_waves <- 1

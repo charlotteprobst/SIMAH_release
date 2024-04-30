@@ -52,6 +52,6 @@ ggplot(subset(compare, microsim.init.sex==sex & AlcCAT==alcoholcat),
         axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + 
   ggtitle(title)
 # save plot 
-ggsave(paste0("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/first_calibration/", sex, alcoholcat, "PSIDmodel.png"),
+ggsave(paste0("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/first_calibration/", sex, alcoholcat, "uninformedbest.png"),
        dpi=300, width=33, height=19, units="cm")
 }

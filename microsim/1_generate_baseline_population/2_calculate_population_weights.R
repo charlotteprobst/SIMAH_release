@@ -15,11 +15,15 @@ library(readxl)
 library(foreign)
 library(splitstackshape)
 
+library(microsimpackage)
+
 options(scipen=999)
 
 ###set working directory to the main folder
 WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 setwd(WorkingDirectory)
+
+source("SIMAH_code/microsim/1_generate_baseline_population/0_IPF_functions.R")
 
 # install microsim package for generating population functions
 
@@ -29,6 +33,8 @@ selected_states <- c("California", "Colorado", "Florida", "Indiana", "Kentucky",
                      "Louisiana", "Massachusetts", "Michigan", "Minnesota", 
                      "Missouri", "New York", "Oregon", "Pennsylvania", 
                      "Tennessee", "Texas", "USA")
+
+selected_states <- "USA"
 
 # read in constraints file - generated in the previous step (1) 
 cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_2023.csv") %>% 
@@ -43,7 +49,7 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_202
 # which years do you want to generate the baseline population for? 
 # default to 2000-2003 (can add or remove years as necessary but be aware there may be missing data for some states with less years)
 # this is also to match with the alcohol targets at baseline that need to be pooled across years
-years <- c(2000:2003)
+years <- c(2000)
 
 # subset the data for these years to minimise computation needed
 brfss <- brfss %>% filter(YEAR %in% years)
@@ -72,12 +78,9 @@ for(i in unique(selected_states)){
 # the above only needs to be re-run when the years / variables etc. need to change
 weights_file <- weights_file %>% bind_rows()
 
-weights_file$State <- weights_file$state
-weights_file$state <- NULL
-
 # join back up with the processed data file 
 processed_data <- left_join(processed_data, weights_file)
 
 # now save a copy of the processed data and associated weights 
 # this means this script does not need to be re-run
-write.csv(processed_data, "SIMAH_workplace/microsim/base_population/brfss_with_weights.csv", row.names=F)
+write.csv(processed_data, "SIMAH_workplace/microsim/base_population/brfss_with_weights_USA.csv", row.names=F)

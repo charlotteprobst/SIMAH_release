@@ -29,13 +29,13 @@ n <- 1000000
 
 # read in the processed data containing the population weights to apply
 # step (2) to generate the weights must have been run at least once before doing this
-data <- read.csv("SIMAH_workplace/microsim/base_population/brfss_with_weights.csv")
+data <- read.csv("SIMAH_workplace/microsim/base_population/brfss_with_weights_USA.csv")
 
 population <- data %>% 
   filter(State==selectedstate) %>% #filter on the state you want to model 
   ungroup() %>% 
   mutate(normalised = weight/sum(weight),
-         new_weights = round(normalised*n)) %>% 
+         new_weights = ceiling(normalised*n)) %>% 
   expandRows("new_weights") %>% 
   sample_n(n)
 
@@ -61,7 +61,7 @@ processed_population <- population %>%
                                "50-54","55-59","60-64","65-69","70-80")))
 
 # save the base population in a sensible location
-write.csv(processed_population, paste0("SIMAH_workplace/microsim/1_input_data/agent_files/", selectedstate, "basepop", n, "V2.csv"), row.names=F)
+write.csv(processed_population, paste0("SIMAH_workplace/microsim/1_input_data/agent_files/", selectedstate, "basepop", n, "V4.csv"), row.names=F)
 
 # # add alcohol categories 
 # processed_population <- code_alcohol_categories(processed_population)

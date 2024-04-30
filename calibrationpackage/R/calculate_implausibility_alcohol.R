@@ -28,7 +28,7 @@ calculate_implausibility_alcohol<- function(data, targets){
   implausibility <- data %>%
     group_by(year, samplenum, microsim.init.sex, microsim.init.race, microsim.init.education, agecat,
              AlcCAT) %>%
-    filter(microsim.init.race!="OTH") %>%
+    # filter(microsim.init.race!="OTH") %>%
     summarise(propsimulation = mean(propsimulation),
               proptarget = mean(proptarget),
               se = mean(se),

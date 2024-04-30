@@ -1,4 +1,4 @@
-TPs <- readRDS(paste0(OutputDirectory, "/transitionsList-1.RDS"))
+TPs <- readRDS(paste0(OutputDirectory, "/transitionsList-1-1.RDS"))
 
 for(i in 1:length(TPs)){
   TPs[[i]]$samplenum <- i
@@ -34,5 +34,5 @@ TPs_new <- TPs %>%
 
 testTPs <- TPs_new %>% 
   filter(agecat=="65+" & sex=="Men" & education=="College" & race=="White") %>%
-  filter(samplenum==249)
+  filter(samplenum==6)
   

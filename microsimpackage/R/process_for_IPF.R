@@ -45,6 +45,24 @@ process_for_IPF <- function(data, selectedstate, variables){
           dplyr::select(all_of(variables))
         selected <- rbind(toreplace, selected)
       }
+      # are there still any missing categories?
+      missing <- selected %>% mutate(sex = as.factor(sex),
+                                     agecat = as.factor(agecat),
+                                     education=as.factor(education),
+                                     race=as.factor(race)) %>%
+        group_by(sex,agecat, education, race, .drop=FALSE) %>%
+        tally() %>%
+        mutate(cat = paste(race, sex, agecat, education, sep="")) %>% ungroup() %>%
+        dplyr::select(cat, n) %>% filter(n==0)
+      missingcats <- unique(missing$cat)
+      # if so borrow from whole US
+      if(length(missingcats>0)){
+        toreplace <- data %>% drop_na() %>%
+          mutate(cat=paste(race,sex,agecat,education,sep="")) %>%
+          filter(cat %in% missingcats) %>% ungroup() %>%
+          dplyr::select(all_of(variables))
+        selected <- rbind(toreplace, selected)
+      }
   }
   # create and ID and make sure any "borrowed" individuals from other states have correct state ID
   id <- 1:nrow(selected)
