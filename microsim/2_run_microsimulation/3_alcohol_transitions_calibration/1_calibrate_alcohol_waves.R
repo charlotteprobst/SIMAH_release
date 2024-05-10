@@ -93,7 +93,7 @@ while(wave <= num_waves){
   # output <- summarise_model_alcohol_output(Output)
   # # 
   # # # calculate and save implausibility values
-  # 
+  # implausibility <- calculate_implausibility_alcohol(output, targets)
   # write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   # 
   # # calculate the difference between the old implausibility and new implausibility 

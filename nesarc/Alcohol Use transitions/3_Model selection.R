@@ -158,6 +158,8 @@ Q <- rbind ( c(0,    0.25,  0,    0),
              c(0.25, 0,     0.25, 0),
              c(0,    0.25,  0,    0.25),
              c(0,    0,     0.25, 0))
+        
+nesarc_expanded <- nesarc_expanded %>% filter(age<=79)
 
 # Specifies initial values
 Q_allAges  <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)      # When age is categorical
@@ -174,7 +176,7 @@ nesarc_expanded$race_w1 <- relevel(nesarc_expanded$race_w1, ref="Other, non-Hisp
 msm3a <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges, 
               center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000),
                   covariates = ~ female_w1 + age3 + edu3 + race_w1)
-        saveRDS(msm3a, paste0(models, "msm3a_relevel.RDS")) 
+        saveRDS(msm3a, paste0(models, "msm3a_relevel_age79.RDS")) 
 
    
 # MSM 3B: Age (7 categories)
