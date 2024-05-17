@@ -36,10 +36,11 @@ calculate_implausibility_alcohol<- function(data, targets){
               # v_o = mean(variance),
               # todo - check implausibility equation in Andrianakis paper
               # should be SE^2?
-              implausibility = abs(propsimulation-proptarget)/sqrt(v_s+se^2)) %>%
-    group_by(samplenum) %>%
-    summarise(implausibility=max(implausibility, na.rm=T)) %>%
-    ungroup() %>%
-    mutate(percentile=ntile(implausibility,100))
+              implausibility = abs(propsimulation-proptarget)/sqrt(v_s+se^2))
+  # %>%
+  #   group_by(samplenum) %>%
+  #   summarise(implausibility=max(implausibility, na.rm=T)) %>%
+  #   ungroup() %>%
+  #   mutate(percentile=ntile(implausibility,100))
   return(implausibility)
 }

@@ -14,6 +14,7 @@ gc()
 names <- Sys.glob(c("SIMAH_workplace/brfss/raw_data/data/*.XPT", 
                     "SIMAH_workplace/brfss/raw_data/data/*.xpt",
                     "SIMAH_workplace/brfss/raw_data/data/*.XPT "))
+names <- names[-c(10:25)]
 dataFiles <- lapply(names, read.xport)
 names(dataFiles) <- names 
 

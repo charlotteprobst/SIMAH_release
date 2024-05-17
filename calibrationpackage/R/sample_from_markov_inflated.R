@@ -3,7 +3,7 @@
 #' @keywords microsimulation markov model
 #' @export
 #' @examples
-sample_from_markov <- function(model, nsamples, inflation, originalsample,inflatedsample){
+sample_from_markov_inflated <- function(model, nsamples, inflation, originalsample,inflatedsample, category){
   estimates <- model$estimates
   covmat <- model$covmat
   # calculate the difference between the original and inflated sample sizes
@@ -23,14 +23,21 @@ sample_from_markov <- function(model, nsamples, inflation, originalsample,inflat
   # now sample from multivariate normal distribution
   samples <- mvrnorm(n=nsamples, estimates, covmat)
 
-  lhs_samples <- randomLHS(nsamples, ncol(samples))
-  #
-  # # Scale samples to the desired range
-  scaled_lhs_samples <- t(apply(lhs_samples, 1, function(x) min(samples) + (max(samples) - min(samples)) * x))
-  #
-  colnames(scaled_lhs_samples) <- colnames(samples)
-  #
-  samples <- scaled_lhs_samples
+  # name the parameters
+  parameters <- expand.grid(transition=1:6,
+                            covariate=names(model$Qmatrices)[1:length(model$Qmatrices)-1])
+  parameters$name <- paste0("transition", parameters$transition, "-", parameters$covariate)
+  colnames(samples) <- parameters$name
+  samples <- data.frame(samples)
+
+  selected_cols <- grep(category, colnames(samples), ignore.case = TRUE, value = TRUE)
+  selected_samples <- samples[selected_cols]
+
+  lhs <- randomLHS(nsamples, length(selected_samples))
+  scaled_lhs <- t(apply(lhs, 1, function(x) min(samples) + (max(samples) - min(samples)) * x))
+  # change racesamples to be a latin hypercube with min and max values
+  samples[selected_cols] <- scaled_lhs
+
   samplenums <- data.frame(samplenum=1:nrow(samples))
   newsamples <- cbind(samplenums, samples)
   return(newsamples)

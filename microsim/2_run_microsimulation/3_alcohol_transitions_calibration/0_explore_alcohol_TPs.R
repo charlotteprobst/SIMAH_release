@@ -1,5 +1,5 @@
-TPs <- readRDS(paste0(OutputDirectory, "/transitionsList-1-1.RDS"))
-
+read_TPs <- function(directory){
+TPs <- readRDS(paste0(directory, "/transitionsList-1.RDS"))
 for(i in 1:length(TPs)){
   TPs[[i]]$samplenum <- i
   TPs[[i]]$probability <- c(0, diff(TPs[[i]]$cumsum))
@@ -9,12 +9,8 @@ for(i in 1:length(TPs)){
 TPs <- do.call(rbind, TPs)
 
 TPs_new <- TPs %>% 
-  mutate(agecat = case_when(grepl("18-20", cat) ~ "18-20",
-                            grepl("21-25", cat) ~ "21-25",
-                            grepl("26-29", cat) ~ "26-29",
-                            grepl("30-39", cat) ~ "30-39",
-                            grepl("40-49", cat) ~ "40-49",
-                            grepl("50-64", cat) ~ "50-64",
+  mutate(agecat = case_when(grepl("18-24", cat) ~ "18-24",
+                            grepl("25-64", cat) ~ "25-64",
                             grepl("65+", cat) ~ "65+"),
          sex = case_when(grepl("_m_", cat) ~ "Men",
                          grepl("_f_", cat) ~ "Women"),
@@ -31,6 +27,9 @@ TPs_new <- TPs %>%
                                grepl("High risk", cat) ~ "High risk")) %>% 
   ungroup() %>% 
   dplyr::select(samplenum, sex, agecat, race, education, StateFrom, StateTo, probability)
+return(TPs_new)
+}
+
 
 testTPs <- TPs_new %>% 
   filter(agecat=="65+" & sex=="Men" & education=="College" & race=="White") %>%

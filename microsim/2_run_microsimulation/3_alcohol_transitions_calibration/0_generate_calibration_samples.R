@@ -13,6 +13,9 @@ inflatedsample <- 2043174
 # first sample from the markov model to get nsamples new estimates
 samples <- sample_from_markov(model, nsamples, inflation=10, originalsample, inflatedsample)
 
+# with selective inflation
+# samples <- sample_from_markov_inflated(model, nsamples, inflation=10, originalsample, inflatedsample, "edu")
+
 # now convert each new sampled estimate into transition probabilities
 #first specify the covariates for the model
 # every age sex race combination
