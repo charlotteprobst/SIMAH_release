@@ -1,5 +1,5 @@
 ####SIMAH OCT 2021 brfss processing - processing the raw data files 
-# BRFSS data 1984- 2020
+# BRFSS data 2000- 2022
 library(foreign)
 library(readr)
 library(dplyr)
@@ -16,13 +16,13 @@ wd <- "C:/Users/cmp21seb/Documents/SIMAH/"
 setwd(wd)
 
 ####read in the joined up data files 
-dataFiles <- readRDS("SIMAH_workplace/brfss/raw_data/data/brfss_full.RDS")
+dataFiles <- readRDS("SIMAH_workplace/brfss/raw_data/data/brfss_full_2022.RDS")
 gc()
 
 # read in R script with the functions
 source("SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
-years <- 1984:2022 
+years <- c(2000:2022) 
 for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
@@ -83,7 +83,7 @@ dataFiles <- lapply(dataFiles, recode_derived_BMI)
 # }
 
 # frequency - drinking days per month
-dataFiles <- lapply(dataFiles, recode_alc_frequency)
+dataFiles <- lapply(dataFiles, recode_alc_frequency) 
 
 # prevalence - note not available in all years but can be derived from quant / freq vars
 dataFiles <- lapply(dataFiles, recode_alc_prevalence)
@@ -133,4 +133,4 @@ dataFilesSubset <- lapply(dataFiles, subset_data)
 #        width=33, height=19, units="cm")
 
 # save an RDS of the processed data
-saveRDS(dataFilesSubset, "SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
+saveRDS(dataFilesSubset, "SIMAH_workplace/brfss/processed_data/brfss_full_2000_2022.RDS")

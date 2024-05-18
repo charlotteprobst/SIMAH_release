@@ -14,13 +14,15 @@ library(splitstackshape)
 library(truncnorm)
 
 # CB laptop directory
-wd <- "~/Google Drive/SIMAH Sheffield/"
+# wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
 # wd <- "G:/My Drive/SIMAH Sheffield/"
+# SB desktop directory
+wd <- "C:/Users/cmp21seb/Documents/SIMAH/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
+data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_2000_2022.RDS")
 gc()
 data <- do.call(rbind, data)
 
