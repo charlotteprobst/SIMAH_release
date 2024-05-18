@@ -289,6 +289,9 @@ mdata_prepped <- inner_join(mdata_prepped, intersections_2009, by = 'intersectio
 eij <- full_grams["residual"][["lev_1_resi_est_Intercept"]]
 constant <- mean(exp(eij))
 
+RP2_var_Intercept <- random_effects[rownames(random_effects) == "RP2_var_Intercept", "random_effects"]
+uj_constant <- exp(0.5*RP2_var_Intercept)
+
 # Estimates including both additive and interaction effects:
 mdata_prepped <- mdata_prepped %>% mutate(
   est = exp(b_cons*Intercept
@@ -319,7 +322,7 @@ mdata_prepped <- mdata_prepped %>% mutate(
                            + b_Multiple_race*`race_6_catsNH Multiple race`
                            + b_med*`education_3_catssome college`
                            + b_high*`education_3_cats4+ years college`
-                           + b_2009*`YEAR2009`)*constant
+                           + b_2009*`YEAR2009`)*uj_constant*constant
 )
 
 # Grams attributable to interaction calculated as the difference between est and estA

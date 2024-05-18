@@ -28,7 +28,7 @@ theme_set(theme_bw(base_size = 12))
 ##### Plots
 
 # Read in data
-plot_data <- readRDS(paste0(outputs,"grams drinkers/results_grams_drinkers.rds"))
+plot_data <- readRDS(paste0(outputs,"grams drinkers/results_grams_drinkers_incl_uj.rds"))
 
 # Prep data for plotting
 plot_data <- plot_data %>%
@@ -79,7 +79,7 @@ female_grams %>%
         legend.position = "bottom") +
   ggtitle("Average daily alcohol consumption by intersectional category, Women")+
   labs(y= "Estimated grams per day")
-ggsave(paste0(outputs,"grams drinkers/plot estimated grams females.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot estimated grams females incl uj.png"), dpi=300, width=33, height=19, units="cm")
 
 # Create a colour blind friendly pallete
 
@@ -105,7 +105,7 @@ male_grams_add_vs_mul <- plot_data %>%
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Men")+
   labs(y= "Estimated grams per day") 
   male_grams_add_vs_mul
-ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
   
 # Plots of additive only versus total estimates
 female_grams_add_vs_mul <- plot_data %>%
@@ -125,7 +125,7 @@ female_grams_add_vs_mul <- plot_data %>%
   theme(strip.background = element_rect(fill = "lightblue")) +
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Women")
 female_grams_add_vs_mul
-ggsave(paste0(outputs,"grams drinkers/plot grams females, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams females, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plot of additive versus total estimates, both genders together
 combined_plot <- plot_data %>%
@@ -146,7 +146,7 @@ combined_plot <- plot_data %>%
         strip.text = element_text(size = 12),
         plot.title = element_text(size = 16)) +
   theme(strip.background = element_rect(fill = "lightblue")) +
-  ggtitle("The influence of interaction effects on estimated alcohol consumption") +
+#  ggtitle("The influence of interaction effects on estimated alcohol consumption") +
   labs(y = "Estimated grams per day", color = "Sex") +
   scale_color_manual(values = c("Men, additive effects only" = "lightblue", "Men, total effects" = "darkblue", "Women, additive effects only" = "orange", "Women, total effects" = "darkred")) +
   guides(color = guide_legend(title = NULL, ncol = 4)) +
@@ -154,7 +154,7 @@ combined_plot <- plot_data %>%
   scale_y_continuous(breaks = seq(0, max(plot_data$esthi), by = 5))
 
 combined_plot
-ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
 
 
 
