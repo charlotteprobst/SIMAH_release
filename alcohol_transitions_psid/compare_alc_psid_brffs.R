@@ -42,7 +42,7 @@ PSID <- PSID %>%
   ))
 
 # Read in (upshifted) BRFSS data to compare to
-brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% 
+brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>% 
   filter(age_var<=80) %>% filter(State=="USA")
 
 # Recategorize age variable into age_cat
@@ -72,17 +72,19 @@ summary <- rbind(summary_psid, summarybrfss)
 
 ggplot(data=summary, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
-  xlim(2005,2021) + # Show only comparable years of data
-  ylim(0,NA) + 
+  scale_x_continuous(limits = c(2005, 2022), breaks = seq(2005, 2022, by = 1), labels = seq(2005, 2022, by = 1)) + 
+  ylim(0, NA) + 
   theme_bw() +
-  facet_grid(rows=vars(sex)) + ylab("mean gpd (in drinkers)") +
-  theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white"))
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd.png",dpi=300, width=33, height=19, units="cm")
+  facet_grid(rows=vars(sex)) + 
+  ylab("mean gpd (in drinkers)") +
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"))
+
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=summary, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
-  xlim(2018,2021) + # Show only COVID period
+  xlim(2018,2022) + # Show only COVID period
   ylim(0,NA) + 
   theme_bw() +
   facet_grid(rows=vars(sex)) + ylab("mean gpd (in drinkers)") +
@@ -105,23 +107,24 @@ summary_2 <- rbind(summary_psid_2, summarybrfss_2)
 
 ggplot(data=summary_2, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
-  xlim(2005,2021) + 
+  scale_x_continuous(limits = c(2005, 2022), breaks = seq(2005, 2022, by = 2), labels = seq(2005, 2022, by = 2)) + 
   ylim(0,NA) + 
   theme_bw() +
   facet_grid(rows=vars(sex), cols=vars(race_eth)) + ylab("mean gpd (in drinkers)") +
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white"))
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd_race_sex.png",dpi=300, width=33, height=19, units="cm")
+        strip.background = element_rect(fill="white"),
+        axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd_race_sex_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=summary_2, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
-  xlim(2018,2021) + 
+  xlim(2018,2022) + 
   ylim(0,NA) + 
   theme_bw() +
   facet_grid(rows=vars(sex), cols=vars(race_eth)) + ylab("mean gpd (in drinkers)") +
   theme(legend.title=element_blank(),
         strip.background = element_rect(fill="white"))
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd_race_sex_COVID.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_gpd_race_sex_COVID_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ## Compare prevalence of drinkers
 summary_prevalence_psid <- PSID %>% group_by(year, sex, race_eth) %>% 
@@ -136,18 +139,19 @@ summarybrfss_prevalence <- brfssorig %>%
 
 summary_prevalence <- rbind(summary_prevalence_psid, summarybrfss_prevalence) %>% 
   mutate(prevalence=round(prevalence,digits=2))
-scaleFUN <- function(x) sprintf("%.2f", x)
+scaleFUN <- function(x) sprintf("%.0f", x)
 
 ggplot(data=summary_prevalence, aes(x=year, y=prevalence, colour=type)) + 
   geom_line() +
-  xlim(2005,2021) +
+  scale_x_continuous(limits = c(2005, 2022), breaks = seq(2005, 2022, by = 2), labels = seq(2005, 2022, by = 2)) + 
   ylim(0,NA) + 
   theme_bw() +
   facet_grid(rows=vars(sex), cols=vars(race_eth)) + ylab("mean prevalence drinkers") +
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white")) + 
+        strip.background = element_rect(fill="white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
   scale_y_continuous(labels=scaleFUN, limits=c(0,NA))
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_prevelance.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_prevelance_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ## Compare by alcohol categories
 
@@ -185,16 +189,17 @@ summary_cat <- rbind(summary_cat_psid, summarybrfss_cat) %>%
 
 ggplot(data=summary_cat, aes(x=year, y=percent, colour=type)) + geom_line() + ylim(0,NA) + 
   theme_bw() +
-  xlim(2005,2021)+
+  scale_x_continuous(limits = c(2005, 2022), breaks = seq(2005, 2022, by = 2), labels = seq(2005, 2022, by = 2)) + 
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white")) +
+        strip.background = element_rect(fill="white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
   facet_grid(cols=vars(final_alc_cat), rows=vars(sex)) + 
   scale_y_continuous(labels=scaleFUN)
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats.png.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_2022.png",dpi=300, width=33, height=19, units="cm")
  
 ggplot(data=summary_cat, aes(x=year, y=percent, colour=type)) + geom_line() + ylim(0,NA) + 
   theme_bw() +
-  xlim(2018,2021)+
+  xlim(2018,2022)+
   theme(legend.title=element_blank(),
         strip.background = element_rect(fill="white")) +
   facet_grid(cols=vars(final_alc_cat), rows=vars(sex)) + 
@@ -234,29 +239,29 @@ summary_cat_race <- rbind(summary_cat_psid_race, summarybrfss_cat_race) %>%
 
 ggplot(data=summary_cat_race, aes(x=year, y=percent, colour=type)) + geom_line() + ylim(0,NA) + 
   theme_bw() +
-  xlim(2005,2021)+
+  xlim(2005,2022)+
   theme(legend.title=element_blank(),
         strip.background = element_rect(fill="white")) +
   facet_grid(cols=vars(final_alc_cat), rows=vars(race_eth)) + 
   scale_y_continuous(labels=scaleFUN)
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=summary_cat_race, aes(x=year, y=percent, colour=type)) + geom_line() + ylim(0,NA) + 
   theme_bw() +
-  xlim(2018,2021)+
+  xlim(2018,2022)+
   theme(legend.title=element_blank(),
         strip.background = element_rect(fill="white")) +
   facet_grid(cols=vars(final_alc_cat), rows=vars(race_eth)) + 
   scale_y_continuous(labels=scaleFUN)
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_COVID.png.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_COVID.png",dpi=300, width=33, height=19, units="cm")
 
 ## BY RACE AND SEX
 summary_cat_psid_race_sex <- PSID %>%
-  drop_na(final_alc_cat) %>%
-  group_by(year, sex, race_eth, final_alc_cat) %>%
+  drop_na(final_alc_cat, age_cat) %>%
+  group_by(year, sex, race_eth, age_cat, final_alc_cat) %>%
   tally() %>%
   ungroup() %>%
-  group_by(year, sex, race_eth) %>%
+  group_by(year, sex, race_eth, age_cat) %>%
   mutate(percent = n / sum(n),
          type = "PSID")
 
@@ -272,10 +277,11 @@ summary_cat_brfss_race_sex <- brfssorig %>%
     sex_recode == "Female" & gramsperday_upshifted > 40 ~ "High risk",
     TRUE ~ NA_character_
   )) %>%
-  group_by(YEAR, sex_recode, race_eth, final_alc_cat) %>%
+  drop_na(final_alc_cat, age_cat) %>%
+  group_by(YEAR, sex_recode, race_eth, age_cat, final_alc_cat) %>%
   summarise(n = n()) %>%
   ungroup() %>%
-  group_by(YEAR, sex_recode, race_eth) %>%
+  group_by(YEAR, sex_recode, race_eth, age_cat) %>%
   mutate(percent = n / sum(n),
          type = "BRFSS") %>%
   ungroup() %>%
@@ -284,31 +290,20 @@ summary_cat_brfss_race_sex <- brfssorig %>%
 
 ## Combine summaries from PSID and BRFSS
 summary_cat_race_sex <- bind_rows(summary_cat_psid_race_sex, summary_cat_brfss_race_sex) %>%
-  mutate(final_alc_cat = factor(final_alc_cat, levels = c("Non-drinker", "Low risk", "Medium risk", "High risk")))
+  mutate(final_alc_cat = factor(final_alc_cat, levels = c("Non-drinker", "Low risk", "Medium risk", "High risk")),
+         percent=percent*100)
 
 ## Plot
 ggplot(data = summary_cat_race_sex, aes(x = year, y = percent, colour = type)) + 
   geom_line() +
-  xlim(2005, 2021) +
+  scale_x_continuous(limits = c(2019, 2021), breaks = seq(2019, 2021, by = 1), labels = seq(2019, 2021, by = 1)) + 
   ylim(0, NA) + 
   theme_bw() +
   theme(legend.title = element_blank(),
-        strip.background = element_rect(fill = "white")) +
-  facet_grid(cols = vars(final_alc_cat), rows = vars(sex, race_eth)) + 
-  scale_y_continuous(labels = scaleFUN)
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_sex.png",dpi=300, width=33, height=19, units="cm")
-
-# COVID period
-ggplot(data = summary_cat_race_sex, aes(x = year, y = percent, colour = type)) + 
-  geom_line() +
-  xlim(2018, 2021) +
-  ylim(0, NA) + 
-  theme_bw() +
-  theme(legend.title = element_blank(),
-        strip.background = element_rect(fill = "white")) +
-  facet_grid(cols = vars(final_alc_cat), rows = vars(sex, race_eth)) + 
-  scale_y_continuous(labels = scaleFUN)
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_sex_COVID.png",dpi=300, width=33, height=19, units="cm")
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(cols = vars(sex, race_eth, age_cat), rows = vars(final_alc_cat), scales = "free_y") 
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/non-replicated/brfss_vs_psid_alc_cats_race_sex_2022.png",dpi=300, width=33, height=19, units="cm")
 
 # Complex comparisson of gpd (comparisson to groups calibrating against)      
 summary_psid_complex <- PSID %>% group_by(year, sex, age_cat, education_cat, race_eth) %>% filter(gpd!=0) %>% 
@@ -332,21 +327,143 @@ summary_complex_F <- summary_complex %>% filter(sex=="female")
 ggplot(data=summary_complex_M, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
   theme_bw() +
-  xlim(2005,2021)+
+  scale_x_continuous(limits = c(2019, 2021), breaks = seq(2019, 2021, by = 1), labels = seq(2019, 2021, by = 1)) + 
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white")) +
+        strip.background = element_rect(fill="white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
   facet_grid(cols=vars(age_cat,education_cat), rows=vars(race_eth)) + 
   scale_y_continuous(labels=scaleFUN) +
   ggtitle("Comparisson of PSID & BRFSS - Males")
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/compare_categories_brfss_psid_complex_male.png",dpi=300, width=33, height=19, units="cm")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/compare_categories_brfss_psid_complex_male_2022.png",dpi=300, width=33, height=19, units="cm")
 
 ggplot(data=summary_complex_F, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
   theme_bw() +
-  xlim(2005,2021)+
+  scale_x_continuous(limits = c(2019, 2021), breaks = seq(2019, 2021, by = 1), labels = seq(2019, 2021, by = 1)) + 
   theme(legend.title=element_blank(),
-        strip.background = element_rect(fill="white")) +
+        strip.background = element_rect(fill="white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
   facet_grid(cols=vars(age_cat,education_cat), rows=vars(race_eth)) + 
   scale_y_continuous(labels=scaleFUN) +
-  ggtitle("Comparisson of PSID & BRFSS - Males")
-ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/compare_categories_brfss_psid_complex_female.png",dpi=300, width=33, height=19, units="cm")
+  ggtitle("Comparisson of PSID & BRFSS - Females")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/compare_categories_brfss_psid_complex_female_2022.png",dpi=300, width=33, height=19, units="cm")
+
+#BY AGE 
+
+# Men
+summary_cat_psid_age_men <- PSID %>% 
+  drop_na(final_alc_cat, age_cat) %>% 
+  filter(sex=="male") %>%
+  group_by(year, age_cat, final_alc_cat) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(year, age_cat) %>% 
+  mutate(percent=n/sum(n), type="PSID")
+
+summary_cat_brfss_age_men <- brfssorig %>%
+  filter(sex_recode=="Male") %>%
+  drop_na(age_cat) %>% 
+  mutate(final_alc_cat = case_when(
+    gramsperday_upshifted == 0 ~ "Non-drinker",
+    sex_recode == "Male" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 40 ~ "Low risk",
+    sex_recode == "Female" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 20 ~ "Low risk",
+    sex_recode == "Male" & gramsperday_upshifted > 40 & gramsperday_upshifted <= 60 ~ "Medium risk",
+    sex_recode == "Female" & gramsperday_upshifted > 20 & gramsperday_upshifted <= 40 ~ "Medium risk",
+    sex_recode == "Male" & gramsperday_upshifted > 60 ~ "High risk",
+    sex_recode == "Female" & gramsperday_upshifted > 40 ~ "High risk",
+    TRUE ~ NA_character_
+  )) %>%
+  group_by(YEAR, age_cat, final_alc_cat) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  group_by(YEAR, age_cat) %>% 
+  mutate(percent = n / sum(n)) %>%
+  ungroup() %>%
+  rename(year = YEAR) %>%
+  mutate(type = "BRFSS")
+
+summary_cat_age_men <- rbind(summary_cat_psid_age_men, summary_cat_brfss_age_men) %>% 
+  mutate(final_alc_cat = factor(final_alc_cat, levels=c("Non-drinker","Low risk","Medium risk","High risk")),
+         percent = percent*100) 
+
+ggplot(data = summary_cat_age_men, aes(x = year, y = percent, colour = type)) + 
+  geom_line() +
+  xlim(2012, 2022) +  theme_bw() +
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Proportion (%)") +
+  facet_grid(cols = vars(age_cat), rows = vars(final_alc_cat), scales = "free_y") + 
+  scale_y_continuous(labels = scaleFUN)+
+  scale_x_continuous(labels = scaleFUN) +
+  ggtitle("Comparisson of PSID & BRFSS by age - Men")
+
+ggplot(data = summary_cat_age_men, aes(x = year, y = percent, colour = type)) + 
+  geom_line() +
+  scale_x_continuous(limits = c(2019, 2021), breaks = c(2019, 2020, 2021), labels = c('19', '20', '21')) + 
+  theme_bw() +
+  ylab("Proportion (%)") +
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white")) +
+  facet_grid(cols = vars(age_cat), rows = vars(final_alc_cat), scales = "free_y") + 
+  ggtitle("Comparisson of PSID & BRFSS by age - Men")
+
+# Women
+summary_cat_psid_age_women <- PSID %>% 
+  drop_na(final_alc_cat, age_cat) %>% 
+  filter(sex=="female") %>%
+  group_by(year, age_cat, final_alc_cat) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(year, age_cat) %>% 
+  mutate(percent=n/sum(n), type="PSID",
+         percent = percent*100)
+
+summary_cat_brfss_age_women <- brfssorig %>%
+  filter(sex_recode=="Female") %>%
+  drop_na(age_cat) %>% 
+  mutate(final_alc_cat = case_when(
+    gramsperday_upshifted == 0 ~ "Non-drinker",
+    sex_recode == "Male" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 40 ~ "Low risk",
+    sex_recode == "Female" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 20 ~ "Low risk",
+    sex_recode == "Male" & gramsperday_upshifted > 40 & gramsperday_upshifted <= 60 ~ "Medium risk",
+    sex_recode == "Female" & gramsperday_upshifted > 20 & gramsperday_upshifted <= 40 ~ "Medium risk",
+    sex_recode == "Male" & gramsperday_upshifted > 60 ~ "High risk",
+    sex_recode == "Female" & gramsperday_upshifted > 40 ~ "High risk",
+    TRUE ~ NA_character_
+  )) %>%
+  group_by(YEAR, age_cat, final_alc_cat) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  group_by(YEAR, age_cat) %>% 
+  mutate(percent = n / sum(n)) %>%
+  ungroup() %>%
+  rename(year = YEAR) %>%
+  mutate(type = "BRFSS",
+         percent = percent*100)
+
+summary_cat_age_women <- rbind(summary_cat_psid_age_women, summary_cat_brfss_age_women) %>% 
+  mutate(final_alc_cat = factor(final_alc_cat, levels=c("Non-drinker","Low risk","Medium risk","High risk")))
+
+ggplot(data = summary_cat_age_women, aes(x = year, y = percent, colour = type)) + 
+  geom_line() +
+  xlim(2012, 2022) +  theme_bw() +
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(cols = vars(age_cat), rows = vars(final_alc_cat), scales = "free_y") + 
+  ylab("Proportion (%)") +
+  scale_y_continuous(labels = scaleFUN)+
+  scale_x_continuous(labels = scaleFUN) +
+  ggtitle("Comparisson of PSID & BRFSS by age - Women")
+
+ggplot(data = summary_cat_age_women, aes(x = year, y = percent, colour = type)) + 
+  geom_line() +
+  scale_x_continuous(limits = c(2019, 2021), breaks = c(2019, 2020, 2021), labels = c('19', '20', '21')) + 
+  theme_bw() +
+  ylab("Proportion (%)") +
+    theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white")) +
+   facet_grid(cols = vars(age_cat), rows = vars(final_alc_cat), scales = "free_y") + 
+  ggtitle("Comparisson of PSID & BRFSS by age - Women")
+
