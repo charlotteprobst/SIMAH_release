@@ -66,5 +66,8 @@ optimisation_wrapper <- function(x,model,targets,variance,maxyear,threshold){
                    update_base_rate,
                    minyear=2000, maxyear=maxyear, output="alcohol",
                    targets, variance,threshold)
+  if(is.null(output)){
+    output <- Inf
+  }
 return(output)
 }

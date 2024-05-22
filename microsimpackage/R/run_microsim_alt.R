@@ -31,7 +31,7 @@ CatSummary <- list()
 # lhs <- as.numeric(lhs)
 # names(lhs) <- names
 for(y in minyear:maxyear){
-print(y)
+# print(y)
 
 # apply policy effects
 if(policy==1 & year_policy>maxyear & y==minyear){
@@ -43,6 +43,39 @@ if(policy==1 & y ==year_policy){
   basepop$microsim.init.alc.gpd <- basepop$microsim.init.alc.gpd - (basepop$microsim.init.alc.gpd*percentreduction)
   basepop <- update_alcohol_cat(basepop)
 }
+
+# calculate implausibility in each year - break if implausibility is over threshold
+  CatSummary[[paste(y)]] <- basepop %>%
+    mutate(agecat = cut(microsim.init.age,
+                        breaks=c(0,24,64,100),
+                        labels=c("18-24","25-64","65+")),
+           microsim.init.education = ifelse(agecat=="18-24" & microsim.init.education=="College","SomeC",
+                                            microsim.init.education),
+           year=y) %>%
+    group_by(year,microsim.init.sex,microsim.init.race,agecat, microsim.init.education,
+             AlcCAT, .drop=FALSE) %>% tally() %>%
+    ungroup() %>%
+    group_by(year,microsim.init.sex,microsim.init.race,agecat, microsim.init.education) %>%
+    mutate(propsimulation=n/sum(n)) %>%
+    dplyr::select(-n) %>%
+    mutate_at(vars(microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT), as.character)
+
+  CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","microsim.init.sex","microsim.init.race",
+                                                                           "agecat","microsim.init.education","AlcCAT"))
+  CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","microsim.init.sex","microsim.init.race",
+                                                                            "agecat","microsim.init.education","AlcCAT"))
+
+  CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2+CatSummary[[paste(y)]]$v_s)
+
+  implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
+
+  if(y>2003 & implausibility>threshold){
+    break
+  }
+
+  if(y==2004){
+    print('survived past 2003')
+  }
 
 # save a population summary
 # PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
@@ -200,33 +233,6 @@ if(updatingalcohol==1){
   basepop <- basepop %>%
     mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
            AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
-
-  # calculate implausibility in each year - break if implausibility is over threshold
-CatSummary[[paste(y)]] <- basepop %>%
-  mutate(agecat = cut(microsim.init.age,
-                      breaks=c(0,24,64,100),
-                      labels=c("18-24","25-64","65+")),
-         year=y) %>%
-           group_by(year,microsim.init.sex,microsim.init.race,agecat, microsim.init.education,
-                    AlcCAT, .drop=FALSE) %>% tally() %>%
-           ungroup() %>%
-           group_by(year,microsim.init.sex,microsim.init.race,agecat, microsim.init.education) %>%
-           mutate(propsimulation=n/sum(n)) %>%
-           dplyr::select(-n) %>%
-           mutate_at(vars(microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT), as.character)
-
-CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","microsim.init.sex","microsim.init.race",
-                                                      "agecat","microsim.init.education","AlcCAT"))
-CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","microsim.init.sex","microsim.init.race",
-                                                     "agecat","microsim.init.education","AlcCAT"))
-
-CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2+CatSummary[[paste(y)]]$v_s)
-
-implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
-
-if(y>2000 & implausibility>threshold){
-  break
-}
 
   # }
   # allocate a numeric gpd for individuals based on model
