@@ -9,10 +9,13 @@ library(survey)     # to accomodate survey weights
 
 
 # Specify the data and output file locations
-data_orig   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC I and II/"
-data_orig3  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC III/"
-data_new    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"
-
+# data_orig   <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC I and II/"
+# data_orig3  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/1_Original data/NESARC III/"
+# data_new    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"
+setwd("~/Google Drive/SIMAH Sheffield")
+data_orig   <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Original data/NESARC I and II/"
+data_orig3  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Original data/NESARC III/"
+data_new    <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"
 
 # Load data 
 nesarc1_orig <- read_dta(paste0(data_orig, "NESARCWave1.dta")) %>% zap_formats() %>% zap_label() %>% zap_labels()

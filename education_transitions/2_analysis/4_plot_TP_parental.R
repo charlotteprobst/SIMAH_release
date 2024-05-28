@@ -30,6 +30,9 @@ t1 <- ggplot(data=subset(probs,Transition=="LEHS->SomeC1" & age==18), aes(x=race
   ggtitle("LEHS -> SomeC1 (18 years old)")
 t1
 
+ggsave("SIMAH_workplace/education_transitions/final_models/Figure2_LEHS.png", t1, dpi=300, width=33, height=19, units="cm")
+
+
 t2 <- ggplot(data=subset(probs,Transition=="SomeC3->College" & age==21), aes(x=racefinal, y=meanprob, fill=as.factor(oneCollegeplus))) + geom_bar(stat="identity", position="dodge", colour="black") + 
   facet_grid(cols=vars(Time), rows=vars(sex)) + geom_errorbar(aes(ymin=min, ymax=max),position="dodge") + 
   theme_bw() + theme(legend.title=element_blank(),
@@ -39,6 +42,9 @@ t2 <- ggplot(data=subset(probs,Transition=="SomeC3->College" & age==21), aes(x=r
   scale_colour_brewer(palette="Set1") + xlab("") + ylab("Transition probability (one year)") + 
   ggtitle("SomeC3 -> College (21 years old)")
 t2
+
+ggsave("SIMAH_workplace/education_transitions/final_models/Figure3_College.png", t2, dpi=300, width=33, height=19, units="cm")
+
 
 # line graphs 
 gap <- probs %>% dplyr::select(-c(min,max)) %>% pivot_wider(names_from=oneCollegeplus, values_from=meanprob) %>% 

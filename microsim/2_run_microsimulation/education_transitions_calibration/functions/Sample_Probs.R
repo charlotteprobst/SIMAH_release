@@ -1,19 +1,17 @@
-Sample_Probs <- function(data, model, nsamples){
+Sample_Probs <- function(model, nsamples, TimePeriod){
   estimates <- model$estimates.t
   covmat <- data.frame(model$covmat)
-  covmat <- covmat*10000
   samples <- mvrnorm(n=nsamples, estimates, covmat)
   x <- model
-  sex <- unique(data$female_wave1.factor)
-  age <- sort(unique(data$age3.factor))
-  educ <- unique(data$edu3.factor)
-  race <- unique(data$race_wave1.factor)
+  sex <- c(0,1)
+  race <- c("white","black","hispanic","other")
+  age <- c("18","19","20","21-25","26+")
   # every age sex race combination
-  combinations <- expand.grid(sex,age,educ,race)
-  names(combinations) <- c("sex","age","educ","race")
+  combinations <- expand.grid(age,sex,race)
+  names(combinations) <- c("age","sex","race")
   combinations <- data.frame(combinations)
   options(digits=3)
-  combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, combinations$educ, sep="_")
+  combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, sep="_")
   # plist <- list()
   # plist <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
   #                                msm.parse.covariates, MatrixExp)
@@ -29,10 +27,12 @@ Sample_Probs <- function(data, model, nsamples){
     allsamples[[paste(k)]]$SampleNum <- k
   }
   allsamples <- do.call(rbind,allsamples)
-  allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo)) %>% 
-    dplyr::select(SampleNum, StateFrom, StateTo, age, sex, race, educ, prob)
+  allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo),
+                                      sex = ifelse(sex==1,"female","male"),
+                                      time = TimePeriod) %>% 
+    dplyr::select(SampleNum, StateFrom, StateTo, time, age, sex, race, prob)
   SampleNum <- 1:nrow(samples)
-  samples <- data.frame(cbind(SampleNum, samples))
+  samples <- data.frame(cbind(SampleNum, TimePeriod, samples))
   list <- list(allsamples, samples)
   return(list)
 }

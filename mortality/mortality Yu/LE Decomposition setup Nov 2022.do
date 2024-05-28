@@ -1,46 +1,45 @@
-// NIH2020 project. 
-// Process mortality data for years 2000 to 2021
-
-/* This do file 
-- reads in the raw mortality data 
-- uses ICD 10 codes to generate cause of death categories
-- aggregates deaths for each category by sociodemographic characteristics
-- redistributes deaths with missing information for education (only applicable when 
-  education is used)
-*/
+//This file sets up the most recent SIMAH LE Decompoisition data after supplement funding 
+//The major change is to 1) use the new AUD definition, 
+//2) redefine liver cirrhosis by adding hepatitis cirrhosis 
+//3) add dementia, drop Alzheimer  
+//Note: the codes are different from codes for SIMAH mortality data 
 
 
-set more off
+*use c:\temp\mort2000.dta, clear 
+*forvalues i = 2001/2020 {
+*	append using c:\temp\mort`i'.dta
+*}
 
-global dir `"C:/Users/marie/Dropbox/NIH2020/SIMAH_workplace/"'
+**save "${dir}/mortality/3_out data/mort_0020_complete.dta", replace
+**save "c:\temp\mort_0020_complete.dta", replace
 
-cd "${dir}/mortality/"
+use "c:\temp\mort_0020_complete.dta", clear 
 
+//the codes are specific for my data 
+//not needed for Charlotte's data 
+drop if age_gp == 999
+drop if age_gp == 17
+recode age_gp 85=80 
+lab drop age_gplab 
 
-use "3_out data/mort_0021_complete.dta", clear
-
-rename race race18 
-gen race = .
-replace race = 1 if race18 == 1
-replace race = 2 if race18 == 2
-replace race = 3 if race18 == 3
-replace race = 4 if race18 == .
-lab var race "Race/ethnicity"
-label define racelab 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
-label values race racelab
-drop race18
+//the codes below doesn't need to run 
+*rename race race18 
+*gen race = .
+*replace race = 1 if race18 == 1
+*replace race = 2 if race18 == 2
+*replace race = 3 if race18 == 3
+*replace race = 4 if race18 == .
+*lab var race "Race/ethnicity"
+*label define racelab 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+*label values race racelab
+*drop race18
 
 drop if age_gp == .
 
-keep icd10 year race sex age_gp edclass R_condition*
+*keep  icd10 year race sex age_gp edclass
+*gen str1 xcode = icd10 
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-// specific causes of death (using icd codes)
-
-/*specific causes of death (using icd codes)
-url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
+   keep icd10 year race sex age_gp edclass R_condition*
 
   // Unintentional injuries: different from SIMAH codes commented out
   gen uij_temp = 1 if inrange(icd10, "V01", "X599") | inrange(icd10, "Y85", "Y869")
@@ -222,8 +221,6 @@ url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
 	generate liver = 1 if inrange(icd10, "K70", "K709") | inrange(icd10, "K73", "K739") ///
 		| inrange(icd10, "K74", "K749")  | inlist(icd10, "K760", "K766") ///
 		| inrange(icd10, "B18", "B189")
-	replace liver = 1 if icd10 == "B171"  | icd10 == "B924" 
-
 	
 
 	// updated AUD 
@@ -410,14 +407,13 @@ url for ICD-10 2019 : https://icd.who.int/browse10/2019/en     */
 	
     tabstat mvacc opioid_poi alc_poi uij sij othj covid19 flu oth_inf heart cancer stroke respirat dementia   ///
 		diabetes kidney liver aud oth_ncd rest, by(year) stat(sum)
-		
-save "3_out data/1_allethn_mortbycause_0021_LE_decomp.dta", replace
+ 
+	save "c:\temp\1_allethn_mortbycause_0020_LE_decomp.dta", replace	
 
-///////////////////////////////////////////////////////////////////////////////
 
-//sum by COD 
-
-use "3_out data/1_allethn_mortbycause_0021_LE_decomp.dta", clear
+	
+	
+use "c:\temp\1_allethn_mortbycause_0020_LE_decomp.dta", clear
 
 keep age_gp sex edclass race year mvacc opioid_poi alc_poi uij sij othj ///
 		covid19 flu oth_inf heart cancer stroke respirat dementia   ///
@@ -456,14 +452,14 @@ bysort age_gp sex edclass race year: egen OTHNCDmort = total(oth_ncd)
 bysort age_gp sex edclass race year: egen RESTmort = total(rest)
 
 by age_gp sex edclass race year, sort: keep if _n==1
+save "c:\temp\2_allethn_sumCOD_0020_LE_decomp.dta", replace
 
-save "3_out data/2_allethn_sumCOD_0021_LE_decomp.dta", replace
 
 //assigning deaths without education information
 //Deaths with missing data on SES were assigned to an education category based 
 //on the proportion in each education group by year, race/ethnicity, sex, age group, and cause of death.
 
-use "3_out data/2_allethn_sumCOD_0021_LE_decomp.dta", clear
+use "c:\temp\2_allethn_sumCOD_0020_LE_decomp.dta", clear
 
 keep year sex age_gp edclass race *mort
 reshape wide Tmort MVACCmort OPIOIDmort ALCPOImort UIJmort SIJmort OTHJmort COVmort FLUmort OTHINFmort ///
@@ -504,6 +500,41 @@ foreach v of varlist Tmort-RESTmort {
 tabstat *mort, stat(sum) by(year) format(%12.0f)
    
 sort year age_gp sex race edclass 
- 
-save "3_out data/allethn_sumCOD_0021_LE_decomp.dta", replace
-outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0021_LE_decomp.csv" , comma replace
+save "c:\temp\allethn_sumCOD_0020_LE_decomp.dta", replace
+cd "I:\Charlotte R01\William Kerr_12-29-2020\stata codes\New Data setup\New Data setup after supplement"
+**outsheet using "${dir}mortality/3_out data/allethn_sumCOD_0020_LE_decomp.csv" , comma replace
+outsheet using "allethn_sumCOD_0020_LE_decomp.csv" , comma replace
+
+//now check the replicated data is exactly the same as Charlott's 
+cd "I:\Charlotte R01\William Kerr_12-29-2020\stata codes\New Data setup\New Data  setup after supplement"
+
+clear
+import delimited allethn_sumCOD_0020_LE_decomp.csv
+
+gen racenum = 1 if race == "White"
+replace racenum = 2 if race == "Black"
+replace racenum = 3 if race == "Hispanic"
+replace racenum = 4 if race == "Other"
+drop race 
+rename racenum race
+
+gen edclassnum = 1 if edclass == "LEHS"
+replace edclassnum = 2 if edclass == "SomeC"
+replace edclassnum = 3 if edclass == "College"
+drop edclass 
+rename edclassnum edclass
+
+foreach v of varlist tmort-restmort {
+	rename `v' `v'_1 
+}
+sort year age_gp sex race edclass 
+merge 1:1 year age_gp sex race edclass using "c:\temp\allethn_sumCOD_0020_LE_decomp.dta"
+
+foreach v of varlist tmort-restmort {
+	gen `v'dif = `v'-`v'_1 
+}
+tabstat tmort-restmort, stat(sum) format(%9.0f) col(stat)
+tabstat tmort_1-restmort_1, stat(sum) format(%9.0f) col(stat)
+
+tabstat tmort-restmort, by(year) stat(sum) format(%9.0f)
+tabstat tmort_1-restmort_1, by(year) stat(sum) format(%9.0f)  

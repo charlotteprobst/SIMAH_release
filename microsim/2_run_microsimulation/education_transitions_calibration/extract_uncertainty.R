@@ -7,7 +7,6 @@ library(tidyr)
 library(MASS)
 
 # how many samples to take from the prior? 
-nsamples <- 10
 
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msm_functions.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/msmparsecovariates.R")
@@ -15,19 +14,13 @@ source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibrat
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/Sample_Probs.R")
 source("SIMAH_code/microsim/2_run_microsimulation/education_transitions_calibration/functions/extract_for_estimates.R")
 
+model1 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt1.RDS")
+model2 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt2.RDS")
+model3 <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_modelt3.RDS")
 
-data <- read_csv("SIMAH_workplace/education_transitions/PSID_reweighted_2019_weight.csv")
-data$racefinal <- ifelse(data$racefinal=="Asian/PI","other",data$racefinal)
-data$racefinal <- ifelse(data$racefinal=="Native","other",data$racefinal)
-
-
-model1 <- readRDS("SIMAH_workplace/education_transitions/educMSM1_tunnelstates.RDS")
-model2 <- readRDS("SIMAH_workplace/education_transitions/educMSM2_tunnelstates.RDS")
-model3 <- readRDS("SIMAH_workplace/education_transitions/educMSM3_tunnelstates.RDS")
-
-Samples1 <- Sample_Probs(data, model1, nsamples, "1999-2005")
-Samples2 <- Sample_Probs(data, model2, nsamples, "2006-2011")
-Samples3 <- Sample_Probs(data, model3, nsamples, "2012-2017")
+Samples1 <- Sample_Probs(model1, nsamples, "1999-2006")
+Samples2 <- Sample_Probs(model2, nsamples, "2007-2013")
+Samples3 <- Sample_Probs(model3, nsamples, "2014-2019")
 
 estimates <- rbind(Samples1[[2]], Samples2[[2]], Samples3[[2]])
 
@@ -42,4 +35,4 @@ for(i in 1:length(unique(estimates$SampleNum))){
     dplyr::select(cat, StateTo, cumsum)
 }
 
-rm(data, model1, model2, model3, Samples1, Samples2, Samples3, probs)
+rm(model1, model2, model3, Samples1, Samples2, Samples3, probs)
