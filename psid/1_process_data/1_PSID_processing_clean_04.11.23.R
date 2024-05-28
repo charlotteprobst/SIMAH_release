@@ -384,7 +384,7 @@ all_race %>% group_by(uniqueID) %>%
   summarise(n_races=n_distinct(final_race_using_priority_order)) %>%
   filter(n_races>1) %>% count()
 
-# Option B. Assign individuals their TAS self-reported race (priority order), if available, otherwise assign race_using_method_hierarchy from main
+# Option B. Assign individuals their TAS self-reported race (method hierarchy), if available, otherwise assign race_using_method_hierarchy from main
 all_race <- all_race %>%
   mutate(final_race_using_method_hierarchy = ifelse(is.na(race_using_priority_order_TAS), race_using_method_hierarchy, race_using_priority_order_TAS)) %>%
   group_by(uniqueID) %>% fill(final_race_using_method_hierarchy, .direction="downup")
@@ -447,6 +447,14 @@ temp <- all_race %>% group_by(final_race_using_priority_order, best_available_ra
 temp <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
 summary_race_using_priority_order_detailed <- temp %>% group_by(final_race_using_priority_order) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
 write.csv(summary_race_using_priority_order_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_priority_order_detailed041123.csv")
+
+temp <- all_race %>% group_by(final_race_using_first_year) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+summary_race_using_first_year <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_first_year, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_first_year041123.csv")
+temp <- all_race %>% group_by(final_race_using_first_year, best_available_race_method) %>% summarise(distinct_individuals = n_distinct(uniqueID))
+temp <- temp %>% ungroup() %>% mutate(percent_of_full_sample = distinct_individuals/sum(distinct_individuals)*100)
+summary_race_using_first_year_detailed <- temp %>% group_by(final_race_using_first_year) %>% mutate(percent_of_race_subgroup = distinct_individuals/sum(distinct_individuals)*100)
+write.csv(summary_race_using_first_year_detailed, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/PSID/Results/Demographics/summary_final_race_using_first_year_detailed041123.csv")
 
 # Final steps of cleaning:
 
