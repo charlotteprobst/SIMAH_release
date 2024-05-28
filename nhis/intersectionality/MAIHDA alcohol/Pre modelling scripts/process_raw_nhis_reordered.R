@@ -1,5 +1,11 @@
-# Set wd
-setwd("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/nhis/intersectionality")
+#### Set up
+
+######################################################################## Set-up
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+code <- "SIMAH_code/nhis/intersectionality/MAIHDA alcohol/"
+inputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/inputs/"
+models <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/models/"
+outputs <- "SIMAH_workplace/nhis/intersectionality/MAIHDA alcohol/outputs/"
 
 # Read in necessary R packages
 library(tidyverse)
@@ -10,21 +16,18 @@ library(ipumsr)     # load in data extracted from IPUMS website
 library(labelled)
 library(mice)
 
-# Clear environment
-rm(list = ls())
-
 # Source required functions
-source("functions/recode_to_NA_all.R")
-source("functions/remove_na.R")
-source("functions/generate_ALCSTAT.R")
-source("functions/assign_grams_alcohol.R")
-source("functions/recode_alc_cats.R")
-source("functions/recode_race_ethnicity.R")
-source("functions/recode_income.R")
-source("functions/recode_education.R")
-source("functions/recode_age.R")
-source("functions/recode_sexorien.R")
-source("functions/recode_cohort.R")
+source(paste0(code,"functions/recode_to_NA_all.R"))
+source(paste0(code,"functions/remove_na.R"))
+source(paste0(code,"functions/generate_ALCSTAT.R"))
+source(paste0(code,"functions/assign_grams_alcohol.R"))
+source(paste0(code,"functions/recode_alc_cats.R"))
+source(paste0(code,"functions/recode_race_ethnicity.R"))
+source(paste0(code,"functions/recode_income.R"))
+source(paste0(code,"functions/recode_education.R"))
+source(paste0(code,"functions/recode_age.R"))
+source(paste0(code,"functions/recode_sexorien.R"))
+source(paste0(code,"functions/recode_cohort.R"))
 
 # Set default theme for plots:
 theme_set(theme_bw(base_size = 12))
@@ -32,60 +35,61 @@ theme_set(theme_bw(base_size = 12))
 # Bias towards non scientific notation
 options(scipen = 100)
 
-# Read in data extracted from IPUMS:
-ddi <- read_ipums_ddi("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/raw_data/nhis_00005.xml")
-data <- read_ipums_micro(ddi)
+#### Initial read in of raw data from IPUMS website
 #(Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Natalie Del Ponte and Pat Convey. IPUMS Health Surveys: National Health Interview Survey, Version 7.1 [dataset]. Minneapolis, MN: IPUMS, 2021). Available at: https://doi.org/10.18128/D070.V7.1):
+ddi <- read_ipums_ddi(paste0(inputs, "/raw_data/nhis_00005.xml"))
+data <- read_ipums_micro(ddi)
 
-# Exclude those aged <18 as not asked about alcohol; exclude years 2019 and 2020 as missing critical info (No alc Qs in 2019; No ALC5UPYR in 2020; No EDUC & Income in 2019/20)
+# Exclude years after 2018 as Qs not asked in 2019 and drinking likely to have changed in 2020 due to pandemic
+# No alc Qs in 2019; No ALC5UPYR in 2020)
 nhis_subset <- data %>%
       dplyr::select(YEAR, INTERVWMO, INTERVWYR, NHISPID, PERWEIGHT, SAMPWEIGHT, AGE, BIRTHYR, SEX, SEXORIEN, EDUCREC2, RACENEW, HISPYN, USBORN, CITIZEN, INCFAM97ON2, starts_with("ALC"), starts_with("MORT"), SMOKFREQNOW) %>%
- filter(AGE >=18) %>%
- filter(YEAR <=2018)  # n= 1,298,461
- 
-# Exclude individuals not in the adult sample (i.e. those with alc questions Not In Universe)
+ filter(YEAR <=2018)  # n= 1762659
+
+# Exclude individuals with alc questions Not In Universe (Universe = Sample adults aged 18+)
  nhis_subset <- nhis_subset %>%
-    filter(ALCSTAT1 != 0)
+    filter(ALCSTAT1 != 0) # 572339
  
 # Create data dictionary for reference
- dictionary <- labelled::generate_dictionary(nhis_subset)
+dictionary <- labelled::generate_dictionary(nhis_subset)
  
 # Zap labels from the dataframe to facilitate data manipulation 
 nhis_subset <- nhis_subset %>% zap_formats() %>% zap_labels()
  
 # Save the subset data
-saveRDS(nhis_subset, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
+saveRDS(nhis_subset, paste0(inputs, "nhis_subset.RDS"))
 
 ######### START FROM HERE IF PREVIOUSLY DOWNLOADED AND SAVED RAW IPUMS DATA
 
 # Read in the subset data
-nhis_subset <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_subset.RDS")
-
-# Look at feasibility of sample weights
-sum(nhis_subset$SAMPWEIGHT) # v large sample if using weights
-min(nhis_subset$SAMPWEIGHT) # could divide by 10 to make more manageable
+nhis_subset <- readRDS(paste0(inputs,"nhis_subset.RDS"))
 
 # Convert all types of NA to be consistent i.e. convert 'refused', 'not ascertained', 'don't know', 'inconsistent' and 'NIU' to NA
 nhis_subset_converted_NA <- recode_to_NA_all(nhis_subset)
 
-## Recategorise age, race, sexual orientation, income, education and birth cohort
+# Drop individuals aged <21
+nhis_21 <- nhis_subset_converted_NA %>% filter(AGE>=21) # 550,979
 
-nhis_subset_age <- recode_age(nhis_subset_converted_NA)
+# Recode race into 6 categories
+nhis_subset_race <- recode_race_ethnicity_all(nhis_21)
+
+# Keep only the 6 selected race and ethnicity groups
+nhis_subset_race_6 <- nhis_subset_race %>% filter(!is.na(race_6_cats)) # 550,183
+
+#Recode age
+nhis_subset_age <- recode_age(nhis_subset_race_6)
 nhis_subset_age$age_3_cats <- factor(nhis_subset_age$age_3_cats,
                                                  levels = c(1,2,3),
                                                  labels = c("18-24", "25-69", "70+"))
 nhis_subset_age$age_diaz <- factor(nhis_subset_age$age_diaz,
                                                    levels = c(0,1,2,3),
                                                    labels = c("18-20", "21-24", "25-59","60+"))
+# Drop individuals aged <21
+nhis_21 <- nhis_subset_age %>% filter(AGE>=21) # 550,183
 
-nhis_subset_race <- recode_race_ethnicity(nhis_subset_age)
-nhis_subset_race <- recode_race_ethnicity_all(nhis_subset_race)
+## Recategorise age, sexual orientation, income, education and birth cohort
 
-nhis_subset_race$race_5_cats <- factor(nhis_subset_race$race_5_cats,
-                    levels = c(1,2,3,4,5),
-                    labels = c("Non-Hispanic White", "Non-Hispanic Black/African American", "Non-Hispanic Asian", "Non-Hispanic Other", "Hispanic"))
-
-nhis_subset_sexorien <- recode_sexorien(nhis_subset_race)
+nhis_subset_sexorien <- recode_sexorien(nhis_subset_age)
 nhis_subset_sexorien$SEXORIEN <- factor(nhis_subset_sexorien$SEXORIEN,
                               levels = c(1,2),
                               labels = c("Heterosexual", "Homosexual/bisexual/something else"))
@@ -130,7 +134,7 @@ nhis_subset_recoded <- nhis_subset_decade
 
 # Review demographics of the sample adult subset (so can compare to overall population demographics)
 sample_adults_by_sex_race_age <- nhis_subset_recoded %>% 
-  count(SEX, age_3_cats, race_5_cats) %>%
+  count(SEX, age_3_cats, race_6_cats) %>%
   mutate(percent = n/sum(n)*100) %>%
   group_by(SEX) %>%
   arrange(desc(percent), .by_group = TRUE)
@@ -139,7 +143,7 @@ sample_adults_by_sex_race_age <- nhis_subset_recoded %>%
 
 # Overall
 nhis_subset_recoded %>%
-  dplyr::select(ALCSTAT1, age_3_cats, race_5_cats, SEX, education_3_cats, income) %>%
+  dplyr::select(ALCSTAT1, age_3_cats, race_6_cats, SEX, education_3_cats, income) %>%
   md.pattern(rotate.names = TRUE)
 
 # BY SEX
@@ -153,7 +157,7 @@ missing_data_sex <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_age = (Age_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100,
@@ -175,7 +179,7 @@ missing_data_age <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_edu = (Educ_NA/total_pop)*100, 
             perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
@@ -188,7 +192,7 @@ missing_data_age <- nhis_subset_recoded %>%
 
 # BY RACE
 missing_data_race <- nhis_subset_recoded %>% 
-  group_by(race_5_cats) %>%
+  group_by(race_6_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
             Age_NA = sum(is.na(AGE)), 
@@ -204,11 +208,11 @@ missing_data_race <- nhis_subset_recoded %>%
             perc_missing_income = (Income_NA/total_pop)*100,
             perc_missing_Alc_status = (Alc_status_NA/total_pop)*100,
             perc_missing_birth_year = (birth_year_NA/total_pop)*100) %>%
-  dplyr::select(race_5_cats, perc_missing_age, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_Alc_status) %>%
+  dplyr::select(race_6_cats, perc_missing_age, perc_missing_birth_year, perc_missing_income, perc_missing_edu, perc_missing_sex_orien, perc_missing_Alc_status) %>%
   unique()
 
 # BY SES
-nhis_subset_recoded %>% 
+missing_data_ses <- nhis_subset_recoded %>% 
   group_by(education_5_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
@@ -217,7 +221,7 @@ nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_age = (Age_NA/total_pop)*100,
             perc_missing_sex_orien = (Sex_orien_NA/total_pop)*100,
@@ -239,7 +243,7 @@ missing_data_year <- nhis_subset_recoded %>%
             Income_NA = sum(is.na(income)),
             Alc_status_NA = sum(is.na(ALCSTAT1)),
             birth_year_NA = sum(is.na(birth_year)),
-            race_NA = sum(is.na(race_5_cats)),
+            race_NA = sum(is.na(race_6_cats)),
             # Calculate percentages for variables with some missing data:
             perc_missing_edu = (Educ_NA/total_pop)*100, 
             perc_missing_age = (Age_NA/total_pop)*100,
@@ -252,9 +256,9 @@ missing_data_year <- nhis_subset_recoded %>%
   unique()
 
 ## Review missing consumption patterns data for drinkers:
-nhis_subset_recoded %>% 
+drinkers_missing_consumption <- nhis_subset_recoded %>% 
   filter(ALCSTAT1==3) %>% 
-  group_by(SEX, age_3_cats, race_5_cats, education_3_cats) %>%
+  group_by(SEX, age_3_cats, race_6_cats, education_3_cats) %>%
   mutate(n=1) %>%
   summarise(total_pop = sum(n), 
             ALC_AMT_NA = sum(is.na(ALCAMT)),
@@ -267,8 +271,7 @@ nhis_subset_recoded %>%
 
 ## Drop individuals missing essential data (education & alc status)
 edu_variables <- c("education_3_cats", "education_4_cats", "education_5_cats")
-nhis_subset_dropped_edu_na <- remove_na(nhis_subset_recoded, all_of(edu_variables))
-
+nhis_subset_dropped_edu_na <- remove_na(nhis_subset_recoded, all_of(edu_variables)) # 545,938
 nhis_subset_dropped_alcstat_na <- remove_na(nhis_subset_dropped_edu_na, "ALCSTAT1")
 
 ## Drop individuals who drink, but who are missing information on consumption patterns
@@ -348,43 +351,89 @@ nhis_alc_clean <- data_with_inconsistancies %>% filter(inconsistent_alc==0)
 nhis_alc_clean <- nhis_alc_clean %>%
     mutate(alc_daily_g_capped_200 = if_else(alc_daily_g > 200, 200, alc_daily_g))
 
+# Check face validity of estimate:
+mean(nhis_alc_clean$alc_daily_g) # 5
+median(nhis_alc_clean$alc_daily_g) # 0.3
+mean(nhis_alc_clean$alc_daily_g_capped_200) # 4.9
+median(nhis_alc_clean$alc_daily_g_capped_200) # 0.3
+
+# Check raw means by intersections
+raw_means_per_group <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(alc_daily_g)) # max 26 grams
+
+raw_means_per_group_capped <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(alc_daily_g_capped_200)) # max 26 grams
+
 ggplot(nhis_alc_clean, aes(x=alc_daily_g_capped_200), y) + 
-  geom_histogram(bins=400) + 
-  xlim(0,201) + 
-  ylim(0,30000) + 
+  geom_histogram() + 
   xlab("Daily grams of alcohol") +
   ylab("Frequency") +
-ggtitle("Distribution of daily grams alcohol, capped, all sample adults")
+ggtitle("Raw distribution of daily grams alcohol, capped, all sample adults")
+ggsave(paste0(outputs,"analytic sample/raw_distribution_daily_grams_full_sample.png"), dpi=300, width=33, height=19, units="cm")
 
 ## TRANSFORM ALC DAILY GRAMS
 
 # Consider data transformation for alc daily grams
 nhis_alc_clean <- nhis_alc_clean %>% 
   mutate(new_grams = alc_daily_g_capped_200 + 0.02)# add half of the smallest grams value (for drinkers) to zero values
+# Check new variable
+mean_new_grams <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(new_grams)) # maximum mean is 26.07 grams
+
 # Check recommended lambda with boxcox
 b <- MASS::boxcox(lm(nhis_alc_clean$new_grams ~ 1))
 lambda <- b$x[which.max(b$y)] # -0.06
 lambda2 <- forecast::BoxCox.lambda(nhis_alc_clean$new_grams)  # -0.07
-# As both suggested lambda are close to 0, log transformation is appropriate
+
+# As both suggested lambda are close to 0, log transform:
 nhis_alc_clean$capped_daily_grams_log <- log(nhis_alc_clean$new_grams)
+# Check new variable
+mean_log_grams <- nhis_alc_clean %>% 
+  group_by(SEX, age_diaz, race_6_cats, education_3_cats) %>% 
+  summarise(mean = mean(capped_daily_grams_log))
+
 # Distribution plot 
-ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram(bins=200) + 
+ggplot(nhis_alc_clean, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
   ggtitle("Distribution of estimated daily grams post transformation, full sample")+ 
   xlab("Daily grams of alcohol, post transformation") +
   ylab("Frequency")
+ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_full_sample.png"), dpi=300, width=33, height=19, units="cm")
 
 ## SAVE CLEANED DATA
 
 # Save full cleaned data
-saveRDS(nhis_alc_clean, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_full_sample.RDS")
+saveRDS(nhis_alc_clean, paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 
 # Save subset of drinkers only 
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>%
-  saveRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.RDS")
+nhis_alc_clean_drinkers <- nhis_alc_clean %>%
+  filter(ALCSTAT1=="Current drinker") 
 
-# Save as csv
-nhis_alc_clean %>%
-  filter(ALCSTAT1=="Current drinker") %>% 
-   write_csv("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/nhis_alc_clean_drinkers_only.csv")
+saveRDS(nhis_alc_clean_drinkers, paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
 
+## READ IN CLEANED DATA
+nhis_alc_clean <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
+nhis_alc_clean_drinkers <- readRDS(paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
+
+# View the analytic sample size if sample weights were used
+sum(nhis_alc_clean_drinkers$SAMPWEIGHT) # v large sample if using weights
+
+# View raw and transformed distributions for drinkers only
+
+ggplot(nhis_alc_clean_drinkers, aes(x=alc_daily_g_capped_200), y) + 
+  geom_histogram() + 
+  ylim(0, 100000)+
+  xlab("Daily grams of alcohol") +
+  ylab("Frequency") +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16))
+ggsave(paste0(outputs,"Cleaned tables for grams manuscript/Supplementary tables & figures/SF1. Raw distribution of daily grams.png"), dpi=300, width=33, height=19, units="cm")
+
+ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
+  xlab("Daily grams of alcohol, post transformation") +
+  ylab("Frequency")+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16))
+ggsave(paste0(outputs,"Cleaned tables for grams manuscript/Supplementary tables & figures/SF2. Log-transformed distribution of daily grams.png"), dpi=300, width=33, height=19, units="cm")

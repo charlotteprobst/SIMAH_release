@@ -3,7 +3,7 @@
 # Axelsson Fisk, S., Mulinari, S., Wemrell, M., Leckie, G., Perez Vicente, R., Merlo, J. Chronic Obstructive Pulmonary Disease in Sweden: an intersectional multilevel analysis of individual heterogeneity and discriminatory accuracy
 
 # MAIN ANALYSIS
-# 6 race cats (White, Black, Hispanic White, AI/AN, Asian, Multiple race)
+# 6 race cats (White, Black, Hispanic, AI/AN, Asian, Multiple race)
 # 3 age cats (21-24; 25-59; 60+)
 # 2 gender cats 
 # 3 education cats
@@ -40,63 +40,25 @@ data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersec
 # Drop individuals age <21
 data_0 <- data %>% filter(age_diaz!="18-20")
 
-# Generate new race category variable
+# Keep only the 6 selected race and ethnicity groups
+data_1 <- data_0 %>% filter(!is.na(race_6_cats))
 
-# review group sizes and raw consumption estimates by race and ethnicity
-review_groups <- data_0 %>% group_by(race_ethnicity) %>% (count)
-review_grams <- data_0 %>% group_by(race_ethnicity) %>% summarise(median=median(alc_daily_g_capped_200), IQR=IQR(alc_daily_g_capped_200)) %>% arrange(desc(median))
-review <- inner_join(review_groups, review_grams)
-
-# Largest groups:
-# 1 Non-hispanic, White only
-# 8 Hispanic, White only
-# 2 Non-hispanic, Black/African American only
-# 4 Non-hispanic, Asian only
-# 7 Non-hispanic, Multiple race
-# 12 Hispanic, Other race 
-#	3 American Indian/Alaska Native only
-
-# Keep 7 most populous race only
-data_1 <- data_0 %>% filter(race_ethnicity==1|race_ethnicity==8|race_ethnicity==2|race_ethnicity==4|
-                                             race_ethnicity==7|race_ethnicity==12|race_ethnicity==3) 
-
-# Check group sizes by intersections based on 7 race categories & new age cats
+# Check intersectional group sizes
 group_sizes <- data_1 %>% 
-  group_by(SEX, race_ethnicity, education_3_cats, age_diaz) %>% 
-  mutate(intersections = cur_group_id())%>%
-  group_by(intersections) %>%
-  mutate(count=n())%>% 
-  distinct(intersections, .keep_all = TRUE)
-sum(group_sizes$count <= 20) 
-# 8 groups with n<20.  6 of these are Hispanic, other, therefore drop this group and regenerate intersections.
-
-data_2 <- data_1 %>% filter(race_ethnicity!=12)
-
-# Convert race and ethnicity from numeric to categorical variable
-data_2$race_6_cats <- factor(data_2$race_ethnicity,
-                                    levels = c(1,8,2,4,7,3),
-                                    labels = c("White", "Hispanic White", 
-                                               "Black", "Asian", 
-                                               "Multiple race", "AI/AN"))
-
-# Check group sizes by intersections based on 6 race categories and new age cats
-temp <- data_2 %>% 
   group_by(SEX, race_6_cats, education_3_cats, age_diaz) %>% 
   mutate(intersections = cur_group_id())%>%
   group_by(intersections) %>%
-  mutate(count=n())
-
-group_sizes_6_race <- temp %>% distinct(intersections, .keep_all = TRUE)
-sum(group_sizes_6_race$count <= 20) # 2 groups with n<=20
+  mutate(count=n()) %>% distinct(intersections, .keep_all = TRUE)
+sum(group_sizes$count <= 20) # 2 groups with n<=20
 
 # Generate a binary HED variable
-data_3 <- data_2 %>%
+data_2 <- data_1 %>%
   mutate(HED =
            case_when(ALC5UPYR >= 1 ~ 1,
                      ALC5UPYR == 0 ~ 0)) 
 
 # Generate intersections
-data_4 <- data_3 %>% 
+data_3 <- data_2 %>% 
   group_by(SEX, race_6_cats, education_3_cats, age_diaz) %>% 
   mutate(intersections = cur_group_id()) %>%
   mutate(intersectional_names = as.character(paste(SEX, age_diaz, race_6_cats, education_3_cats))) %>%
@@ -109,12 +71,12 @@ data_4 <- data_3 %>%
   ungroup() 
 
 # Subset data to keep only the variables of interest
-data_5 <- data_4 %>%
+data_4 <- data_3 %>%
   dplyr::select(intersections, intersectional_names, NHISPID, ALCSTAT1, HED, numerator, denominator, proportion, 
                 age_diaz, SEX, race_6_cats, education_3_cats, YEAR)
 
 # Generate a summary table showing the proportion of HEDs by intersection
-summary_table <- data_5 %>%
+summary_table <- data_4 %>%
   filter(HED==1) %>%
   dplyr::select(-c(ALCSTAT1)) %>%
   distinct(intersections, .keep_all = TRUE)
@@ -126,7 +88,7 @@ summary_table %>%
   distinct() # Nil	
 
 # Save
-saveRDS(data_5, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
+saveRDS(data_4, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
 
 ###################################################################### MODELLING
 
@@ -134,6 +96,18 @@ saveRDS(data_5, "SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec Au
 
 # Read in the data
 model_data <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/new spec August 2023/HED/hed_data_pre_maihda_main.rds")
+
+# count number of HEDs and calculate proportion of sample that are HEDs
+model_data %>% count(HED==1)
+model_data %>%
+  summarise(proportion_hed = mean(HED, na.rm = TRUE)*100) # 20.7
+
+# Generate reference table with intersectional names & proportion of observed HED per intersection
+intersections_reference <- model_data %>%
+  group_by(intersectional_names) %>%
+  mutate(Observed_prop_HED = mean(HED, na.rm = TRUE),
+         count=n()) %>%
+  distinct(intersections, intersectional_names, count, Observed_prop_HED)
 
 # Prep data for use with Mlwin
 model_data <- model_data %>%
@@ -143,10 +117,6 @@ model_data <- model_data %>%
 model_data$age_diaz <- droplevels(model_data$age_diaz)
 
 model_data$YEAR <- as.factor(model_data$YEAR)
-
-# Generate reference table with intersectional names
-intersections_reference <- model_data %>%
-  distinct(intersections, intersectional_names)
 
 # null model
 (null_HED <- runMLwiN(logit(HED) ~ 1 + YEAR +
@@ -168,14 +138,14 @@ intersections_reference <- model_data %>%
                                                         resi.store=TRUE))))                                           
 
 # save the model objects
-saveRDS(null_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/HED/null_HED_MAIN.rds")
-saveRDS(full_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/HED/full_HED_MAIN.rds")
+saveRDS(null_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_MAIN.rds")
+saveRDS(full_HED, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_MAIN.rds")
 
 ####################################################################### ANALYSIS
 
 # read in the model objects
-null_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/HED/null_HED_MAIN.rds")
-full_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/models/new spec August 2023/HED/full_HED_MAIN.rds")
+null_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/null_HED_MAIN.rds")
+full_HED <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/full_HED_MAIN.rds")
 
 
 ##### PRODUCE A TABLE OF MODEL COEFFICIENTS 
@@ -204,15 +174,15 @@ rownames(coefs_full) <- c("intercept_FE_2","female","age 25-59", "age 60+",
                                "strata_RE_2", "RP1_var_bcons_1")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/HED model coefficients and variance_MAIN.rds")
-write.csv(coefs_table,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/HED model coefficients and variance_MAIN.csv") 
+saveRDS(coefs_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_MAIN.rds")
+write.csv(coefs_table,"C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/HED model coefficients and variance_MAIN.csv") 
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_HED_null <- print(VPC <- null_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + null_HED["RP"][["RP2_var_Intercept"]]))
 VPC_full_HED <- print(VPC <- full_HED["RP"][["RP2_var_Intercept"]]/(pi^2/3 + full_HED["RP"][["RP2_var_Intercept"]]))
 VPC_table <- data.frame(Model = c("null", "main effects"),
                          VPC = c(VPC_HED_null, VPC_full_HED))
-write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/hed_VPC_table_MAIN.csv")
+write.csv(VPC_table, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/hed_VPC_table_MAIN.csv")
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -241,11 +211,11 @@ mb_prepped <- dplyr::rename(mb_prepped,
                       b_female = "FP_SEXFemale",
                       b_adult = "FP_age_diaz25-59",
                       b_older_adult = "FP_age_diaz60+",
-                      b_Black = "FP_race_6_catsBlack",
-                      b_Asian = "FP_race_6_catsAsian",
-                      b_AI_AN = "FP_race_6_catsAI/AN",
-                      b_Hispanic = "FP_race_6_catsHispanic White",
-                      b_Multiple_race = "FP_race_6_catsMultiple race",
+                      b_Black = "FP_race_6_catsNH Black",
+                      b_Asian = "FP_race_6_catsNH Asian",
+                      b_AI_AN = "FP_race_6_catsNH AI/AN",
+                      b_Hispanic = "FP_race_6_catsHispanic",
+                      b_Multiple_race = "FP_race_6_catsNH Multiple race",
                       b_med = "FP_education_3_catssome college",
                       b_high = "FP_education_3_cats4+ years college",
                       b_2001 = "FP_YEAR2001", 
@@ -298,31 +268,14 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + b_female*SEXFemale
                     + b_adult*`age_diaz25-59`
                     + b_older_adult*`age_diaz60+`  
-                    + b_Hispanic*`race_6_catsHispanic White`
-                    + b_Asian*`race_6_catsAsian`
-                    + b_AI_AN*`race_6_catsAI/AN`
-                    + b_Black*`race_6_catsBlack`
-                    + b_Multiple_race*`race_6_catsMultiple race`
+                    + b_Hispanic*`race_6_catsHispanic`
+                    + b_Asian*`race_6_catsNH Asian`
+                    + b_AI_AN*`race_6_catsNH AI/AN`
+                    + b_Black*`race_6_catsNH Black`
+                    + b_Multiple_race*`race_6_catsNH Multiple race`
                     + b_med*`education_3_catssome college`
                     + b_high*`education_3_cats4+ years college`
-                    + b_2001*`YEAR2001` 
-                    + b_2002*`YEAR2002`
-                    + b_2003*`YEAR2003`
-                    + b_2004*`YEAR2004`
-                    + b_2005*`YEAR2005`
-                    + b_2006*`YEAR2006`
-                    + b_2007*`YEAR2007`
-                    + b_2008*`YEAR2008`
                     + b_2009*`YEAR2009`
-                    + b_2010*`YEAR2010`
-                    + b_2011*`YEAR2011`
-                    + b_2012*`YEAR2012`
-                    + b_2013*`YEAR2013`
-                    + b_2014*`YEAR2014`
-                    + b_2015*`YEAR2015`
-                    + b_2016*`YEAR2016`
-                    + b_2017*`YEAR2017`
-                    + b_2018*`YEAR2018`
                     + u)
 )
 
@@ -332,31 +285,14 @@ mdata_prepped <- mdata_prepped %>% mutate(
                     + b_female*SEXFemale
                     + b_adult*`age_diaz25-59`
                     + b_older_adult*`age_diaz60+`  
-                    + b_Hispanic*`race_6_catsHispanic White`
-                    + b_Asian*`race_6_catsAsian`
-                    + b_AI_AN*`race_6_catsAI/AN`
-                    + b_Black*`race_6_catsBlack`
-                    + b_Multiple_race*`race_6_catsMultiple race`
+                    + b_Hispanic*`race_6_catsHispanic`
+                    + b_Asian*`race_6_catsNH Asian`
+                    + b_AI_AN*`race_6_catsNH AI/AN`
+                    + b_Black*`race_6_catsNH Black`
+                    + b_Multiple_race*`race_6_catsNH Multiple race`
                     + b_med*`education_3_catssome college`
                     + b_high*`education_3_cats4+ years college`
-                    + b_2001*`YEAR2001` 
-                    + b_2002*`YEAR2002`
-                    + b_2003*`YEAR2003`
-                    + b_2004*`YEAR2004`
-                    + b_2005*`YEAR2005`
-                    + b_2006*`YEAR2006`
-                    + b_2007*`YEAR2007`
-                    + b_2008*`YEAR2008`
-                    + b_2009*`YEAR2009`
-                    + b_2010*`YEAR2010`
-                    + b_2011*`YEAR2011`
-                    + b_2012*`YEAR2012`
-                    + b_2013*`YEAR2013`
-                    + b_2014*`YEAR2014`
-                    + b_2015*`YEAR2015`
-                    + b_2016*`YEAR2016`
-                    + b_2017*`YEAR2017`
-                    + b_2018*`YEAR2018`)
+                    + b_2009*`YEAR2009`)
 )
 
 # Percentage calculated as the difference between p and pA
@@ -385,10 +321,10 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_results_MAIN.rds")
+saveRDS(mdata_results, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_HED_MAIN.rds")
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_results_MAIN.rds")
+mdata_results <- readRDS("C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_results_HED_MAIN.rds")
 
 # Summarise intersectional groups with the highest and lowest proportions of HEDs
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(pmn, n = 5) %>% 
@@ -397,7 +333,7 @@ mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(pmn, n = 5) %>%
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_5_estimates_MAIN.csv")
+write.csv(mdata_overall, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_estimates_HED_MAIN.csv")
 
 # Summarise which intersectional groups have the largest differences in proportions,
 # when comparing additive only estimates vs estimates which include interaction effects
@@ -407,4 +343,13 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(pBmn, n = 5)
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/results tables/new spec August 2023/HED/mdata_5_interactions_MAIN.csv")
+write.csv(mdata_interactions, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/mdata_5_interactions_HED_MAIN.csv")
+
+# Generate a table comparing the observed & predicted proportion of heavy drinkers:
+obs_vs_est <- merge(summary_table, mdata_results)
+obs_vs_est <- obs_vs_est %>% dplyr::select(intersectional_names, numerator, denominator, proportion, pmn)
+obs_vs_est <- obs_vs_est %>% mutate(n = numerator + denominator, 
+                                    percentage=proportion*100,
+                                    difference=pmn-percentage)
+write.csv(obs_vs_est, "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_workplace/nhis/intersectionality/170124/Table of observed vs estimated proportions HEDs - MAIN.csv")
+# Difference in observed and estimated range from 14% lower than the observed to 7% higher
