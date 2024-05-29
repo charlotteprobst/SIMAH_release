@@ -50,7 +50,14 @@ source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # set up samples for calibration for education transitions
-source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
+# source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
+
+# read in the NESARC regression model 
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC.csv") %>% 
+    filter(...1 == "PE")
+
+targets <- generate_targets_alcohol(brfss)
+targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
 
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
@@ -65,7 +72,7 @@ while(wave <= num_waves){
     # reset the base population to the original pop for each calibration iteration
     basepop <- baseorig
     # change the alcohol model being run 
-    alcohol_transitions <- transitionsList[[samplenum]]
+    # alcohol_transitions <- transitionsList[[samplenum]]
     # change the education model - based on the prior calibrated models 
     education_model_num <- as.numeric(sampleseeds$educationmodel[i])
     education_transitions <- education_transitionsList[[education_model_num]]
@@ -80,7 +87,8 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2005, output="alcohol")
+                     minyear=2000, maxyear=2005, output="alcohol",
+                     targets, 1, 10)
     }
 
   Output <- do.call(rbind,Output)

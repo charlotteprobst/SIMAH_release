@@ -30,6 +30,6 @@ generate_targets_alcohol <- function(data){
     mutate(proptarget = n/sum(n),
            se = sqrt(proptarget * (1 - proptarget) / sum(n)),
            agecat = as.character(agecat)) %>%
-    dplyr::select(-n)
+    dplyr::select(-n) %>% drop_na()
   return(targets)
 }

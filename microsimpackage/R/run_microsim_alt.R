@@ -23,7 +23,7 @@ set.seed(seed)
 # Summary <- list()
 # DeathSummary <- list()
 # DiseaseSummary <- list()
-# PopPerYear <- list()
+PopPerYear <- list()
 CatSummary <- list()
 # birth_rates <- list()
 # migration_rates <- list()
@@ -31,7 +31,7 @@ CatSummary <- list()
 # lhs <- as.numeric(lhs)
 # names(lhs) <- names
 for(y in minyear:maxyear){
-# print(y)
+print(y)
 
 # apply policy effects
 if(policy==1 & year_policy>maxyear & y==minyear){
@@ -62,23 +62,24 @@ if(policy==1 & y ==year_policy){
 
   CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","microsim.init.sex","microsim.init.race",
                                                                            "agecat","microsim.init.education","AlcCAT"))
-  CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","microsim.init.sex","microsim.init.race",
-                                                                            "agecat","microsim.init.education","AlcCAT"))
+  # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","microsim.init.sex","microsim.init.race",
+  #                                                                           "agecat","microsim.init.education","AlcCAT"))
 
-  CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2+CatSummary[[paste(y)]]$v_s)
+  CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2)
 
-  implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
+  # implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
+  # print(implausibility)
 
-  if(y>2003 & implausibility>threshold){
-    break
-  }
-
-  if(y==2004){
-    print('survived past 2003')
-  }
+  # if(y>2003 & implausibility>threshold){
+  #   break
+  # }
+  #
+  # if(y==2004){
+  #   print('survived past 2003')
+  # }
 
 # save a population summary
-# PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
@@ -216,23 +217,26 @@ if(updatingeducation==1){
 
 # update alcohol use categories
 if(updatingalcohol==1){
+  basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
+  basepop <- update_alcohol_cat(basepop)
+
   # print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
-  basepop <- basepop %>% ungroup() %>% mutate(
-    # agecat = cut(microsim.init.age,
-    #              breaks=c(0,20,25,29,39,49,64,100),
-    #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
-    agecat = cut(microsim.init.age,
-                 breaks=c(0,24,64,100),
-                 labels=c("18-24","25-64","65+")),
-    cat = paste(agecat, microsim.init.sex,
-                                      microsim.init.race, microsim.init.education,
-                                      AlcCAT, sep="_"),
-                                prob = runif(nrow(.)))
-  basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
-  basepop <- basepop %>%
-    mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
-           AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
+  # basepop <- basepop %>% ungroup() %>% mutate(
+  #   # agecat = cut(microsim.init.age,
+  #   #              breaks=c(0,20,25,29,39,49,64,100),
+  #   #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+  #   agecat = cut(microsim.init.age,
+  #                breaks=c(0,24,64,100),
+  #                labels=c("18-24","25-64","65+")),
+  #   cat = paste(agecat, microsim.init.sex,
+  #                                     microsim.init.race, microsim.init.education,
+  #                                     AlcCAT, sep="_"),
+  #                               prob = runif(nrow(.)))
+  # basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
+  # basepop <- basepop %>%
+  #   mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
+  #          AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
 
   # }
   # allocate a numeric gpd for individuals based on model
@@ -246,7 +250,7 @@ if(updatingalcohol==1){
   # # print(summary(basepop$formerdrinker))
   # basepop$microsim.init.alc.gpd <- basepop$newgpd
   # basepop$newgpd <- NULL
-  basepop$totransition <-  NULL
+  # basepop$totransition <-  NULL
   # basepop$prop_former_drinker <- NULL
   # basepop$n <- NULL
 }
@@ -323,5 +327,5 @@ implausibility <- max(CatSummary$implausibility, na.rm=T)
 # }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(implausibility)
+return(CatSummary)
 }

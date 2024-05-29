@@ -64,7 +64,7 @@ processed_population <- population %>%
 write.csv(processed_population, paste0("SIMAH_workplace/microsim/1_input_data/agent_files/", selectedstate, "basepop", n, "V4.csv"), row.names=F)
 
 # # add alcohol categories 
-# processed_population <- code_alcohol_categories(processed_population)
+processed_population <- code_alcohol_categories(processed_population)
 # 
 # basepop <- code_alcohol_categories(basepop)
 # 

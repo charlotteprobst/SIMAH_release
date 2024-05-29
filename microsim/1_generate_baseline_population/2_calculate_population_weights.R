@@ -49,7 +49,7 @@ brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_202
 # which years do you want to generate the baseline population for? 
 # default to 2000-2003 (can add or remove years as necessary but be aware there may be missing data for some states with less years)
 # this is also to match with the alcohol targets at baseline that need to be pooled across years
-years <- c(2000)
+years <- c(2001)
 
 # subset the data for these years to minimise computation needed
 brfss <- brfss %>% filter(YEAR %in% years)
