@@ -72,14 +72,10 @@ predictors <- nesarc_selected %>%
                 medorhigh)
 
 # regression predicting the prob of being an abstainer - to decide on predictors
-model <- glm(abstainer_2 . ~ .^2, data = predictors, family = binomial, 
-             weights=nesarc_selected$scaledweight) %>%
-  stepAIC(trace = FALSE)
-
 init_mod <- glm(abstainer_2 ~ ., data = predictors, family=binomial,
                 weights=nesarc_selected$scaledweight)
-step(init_mod, scope = . ~ .^2, direction = 'forward')
-summary(model)
+stepped <- step(init_mod, scope = . ~ .^2, direction = 'both')
+summary(stepped)
 
 # predictors are previous alcohol use, all demographics and some interactions effects 
 # count model parameters | zero model parameters 
