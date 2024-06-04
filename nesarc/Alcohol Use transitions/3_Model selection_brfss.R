@@ -161,6 +161,13 @@ Q <- rbind ( c(0,    0.25,  0,    0),
         
 nesarc_expanded <- nesarc_expanded %>% filter(age<=79)
 
+Poplong <- do.call(rbind,PopPerYear) %>% 
+  dplyr::select(microsim.init.id, year, microsim.init.sex,microsim.init.race,
+                microsim.init.age, microsim.init.education, AlcCAT) %>% 
+  group_by(microsim.init.id) %>% 
+  add_tally() %>% 
+  filter(n>1)
+  
 Poplong$catnum <- ifelse(Poplong$AlcCAT=="Non-drinker", 1,
                          ifelse(Poplong$AlcCAT=="Low risk", 2, 
                                 ifelse(Poplong$AlcCAT=="Medium risk", 3,
@@ -182,7 +189,7 @@ nesarc_expanded$race_w1 <- relevel(nesarc_expanded$race_w1, ref="Other, non-Hisp
 # MSM 3: All ages **************************************************************************************
 # MSM 3A: Age (3 categories)
 msm3a <- msm (catnum ~ year, subject=microsim.init.id, data = Poplong, qmatrix = Q_allAges, 
-              center=FALSE, control = list(trace=1, maxit=1000, fnscale = 2632448),
+              center=FALSE, control = list(trace=1, maxit=600, fnscale = 2632448),
                   covariates = ~ microsim.init.sex + age3 + microsim.init.education + microsim.init.race)
         saveRDS(msm3a, paste0(models, "msm_brfss_alltransitions.RDS")) 
 

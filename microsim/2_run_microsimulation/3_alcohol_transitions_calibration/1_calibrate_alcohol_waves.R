@@ -67,7 +67,7 @@ while(wave <= num_waves){
     samplenum <- as.numeric(sampleseeds$samplenum[i])
     seed <- as.numeric(sampleseeds$seed[i])
     # reset the base population to the original pop for each calibration iteration
-    basepop <- baseorig
+    basepop <- baseorig 
     # change the alcohol model being run 
     alcohol_transitions <- transitionsList[[samplenum]]
     # alcohol_transitions <- lhs %>% filter(sample==samplenum)

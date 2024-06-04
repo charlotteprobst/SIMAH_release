@@ -10,7 +10,7 @@ test <- implausibility %>%
 implausibility <- implausibility %>% 
   filter(samplenum %in% samples)
 
-ggplot(subset(Output, AlcCAT=="High risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+ggplot(subset(Output, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line() + 
   # geom_point() + 
   geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
