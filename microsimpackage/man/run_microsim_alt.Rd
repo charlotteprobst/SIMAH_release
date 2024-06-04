@@ -30,9 +30,7 @@ run_microsim_alt(
   minyear = 2000,
   maxyear = 2005,
   output = "mortality",
-  targets,
-  variance,
-  threshold
+  targets
 )
 }
 \description{

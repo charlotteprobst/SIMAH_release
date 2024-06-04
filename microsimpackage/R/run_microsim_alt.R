@@ -18,7 +18,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          age_inflated,
                          update_base_rate,
                          minyear=2000, maxyear=2005, output="mortality",
-                         targets, variance,threshold){
+                         targets){
 set.seed(seed)
 # Summary <- list()
 # DeathSummary <- list()
@@ -215,17 +215,36 @@ if(updatingeducation==1){
   basepop <- rbind(totransition, tostay)
 }
 
+
+#delete anyone over 79
+###then age everyone by 1 year and update age category
+basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
+                              agecat = cut(microsim.init.age,
+                                           breaks=c(0,19,24,34,44,54,64,74,100),
+                                           labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
+                                                    "65-74","75-79")))
+basepop <- subset(basepop, microsim.init.age<=79)
+
+# add and remove migrants
+if(y<2019){
+model <- "SIMAH"
+basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
+basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
+basepop <- outward_migration_rate(basepop,migration_rates,y)
+}
+
 # update alcohol use categories
 if(updatingalcohol==1){
-  basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
+  # basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
+  basepop <- transition_alcohol_determ(basepop, brfss, y)
   basepop <- update_alcohol_cat(basepop)
 
   # print("updating alcohol use")
   # if(y %in% transitionyears==TRUE){
   # basepop <- basepop %>% ungroup() %>% mutate(
-  #   # agecat = cut(microsim.init.age,
-  #   #              breaks=c(0,20,25,29,39,49,64,100),
-  #   #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+    # agecat = cut(microsim.init.age,
+    #              breaks=c(0,20,25,29,39,49,64,100),
+    #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
   #   agecat = cut(microsim.init.age,
   #                breaks=c(0,24,64,100),
   #                labels=c("18-24","25-64","65+")),
@@ -234,6 +253,10 @@ if(updatingalcohol==1){
   #                                     AlcCAT, sep="_"),
   #                               prob = runif(nrow(.)))
   # basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
+  # basepop$AlcCAT <- basepop$newALC
+  # basepop$newALC <- NULL
+  # basepop$cat <- NULL
+  # basepop$prob <- NULL
   # basepop <- basepop %>%
   #   mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
   #          AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
@@ -253,23 +276,6 @@ if(updatingalcohol==1){
   # basepop$totransition <-  NULL
   # basepop$prop_former_drinker <- NULL
   # basepop$n <- NULL
-}
-
-#delete anyone over 79
-###then age everyone by 1 year and update age category
-basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
-                              agecat = cut(microsim.init.age,
-                                           breaks=c(0,19,24,34,44,54,64,74,100),
-                                           labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
-                                                    "65-74","75-79")))
-basepop <- subset(basepop, microsim.init.age<=79)
-
-# add and remove migrants
-if(y<2019){
-model <- "SIMAH"
-basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
-basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
-basepop <- outward_migration_rate(basepop,migration_rates,y)
 }
 
 }
@@ -305,7 +311,8 @@ if(output=="mortality" & !is.null(diseases)){
   #     mutate(propsimulation=n/sum(n)) %>%
   #     dplyr::select(-n) %>%
   #     mutate_at(vars(microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT), as.character)
-CatSummary <- do.call(rbind,CatSummary)
+CatSummary <- do.call(rbind,CatSummary) %>%
+  mutate(seed=seed, samplenum=samplenum)
 implausibility <- max(CatSummary$implausibility, na.rm=T)
   # MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
   #                                                     samplenum=as.factor(samplenum),

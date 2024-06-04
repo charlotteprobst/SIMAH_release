@@ -14,7 +14,7 @@ models  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Models/"      
 nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_new.rds")) 
 
 # select the variables that are needed 
-nesarc_selected <- nesarc_expanded %>% 
+nesarc_selected <- Pop %>% 
   dplyr::select(idnum, wave, weight_wave2, years, age,
                 female.factor, race.factor,
                 edu3, alc_daily_g, alc4.factor, alc5.factor) %>% 
@@ -28,10 +28,10 @@ nesarc_selected <- nesarc_expanded %>%
          cat1 = ifelse(alc4.factor=="Category I", 1,0),
          cat2 = ifelse(alc4.factor=="Category II", 1,0),
          cat3 = ifelse(alc4.factor=="Category III", 1,0)) %>% 
-  dplyr::select(idnum, wave, weight_wave2, years, age, age3, female.factor, race.factor, edu3, alc_daily_g,
+  dplyr::select(idnum, wave, weight_wave2, years, age3, female.factor, race.factor, edu3, alc_daily_g,
                 alc_rounded, abstainer, formerdrinker, cat1, cat2, cat3) %>% 
   pivot_wider(names_from=wave, 
-              values_from=c(years,age,age3,female.factor,race.factor, edu3,
+              values_from=c(years,age3,female.factor,race.factor, edu3,
                             alc_daily_g, alc_rounded, abstainer, formerdrinker, cat1, cat2, cat3)) %>% 
   mutate(microsim.init.alc.gpd=alc_rounded_1,
          formerdrinker = formerdrinker_1,
@@ -84,16 +84,36 @@ nesarc_selected$scaledweight1 <- as.integer(nesarc_selected$weight_wave2/455)
 
 # predictors are previous alcohol use, all demographics and some interactions effects 
 # count model parameters | zero model parameters 
-m1 <-  zeroinfl(alc_rounded_2 ~ age3_2 + age_2 + female.factor_2 +
+m1 <-  zeroinfl(alc_rounded_2 ~ age3_2 + female.factor_2 +
                   race.factor_2 + edu3_2 + alc_rounded_1 + abstainer_1 + 
                   abstainer_1*age3_2 + alc_rounded_1*cat2_1 + alc_rounded_1*cat3_1 | 
-                  age3_2 + age_2 + female.factor_2 +
+                  age3_2 + female.factor_2 +
                   race.factor_2 + edu3_2 + alc_rounded_1 + abstainer_1 + 
                   abstainer_1*age3_2 + alc_rounded_1*cat2_1 + alc_rounded_1*cat3_1,
                 data = nesarc_selected,
                 weights = scaledweight1,
                 dist = "poisson")
 summary(m1)
+
+Pop$microsim.init.alc.gpd_2003 <- round(Pop$microsim.init.alc.gpd_2003)
+Pop$microsim.init.alc.gpd_2004 <- round(Pop$microsim.init.alc.gpd_2004)
+Pop$agecat <- cut(Pop$microsim.init.age_2004,
+                  breaks=c(0,24,64,100),
+                  labels=c("18-24","25-64","65+"))
+Pop$abstainer <- ifelse(Pop$microsim.init.alc.gpd_2003==0, 1,0)
+
+
+m1 <-  zeroinfl(microsim.init.alc.gpd_2004 ~ agecat + microsim.init.sex_2003 +
+                  microsim.init.race_2003 + microsim.init.education_2003 +
+                  microsim.init.alc.gpd_2003 + abstainer | 
+                  agecat + microsim.init.sex_2003 +
+                  microsim.init.race_2003 + microsim.init.education_2003 +
+                  microsim.init.alc.gpd_2003 + abstainer,
+                data = Pop,
+                # weights = scaledweight1,
+                dist = "poisson")
+summary(m1)
+
 
 # Extract coefficients
 zero_part_coef <- coef(m1, model = "zero")

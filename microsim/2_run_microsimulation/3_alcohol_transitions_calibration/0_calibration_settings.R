@@ -3,13 +3,13 @@
 # setting up parallel settings for calibration
 # note that this is for use on HPC across multiple cores 
 # if running locally (which is not suggested) set to 1
-registerDoParallel(8)
+registerDoParallel(16)
 options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 20
+nsamples <- 500
 nreps <- 2
 
 # generate list of samples to be run with random number seeds
