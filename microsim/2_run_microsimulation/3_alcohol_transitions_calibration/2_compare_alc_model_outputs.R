@@ -26,6 +26,7 @@ output_deterministicpop <- read_csv("SIMAH_workplace/brfss/processed_data/output
 
 # Poisson regression, NESARC
 
+# White
 ggplot(subset(output_poissonregression, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line() + 
   # geom_point() + 
@@ -59,7 +60,6 @@ ggplot(subset(output_poissonregression, AlcCAT=="Medium risk" & microsim.init.ra
   ggtitle("Poisson - Medium risk - White")
 ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/White_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
 
-
 ggplot(subset(output_poissonregression, AlcCAT=="High risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line() + 
   # geom_point() + 
@@ -71,12 +71,53 @@ ggplot(subset(output_poissonregression, AlcCAT=="High risk" & microsim.init.race
   ggtitle("Poisson - High risk - White")
 ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/White_highrisk.png", dpi=300, width=33, height=19, units='cm')
 
+# Black
+ggplot(subset(output_poissonregression, AlcCAT=="Non-drinker" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none") + ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Poisson - Non-drinkers - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/Black_nondrinkers.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_poissonregression, AlcCAT=="Low risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none") + ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Poisson - Low risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/Black_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_poissonregression, AlcCAT=="Medium risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none") + ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Poisson - Medium risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/Black_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_poissonregression, AlcCAT=="High risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none") + ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Poisson - High risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/poisson_regression_nesarc/Black_highrisk.png", dpi=300, width=33, height=19, units='cm')
 
 ## GLMM, NESARC
+
+#White
 output_GLMM_poisson$year <- round(output_GLMM_poisson$year, 0)
 ggplot(subset(output_GLMM_poisson, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + # , colour=as.factor(samplenum))) + 
   geom_line() + 
-  # geom_point() + 
   geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
   geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
   theme_bw() + 
@@ -89,7 +130,6 @@ ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/White_nondrinkers.
 
 ggplot(subset(output_GLMM_poisson, AlcCAT=="Low risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + # , colour=as.factor(samplenum))) + 
   geom_line() + 
-  # geom_point() + 
   geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
   geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
   theme_bw() + 
@@ -102,7 +142,6 @@ ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/White_lowrisk.png"
 
 ggplot(subset(output_GLMM_poisson, AlcCAT=="Medium risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + # , colour=as.factor(samplenum))) + 
   geom_line() + 
-  # geom_point() + 
   geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
   geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
   theme_bw() + 
@@ -124,6 +163,56 @@ ggplot(subset(output_GLMM_poisson, AlcCAT=="High risk" & microsim.init.race=="WH
   facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
   ggtitle("GLMM - High risk - White")
 ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/White_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black
+ggplot(subset(output_GLMM_poisson, AlcCAT=="Non-drinker" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("GLMM - Non-drinkers - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/Black_nondrinkers.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_GLMM_poisson, AlcCAT=="Low risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("GLMM - Low risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/Black_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_GLMM_poisson, AlcCAT=="Medium risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("GLMM - Medium risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/Black_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_GLMM_poisson, AlcCAT=="High risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("GLMM - High risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/GLMM_nesarc/Black_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
 
 ## Multinomial logistic regression (Barbosa method), NESARC
 ggplot(subset(output_multinom, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + # , colour=as.factor(samplenum))) + 
@@ -177,3 +266,259 @@ ggplot(subset(output_multinom, AlcCAT=="High risk" & microsim.init.race=="WHI"),
   facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
   ggtitle("Multinom - High risk - White")
 ggsave("SIMAH_workplace/alcohol_models_comparison/multinom/White_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Non-drinkers
+ggplot(subset(output_multinom, AlcCAT=="Non-drinker" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Multinom - Non-drinkers - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/multinom/Black_nondrinkers.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Low risk
+ggplot(subset(output_multinom, AlcCAT=="Low risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Multinom - Low risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/multinom/Black_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Medium risk
+ggplot(subset(output_multinom, AlcCAT=="Medium risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Multinom - Medium risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/multinom/Black_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - High risk
+ggplot(subset(output_multinom, AlcCAT=="High risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Multinom - High risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/multinom/Black_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+
+## Uninformed priors and 'optimiser'
+ggplot(subset(output_uninformedpriors, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Non drinkers - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/White_nondrinker.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_uninformedpriors, AlcCAT=="Low risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Low risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/White_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_uninformedpriors, AlcCAT=="Medium risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Medium risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/White_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_uninformedpriors, AlcCAT=="High risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - High risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/White_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Non-drinker
+ggplot(subset(output_uninformedpriors, AlcCAT=="Non-drinker" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Non drinkers - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/Black_nondrinker.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Low risk
+ggplot(subset(output_uninformedpriors, AlcCAT=="Low risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Low risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/Black_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Medium risk
+ggplot(subset(output_uninformedpriors, AlcCAT=="Medium risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - Medium risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/Black_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - High risk
+ggplot(subset(output_uninformedpriors, AlcCAT=="High risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Uninformed priors - High risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/uninformed_priors/Black_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+
+## Artificial population generated using BRFSS
+ggplot(subset(output_deterministicpop, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Non drinker - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/White_nondrinker.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_deterministicpop, AlcCAT=="Low risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Low risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/White_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_deterministicpop, AlcCAT=="Medium risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Medium risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/White_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+ggplot(subset(output_deterministicpop, AlcCAT=="High risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - High risk - White")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/White_highrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Non-drinker
+ggplot(subset(output_deterministicpop, AlcCAT=="Non-drinker" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Non drinker - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/Black_nondrinker.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Low risk
+ggplot(subset(output_deterministicpop, AlcCAT=="Low risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Low risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/Black_lowrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - Medium risk
+ggplot(subset(output_deterministicpop, AlcCAT=="Medium risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - Medium risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/Black_mediumrisk.png", dpi=300, width=33, height=19, units='cm')
+
+# Black - High risk
+ggplot(subset(output_deterministicpop, AlcCAT=="High risk" & microsim.init.race=="BLA"), aes(x=year, y=propsimulation, colour="red")) + 
+  geom_line() + 
+  geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
+  geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
+  theme_bw() + 
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylim(0,NA) +
+  facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
+  ggtitle("Artificial pop - High risk - Black")
+ggsave("SIMAH_workplace/alcohol_models_comparison/artificial_pop/Black_highrisk.png", dpi=300, width=33, height=19, units='cm')
