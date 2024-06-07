@@ -13,7 +13,7 @@ library(timereg)    # additive survival models
 library(survey)     # Survey adjusted results
 library(srvyr)
 library(foreach)    # loops 
-# library(tidycmprsk)
+library(tidycmprsk)
 library(cmprsk)
 library(fastDummies)
 
@@ -51,7 +51,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     # 1) Data preparation 
     data <- mutate (data, 
                     cause_of_death = .data[[i]],
-                    cause_of_death_crr = .data[[paste0(i, "_crr")]],  # outcome for Fine-Gray regression
+                    cause_of_death_crr = .data[[paste0(i, "_crr")]],  # outcome for Fine-Gray regression, 0=alive, 1=died from the cause of interest, 2=died from other causes
                     SES = {{SES}},
                     lifestyle = {{lifestyle}},
                     SES_lifestyle = interaction(SES, lifestyle)) # Create an 'interaction' variable, combining the SES and lifestyle
@@ -118,30 +118,42 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 
     
     
-    ## Alternative Fine-Gray from cmprsk package
-    
-    # Fine-Gray joint effect model (cannot specify the interaction term as SES * lifestyle in  covs)
-    cat("    Crr Joint effects model in progress", "\n")  
+    ## tidycmprsk package
+    # Fine-Gray interaction model
+    cat("    Crr Interaction model in progress", "\n")  # progress indicator
     if(data_name == "all"){
-      
+      crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
+    } else if(data_name %in% c("female", "male")){
+      crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
+    }
+    cat("    Completed", "\n")  # progress indicator
+    
+    
+    
+    ## Alternative Fine-Gray from cmprsk package
+
+    # Fine-Gray joint effect model (cannot specify the interaction term as SES * lifestyle in  covs)
+    cat("    Crr Joint effects model in progress", "\n")
+    if(data_name == "all"){
+
       covs <- data %>% select(bl_age, female, SES_lifestyle, married2, race4, srvy_yr22) %>%
         dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
         data.frame() %>%
-        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997, 
-               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer) 
-      
-      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr, 
+        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997,
+               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer)
+
+      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr,
                          cov1 = covs, failcode = 1, cencode = 0)
-      
+
     } else if(data_name %in% c("female", "male")){
-      
+
       covs <- data %>% select(bl_age, "SES_lifestyle", "married2", "race4", "srvy_yr22") %>%
         dummy_cols(select_columns = c("SES_lifestyle", "married2", "race4", "srvy_yr22")) %>%
         data.frame() %>%
-        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997, 
-               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer) 
-      
-      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr, 
+        select(-SES_lifestyle, -married2, -race4, -srvy_yr22, -srvy_yr22_1997,
+               -race4_White, -married2_Not.married.cohabitating, -SES_lifestyle_Bachelors.Lifetime.abstainer)
+
+      crr_joint <- cmprsk::crr(ftime = data$yrs_followup, fstatus = data$cause_of_death_crr,
                          cov1 = covs, failcode = 1, cencode = 0)
     }
     cat("    Completed", "\n")
@@ -408,54 +420,6 @@ table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # M
 
 
 
-##### compute RERI and merge with the output table based on previously saved model ----------------------------------------------------
-
-
-## categories excluding the reference
-educat <- c("edu3Highschool", "edu3Some college")
-alccat <- c("alc5Former drinker", "alc5Lifetime abstainer", "alc5Category II", "alc5Category III")
-
-edu3 <- rep(educat, 4)
-alc5 <- rep(alccat, each = 2)
-RERI <- CI.lo <- CI.hi <- p.value <- rep(NA, 8)
-
-add_int <- data.frame(edu3, alc5, RERI, CI.lo, CI.hi, p.value)
-
-
-foreach(i = 1:8)%do%{
-  
-  rs <- additive_interactions( cox_int, add_int[i, "edu3"], add_int[i, "alc5"] )
-  
-  add_int[i, "RERI"] <- rs[1,2]
-  add_int[i, "CI.lo"] <- rs[1,3]
-  add_int[i, "CI.hi"] <- rs[1,4]
-  add_int[i, "p.value"] <- rs[1,5]
-  
-}
-
-# load the cox_int_results for saved model first, and then merge with the add_int table for RERI and CI
-# cox_int_results <- readRDS(cox_int, paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
-
-cox_int_results_RERI <- cox_int_results %>%
-  left_join(  cox_int_results %>% 
-                filter(str_detect(variable, ":")) %>% select(variable) %>%
-                separate(variable, into = c("edu3", "alc5"), sep = ":", remove = FALSE) %>% 
-                left_join(add_int %>%
-                            mutate(RERI = round(RERI, 2),
-                                   CI.lo = round(CI.lo, 2),
-                                   CI.hi = round(CI.hi, 2),
-                                   CI_RERI = paste0("(", CI.lo,", ", CI.hi, ")"),
-                                   p.value_RERI = round(p.value, 3),
-                                   p.value_RERI = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
-                            ) %>%
-                            select(-CI.lo, -CI.hi, -p.value) %>%
-                            mutate(edu3 = str_remove(edu3, fixed("edu3")), 
-                                   alc5 = str_remove(alc5, fixed("alc5"))), 
-                          by = c("edu3", "alc5")),
-              by = "variable" )
-
-
-
 
 
 # **NOTE**: Need to change to code for this so that the start age and end age is specified
@@ -481,7 +445,7 @@ table4to9(nhis_male.other, death_list, edu3, alc5, "table4a") # Males, Other
 
 
 ## Income x Alcohol
-table4to9(nhis18_clean, nhis18_clean_svy, death_list, income5, alc5, "table4b") # All participants
+table4to9(nhis18_all, nhis18_all_svy, death_list, income5, alc5, "table4b") # All participants
 table4to9(nhis18_female, nhis18_female_svy, death_list, income5, alc5, "table4b") # Females
 table4to9(nhis18_male, nhis18_male_svy, death_list, income5, alc5, "table4b") # Males
 

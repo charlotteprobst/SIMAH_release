@@ -4,7 +4,7 @@
 \alias{setup_base_counts}
 \title{Sets up baseline mortality counts}
 \usage{
-setup_base_counts(death_counts, diseases, inflation_factor)
+setup_base_counts(death_counts, diseases, inflation_factors, age_inflated)
 }
 \description{
 This function sets up baseline mortality counts for COD modelled in simulation and inflates by a factor

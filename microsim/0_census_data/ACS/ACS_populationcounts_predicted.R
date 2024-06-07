@@ -29,6 +29,13 @@ ACS_2020weights <- readRDS("SIMAH_workplace/ACS/rep_weights_2020.RDS") %>%
 # join the original data with the min and max for the 2020 weights 
 ACS_20002020 <- left_join(ACS_20002020, ACS_2020weights)
 
+ACS2021 <- expand.grid(state="USA", year=2021, sex=c(1,2),
+                       age_gp=unique(ACS_20002020$age_gp),
+                       race = unique(ACS_20002020$race),
+                       edclass=unique(ACS_20002020$edclass),
+                       TPop=NA, min=NA, max=NA)
+ACS_20002020 <- rbind(ACS_20002020, ACS2021)
+
 # now plot to show the jump in 2020
 ggplot(data=subset(ACS_20002020,sex==1), aes(x=year, y=TPop, colour=edclass)) +
   geom_line() + geom_errorbar(aes(ymin=min, ymax=max)) + 
@@ -63,18 +70,8 @@ pct_change_overall <- rbind(pct_change_overall, pct_change_2020) %>%
 # now fit a linear model to predict - data without 2020
 ACS_20002020$time <- ACS_20002020$year-2000
 
-data <- ACS_20002020 %>% 
-  filter(sex==2 & age_gp==18 & race=="Black" & edclass=="College")
-
-arima.model <- auto.arima(data$TPop)
-forecast(arima.model)
-
-fore_arima = forecast::forecast(arima.model, h=12)
-df_arima = as.data.frame(fore_arima)
-dat_test$arima = df_arima$`Point Forecast`
-
 pred_function <- function(data){
-  model <- lm(TPop ~ year, data=subset(data, year!=2020 & year>=2015))
+  model <- lm(TPop ~ year, data=subset(data, year<2020 & year>=2015))
   data$predicted <- predict(model, data)
   return(data)
 }
@@ -123,7 +120,7 @@ ggsave("SIMAH_workplace/demography/plots/modelled_ACS_popcounts_overall.png",
 
 finaldata_2020 <- modelled  %>% 
   pivot_wider(names_from=name, values_from=value) %>% 
-  dplyr::select(state,year,sex, age_gp, race, edclass,predicted) %>% filter(year==2020) %>% 
+  dplyr::select(state,year,sex, age_gp, race, edclass,predicted) %>% filter(year>=2020) %>% 
   rename(TPop=predicted)
 
 # join with the original data 
@@ -131,5 +128,5 @@ ACS_20002020 <- read.csv("SIMAH_workplace/ACS/ACS_popcounts_2000_2020.csv") %>% 
   filter(year<=2019)
 ACS_20002020 <- rbind(ACS_20002020, finaldata_2020)
 
-write.csv(ACS_20002020, "SIMAH_workplace/demography/ACS_popcounts_2000_2020_predicted2020.csv")
+write.csv(ACS_20002020, "SIMAH_workplace/demography/ACS_popcounts_predicted2021.csv")
 

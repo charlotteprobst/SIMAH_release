@@ -344,3 +344,24 @@ model11_both <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:usa
                        digits = 6,data=final, random = ~ 1 | study, method = "REML")
 model11_both
 
+#updated
+#regression model
+
+final$sex <- as.factor(final$sex)
+final$type <- as.factor(final$type)
+final$usa <- as.factor(final$usa)
+final$qualitySC <- as.factor(final$qualitySC)
+final$mortality <- as.factor(final$mortality)
+final$studyyear <- as.factor(final$studyyear)
+final$region <- as.factor(final$region)
+final$asia  <- as.factor(final$asia)
+
+#final model
+#drop Alemy-Carreau
+final <- final[-c(1),]
+
+model1 <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+ I(dose^2) + dose:type + I(dose^2):type + 
+                   + dose:asia + I(dose^2):asia +  dose:mortality + I(dose^2):mortality, 
+                 digits = 6,data=final, random = ~ 1 | study, method = "REML")
+model1
+

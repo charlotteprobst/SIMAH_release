@@ -147,12 +147,13 @@ plot1 <- plot_usmap(data=means, values="Coverage") +
   scale_fill_gradient(low="yellow", high="blue", labels=scales::percent_format(accuracy=5L)) +
   facet_grid(rows=vars(name)) +
   theme(strip.background=element_rect(fill="white"),
+        panel.background = element_rect(fill="white"),
         strip.text = element_text(size=18),
         legend.text = element_text(size=16),
         legend.title = element_text(size=18))
 plot1
 
-ggsave("SIMAH_workplace/brfss/paper/Figure2_map.png", dpi=700, width=23, height=30, units="cm")
+ggsave("SIMAH_workplace/brfss/paper/Figure2_map_v2.png", dpi=700, width=23, height=30, units="cm")
 
 
 

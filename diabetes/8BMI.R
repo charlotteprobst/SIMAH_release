@@ -11,7 +11,7 @@ library(rms)
 setwd("C:/Users/laura/Documents/CAMH/")
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/8BMI.xlsx",
+dataset <- read_excel("DIABETES/analysis/SIMAH_workplace/8BMI.xlsx",
                       col_types = c("numeric", "numeric", "numeric", "numeric", "text", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric",
@@ -65,10 +65,13 @@ regplot(quad_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relati
 predict(quad_normalm, c(15.5,15.5^2), transf=exp)
 
 #for figure3
+tiff("F3menhw.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(quad_normalm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative risk", lwd = c(3.5,1.5), lcol= "blue4",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE, 
-        ylim = c(0.4, 2), pred = pred_quad_normalm, xvals = ms, main="Men")
+        ylim = c(0.4, 2), pred = pred_quad_normalm, xvals = ms)
 abline(h=1)
+title("Healthy weight range - Men", adj = 0, line = 2)
+dev.off()
 
 ##RESTRICTED CUBIC SPLINE
 knotsnm <- quantile(normalm$dose, c(.05, .35, .65, .95))
@@ -107,11 +110,14 @@ regplot(linear_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative
 predict(linear_ovm, 0.57, transf=exp)
 
 #for figure 3
+tiff("F3menov.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(linear_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5),
         pred = pred_lin_ovm, xvals = ms)
 abline(h=1)
+title("Overweight range - Men", adj = 0, line = 2)
+dev.off()
 
 ##QUADRATIC REGRESSION
 
@@ -123,6 +129,7 @@ pred_quad_ovm <- predict(quad_ovm, newmods=cbind(ms,ms^2))
 regplot(quad_ovm, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80),
         ylim = c(0, 2), pred = pred_quad_ovm, xvals = ms, main="Male - Quadratic Regression")
+abline(h=1)
 
 ##RESTRICTED CUBIC SPLINE
 knotsovm <- quantile(ovm$dose, c(.05, .35, .65, .95))
@@ -135,7 +142,7 @@ pred_rcs_ovm <- predict(rcs_ovm, newmods=rcspline.eval(ms, knotsovm, inclx=TRUE)
 regplot(rcs_ovm, mod="rcs(dose, knotsovm)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,80),
         ylim = c(0, 2), pred = pred_rcs_ovm, xvals = ms, main="Male - RCS Regression")
-
+abline(h=1)
 waldtest(b = coef(rcs_ovm), Sigma = vcov(rcs_ovm), Terms = 1:nrow(vcov(rcs_ovm)))
 
 fitstats(linear_ovm, quad_ovm, rcs_ovm)
@@ -165,11 +172,14 @@ weights(linear_obm)
 predict(linear_obm, 0.57, transf=exp)
 
 #for figure 3
+tiff("F3menob.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(linear_obm, mod="dose", ylab="Relative Risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "blue4", lwd = c(3.5,1.5), xlab="Alcohol intake, grams/day",
         pred = pred_lin_obm, xvals = ms)
 abline(h=1)
+title("Obese range - Men", adj = 0, line = 2)
+dev.off()
 
 ##QUADRATIC REGRESSION
 
@@ -223,12 +233,14 @@ regplot(linear_normalf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Rela
         ylim = c(0, 2), pred = pred_lin_normalf, xvals = fs, main="Female - Linear Regression")
 
 #for figure 3
+tiff("F3womenhw.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(linear_normalf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
-        pred = pred_lin_normalf, xvals = fs, main="Women")
+        pred = pred_lin_normalf, xvals = fs)
 abline(h=1)
-
+title("Healthy weight range - Women", adj = 0, line = 2)
+dev.off()
 
 ##QUADRATIC REGRESSION
 
@@ -286,11 +298,14 @@ regplot(quad_ovf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative R
         ylim = c(0, 2), pred = pred_quad_ovf, xvals = fs, main="Female - Quadratic Regression")
 
 #for figure 3
+tiff("F3womenov.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(quad_ovf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
         pred = pred_quad_ovf, xvals = fs)
 abline(h=1)
+title("Overweight range - Women", adj = 0, line = 2)
+dev.off()
 
 predict(quad_ovf, c(33,33^2), transf=exp)
 
@@ -342,13 +357,16 @@ regplot(quad_obf, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative R
         ylim = c(0, 2), pred = pred_quad_obf, xvals = fs, main="Female - Quadratic Regression")
 
 #for figure 3
+tiff("F3womenob.tiff", width = 6, height = 5, units = 'in',res = 1000)
 regplot(quad_obf, xlab="Alcohol intake, grams/day", mod="dose", ylab="Relative risk", 
         transf=exp, digits=2L, las=1, bty="l", xlim = c(0,45),pch=NA_integer_, shade =FALSE,
         ylim = c(0.4, 2), lcol= "firebrick2", lwd = c(3.5,1.5),
         pred = pred_quad_obf, xvals = fs)
 abline(h=1)
+title("Obese range - Women", adj = 0, line = 2)
+dev.off()
 
-predict(quad_obf, c(26,26^2), transf=exp)
+predict(quad_obf, c(18,18^2), transf=exp)
 
 ##RESTRICTED CUBIC SPLINE
 knotsobf <- quantile(obf$dose, c(.05, .35, .65, .95))

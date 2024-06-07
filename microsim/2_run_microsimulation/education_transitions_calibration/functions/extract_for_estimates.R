@@ -1,10 +1,9 @@
 extract_for_estimates <- function(estimates, combinations, model, setupQ, msm.fixdiag.qmatrix,
                                   msm.parse.covariates, MatrixExp){
   plist <- list()
-  i <- combinations$cat[35]
   for(i in levels(as.factor(combinations$cat))){
     combination <- combinations %>% filter(cat==i)
-    covariates <- list(sex=combination$sex, age=combination$age, racefinal=combination$race)
+    covariates <- list(sex=combination$sex, agecat=combination$age, racefinal2=combination$race)
     x <- model
     covlist <- msm.parse.covariates(x, covariates, x$qcmodel)
     ni <- x$qmodel$npars

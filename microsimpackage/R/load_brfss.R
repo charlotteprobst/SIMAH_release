@@ -57,7 +57,7 @@ if(model=="SIMAH"){
 #   do(dplyr::sample_n(.,size=unique(tosample), replace=FALSE)) %>%
 #   dplyr::select(-c(n,tosample))
 # saveRDS(sampled, "SIMAH_workplace/microsim/1_input_data/BRFSS_subset_SIMAH.RDS")
-brfss <- read_rds(paste0(WorkingDirectory,"BRFSS_subset_SIMAH.RDS"))
+brfss <- readRDS(paste0(WorkingDirectory,"BRFSS_subset_SIMAH.RDS"))
 }else if(model=="CASCADE"){
   brfssorig <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_reweighted_upshifted_1984_2020.RDS") %>%
     filter(age_var<=80) %>% filter(State==SelectedState) %>%

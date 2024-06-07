@@ -8,16 +8,18 @@ library(labelled)
 
 setwd("~/Google Drive/SIMAH Sheffield/")
 
+
 # NOTE: To load data, you must download both the extract's data and the DDI
 # and also set the working directory to the folder with these files (or change the path below).
 
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
 
-ddi <- read_ipums_ddi("SIMAH_workplace/CPS/cps_00005.xml")
+ddi <- read_ipums_ddi("SIMAH_workplace/CPS/cps_00006.xml")
 data <- read_ipums_micro(ddi)
-data <- remove_labels(data)
+data <- zap_ipums_attributes(data)
 
 data <- data %>% filter(AGE>=18) %>% 
+  filter(ASECFLAG==1) %>% 
   mutate(edclass = ifelse(EDUC==1, NA,
                           ifelse(EDUC<=73, "LEHS",
                        ifelse(EDUC==999, NA,
@@ -47,12 +49,12 @@ summary <- data %>% filter(AGE>=18) %>%
   summarise(TPop = round(sum(weight, na.rm=T),digits=0)) %>% 
   rename(year=YEAR, sex=SEX) %>% 
   mutate(age_gp=as.integer(age_gp)) %>% data.frame() %>% 
-  mutate(type="CB_CPS") %>% filter(year<=2020) %>% filter(year>=2000)
+  mutate(type="CB_CPS") %>% filter(year<=2021) %>% filter(year>=2000)
 
 final_series <- summary %>% 
   dplyr::select(-type)
   
-write.csv(final_series, "SIMAH_workplace/CPS/CPS_2000_2020_agegp.csv", row.names=F)
+write.csv(final_series, "SIMAH_workplace/CPS/CPS_2000_2021_agegp.csv", row.names=F)
 
 # compare with Yu's data 
 CPS <- read.csv("SIMAH_workplace/CPS/allethn_rates_0018_final.csv") %>% 
@@ -73,7 +75,6 @@ compare <- rbind(summary, CPS) %>% pivot_wider(names_from=type, values_from=TPop
 
 # for YU 
 write.csv(summary, "SIMAH_workplace/CPS/CPS_2015_2020_agegp.csv", row.names=F)
-
 
 summary <- data %>% filter(AGE>=18) %>% 
   group_by(YEAR, AGE, SEX, race, edclass) %>% 
