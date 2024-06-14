@@ -45,48 +45,25 @@ plot_data <- plot_data %>%
          age=ifelse(grepl("21-24", intersectional_names), "21-24",
                     ifelse(grepl("25-59", intersectional_names), "25-59", "60+")))
 
-# Plots of predicted grams - separate for males and females
-male_grams <- plot_data %>%
-  filter(sex=="Men") 
-male_grams %>%
-  ggplot(aes(x=education, y=estmn)) +
-  geom_point(position=position_dodge(width=0.8)) +
+
+# Plots of additive only - men
+male_grams_add <- plot_data %>%
+  filter(sex=="Men") %>%
+  ggplot(aes(x=education)) +
+  geom_point(aes(y=estmn), colour = "darkblue") +
   geom_errorbar(aes(ymin = estlo,
                     ymax = esthi),
-                    position=position_dodge(width=0.8)) +
-  ylim(0, 30) +
+                colour="darkblue") +
   facet_grid(cols=vars(race),rows=vars(age)) +
   theme(axis.title.x = element_blank(), 
-        axis.text.x = element_text(angle=90),
-        legend.position = "bottom") +
-  ggtitle("Average daily alcohol consumption by intersectional category, Men")+
-  labs(y= "Estimated grams per day")
-ggsave(paste0(outputs,"grams drinkers/plot estimated grams males.png"), dpi=300, width=33, height=19, units="cm")
+        axis.text.x = element_text(angle=90))+
+  theme(strip.background = element_rect(fill = "lightblue")) +
+  ggtitle("The influence of interaction effects on estimated alcohol consumption: Men")+
+  labs(y= "Estimated grams per day") 
+male_grams_add
+ggsave(paste0(outputs,"grams drinkers/plot grams males, additive.png"), dpi=300, width=33, height=19, units="cm")
 
-# Plot females
-female_grams <- plot_data %>%
-  filter(sex=="Women") 
-female_grams %>%
-  ggplot(aes(x=education, y=estmn)) +
-  geom_point(position=position_dodge(width=0.8)) +
-  geom_errorbar(aes(ymin = estlo,
-                    ymax = esthi),
-                position=position_dodge(width=0.8)) +
-  ylim(0, 30) +
-  facet_grid(cols=vars(race),rows=vars(age)) +
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_text(angle=90),
-        legend.position = "bottom") +
-  ggtitle("Average daily alcohol consumption by intersectional category, Women")+
-  labs(y= "Estimated grams per day")
-ggsave(paste0(outputs,"grams drinkers/plot estimated grams females incl uj.png"), dpi=300, width=33, height=19, units="cm")
-
-# Create a colour blind friendly pallete
-
-# The palette with black:
-cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-# Plots of additive only versus total estimates
+# Plots of additive only versus total estimates - men
 male_grams_add_vs_mul <- plot_data %>%
   filter(sex=="Men") %>%
   ggplot(aes(x=education)) +
@@ -106,8 +83,24 @@ male_grams_add_vs_mul <- plot_data %>%
   labs(y= "Estimated grams per day") 
   male_grams_add_vs_mul
 ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
-  
-# Plots of additive only versus total estimates
+
+
+# Plots of additive only  - women
+female_grams_add <- plot_data %>%
+  filter(sex=="Women") %>%
+  ggplot(aes(x=education)) +
+  geom_point(aes(y=estmn), colour = "darkblue") +
+  geom_errorbar(aes(ymin = estlo,
+                    ymax = esthi),
+                colour = "darkblue") +
+  facet_grid(cols=vars(race),rows=vars(age)) +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle=90))+
+  ggtitle("The influence of interaction effects on estimated alcohol consumption: Women")
+female_grams_add
+ggsave(paste0(outputs,"grams drinkers/plot grams females, additive only.png"), dpi=300, width=33, height=19, units="cm")
+
+# Plots of additive only versus total estimates - women
 female_grams_add_vs_mul <- plot_data %>%
   filter(sex=="Women") %>%
   ggplot(aes(x=education)) +
@@ -146,15 +139,37 @@ combined_plot <- plot_data %>%
         strip.text = element_text(size = 12),
         plot.title = element_text(size = 16)) +
   theme(strip.background = element_rect(fill = "lightblue")) +
-#  ggtitle("The influence of interaction effects on estimated alcohol consumption") +
+  #  ggtitle("The influence of interaction effects on estimated alcohol consumption") +
   labs(y = "Estimated grams per day", color = "Sex") +
   scale_color_manual(values = c("Men, additive effects only" = "lightblue", "Men, total effects" = "darkblue", "Women, additive effects only" = "orange", "Women, total effects" = "darkred")) +
   guides(color = guide_legend(title = NULL, ncol = 4)) +
   scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high"))+
   scale_y_continuous(breaks = seq(0, max(plot_data$esthi), by = 5))
-
 combined_plot
 ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
+
+# Plot of total estimates only, both genders together
+combined_plot_total <- plot_data %>%
+  ggplot(aes(x = education)) +
+  geom_point(data = filter(plot_data, sex == "Men"), aes(y = estmn, color = "Men, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = estlo, ymax = esthi, color = "Men, total effects")) +
+  geom_point(data = filter(plot_data, sex == "Women"), aes(y = estmn, color = "Women, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(ymin = estlo, ymax = esthi, color = "Women, total effects")) +
+  facet_grid(cols = vars(race), rows = vars(age)) +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = 90, size=12),
+        legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        plot.title = element_text(size = 16)) +
+  theme(strip.background = element_rect(fill = "lightblue")) +
+  labs(y = "Estimated grams per day", color = "Sex") +
+  scale_color_manual(values = c("Men, total effects" = "darkblue", "Women, total effects" = "darkred")) +
+  guides(color = guide_legend(title = NULL, ncol = 4)) +
+  scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high"))+
+  scale_y_continuous(breaks = seq(0, max(plot_data$esthi), by = 5))
+combined_plot_total
+ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, total estimates only.png"), dpi=300, width=33, height=19, units="cm")
 
 
 

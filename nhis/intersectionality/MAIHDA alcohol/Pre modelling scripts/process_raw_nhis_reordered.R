@@ -413,6 +413,15 @@ nhis_alc_clean_drinkers <- nhis_alc_clean %>%
 
 saveRDS(nhis_alc_clean_drinkers, paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
 
+# Distribution plot drinkers only
+ggplot(nhis_alc_clean_drinkers, aes(x=capped_daily_grams_log), y) + geom_histogram() + 
+  ggtitle("Distribution of estimated daily grams post transformation, drinkers only")+ 
+  xlab("Daily grams of alcohol, post transformation") +
+  ylab("Frequency")
+ggsave(paste0(outputs,"analytic sample/transformed_distribution_daily_grams_drinkersonly.png"), dpi=300, width=33, height=19, units="cm")
+
+
+
 ## READ IN CLEANED DATA
 nhis_alc_clean <- readRDS(paste0(inputs,"nhis_alc_clean_full_sample.RDS"))
 nhis_alc_clean_drinkers <- readRDS(paste0(inputs,"nhis_alc_clean_drinkers_only.RDS"))
