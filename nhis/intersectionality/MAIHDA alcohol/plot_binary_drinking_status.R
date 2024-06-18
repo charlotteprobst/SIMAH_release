@@ -48,7 +48,7 @@ plot_data <- plot_data %>%
 # Plot of additive versus total estimates, both genders together
 combined_plot <- plot_data %>%
   ggplot(aes(x = education)) +
-  geom_point(data = filter(plot_data, sex == "Men"), aes(y = pmn, color = "Men, additive effects only"), alpha = 0.5) +
+  geom_point(data = filter(plot_data, sex == "Men"), aes(y = pAmn, color = "Men, additive effects only"), alpha = 0.5) +
   geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = pAlo, ymax = pAhi, color = "Men, additive effects only")) +
   geom_point(data = filter(plot_data, sex == "Men"), aes(y = pmn, color = "Men, total effects")) +
   geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = plo, ymax = phi, color = "Men, total effects")) +
@@ -64,7 +64,6 @@ combined_plot <- plot_data %>%
         strip.text = element_text(size = 12),
         plot.title = element_text(size = 16)) +
   theme(strip.background = element_rect(fill = "lightblue")) +
-  ggtitle("The influence of interaction effects on estimated proportion of current drinkers") +
   labs(y = "% current drinkers", color = "Sex") +
   scale_color_manual(values = c("Men, additive effects only" = "lightblue", "Men, total effects" = "darkblue", "Women, additive effects only" = "orange", "Women, total effects" = "darkred")) +
   guides(color = guide_legend(title = NULL, ncol = 4)) +
@@ -73,6 +72,41 @@ combined_plot <- plot_data %>%
 
 combined_plot
 ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
+
+
+# Plot of total estimates only, both genders together
+combined_plot_total <- plot_data %>%
+  ggplot(aes(x = education)) +
+  # geom_point(data = filter(plot_data, sex == "Men"), aes(y = pmn, color = "Men, additive effects only"), alpha = 0.5) +
+  # geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = pAlo, ymax = pAhi, color = "Men, additive effects only")) +
+  geom_point(data = filter(plot_data, sex == "Men"), aes(y = pmn, color = "Men, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = plo, ymax = phi, color = "Men, total effects")) +
+  # geom_point(data = filter(plot_data, sex == "Women"), aes(y = pAmn, color = "Women, additive effects only"), alpha = 0.5) +
+  # geom_errorbar(data = filter(plot_data, sex == "Women"), aes(ymin = pAlo, ymax = pAhi, color = "Women, additive effects only")) +
+  geom_point(data = filter(plot_data, sex == "Women"), aes(y = pmn, color = "Women, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(ymin = plo, ymax = phi, color = "Women, total effects")) +
+  facet_grid(cols = vars(race), rows = vars(age)) +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = 90, size=12),
+        legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        plot.title = element_text(size = 16)) +
+  theme(strip.background = element_rect(fill = "lightblue")) +
+#  ggtitle("The influence of interaction effects on estimated proportion of current drinkers") +
+  labs(y = "% current drinkers", color = "Sex") +
+  scale_color_manual(values = c("Men, total effects" = "darkblue", "Women, total effects" = "darkred")) +
+  guides(color = guide_legend(title = NULL, ncol = 4)) +
+  scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high")) + 
+  scale_y_continuous(limits = c(0, 100))
+
+combined_plot_total
+ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, total estimates only.png"), dpi=300, width=33, height=19, units="cm")
+
+
+
+
+
 
 
 
