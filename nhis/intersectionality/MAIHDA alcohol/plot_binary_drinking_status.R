@@ -28,7 +28,7 @@ theme_set(theme_bw(base_size = 12))
 ##### Plots
 
 # Read in data
-plot_data <- readRDS(paste0(outputs,"binary drinking status/results binary drinking status.rds"))
+plot_data <- readRDS(paste0(outputs,"binary drinking status/results binary drinking status corrected CIs.rds"))
 
 # Prep data for plotting
 plot_data <- plot_data %>%
@@ -71,7 +71,7 @@ combined_plot <- plot_data %>%
   scale_y_continuous(limits = c(0, 100))
 
 combined_plot
-ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, additive versus total estimates.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, additive versus total estimates, corrected cis.png"), dpi=300, width=33, height=19, units="cm")
 
 
 # Plot of total estimates only, both genders together
@@ -101,15 +101,7 @@ combined_plot_total <- plot_data %>%
   scale_y_continuous(limits = c(0, 100))
 
 combined_plot_total
-ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, total estimates only.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"binary drinking status/plot binary drinking status both sexes, total estimates only, correctd cis.png"), dpi=300, width=33, height=19, units="cm")
 
-
-
-
-
-
-
-
-
-
-
+# Calculate the number of strat for whom there are significant interaction effects (i.e. CIs don't cross zero)
+significant_interactions <- plot_data %>% filter(pBlo<0 & pBhi <0 | pBlo >0 & pBhi>0)

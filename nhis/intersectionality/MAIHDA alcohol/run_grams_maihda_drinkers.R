@@ -184,15 +184,15 @@ rownames(coefs_full) <- c("intercept_FE_2","Year 2001", "Year 2002", "Year 2003"
                           "RP2_var_intercept", "RP1_var_intercept")
 
 coefs_table <- rbind(coefs_null, coefs_full)
-saveRDS(coefs_table, paste0(outputs, "grams drinkers/model coefficients and variance_grams_drinkers.rds"))
-write.csv(coefs_table, paste0(outputs, "grams drinkers/model coefficients and variance_grams_drinkers.csv"))
+#saveRDS(coefs_table, paste0(outputs, "grams drinkers/model coefficients and variance_grams_drinkers.rds"))
+#write.csv(coefs_table, paste0(outputs, "grams drinkers/model coefficients and variance_grams_drinkers.csv"))
 
 ##### CALCULATE VPC AND PCV (from the parameter point estimates)
 VPC_grams_null <- null_grams["RP"][["RP2_var_Intercept"]]/(null_grams["RP"][["RP1_var_Intercept"]] + null_grams["RP"][["RP2_var_Intercept"]])
 VPC_grams_full <- full_grams["RP"][["RP2_var_Intercept"]]/(full_grams["RP"][["RP1_var_Intercept"]] + full_grams["RP"][["RP2_var_Intercept"]])
 VPC_table <- data.frame(Model = c("null", "main effects"),
                         VPC = c(VPC_grams_null, VPC_grams_full))
-write.csv(VPC_table, paste0(outputs, "grams drinkers/VPC_table_grams_drinkers.csv"))
+#write.csv(VPC_table, paste0(outputs, "grams drinkers/VPC_table_grams_drinkers.csv"))
 
 ##### Extract data from relevant slots of s4 object (based upon full model)
 
@@ -335,14 +335,14 @@ mdata_prepped <- mdata_prepped %>%
 mdata_prepped <- mdata_prepped %>% 
   group_by(intersections) %>%
   mutate(estmn = mean(est),
-         estlo = quantile(est,.25),
-         esthi = quantile(est,.75),
+         estlo = quantile(est,.025),
+         esthi = quantile(est,.975),
          estAmn = mean(estA),
-         estAlo = quantile(estA,.25),
-         estAhi = quantile(estA,.75),
+         estAlo = quantile(estA,.025),
+         estAhi = quantile(estA,.975),
          estImn = mean(estI),
-         estIlo = quantile(estI,.25),
-         estIhi = quantile(estI,.75))
+         estIlo = quantile(estI,.025),
+         estIhi = quantile(estI,.975))
 
 # Drop chains and just keep their summaries (mean, 2.5th and 97.5th)
 mdata_results <- mdata_prepped %>%
@@ -363,25 +363,25 @@ mdata_results <- mdata_results %>%
     difference = estmn-mean_observed_grams)
 
 # save results
-saveRDS(mdata_results, paste0(outputs, "grams drinkers/results_grams_drinkers_incl_uj.rds"))
-write.csv(mdata_results, paste0(outputs, "grams drinkers/results_grams_drinkers_incl_uj.csv"))
+saveRDS(mdata_results, paste0(outputs, "grams drinkers/results_grams_drinkers_corrected_cis.rds"))
+write.csv(mdata_results, paste0(outputs, "grams drinkers/results_grams_drinkers_corrected_cis.csv"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS(paste0(outputs, "grams drinkers/results_grams_drinkers_incl_uj.rds"))
+mdata_results <- readRDS(paste0(outputs, "grams drinkers/results_grams_drinkers_corrected_cis.rds"))
 
 # Summarise intersectional groups with the highest and lowest estimated grams
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(estmn, n = 5) 
 mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(estmn, n = 5)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, paste0(outputs, "grams drinkers/mdata_5_estimates_drinkers_incl_uj.csv"))
+write.csv(mdata_overall, paste0(outputs, "grams drinkers/mdata_5_estimates_drinkers_corrected_cis.csv"))
 
 # Summarise which intersectional groups have the largest differences in grams estimates,
 # when comparing additive only estimates vs estimates which include interaction effects
 mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(estImn, n = 5) 
 mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(estImn, n = 5)  
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
-write.csv(mdata_interactions, paste0(outputs, "grams drinkers/mdata_5_interactions_drinkers_incl_uj.csv"))
+write.csv(mdata_interactions, paste0(outputs, "grams drinkers/mdata_5_interactions_drinkers_corrected_cis.csv"))
 
 ##### Explore face validity of estimates
 

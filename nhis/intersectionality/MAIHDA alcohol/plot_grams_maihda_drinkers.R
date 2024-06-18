@@ -28,7 +28,7 @@ theme_set(theme_bw(base_size = 12))
 ##### Plots
 
 # Read in data
-plot_data <- readRDS(paste0(outputs,"grams drinkers/results_grams_drinkers_incl_uj.rds"))
+plot_data <- readRDS(paste0(outputs,"grams drinkers/results_grams_drinkers_corrected_cis.rds"))
 
 # Prep data for plotting
 plot_data <- plot_data %>%
@@ -61,7 +61,7 @@ male_grams_add <- plot_data %>%
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Men")+
   labs(y= "Estimated grams per day") 
 male_grams_add
-ggsave(paste0(outputs,"grams drinkers/plot grams males, additive.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams males, additive_updated CIs.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates - men
 male_grams_add_vs_mul <- plot_data %>%
@@ -82,8 +82,7 @@ male_grams_add_vs_mul <- plot_data %>%
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Men")+
   labs(y= "Estimated grams per day") 
   male_grams_add_vs_mul
-ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
-
+ggsave(paste0(outputs,"grams drinkers/plot grams males, additive versus total estimates updated cis.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only  - women
 female_grams_add <- plot_data %>%
@@ -98,7 +97,7 @@ female_grams_add <- plot_data %>%
         axis.text.x = element_text(angle=90))+
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Women")
 female_grams_add
-ggsave(paste0(outputs,"grams drinkers/plot grams females, additive only.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams females, additive only updated CIs.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plots of additive only versus total estimates - women
 female_grams_add_vs_mul <- plot_data %>%
@@ -118,7 +117,7 @@ female_grams_add_vs_mul <- plot_data %>%
   theme(strip.background = element_rect(fill = "lightblue")) +
   ggtitle("The influence of interaction effects on estimated alcohol consumption: Women")
 female_grams_add_vs_mul
-ggsave(paste0(outputs,"grams drinkers/plot grams females, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams females, additive versus total estimates updated CIs.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plot of additive versus total estimates, both genders together
 combined_plot <- plot_data %>%
@@ -146,7 +145,7 @@ combined_plot <- plot_data %>%
   scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high"))+
   scale_y_continuous(breaks = seq(0, max(plot_data$esthi), by = 5))
 combined_plot
-ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, additive versus total estimates incl uj.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, additive versus total estimates updated CIs.png"), dpi=300, width=33, height=19, units="cm")
 
 # Plot of total estimates only, both genders together
 combined_plot_total <- plot_data %>%
@@ -169,9 +168,10 @@ combined_plot_total <- plot_data %>%
   scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high"))+
   scale_y_continuous(breaks = seq(0, max(plot_data$esthi), by = 5))
 combined_plot_total
-ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, total estimates only.png"), dpi=300, width=33, height=19, units="cm")
+ggsave(paste0(outputs,"grams drinkers/plot grams both sexes, total estimates only updated CIs.png"), dpi=300, width=33, height=19, units="cm")
 
-
+# Calculate the number of strat for whom there are significant interaction effects (i.e. CIs don't cross zero)
+significant_interactions <- plot_data %>% filter(estIlo<0 & estIhi <0 | estIlo >0 & estIhi>0)
 
 
 
