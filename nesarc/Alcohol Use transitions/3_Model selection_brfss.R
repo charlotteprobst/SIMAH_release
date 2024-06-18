@@ -186,12 +186,18 @@ Poplong$age3 <- cut(Poplong$microsim.init.age,
                             labels=c("18-24","25-64","65+"))
 
 nesarc_expanded$race_w1 <- relevel(nesarc_expanded$race_w1, ref="Other, non-Hispanic")
+
+
+Poplong$microsim.init.sex <- as.factor(Poplong$microsim.init.sex)
+Poplong$microsim.init.education <- as.factor(Poplong$microsim.init.education)
+Poplong$microsim.init.race <- as.factor(Poplong$microsim.init.race)
+
 # MSM 3: All ages **************************************************************************************
 # MSM 3A: Age (3 categories)
 msm3a <- msm (catnum ~ year, subject=microsim.init.id, data = Poplong, qmatrix = Q_allAges, 
               center=FALSE, control = list(trace=1, maxit=600, fnscale = 2632448),
                   covariates = ~ microsim.init.sex + age3 + microsim.init.education + microsim.init.race)
-        saveRDS(msm3a, paste0(models, "msm_brfss_alltransitions.RDS")) 
+        saveRDS(msm3a, paste0(models, "msm_brfss.RDS")) 
 
    
 # MSM 3B: Age (7 categories)

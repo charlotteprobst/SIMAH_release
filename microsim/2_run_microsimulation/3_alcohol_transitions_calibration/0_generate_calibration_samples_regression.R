@@ -1,5 +1,5 @@
 # read in the NESARC regression model 
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC.csv")
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_GLMM.csv")
 
 mean_zero <- alcohol_transitions %>% filter(estimate=="PE" & type=="zero") %>% 
   dplyr::select(-c(type,estimate)) %>% as.numeric(.)

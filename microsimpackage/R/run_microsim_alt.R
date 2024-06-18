@@ -235,16 +235,16 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 
 # update alcohol use categories
 if(updatingalcohol==1){
-  # basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
-  basepop <- transition_alcohol_determ(basepop, brfss, y)
+  basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
+  # # basepop <- transition_alcohol_determ(basepop, brfss, y)
   basepop <- update_alcohol_cat(basepop)
-
-  # print("updating alcohol use")
-  # if(y %in% transitionyears==TRUE){
+  #
+  # # print("updating alcohol use")
+  # # if(y %in% transitionyears==TRUE){
   # basepop <- basepop %>% ungroup() %>% mutate(
-    # agecat = cut(microsim.init.age,
-    #              breaks=c(0,20,25,29,39,49,64,100),
-    #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
+  # agecat = cut(microsim.init.age,
+  #              breaks=c(0,20,25,29,39,49,64,100),
+  #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
   #   agecat = cut(microsim.init.age,
   #                breaks=c(0,24,64,100),
   #                labels=c("18-24","25-64","65+")),

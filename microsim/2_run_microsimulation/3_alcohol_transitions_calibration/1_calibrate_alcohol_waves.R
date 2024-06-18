@@ -26,8 +26,8 @@ options(dplyr.summarise.inform = FALSE)
 
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
-# WorkingDirectory <- "/home/cbuckley"
-WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+WorkingDirectory <- "/home/cbuckley"
+# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
@@ -51,7 +51,11 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # set up samples for calibration for education transitions
 # source(paste0(ScriptDirectory,"0_generate_calibration_samples_regression.R"))
-source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
+# source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/1yrprob_multinomial_model.csv")
+
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_GLMM_binom.csv")
+
 
 targets <- generate_targets_alcohol(brfss)
 targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)

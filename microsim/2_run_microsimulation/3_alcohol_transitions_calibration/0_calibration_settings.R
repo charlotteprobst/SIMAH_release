@@ -9,7 +9,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 500
+nsamples <- 540
 nreps <- 2
 
 # generate list of samples to be run with random number seeds

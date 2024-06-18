@@ -2,16 +2,19 @@
 
 # model <- read_rds("SIMAH_workplace/nesarc/Models/msm3b.RDS")
 
-model <- read_rds("SIMAH_workplace/nesarc/Models/msm_brfss_alltransitions.RDS")
+# model <- read_rds("SIMAH_workplace/nesarc/Models/msm_brfss_alltransitions.RDS")
+
+# output <- read_rds("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/NESARC_optim/optimised_output2.RDS")
 
 # model <- read_rds("SIMAH_workplace/nesarc/Models/psid_alcohol_model_2005_2010.RDS")
 
-# model <- read_rds("SIMAH_workplace/nesarc/Models/msm3a.RDS")
-# originalsample <- 34165
-# inflatedsample <- 2043174
+model <- read_rds("SIMAH_workplace/nesarc/Models/msm3a.RDS")
+originalsample <- 34165
+inflatedsample <- 2043174
 
 # first sample from the markov model to get nsamples new estimates
-samples <- sample_from_markov(model, nsamples, inflation=1, 1, 1)
+samples <- sample_from_markov(model, nsamples, inflation=10, originalsample, inflatedsample)
+# samples <- output$member$pop
 
 # with selective inflation
 # samples <- sample_from_markov_inflated(model, nsamples, inflation=10, originalsample, inflatedsample, "edu")
@@ -21,22 +24,24 @@ samples <- sample_from_markov(model, nsamples, inflation=1, 1, 1)
 # every age sex race combination
 # note these have to be in exactly the same format of the covariates specified in the model
 # if unsure of this run model$covariates to check and e.g. model$data$mf$sex
-# covariates <- data.frame(expand.grid(female_w1=c("Men","Women"),
-#                                      # age7=c("18-20","21-25","26-29","30-39",
-#                                      #        "40-49","50-64","65+"),
-#                                      age3 = c("18-24","25-64","65+"),
-#                                      edu3=c("Low","Med","High"),
-#                                      race_w1=c("White, non-Hispanic",
-#                                                "Black, non-Hispanic",
-#                                                "Hispanic",
-#                                                "Other, non-Hispanic")))
-covariates <- data.frame(expand.grid(microsim.init.sex=c("m","f"),
+covariates <- data.frame(expand.grid(female_w1=c("Men","Women"),
                                      # age7=c("18-20","21-25","26-29","30-39",
                                      #        "40-49","50-64","65+"),
                                      age3 = c("18-24","25-64","65+"),
-                                     microsim.init.education=c("LEHS","SomeC","College"),
-                                     microsim.init.race=c("WHI","BLA","SPA","OTH")))
-covariates$cat <- paste(covariates$age3, covariates$microsim.init.sex, covariates$microsim.init.race, covariates$microsim.init.education, sep="_")
+                                     edu3=c("Low","Med","High"),
+                                     race_w1=c("White, non-Hispanic",
+                                               "Black, non-Hispanic",
+                                               "Hispanic",
+                                               "Other, non-Hispanic")))
+covariates$cat <- paste(covariates$age3, covariates$female_w1, covariates$race_w1, covariates$edu3, sep="_")
+
+# covariates <- data.frame(expand.grid(microsim.init.sex=c("m","f"),
+#                                      # age7=c("18-20","21-25","26-29","30-39",
+#                                      #        "40-49","50-64","65+"),
+#                                      age3 = c("18-24","25-64","65+"),
+#                                      microsim.init.education=c("LEHS","SomeC","College"),
+#                                      microsim.init.race=c("WHI","BLA","SPA","OTH")))
+# covariates$cat <- paste(covariates$age3, covariates$microsim.init.sex, covariates$microsim.init.race, covariates$microsim.init.education, sep="_")
 
 # covariates <- data.frame(expand.grid(sex=c(0,1),
 #                                      # age7=c("18-20","21-25","26-29","30-39",
@@ -50,8 +55,9 @@ covariates$cat <- paste(covariates$age3, covariates$microsim.init.sex, covariate
 #                                                "hispanic",
 #                                                "other")))
 # covariates$cat <- paste(covariates$age_cat, covariates$sex, covariates$race, covariates$education, sep="_")
-samples <- data.frame(t(model$estimates))
-samples <- cbind(samplenum=1, samples)
+# samples <- data.frame(t(model$estimates))
+# samples <- cbind(samplenum=1:nrow(samples), samples)
+# samples <- data.frame(samples)
 
 probs <- convert_to_probability(samples, model, covariates)
 
@@ -65,14 +71,14 @@ probs <- probs %>%
                              endsWith(StateTo,"4") ~ "State 4")) %>%
   separate(cov, into=c("age","sex","race","edu"), sep="_") %>%
   mutate(
-    # sex=ifelse(sex=="Men", "m","f"),
-    #      race=case_when(grepl("Black", race) ~ "BLA",
-    #                     grepl("White", race) ~ "WHI",
-    #                     grepl("Other", race) ~ "OTH",
-    #                     grepl("Hispanic", race) ~ "SPA"),
-    #      edu=case_when(edu=="Low" ~ "LEHS",
-    #                    edu=="Med" ~ "SomeC",
-    #                    edu=="High" ~ "College"),
+    sex=ifelse(sex=="Men", "m","f"),
+         race=case_when(grepl("Black", race) ~ "BLA",
+                        grepl("White", race) ~ "WHI",
+                        grepl("Other", race) ~ "OTH",
+                        grepl("Hispanic", race) ~ "SPA"),
+         edu=case_when(edu=="Low" ~ "LEHS",
+                       edu=="Med" ~ "SomeC",
+                       edu=="High" ~ "College"),
          StateFrom=case_when(StateFrom==1 ~ "Non-drinker",
                              StateFrom==2 ~ "Low risk",
                              StateFrom==3 ~ "Medium risk",

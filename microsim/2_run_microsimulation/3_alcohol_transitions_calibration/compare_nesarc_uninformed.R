@@ -7,16 +7,18 @@ test <- implausibility %>%
   summarise(max_implausibility=max(implausibility, na.rm=T)) %>% 
   filter(max_implausibility<5)
 
-implausibility <- implausibility %>% 
-  filter(samplenum %in% samples)
+implausibility <- Output %>% 
+  filter(samplenum ==38)
+Output$samplenum <- 1
 
-ggplot(subset(Output, AlcCAT=="Non-drinker" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
+ggplot(subset(Output, AlcCAT=="Low risk" & microsim.init.race=="WHI"), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line() + 
-  # geom_point() + 
+  geom_point() +
   geom_line(aes(x=year, y=proptarget), colour="black", linewidth=1) + 
   geom_ribbon(aes(ymin=proptarget-1.96*se, ymax=proptarget+1.96*se), fill="grey", colour=NA, alpha=0.6) + 
-  theme_bw() + 
-  theme(legend.position="none") + ylim(0,NA) +
+  theme_bw() + ylim(0,NA)+ 
+  theme(legend.position="none") + 
+  # ylim(0,NA) +
   facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
   ggtitle("NESARC - Medium risk - White")
 ggsave("SIMAH_workplace/WhiteMedNESARCfullunin_goodfit.png", dpi=300, width=33, height=19, units='cm')

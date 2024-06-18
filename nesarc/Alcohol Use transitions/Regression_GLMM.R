@@ -82,6 +82,81 @@ nesarc_selected$scaledweight1 <- as.integer(nesarc_selected$weight_wave2/455)
 
 # nesarc_selected$scaledweight2 <- as.integer(nesarc_selected$scaledweight/nesarc_selected$years_2)
 
+nesarc_selected$alc_rounded_1_scaled <- round((nesarc_selected$alc_rounded_1-mean(nesarc_selected$alc_rounded_1))/sd(nesarc_selected$alc_rounded_1))
+nesarc_selected$alc_rounded_2_scaled <- round((nesarc_selected$alc_rounded_2-mean(nesarc_selected$alc_rounded_2))/sd(nesarc_selected$alc_rounded_2))
+
+head(round(scale(nesarc_selected$alc_rounded_1)))
+
+# predicting the probability of being an abstainer 
+abstainermod <- glmer(abstainer_2 ~ abstainer_1 + age3_2 + female.factor_2 + 
+                      race.factor_2 + edu3_2 + cat1_1 + cat2_1 + (1|idnum),
+                      data=nesarc_selected, weights=scaledweight1,
+                      family=binomial) 
+
+summary(abstainermod)
+
+coef(abstainermod)
+
+summary <- summary(abstainermod)
+
+nesarc_selected$predicted_abstainers <- predict(abstainermod, type="response")
+
+# now drinkers model 
+drinkers <- nesarc_selected %>% filter(alc_rounded_1!=0)
+
+drinkers$alc1_scaled <- round((drinkers$alc_daily_g_1-mean(drinkers$alc_daily_g_1))/sd(drinkers$alc_daily_g_1))
+drinkers$alc2_scaled <- round((drinkers$alc_daily_g_2-mean(drinkers$alc_daily_g_2))/sd(drinkers$alc_daily_g_2))
+
+drinkermod <- glmer(alc2_scaled ~ alc1_scaled + abstainer_1 + age3_2 + female.factor_2 + 
+                        race.factor_2 + edu3_2 + cat1_1 + cat2_1 + (1|idnum),
+                      data=drinkers, weights=scaledweight1,
+                      family=poisson) 
+summary(drinkermod)
+
+coef(abstainermod)
+summaryabstainer <- summary(abstainermod)
+coefabstainers <- data.frame(summaryabstainer$coefficients)
+
+summarydrinker <- summary(drinkermod)
+coefdrinkers <- data.frame(summarydrinker$coefficients)
+
+coefSE <- rbind(c("PE","zero",coefabstainers$Estimate),
+                c("PE","count", coefdrinkers$Estimate),
+                c("SE","zero", coefabstainers$Std.Err),
+                c("SE","count", coefdrinkers$Std.Err))
+coefSE <- data.frame(coefSE)
+names(coefSE)[1:2] <- c("estimate","type")
+names(coefSE)[3:15] <- rownames(zero_part_coef)
+# coefSE <- coefSE[,-ncol(coefSE)] 
+
+# save a copy of the coefficients 
+write.csv(coefSE, paste0(models, "regression_NESARC_GLMM_binom.csv"), row.names=F)
+
+
+random_intercepts <- ranef(abstainermod)$idnum[, 1]
+predictors <- nesarc_selected[c("abstainer_1", "age3_2", "female.factor_2", "race.factor_2", "edu3_2", "cat1_1", "cat2_1")]
+residuals <- resid(abstainermod)
+
+for (var in colnames(predictors)) {
+  p <- ggplot(data = nesarc_selected, aes_string(x = var, y = residuals)) +
+    geom_point() + 
+    geom_smooth(method = "loess") + 
+    labs(title = paste("Residuals vs", var))
+  print(p)
+}
+
+for (var in colnames(predictors)) {
+  p <- ggplot(data = data.frame(predictors, random_intercepts), aes_string(x = var, y = "random_intercepts")) +
+    geom_point() + 
+    geom_smooth(method = "loess") + 
+    labs(title = paste("Random Intercepts vs", var))
+  print(p)
+}
+
+
+
+
+
 # predictors are previous alcohol use, all demographics and some interactions effects 
 # count model parameters | zero model parameters 
 m1 <-  zeroinfl(alc_rounded_2 ~ age3_2 + age_2 + female.factor_2 +
@@ -94,36 +169,41 @@ m1 <-  zeroinfl(alc_rounded_2 ~ age3_2 + age_2 + female.factor_2 +
                 weights = scaledweight1,
                 dist = "poisson")
 summary(m1)
+library(GLMMadaptive)
 
-mixed <- mixed_model(fixed = alc_rounded_2 ~ age3_2 + female.factor_2 + race.factor_2 + edu3_2 +
-                       alc_rounded_1 + abstainer_1, 
+mixed <- mixed_model(fixed = alc_rounded_2_scaled ~ age3_2 + female.factor_2 + race.factor_2 + edu3_2 +
+                       alc_rounded_1_scaled + abstainer_1 + cat1_1 + cat2_1, 
                      random= ~ 1 | idnum, 
                      data=nesarc_selected,
-                     family=zi.poisson,
-                     # weights=scaledweight1, 
+                     family=zi.negative.binomial(),
+                     weights=nesarc_selected$scaledweight1,
                      zi_fixed = ~ age3_2 + female.factor_2 + race.factor_2 + edu3_2 +
-                       alc_rounded_1 + abstainer_1)
+                       alc_rounded_1_scaled + abstainer_1 + cat1_1 + cat2_1, 
+                     control = list(max_coef_value = 500, iter_EM = 0))
 summary(mixed)
 
-coef(mixed, model="zero")
-coef(mixed, model="count")
+ranef(mixed)
+mean(ranef(mixed))
+sd(ranef(mixed))
+rnorm(100, mean=ranef(mixed), sd(ranef(mixed)))
 
+summary <- summary(mixed)
 
-# Extract coefficients
-zero_part_coef <- coef(m1, model = "zero")
-count_part_coef <- coef(m1, model = "count")
+count_part_coef <- data.frame(summary$coef_table)
+zero_part_coef <- data.frame(summary$coef_table_zi)
 
 # Extract standard errors for the zero part
-coefSE <- rbind(c("PE","zero",zero_part_coef),
-                c("PE","count", count_part_coef),
-                c("SE","zero", summary(m1)$coefficients$zero[, "Std. Error"]),
-                c("SE","count", summary(m1)$coefficients$count[, "Std. Error"]))
+coefSE <- rbind(c("PE","zero",zero_part_coef$Estimate),
+                c("PE","count", count_part_coef$Estimate),
+                c("SE","zero", zero_part_coef$Std.Err),
+                c("SE","count", count_part_coef$Std.Err))
 coefSE <- data.frame(coefSE)
 names(coefSE)[1:2] <- c("estimate","type")
+names(coefSE)[3:15] <- rownames(zero_part_coef)
 # coefSE <- coefSE[,-ncol(coefSE)] 
 
 # save a copy of the coefficients 
-write.csv(coefSE, paste0(models, "regression_NESARC.csv"), row.names=F)
+write.csv(coefSE, paste0(models, "regression_NESARC_GLMM_binom.csv"), row.names=F)
 
 # Display the coefficients
 print("Zero part coefficients (logistic regression):")
