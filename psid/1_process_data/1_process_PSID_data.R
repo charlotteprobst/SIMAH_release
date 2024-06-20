@@ -467,7 +467,7 @@ alcohol_discrepencies <- all_data_incl_race %>%
   filter(flag==1) %>%
   dplyr::select(uniqueID, year, everdrink, quantity, frequency, gpd,
                 everdrink_TAS, quantity_TAS, frequency_TAS, gpd_TAS) 
-# 4 discrepancies - estimates higher based on TAS estimates so suggest using them in alcohol analyses
+# 3 discrepancies - estimates higher based on TAS estimates so suggest using them in alcohol analyses
 
 # Fill education and weight data and filter by year >= 1999
 all_data_1999 <- all_data_incl_race %>%
@@ -487,7 +487,7 @@ n_distinct(all_data_filled$familyID)# 3,018 families
 n_distinct(all_data_filled$uniqueID)# 43,884 individuals
 
 # Save full cleaned data
-write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_psid_data_1999_2021.csv", row.names=F)
+write.csv(all_data_filled, "SIMAH_workplace/PSID/cleaned data/all_psid_data_1999_2021_050424.csv", row.names=F)
 
 # Filter to select only final variables
 PSID_data_cleaned <- all_data_filled %>% 
@@ -507,11 +507,11 @@ PSID_data_cleaned <- all_data_filled %>%
     "individualrace_TAS","race_using_first_year_TAS", "race_using_priority_order_TAS", "race_consistency_TAS",
     "final_race_using_first_year", "final_race_using_priority_order", "final_race_using_method_hierarchy","best_available_race_method",
     # Alcohol consumption
-    "drinkingstatus","quantity","frequency","gpd","bingedrinkdays","AlcCAT",
-    "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS", "AlcCAT_TAS",
+    "drinkingstatus","quantity","frequency","gpd_basic", "gpd","bingedrinkdays","AlcCAT",
+    "everdrink_TAS", "quantity_TAS", "frequency_TAS", "bingedrink_TAS", "gpd_TAS_basic", "gpd_TAS", "AlcCAT_TAS",
     # Psychological distress
     "kessler_score","distress_severe","distress_class"))
-write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021.csv", row.names=F)
+write.csv(PSID_data_cleaned, "SIMAH_workplace/PSID/cleaned data/psid_data_1999_2021_050424.csv", row.names=F)
 
 
 

@@ -556,7 +556,7 @@ process_alcohol <- function(data){
   everdrinkalcoholspouse <- recode_PSID_vars(data=data, varlist, "everdrinkspouse", years)
   everdrinkalcoholspouse$everdrinkspouse <- ifelse(everdrinkalcoholspouse$everdrinkspouse==9|everdrinkalcoholspouse$everdrinkspouse==8, NA, everdrinkalcoholspouse$everdrinkspouse)
 
-  # variables for "drinking frequency" for household head
+  # variables for "drinking frequency" for household head (last year)
   varlist<-c("ER27106", "ER38317", "ER44290", "ER49628", "ER55376", "ER62498", "ER68563", "ER74571", "ER80722")
   frequencydrinkhd <- recode_PSID_vars(data=data, varlist, "frequencydrinkhd", years)
   frequencydrinkhd$frequencydrinkhd <- ifelse(frequencydrinkhd$frequencydrinkhd==9|frequencydrinkhd$frequencydrinkhd==8, NA, frequencydrinkhd$frequencydrinkhd)
@@ -608,19 +608,19 @@ recode_alcohol <- function(data){
                                     ifelse(relationship=="cohabitor", drinksperdayspouse,NA)))) %>%
     dplyr::select(-c(drinksperdayhd, drinksperdayspouse))
   
-  # drinking frequency (frequencydrinkfinal)
+  # drinking frequency 
   data <- data %>%
     mutate(frequency = ifelse(relationship=="head", frequencydrinkhd,
                               ifelse(relationship=="wife/partner" | relationship=="husbandofhead", frequencydrinkspouse,
                                      ifelse(relationship=="cohabitor", frequencydrinkspouse, NA))),
+           # recode drinking frequency to reflect days per month
            frequency = ifelse(frequency==1, 1, 
                               ifelse(frequency==2, 1.5, 
                                      ifelse(frequency==3, 3.5,
                                             ifelse(frequency==4, 5,
                                                    ifelse(frequency==5, 12,
                                                           ifelse(frequency==6, 30, frequency))))))) %>% 
-    dplyr::select(-c(frequencydrinkhd,frequencydrinkspouse)) %>% 
-    mutate(gpd = (quantity*frequency*14)/30)
+    dplyr::select(-c(frequencydrinkhd,frequencydrinkspouse)) 
   
   # binge drinking
   data$bingedrinkdays<-ifelse(data$relationship=="head", data$bingedrinkhd,
@@ -628,7 +628,22 @@ recode_alcohol <- function(data){
                                        ifelse(data$relationship=="cohabitor", data$bingedrinkspouse,
                                               NA)))
   
-  #Recoding to WHO alcohol categories
+# Estimate gpd (basic quantity/frequency approach)
+  data <- data %>% 
+    mutate(gpd_basic = (quantity*frequency*14)/30.4)
+
+# Estimate gpd (expanded approach)
+  data <- data %>% mutate(
+    gpd = ifelse(
+    ((quantity<5 & sex=="male")|(quantity<4 & sex=="female")) & 
+      !is.na(bingedrinkdays) & 
+      bingedrinkdays!=0, 
+    ((quantity*(frequency*12 - bingedrinkdays) + 5*bingedrinkdays)*14)/365,
+    gpd_basic
+    )
+  )                       
+ 
+  # Recoding to WHO alcohol categories
   data <- data %>%
     mutate(AlcCAT = ifelse(gpd==0,"Non-drinker",
                            ifelse(sex=="male" & gpd>0 & gpd<=40,"Low risk",
@@ -666,7 +681,7 @@ process_alcohol_TAS <- function(data){
   freq_drink_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
   names(freq_drink_tas)[2:9] <- years
   freq_drink_tas <- freq_drink_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="freqdrink")
-  # Estimate number of drinking days per moneth based on descriptive variable
+  # Estimate number of drinking days per month based on descriptive variable
   freq_drink_tas <- freq_drink_tas %>% mutate(frequency_TAS = case_when(
     freqdrink==8|freqdrink==9|freqdrink==0 ~ NA, # Don't know, refused or inappropriate (does not drink)
     freqdrink==1 ~ 1, # Less than once a month
@@ -689,25 +704,38 @@ process_alcohol_TAS <- function(data){
   bingedrinkdays_tas <- data %>% dplyr::select(uniqueID, all_of(varlist))
   names(bingedrinkdays_tas)[2:9] <- years
   bingedrinkdays_tas <- bingedrinkdays_tas %>% pivot_longer(cols='2005':'2019', names_to="year", values_to="bingedrinkdays")
-  bingedrinkdays_tas <- bingedrinkdays_tas %>% mutate(bingedrink_TAS = ifelse(
-    bingedrinkdays==998|bingedrinkdays==999|bingedrinkdays==0, NA, bingedrinkdays))
+  bingedrinkdays_tas <- bingedrinkdays_tas %>% mutate(
+    bingedrink_TAS = ifelse(
+    bingedrinkdays==998|bingedrinkdays==999|bingedrinkdays==0, NA, 
+    bingedrinkdays))
   
   # Combine all drinking variables into one dataset
   drinking <- left_join(ever_drink_tas, freq_drink_tas) %>% 
     left_join(., drinksperday_tas) %>% left_join(., bingedrinkdays_tas)
     
   # Estimate grams per day for an individual (basic formula)
-  drinking <- drinking %>%  mutate(gpd_TAS = (quantity_TAS*frequency_TAS*14)/30)
+  drinking <- drinking %>%  mutate(gpd_TAS_basic = (quantity_TAS*frequency_TAS*14)/30)
   
+  # Estimate gpd (expanded approach)
+drinking <- drinking %>% mutate(
+  gpd_TAS = ifelse(
+    ((quantity_TAS<5 & sex=="male")|(quantity_TAS<4 & sex=="female")) & 
+      !is.na(bingedrink_TAS) & 
+      bingedrink_TAS!=0, 
+    ((quantity_TAS*(frequency_TAS*12 - bingedrink_TAS) + 5*bingedrink_TAS)*14)/365,
+    gpd_TAS_basic
+  )
+)                  
+
   # Recode to WHO alcohol categories
   drinking <- drinking %>%
     mutate(AlcCAT_TAS = ifelse(gpd_TAS==0,"Non-drinker",
-                           ifelse(sex=="male" & gpd_TAS>0 & gpd_TAS<=40,"Low risk",
-                                  ifelse(sex=="female" & gpd_TAS>0 & gpd_TAS<=20,"Low risk",
+                           ifelse(sex=="male" & gpd_TAS>0 & gpd_TAS<=40,"Low risk", 
+                                  ifelse(sex=="female" & gpd_TAS>0 & gpd_TAS<=20,"Low risk", 
                                          ifelse(sex=="male" & gpd_TAS>40 & gpd_TAS<=60,"Medium risk",
-                                                ifelse(sex=="female" & gpd_TAS>20 & gpd_TAS<=40,"Medium risk",
-                                                       ifelse(sex=="male" & gpd_TAS>60 & gpd_TAS<=100,"High risk",
-                                                              ifelse(sex=="female" & gpd_TAS>40 & gpd_TAS<=60,"High risk",
+                                                ifelse(sex=="female" & gpd_TAS>20 & gpd_TAS<=40,"Medium risk", 
+                                                       ifelse(sex=="male" & gpd_TAS>60 & gpd_TAS<=100,"High risk", 
+                                                              ifelse(sex=="female" & gpd_TAS>40 & gpd_TAS<=60,"High risk", 
                                                                      ifelse(sex=="male" & gpd_TAS>100,"Very high risk",
                                                                             ifelse(sex=="female" & gpd_TAS>60,"Very high risk",NA))))))))))
   

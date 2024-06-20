@@ -94,15 +94,40 @@ tally <- data %>% group_by(YEAR, State, drinkingstatus_updated) %>%
 # now calculate the percentage of drinkers in each year in each state
 data <- left_join(data,tally)
 
+# Calculate confidence interval for each group
+conf_intervals <- data %>%
+  group_by(YEAR, State) %>%
+  summarize(sample_size = length(gramsperday_new),
+            mean = mean(gramsperday_new),
+            sd = sd(gramsperday_new),
+            SE = sd/sqrt(sample_size),
+            lower = mean - 1.96*SE,
+            upper = mean + 1.96*SE)
+
+# Join the confidence intervals back to the original dataset
+data <- left_join(data, conf_intervals, by = c("YEAR", "State"))
+
 # perform the up-shift 
-data <- data %>% group_by(YEAR, State) %>% 
-  mutate(BRFSS_APC = mean(gramsperday_new),
+test <- data %>% group_by(YEAR, State) %>% 
+  mutate(BRFSS_APC = mean,
+         BRFSS_APC_lower = lower,
+         BRFSS_APC_upper = upper,
          adj_brfss_apc = BRFSS_APC/percentdrinkers,       # adjust the BRFSS APC value based on % of current drinkers
+         adj_brfss_apc_lower = BRFSS_APC_lower/percentdrinkers,
+         adj_brfss_apc_upper = BRFSS_APC_upper/percentdrinkers,
          gramspercapita_90 = gramspercapita_adj1*0.9, #adjust to 90% of APC
          quotient = (gramspercapita_90)/adj_brfss_apc, # adjust to 90% of the APC data
          cr_quotient = (quotient^(1/3)),                  # calculate cube root of quotient 
+         quotient_lower = (gramspercapita_90)/adj_brfss_apc_lower, # adjust to 90% of the APC data
+         cr_quotient_lower = (quotient_lower^(1/3)),                  # calculate cube root of quotient  
+         quotient_upper = (gramspercapita_90)/adj_brfss_apc_upper, # adjust to 90% of the APC data
+         cr_quotient_upper = (quotient_upper^(1/3)),                  # calculate cube root of quotient  
          gramsperday_upshifted= gramsperday_new*(cr_quotient^2),   # apply cube root quotient to gpd
          gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted), #establish cap
+         gramsperday_upshifted_upper = gramsperday_new*(cr_quotient_lower^2),   # apply cube root quotient to gpd
+     #    gramsperday_upshifted_upper = ifelse(gramsperday_upshifted_lower>200, 200, gramsperday_upshifted), #establish cap
+         gramsperday_upshifted_lower = gramsperday_new*(cr_quotient_upper^2),   # apply cube root quotient to gpd
+       #  gramsperday_upshifted_lower = ifelse(gramsperday_upshifted_upper>200, 200, gramsperday_upshifted), #establish cap
          frequency_upshifted = alc_frequency_new*(cr_quotient^2),              # apply cube root quotient to frequency
          frequency_upshifted = round(frequency_upshifted),                #round upshifted frequency - can't drink on 0.4 of a day
          frequency_upshifted = ifelse(frequency_upshifted>30, 30, frequency_upshifted), # cap frequency at 30 days
@@ -121,6 +146,8 @@ final_version <- data %>%
                 drinkingstatus_detailed, drinkingstatus_updated,
                 gramsperday, alc_frequency, quantity_per_occasion,
                 gramsperday_upshifted,
+                gramsperday_upshifted_lower,
+                gramsperday_upshifted_upper,
                 frequency_upshifted, 
                 quantity_per_occasion_upshifted) %>% 
   rename(gramsperday_raw = gramsperday,
@@ -130,64 +157,4 @@ final_version <- data %>%
   mutate(gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted),
          formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0)) %>% filter(YEAR>=2000)
   
-saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS")
-
-
-# select variables and save the upshifted data 
-data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 
-                               race_eth_detailed, sex_recode, age_var, employment, 
-                               employment_detailed, marital_status_detailed,
-                               marital_status,
-                               education_summary, 
-                               household_income, BMI,
-                               mentalhealth,physicalhealth,
-                               drinkingstatus_updated,
-                               drinkingstatus_detailed, gramsperday_upshifted_crquotient,
-                               frequency_upshifted, quantity_per_occasion_upshifted,
-                               hed) %>% 
-  rename(drinkingstatus = drinkingstatus_updated,
-         gramsperday = gramsperday_upshifted_crquotient,
-         frequency = frequency_upshifted,
-         quantity_per_occasion = quantity_per_occasion_upshifted) %>% 
-  mutate(formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0),
-         gramsperday = ifelse(gramsperday>200, 200, gramsperday))
-
-# data for Maddy APC 
-# USA <- data %>% filter(State=="USA") %>% ungroup() %>% 
-#   mutate(birth_year=YEAR-age_var,
-#          age_cat = cut(age_var,
-#                        breaks=c(0,20,25,30,40,50,60,70,100),
-#                        labels=c('18-20','21-25', '26-30', '31-40',
-#                                 '41-50','51-60','61-70', '71+')),
-#          birth_cohort = cut(birth_year,
-#                             breaks=c(0,1899,1920,1925,1930,1935,1940,1945,
-#                                      1950,1955,1960,1965,1970,1975,1980,
-#                                      1985, 1990, 1995, 2000, 2002),
-#                             labels=c("<1900","1900-1920","1921-1925","1926-1930",
-#                                      "1931-1935","1936-1940","1941-1945","1946-1950",
-#                                      "1951-1955","1956-1960","1961-1965","1966-1970",
-#                                      "1971-1975","1976-1980","1981-1985","1986-1990",
-#                                      "1991-1995","1996-2000","2001-2002")),
-#          race_eth = ifelse(race_eth_detailed=="Non-Hispanic White","White",
-#                            ifelse(race_eth_detailed=="Non-Hispanic Black","Black",
-#                                   ifelse(race_eth_detailed=="Hispanic","Hispanic",
-#                                          ifelse(race_eth_detailed=="Non-Hispanic Asian/PI","Asian",
-#                                                 ifelse(race_eth_detailed=="Non-Hispanic Native American","American Indian","Other ethnicity"))))),
-#          marital_status = ifelse(marital_status_detailed=="married","Married",
-#                                  ifelse(marital_status_detailed=="separated" | marital_status_detailed=="divorced", "Divorce/separated",
-#                                         ifelse(marital_status_detailed=="widowed","Widowed",
-#                                                ifelse(marital_status_detailed=="nevermarried" | marital_status_detailed=="unmarriedcouple","Never married",NA)))),
-#          employment_status = ifelse(employment_detailed=="employed","Employed",
-#                                     ifelse(employment_detailed=="retired","Retired",
-#                                            ifelse(employment_detailed=="homemaker" | employment_detailed=="unemployed - <1 year" |
-#                                                   employment_detailed=="unemployed - 1+ years" | employment_detailed=="student" |
-#                                                     employment_detailed=="unable to work","Unemployed", NA)))) %>% 
-#   dplyr::select(YEAR, StateOrig, region, sex_recode, race_eth, age_var, age_cat, birth_year, birth_cohort,
-#                 household_income,
-#                 employment_status, marital_status, education_summary, drinkingstatus,
-#                 gramsperday, frequency, hed) %>% 
-#   rename(year=YEAR, sex=sex_recode, age=age_var, education=education_summary,
-#          drink_frequency=frequency)
-# 
-# # save the output to a .dta file 
-# write.dta(USA, "SIMAH_workplace/brfss/processed_data/BRFSS_for_APC_covariates.dta")
+saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_CIs_2000_2022_final.RDS")

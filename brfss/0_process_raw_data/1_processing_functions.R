@@ -1,211 +1,258 @@
 # demographic functions 
+library(dplyr)
 
-recode_state <- function(data){
-  data <- data %>% 
+recode_state <- function(data) {
+  data <- data %>%
     mutate(
-    State = recode(X.STATE,
-                   "1"="Alabama", "2"="Alaska", "4"="Arizona","5"="Arkansas",
-    "6"="California", "8"="Colorado", "9"="Connecticut", "10"="Delaware",
-    "12"="Florida","13"="Georgia","15"="Hawaii","16"="Idaho","17"="Illinois",
-    "18"="Indiana","19"="Iowa","20"="Kansas","21"="Kentucky","22"="Louisiana",
-    "23"="Maine","24"="Maryland", "25"="Massachusetts", "26"="Michigan",
-    "27"="Minnesota", "28"="Mississippi", "29"="Missouri", "30"="Montana",
-    "31"="Nebraska","32"="Nevada", "33"="New Hampshire", "34"="New Jersey",
-    "35"="New Mexico", "36"="New York", "37"="North Carolina", "38"="North Dakota",
-    "39"="Ohio", "40"="Oklahoma", "41"="Oregon", "42"="Pennsylvania", "44"="Rhode Island",
-    "45"="South Carolina", "46"="South Dakota", "47"="Tennessee", "48"="Texas", "49"="Utah",
-    "50"="Vermont", "51"="Virginia", "53"="Washington", "54"="West Virginia", "55"="Wisconsin",
-    "56"="Wyoming", "11"="DC", "66"="Guam", "72"="Puerto Rico",
-    .default="territories"))
+      State = if ("State" %in% names(data)) {
+        State
+      } else if ("X.STATE" %in% names(data)) {
+        if_else(YEAR <= 2020,
+                recode(X.STATE,
+                       "1" = "Alabama", "2" = "Alaska", "4" = "Arizona", "5" = "Arkansas",
+                       "6" = "California", "8" = "Colorado", "9" = "Connecticut", "10" = "Delaware",
+                       "12" = "Florida", "13" = "Georgia", "15" = "Hawaii", "16" = "Idaho", "17" = "Illinois",
+                       "18" = "Indiana", "19" = "Iowa", "20" = "Kansas", "21" = "Kentucky", "22" = "Louisiana",
+                       "23" = "Maine", "24" = "Maryland", "25" = "Massachusetts", "26" = "Michigan",
+                       "27" = "Minnesota", "28" = "Mississippi", "29" = "Missouri", "30" = "Montana",
+                       "31" = "Nebraska", "32" = "Nevada", "33" = "New Hampshire", "34" = "New Jersey",
+                       "35" = "New Mexico", "36" = "New York", "37" = "North Carolina", "38" = "North Dakota",
+                       "39" = "Ohio", "40" = "Oklahoma", "41" = "Oregon", "42" = "Pennsylvania", "44" = "Rhode Island",
+                       "45" = "South Carolina", "46" = "South Dakota", "47" = "Tennessee", "48" = "Texas", "49" = "Utah",
+                       "50" = "Vermont", "51" = "Virginia", "53" = "Washington", "54" = "West Virginia", "55" = "Wisconsin",
+                       "56" = "Wyoming", "11" = "DC", "66" = "Guam", "72" = "Puerto Rico",
+                       .default = "territories"),
+                NA_character_)
+      } else if ("X_STATE" %in% names(data)) {
+        if_else(YEAR >= 2021,
+                recode(X_STATE,
+                       "1" = "Alabama", "2" = "Alaska", "4" = "Arizona", "5" = "Arkansas",
+                       "6" = "California", "8" = "Colorado", "9" = "Connecticut", "10" = "Delaware",
+                       "12" = "Florida", "13" = "Georgia", "15" = "Hawaii", "16" = "Idaho", "17" = "Illinois",
+                       "18" = "Indiana", "19" = "Iowa", "20" = "Kansas", "21" = "Kentucky", "22" = "Louisiana",
+                       "23" = "Maine", "24" = "Maryland", "25" = "Massachusetts", "26" = "Michigan",
+                       "27" = "Minnesota", "28" = "Mississippi", "29" = "Missouri", "30" = "Montana",
+                       "31" = "Nebraska", "32" = "Nevada", "33" = "New Hampshire", "34" = "New Jersey",
+                       "35" = "New Mexico", "36" = "New York", "37" = "North Carolina", "38" = "North Dakota",
+                       "39" = "Ohio", "40" = "Oklahoma", "41" = "Oregon", "42" = "Pennsylvania", "44" = "Rhode Island",
+                       "45" = "South Carolina", "46" = "South Dakota", "47" = "Tennessee", "48" = "Texas", "49" = "Utah",
+                       "50" = "Vermont", "51" = "Virginia", "53" = "Washington", "54" = "West Virginia", "55" = "Wisconsin",
+                       "56" = "Wyoming", "11" = "DC", "66" = "Guam", "72" = "Puerto Rico",
+                       .default = "territories"),
+                NA_character_)
+      } else {
+        NA_character_
+      }
+    )
   return(data)
 }
 
-recode_education <- function(data){
-  if(data$YEAR[1]<=1992){
-    data <- data %>% 
-      mutate(
-        education_detailed = recode(EDUCA, 
-                                    "1"="eighth grade or less",
-                                    "2"="some high school",
-                                    "3"="high school graduate",
-                                    "4"="some technical school",
-                                    "5"="technical school graduate",
-                                    "6"="some college",
-                                    "7"="college graduate",
-                                    "8"="postgraduate degree",
-                                    "9"="NA",.default="NA"),
-        education_detailed = ifelse(education_detailed=="NA",NA,
-                                    education_detailed),
-        education_summary = ifelse(EDUCA<=4, "LEHS",
-                                   ifelse(EDUCA>=5 & EDUCA<=6,"SomeC",
-                                          ifelse(EDUCA>=7 & EDUCA<=8, "College",NA))))
-  }else{
-  data <- data %>% 
-    mutate(
-      education_detailed = recode(EDUCA, 
-                         "1"="no school",
-                         "2"="elementary school",
-                         "3"="some high school",
-                         "4"="high school graduate",
-                         "5"="some college",
-                         "6"="college graduate",
-                         "9"="NA",.default="NA"),
-      education_detailed = ifelse(education_detailed=="NA",NA,
-                                  education_detailed),
-      education_summary = ifelse(EDUCA<=4, "LEHS",
-                                 ifelse(EDUCA==5,"SomeC",
-                                        ifelse(EDUCA==6, "College",NA))))
+recode_education <- function(data) {
+  if (!"education_summary" %in% names(data)) {
+    if (data$YEAR[1] <= 1992) {
+      data <- data %>% 
+        mutate(
+          education_detailed = recode(EDUCA, 
+                                      "1" = "eighth grade or less",
+                                      "2" = "some high school",
+                                      "3" = "high school graduate",
+                                      "4" = "some technical school",
+                                      "5" = "technical school graduate",
+                                      "6" = "some college",
+                                      "7" = "college graduate",
+                                      "8" = "postgraduate degree",
+                                      "9" = "NA", .default = "NA"),
+          education_detailed = ifelse(education_detailed == "NA", NA, education_detailed),
+          education_summary = ifelse(EDUCA <= 4, "LEHS",
+                                     ifelse(EDUCA >= 5 & EDUCA <= 6, "SomeC",
+                                            ifelse(EDUCA >= 7 & EDUCA <= 8, "College", NA)))
+        )
+    } else {
+      data <- data %>% 
+        mutate(
+          education_detailed = recode(EDUCA, 
+                                      "1" = "no school",
+                                      "2" = "elementary school",
+                                      "3" = "some high school",
+                                      "4" = "high school graduate",
+                                      "5" = "some college",
+                                      "6" = "college graduate",
+                                      "9" = "NA", .default = "NA"),
+          education_detailed = ifelse(education_detailed == "NA", NA, education_detailed),
+          education_summary = ifelse(EDUCA <= 4, "LEHS",
+                                     ifelse(EDUCA == 5, "SomeC",
+                                            ifelse(EDUCA == 6, "College", NA)))
+        )
+    }
   }
   return(data)
 }
 
-recode_race <- function(data){
-  data <- data %>% 
-    mutate(hispanic_comb = ifelse(YEAR<=2000, HISPANIC,
-                                  ifelse(YEAR>=2001 & YEAR<=2012, HISPANC2,
-                                         ifelse(YEAR>=2013, X.HISPANC, NA))),
-      hispanic_comb = ifelse(hispanic_comb==1, 1,
-                             ifelse(hispanic_comb==2, 0, NA)),
-      race_comb = ifelse(YEAR<2001, ORACE,
-                              ifelse(YEAR>=2001 & YEAR<=2012, RACE2,
-                                     ifelse(YEAR>=2013, X.RACE, NA))),
-      race_eth_detailed = ifelse(YEAR<2001 & race_comb == 1 & hispanic_comb==0, "Non-Hispanic White",
-                        ifelse(YEAR<2001 & race_comb==2 & hispanic_comb==0, "Non-Hispanic Black",
-                               ifelse(YEAR<2001 & race_comb==3 & hispanic_comb==0, "Non-Hispanic Asian/PI",
-                                      ifelse(YEAR<2001 & race_comb==4 & hispanic_comb==0, "Non-Hispanic Native American",
-                                             ifelse(YEAR<2001 & race_comb==5 & hispanic_comb==0, "Non-Hispanic Other",
-                                                    ifelse(YEAR<2001 & hispanic_comb==1, "Hispanic",
-                                                           ifelse(YEAR<2001 & race_comb>=7, NA, NA))))))),
-      race_eth_detailed = ifelse(YEAR>=2001 & race_comb ==1, "Non-Hispanic White",
-                                 ifelse(YEAR>=2001 & race_comb==2, "Non-Hispanic Black",
-                                        ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==3, "Non-Hispanic Asian/PI",
-                                               ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==4, "Non-Hispanic Asian/PI",
-                                                      ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==5, "Non-Hispanic Native American",
-                                                             ifelse(YEAR>=2001 & race_comb==6, "Non-Hispanic Other",
-                                                                    ifelse(YEAR>=2001 & race_comb==7, "Non-Hispanic Other",
-                                                                           ifelse(YEAR>=2001 & race_comb==8, "Hispanic",
-                                                                                  ifelse(YEAR>2012 & race_comb==3, "Non-Hispanic Native American",
-                                                                                         ifelse(YEAR>2012 & race_comb==4, "Non-Hispanic Asian/PI",
-                                                                                                ifelse(YEAR>2012 & race_comb==5, "Non-Hispanic Asian/PI",
-                                                                                                       race_eth_detailed))))))))))),
-      race_eth = ifelse(race_eth_detailed == "Non-Hispanic Asian/PI", "Non-Hispanic Other",
-                        ifelse(race_eth_detailed=="Non-Hispanic Native American", "Non-Hispanic Other",
-                               race_eth_detailed))
-      
-      
+recode_race <- function(data) {
+  if (!"race_eth" %in% names(data)) {
+    data <- data %>% 
+      mutate(hispanic_comb = ifelse(YEAR <= 2000, HISPANIC,
+                                    ifelse(YEAR >= 2001 & YEAR <= 2012, HISPANC2,
+                                           ifelse(YEAR >= 2013, X_HISPANC, NA))),
+             hispanic_comb = ifelse(hispanic_comb == 1, 1,
+                                    ifelse(hispanic_comb == 2, 0, NA)),
+             race_comb = ifelse(YEAR < 2001, ORACE,
+                                ifelse(YEAR >= 2001 & YEAR <= 2012, RACE2,
+                                       ifelse(YEAR >= 2013 & YEAR <= 2021, X_RACE, 
+                                              ifelse(YEAR >= 2022, X_RACE1, NA)))),
+             race_eth_detailed = ifelse(YEAR < 2001 & race_comb == 1 & hispanic_comb == 0, "Non-Hispanic White",
+                                        ifelse(YEAR < 2001 & race_comb == 2 & hispanic_comb == 0, "Non-Hispanic Black",
+                                               ifelse(YEAR < 2001 & race_comb == 3 & hispanic_comb == 0, "Non-Hispanic Asian/PI",
+                                                      ifelse(YEAR < 2001 & race_comb == 4 & hispanic_comb == 0, "Non-Hispanic Native American",
+                                                             ifelse(YEAR < 2001 & race_comb == 5 & hispanic_comb == 0, "Non-Hispanic Other",
+                                                                    ifelse(YEAR < 2001 & hispanic_comb == 1, "Hispanic",
+                                                                           ifelse(YEAR < 2001 & race_comb >= 7, NA, NA))))))),
+             race_eth_detailed = ifelse(YEAR >= 2001 & race_comb == 1, "Non-Hispanic White",
+                                        ifelse(YEAR >= 2001 & race_comb == 2, "Non-Hispanic Black",
+                                               ifelse(YEAR >= 2001 & YEAR <= 2012 & race_comb == 3, "Non-Hispanic Asian/PI",
+                                                      ifelse(YEAR >= 2001 & YEAR <= 2012 & race_comb == 4, "Non-Hispanic Asian/PI",
+                                                             ifelse(YEAR >= 2001 & YEAR <= 2012 & race_comb == 5, "Non-Hispanic Native American",
+                                                                    ifelse(YEAR >= 2001 & race_comb == 6, "Non-Hispanic Other",
+                                                                           ifelse(YEAR >= 2001 & race_comb == 7, "Non-Hispanic Other",
+                                                                                  ifelse(YEAR >= 2001 & race_comb == 8, "Hispanic",
+                                                                                         ifelse(YEAR > 2012 & race_comb == 3, "Non-Hispanic Native American",
+                                                                                                ifelse(YEAR > 2012 & race_comb == 4, "Non-Hispanic Asian/PI",
+                                                                                                       ifelse(YEAR > 2012 & race_comb == 5, "Non-Hispanic Asian/PI",
+                                                                                                              race_eth_detailed))))))))))),
+             race_eth = ifelse(race_eth_detailed == "Non-Hispanic Asian/PI", "Non-Hispanic Other",
+                               ifelse(race_eth_detailed == "Non-Hispanic Native American", "Non-Hispanic Other",
+                                      race_eth_detailed))
+      )
+  }
+  
+  return(data)
+}
+
+
+recode_age <- function(data) {
+  if (!"age_var" %in% names(data)) {
+    data <- data %>% 
+      mutate(age_var = ifelse(YEAR <= 2012, AGE, X_AGE80),
+             age_var = ifelse(age_var <= 9, NA, age_var))
+  }
+  return(data)
+}
+
+recode_sex <- function(data) {
+  if (!"sex_recode" %in% names(data)) {
+    data <- data %>% mutate(
+      sex_var = ifelse(YEAR == 2018, SEX1, 
+                       ifelse(YEAR >= 2019, SEXVAR, SEX))
     )
-                                      
-  return(data)
-}
-
-recode_age <- function(data){
-  data <- data %>% 
-    mutate(age_var = ifelse(YEAR<=2012, AGE, X.AGE80),
-           age_var = ifelse(age_var<=9, NA, age_var))
-  return(data)
-}
-
-recode_sex <- function(data){
-  data <- data %>% mutate(
-    sex_var = ifelse(YEAR==2018, SEX1, 
-                     ifelse(YEAR>=2019, SEXVAR, SEX)),
-    sex_recode = ifelse(sex_var== 1, "Men",
-                        ifelse(sex_var==2, "Women", NA))
-  )
-  return(data)
-}
-
-recode_employment <- function(data){
-  data <- data %>% 
-    mutate(employment_var = ifelse(YEAR<=2012, EMPLOY,EMPLOY1),
-           employment_detailed = ifelse(employment_var<=2, "employed",
-                                        ifelse(employment_var==3, "unemployed - 1+ years",
-                                               ifelse(employment_var==4, "unemployed - <1 year",
-                                                      ifelse(employment_var==5, "homemaker",
-                                                             ifelse(employment_var==6, "student",
-                                                                    ifelse(employment_var==7, "retired",
-                                                                           ifelse(employment_var==8, "unable to work",
-                                                                                  ifelse(employment_var==9, NA, NA)))))))),
-           employment = ifelse(employment_detailed=="unemployed - 1+ years", "unemployed",
-                               ifelse(employment_detailed=="unemployed - <1 year", "unemployed",
-                                      ifelse(employment_detailed=="homemaker", "unemployed",
-                                             ifelse(employment_detailed=="student", "unemployed",
-                                                    ifelse(employment_detailed=="retired", "unemployed",
-                                                           ifelse(employment_detailed=="unable to work", "unemployed",
-                                                                  employment_detailed)))))))
-  return(data)
-}
-
-recode_marital <- function(data){
-  data <- data %>% mutate(
-    marital_status = ifelse(MARITAL==1, 1,
-                            ifelse(MARITAL==9, NA, 0)))
-    return(data)
-}
-
-recode_income <- function(data){
- # if(data$YEAR[1]>=1994 & data$YEAR[1]<=1995){
- #  data$INCOME2 <- data$INCOME
- # }
-  if(data$YEAR[1]==1984){
+  }
+  
+  if (!"sex_recode" %in% names(data)) {
     data <- data %>% mutate(
-      household_income = ifelse(INCOME==1, "0-10000",
-                                ifelse(INCOME==2, "10001-15000",
-                                       ifelse(INCOME==3, "15001-20000",
-                                              ifelse(INCOME==4, "20001-25000",
-                                                     ifelse(INCOME==5, "25001-35000",
-                                                            ifelse(INCOME==6, "35001-100000",
-                                                                   NA)))))))
-  }else if(data$YEAR[1]>=1985 & data$YEAR[1]<=1990){
-    data <- data %>% mutate(
-      household_income = ifelse(INCOME==1, "0-10000",
-                                ifelse(INCOME==2, "10001-15000",
-                                       ifelse(INCOME==3, "15001-20000",
-                                              ifelse(INCOME==4, "20001-25000",
-                                                     ifelse(INCOME==5, "25001-35000",
-                                                            ifelse(INCOME==6, "35001-50000",
-                                                                   ifelse(INCOME==8, "50000-100000",
-                                                                          NA))))))))
-  }else if(data$YEAR[1]>=1991 & data$YEAR[1]<=1994){
-    data <- data %>% mutate(
-      household_income = ifelse(INCOME==1, "0-10000",
-                                ifelse(INCOME==2, "10001-15000",
-                                       ifelse(INCOME==3, "15001-20000",
-                                              ifelse(INCOME==4, "20001-25000",
-                                                     ifelse(INCOME==5, "25001-35000",
-                                                            ifelse(INCOME==6, "35001-50000",
-                                                                   ifelse(INCOME==7, "50000-100000",
-                                                                          NA))))))))
-    }else if(data$YEAR[1]>=1994 & data$YEAR[1]<=2020){
-  data <- data %>% mutate(
-    INCOME2 = ifelse(YEAR==1995, INCOME95, INCOME2),
-    household_income = ifelse(INCOME2==1, "0-9999",
-                        ifelse(INCOME2==2, "10000-14999",
-                               ifelse(INCOME2==3, "15000-19999",
-                                      ifelse(INCOME2==4, "20000-24999",
-                                             ifelse(INCOME2==5, "25000-34999",
-                                                    ifelse(INCOME2==6, "35000-49999",
-                                                           ifelse(INCOME2==7, "50000-74999",
-                                                                  ifelse(INCOME2==8, "75000+", NA)))))))))
-    }else if(data$YEAR[1]>=2021){
+      sex_recode = ifelse(sex_var == 1, "Men",
+                          ifelse(sex_var == 2, "Women", NA))
+    )
+  }
+  
+  return(data)
+}
+
+recode_employment <- function(data) {
+  if (!"employment" %in% names(data)) {
+      data <- data %>% 
+      mutate(employment_var = ifelse(YEAR <= 2012, EMPLOY, EMPLOY1),
+             employment_detailed = ifelse(employment_var <= 2, "employed",
+                                          ifelse(employment_var == 3, "unemployed - 1+ years",
+                                                 ifelse(employment_var == 4, "unemployed - <1 year",
+                                                        ifelse(employment_var == 5, "homemaker",
+                                                               ifelse(employment_var == 6, "student",
+                                                                      ifelse(employment_var == 7, "retired",
+                                                                             ifelse(employment_var == 8, "unable to work",
+                                                                                    ifelse(employment_var == 9, NA, NA)))))))),
+             employment = ifelse(employment_detailed == "unemployed - 1+ years", "unemployed",
+                                 ifelse(employment_detailed == "unemployed - <1 year", "unemployed",
+                                        ifelse(employment_detailed == "homemaker", "unemployed",
+                                               ifelse(employment_detailed == "student", "unemployed",
+                                                      ifelse(employment_detailed == "retired", "unemployed",
+                                                             ifelse(employment_detailed == "unable to work", "unemployed",
+                                                                    employment_detailed)))))))
+  }
+  return(data)
+}
+
+
+recode_marital <- function(data) {
+  if (!"marital_status" %in% names(data)) {
+    data <- data %>% 
+      mutate(marital_status = ifelse(MARITAL == 1, 1,
+                                     ifelse(MARITAL == 9, NA, 0)))
+  }
+  return(data)
+}
+
+recode_income <- function(data) {
+  if (!"household_income" %in% names(data)) {
+    # if (data$YEAR[1] >= 1994 & data$YEAR[1] <= 1995) {
+    #   data$INCOME2 <- data$INCOME
+    # }
+    if (data$YEAR[1] == 1984) {
+      data <- data %>% mutate(
+        household_income = ifelse(INCOME == 1, "0-10000",
+                                  ifelse(INCOME == 2, "10001-15000",
+                                         ifelse(INCOME == 3, "15001-20000",
+                                                ifelse(INCOME == 4, "20001-25000",
+                                                       ifelse(INCOME == 5, "25001-35000",
+                                                              ifelse(INCOME == 6, "35001-100000", NA)))))))
+    } else if (data$YEAR[1] >= 1985 & data$YEAR[1] <= 1990) {
+      data <- data %>% mutate(
+        household_income = ifelse(INCOME == 1, "0-10000",
+                                  ifelse(INCOME == 2, "10001-15000",
+                                         ifelse(INCOME == 3, "15001-20000",
+                                                ifelse(INCOME == 4, "20001-25000",
+                                                       ifelse(INCOME == 5, "25001-35000",
+                                                              ifelse(INCOME == 6, "35001-50000",
+                                                                     ifelse(INCOME == 8, "50000-100000", NA))))))))
+    } else if (data$YEAR[1] >= 1991 & data$YEAR[1] <= 1994) {
+      data <- data %>% mutate(
+        household_income = ifelse(INCOME == 1, "0-10000",
+                                  ifelse(INCOME == 2, "10001-15000",
+                                         ifelse(INCOME == 3, "15001-20000",
+                                                ifelse(INCOME == 4, "20001-25000",
+                                                       ifelse(INCOME == 5, "25001-35000",
+                                                              ifelse(INCOME == 6, "35001-50000",
+                                                                     ifelse(INCOME == 7, "50000-100000", NA))))))))
+    } else if (data$YEAR[1] >= 1994 & data$YEAR[1] <= 2020) {
+      data <- data %>% mutate(
+        INCOME2 = ifelse(YEAR == 1995, INCOME95, INCOME2),
+        household_income = ifelse(INCOME2 == 1, "0-9999",
+                                  ifelse(INCOME2 == 2, "10000-14999",
+                                         ifelse(INCOME2 == 3, "15000-19999",
+                                                ifelse(INCOME2 == 4, "20000-24999",
+                                                       ifelse(INCOME2 == 5, "25000-34999",
+                                                              ifelse(INCOME2 == 6, "35000-49999",
+                                                                     ifelse(INCOME2 == 7, "50000-74999",
+                                                                            ifelse(INCOME2 == 8, "75000+", NA)))))))))
+    } else if (data$YEAR[1] >= 2021) {
       data <- data %>% 
         mutate(
-          household_income = ifelse(INCOME3==1, "0-9999",
-                                    ifelse(INCOME3==2, "10000-14999",
-                                           ifelse(INCOME3==3, "15000-19999",
-                                                  ifelse(INCOME3==4, "20000-24999",
-                                                         ifelse(INCOME3==5, "25000-34999",
-                                                                ifelse(INCOME3==6, "35000-49999",
-                                                                       ifelse(INCOME3==7, "50000-74999",
-                                                                              ifelse(INCOME3==8, "75000-99999", 
-                                                                                     ifelse(INCOME3==9, "100000-149000",
-                                                                                            ifelse(INCOME3==10, "150000-199999", 
-                                                                                                   ifelse(INCOME3==11, "200000+", NA))))))))))))
+          household_income = ifelse(INCOME3 == 1, "0-9999",
+                                    ifelse(INCOME3 == 2, "10000-14999",
+                                           ifelse(INCOME3 == 3, "15000-19999",
+                                                  ifelse(INCOME3 == 4, "20000-24999",
+                                                         ifelse(INCOME3 == 5, "25000-34999",
+                                                                ifelse(INCOME3 == 6, "35000-49999",
+                                                                       ifelse(INCOME3 == 7, "50000-74999",
+                                                                              ifelse(INCOME3 == 8, "75000-99999", 
+                                                                                     ifelse(INCOME3 == 9, "100000-149000",
+                                                                                            ifelse(INCOME3 == 10, "150000-199999", 
+                                                                                                   ifelse(INCOME3 == 11, "200000+", NA))))))))))))
     }
-return(data)
+  }
+  return(data)
 }
-
+                                                
+                                                
 recode_weight <- function(data){
+  if (!"weight_kg" %in% names(data)) {
   if(data$YEAR[1]<2004){
   data <- data %>% 
     mutate(
@@ -223,11 +270,12 @@ recode_weight <- function(data){
                                          WEIGHT2*0.4536))))
     # check if weight in kg starts in 99 or 90 
   }
-  data$weight_kg <- ifelse(data$weight_kg>=400, NA, data$weight_kg)
+  data$weight_kg <- ifelse(data$weight_kg>=400, NA, data$weight_kg)}
   return(data)
 }
 
 recode_height <- function(data){
+  if (!"height_cm" %in% names(data)) {
   data <- data %>% mutate(
     heightvar = ifelse(YEAR<=2003, HEIGHT,
                        ifelse(YEAR==2004, HEIGHT2, 
@@ -258,14 +306,15 @@ recode_height <- function(data){
       height_cm = ifelse(heightvar==777, NA, 
                          ifelse(heightvar==9777, NA, height_cm)))
   }
-  data$height_cm <- ifelse(data$height_cm>300, NA, data$height_cm)
+  data$height_cm <- ifelse(data$height_cm>300, NA, data$height_cm)}
   return(data)
 }
 
 recode_BMI <- function(data){
+  if (!"BMI" %in% names(data)) {
   data <- data %>% mutate(
     BMI = weight_kg / ((height_cm)^2)
-  )
+  )}
 }
 
 for(i in names(dataFiles)){
@@ -280,13 +329,14 @@ for(i in names(dataFiles)){
 
 # recoding derived BMI variable 
 recode_derived_BMI <- function(data){
+  if (!"BMI_final" %in% names(data)) {
   data <- data %>% mutate(
     BMI_derived = ifelse(YEAR<1987, NA,
-                         ifelse(YEAR>=1987 & YEAR<2000, X.BMI,
-                         ifelse(YEAR>=2000 & YEAR<=2002, X.BMI2, 
-                                ifelse(YEAR==2003, X.BMI3, 
-                                       ifelse(YEAR>=2004 & YEAR<=2010, X.BMI4,
-                                              ifelse(YEAR>=2011, X.BMI5, NA)))))),
+                         ifelse(YEAR>=1987 & YEAR<2000, X_BMI,
+                         ifelse(YEAR>=2000 & YEAR<=2002, X_BMI2, 
+                                ifelse(YEAR==2003, X_BMI3, 
+                                       ifelse(YEAR>=2004 & YEAR<=2010, X_BMI4,
+                                              ifelse(YEAR>=2011, X_BMI5, NA)))))),
     BMI_derived = ifelse(YEAR<1987, NA, 
                          ifelse(YEAR>=1987 & YEAR<=2000 & BMI_derived>=999, NA,
                                 ifelse(YEAR>=1987 & YEAR<=2000, BMI_derived/10,
@@ -296,7 +346,7 @@ recode_derived_BMI <- function(data){
                                                             ifelse(YEAR>=2002 & YEAR<=2010, BMI_derived/100,
                                                                    ifelse(YEAR>=2011 & BMI_derived>9000, NA,
                                                                           ifelse(YEAR>=2011, BMI_derived/100, NA))))))))),
-    BMI_final = ifelse(is.na(BMI_derived), BMI, BMI_derived))
+    BMI_final = ifelse(is.na(BMI_derived), BMI, BMI_derived))}
   
   return(data)
   }
@@ -317,6 +367,7 @@ impute_missing_BMI <- function(data){
 # alcohol functions 
 
 recode_alc_prevalence <- function(data){
+  if (!"drinkingstatus" %in% names(data)) {
   data <- data %>%
     mutate(drinkingstatus = ifelse(YEAR<=2000, DRINKANY,
                                    ifelse(YEAR>=2005 & YEAR<=2010, DRNKANY4,NA)),
@@ -329,17 +380,18 @@ recode_alc_prevalence <- function(data){
   }else if(data$YEAR[1]>2010){
     data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
                                          ifelse(data$alc_frequency>0, 1, NA))
-  }
+  }}
   return(data)
 }
 
 recode_alc_frequency <- function(data){
+  if (!"alc_frequency" %in% names(data)) {
   data <- data %>% mutate(
   alc_frequency = ifelse(YEAR<=2000 & YEAR>=1989, ALCOHOL,
                          ifelse(YEAR==2001, ALCDAYS,
                                 ifelse(YEAR>=2002 & YEAR<=2004, ALCDAY3,
-                                       ifelse(YEAR>=2005 & YEAR<=2010, ALCDAY4, 
-                                              ifelse(YEAR>=2011, ALCDAY5, NA))))))
+                                       ifelse(YEAR>=2005 & YEAR<=2010 | YEAR==2022, ALCDAY4, 
+                                              ifelse(YEAR>=2011 & YEAR<=2021, ALCDAY5, NA))))))
   if(data$YEAR[1]<=2000 & data$YEAR[1]>=1989){
     data <- data %>% mutate(
       alc_frequency = ifelse(DRINKANY==2, 0,
@@ -401,11 +453,13 @@ recode_alc_frequency <- function(data){
   # recode the missing drinking prevalence values now we have frequency values 
   # data$drinkingstatus <- ifelse(data$alc_frequency==0, 0,
   #                               ifelse(data$alc_frequency>=1, 1, data$drinkingstatus))
+  }
   
   return(data)
 }
 
 recode_alc_quantity <- function(data){
+  if (!"quantity_per_occasion" %in% names(data)) {
   if(data$YEAR[1]<=1988){
     data <- data %>% mutate(
       nbeer = ifelse(NBEEROCC>=77, NA, 
@@ -442,10 +496,12 @@ recode_alc_quantity <- function(data){
                           data$quantity_per_occasion)
   # data$alc_frequency <- ifelse(data$quantity_per_occasion==0, 0, data$alc_frequency)
   data$gramsperday <- ((data$quantity_per_occasion*data$alc_frequency)/30)*14
+  }
   return(data)
 }
 
 recode_hed <- function(data){
+  if (!"hed" %in% names(data)) {
   data <- data %>% 
     mutate(hed = ifelse(YEAR<=2000, DRINKGE5,
                         ifelse(YEAR>=2001 & YEAR<=2005, DRNK2GE5,
@@ -455,10 +511,12 @@ recode_hed <- function(data){
                                ifelse(hed==88, 0, hed))))
   data$hed <- ifelse(data$gramsperday==0, 0,
                      ifelse(data$hed>30, 30, data$hed))
+  }
   return(data)
 }
 
 recode_menthealth <- function(data){
+  if (!"mentalhealth" %in% names(data)) {
   if(data$YEAR[1]>=1993){
   data <- data %>% 
     mutate(mentalhealth = ifelse(MENTHLTH==88, 0,
@@ -471,18 +529,22 @@ recode_menthealth <- function(data){
     data$mentalhealth <- NA
     data$physicalhealth <- NA
   }
+  }
   return(data)
 }
 
 # sample weights 
 recode_sample_weights <- function(data){
+  if (!"final_sample_weight" %in% names(data)) {
   data <- data %>% 
     mutate(final_sample_weight = ifelse(YEAR<=2010, X.FINALWT,
-                                        X.LLCPWT))
+                                        ifelse(YEAR>=2021, X_LLCPWT, X.LLCPWT)))
+  }
   return(data)
-}
+  }
 
 extract_date <- function(data){
+  if (!"surveymonth" %in% names(data)) {
   data <- data %>% 
     mutate(date = IDATE,
            surveymonth = ifelse(IMONTH==13, 1,
@@ -493,6 +555,7 @@ extract_date <- function(data){
                                 "11"="November","12"="December"),
            surveyyear = ifelse(IYEAR==1, YEAR,
                                YEAR+1))
+  }
   return(data)
 }
 

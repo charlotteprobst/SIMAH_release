@@ -108,7 +108,7 @@ summariseprevalence <- function(data){
   }
 
 process_APC <- function(data){
-  APC <- read.delim("SIMAH_workplace/brfss/processed_data/pcyr1970-2020.txt", skip=131, header=F, sep="")
+  APC <- read.delim("SIMAH_workplace/brfss/processed_data/pcyr1970-2022.txt", skip=131, header=F, sep="")
   names(APC)[1] <- "Year"
   names(APC)[2] <- "State"
   names(APC)[3] <- "BeverageType"
