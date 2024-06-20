@@ -31,7 +31,7 @@ if(model=="SIMAH"){
 selectedregion <- "USA"
 brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>%
   filter(region==selectedregion) %>%
-  filter(age_var<=79) %>% filter(YEAR>=2000) %>%
+  filter(age_var<=79) %>% filter(YEAR>=1999) %>%
   rename(microsim.init.education = education_summary,
          microsim.init.drinkingstatus=drinkingstatus,
          microsim.init.alc.gpd=gramsperday_upshifted,

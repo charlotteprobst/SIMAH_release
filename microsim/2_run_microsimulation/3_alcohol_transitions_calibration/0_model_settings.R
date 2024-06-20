@@ -3,11 +3,11 @@
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory
 DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/testing")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/NESARC_optimisation_output")
 
 dir.create(OutputDirectory)
 
-seed <- 42 
+seed <- 20 
 
 options(scipen=999)
 
@@ -51,7 +51,7 @@ output_type <- "alcohol"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
-liverinteraction <- 0
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios

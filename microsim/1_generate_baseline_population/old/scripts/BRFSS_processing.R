@@ -1,5 +1,5 @@
 #####BRFSS processing for micro-synthesis 
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS") %>% 
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% 
   filter(age_var<=79) %>% filter(YEAR==2000) %>% 
   mutate(RACE = recode(race_eth,"White"="WHI", 
                        "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),

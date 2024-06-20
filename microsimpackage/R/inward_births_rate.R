@@ -19,7 +19,7 @@ inward_births_rate <- function(basepop, migration_rates, y, brfss, model){
                                  "70-74","75-79"))) %>%
     group_by(microsim.init.race, microsim.init.sex) %>%
     tally()
-  births <- left_join(births, denominator)
+  births <- left_join(births, denominator, by=c("microsim.init.race","microsim.init.sex"))
   births$toadd <- births$n*births$birthrate
 #
 #   summary <- migration_counts %>% filter(Year==y) %>%

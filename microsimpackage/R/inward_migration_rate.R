@@ -21,7 +21,7 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
     group_by(microsim.init.race, microsim.init.sex,agecat) %>%
     tally()
 
-  summary <- left_join(summary, denominator)
+  summary <- left_join(summary, denominator, by=c("agecat","microsim.init.race","microsim.init.sex"))
   summary$toadd <- summary$n*summary$migrationinrate
 
   summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")

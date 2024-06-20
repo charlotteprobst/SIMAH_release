@@ -29,7 +29,8 @@ run_microsim_alt(
   update_base_rate,
   minyear = 2000,
   maxyear = 2005,
-  output = "mortality"
+  output = "mortality",
+  targets
 )
 }
 \description{

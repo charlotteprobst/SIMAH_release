@@ -2,8 +2,8 @@
 
 # read in constraints 
 cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_IPF_2023.csv") %>% 
-  filter(STATE==SelectedState) %>% 
-  dplyr::select(-STATE)
+  filter(state==SelectedState) %>% 
+  dplyr::select(-state)
 # select the appropriate state 
 percentpop <- PopulationSize / rowSums(cons)
 percentpop <- ifelse(percentpop>1, 1, percentpop)
