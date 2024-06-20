@@ -282,7 +282,13 @@ if(updatingalcohol==1){
 # save output - depending on which was selected
 #### use a vector to contain the outputs we are interested in TODO
 # indicator of how aggregated the results should be? - in the vector of outputs
-if(output=="mortality" & !is.null(diseases)){
+
+if(output=="population"){
+  Summary <- basepop %>%
+    group_by(microsim.init.sex, agecat, microsim.init.race, microsimnewED) %>%
+    summarize(count = n()) %>%
+    mutate(percentage = round(count / sum(count) * 100, 1))
+}else if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
     mutate(seed = seed, samplenum = samplenum)
 }else if(output=="mortality" & is.null(diseases)){
@@ -326,7 +332,7 @@ implausibility <- max(CatSummary$implausibility, na.rm=T)
   # add former drinkers and lifetime abstainers to this summary TODO
   # Summary <- CatSummary
   # Summary <- list(CatSummary, MeanSummary)
-}
+} 
 # formerdrinkers <- list()
 # for(i in 1:length(PopPerYear)){
 #   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%
