@@ -31,7 +31,10 @@ transition_alcohol_regression <- function(data, model){
            cat3 = ifelse(AlcCAT=="High risk", 1,0),
            alc_scaled = (microsim.init.alc.gpd-mean(microsim.init.alc.gpd)) / sd(microsim.init.alc.gpd))
 
-  zero_part_coef <- model %>% filter(type=="zero") %>% filter(estimate=="PE")
+  zero_part_coef <- model %>% filter(type=="abstainermod") %>% dplyr::select(parameter, Estimate) %>%
+    pivot_wider(names_from=parameter, values_from=Estimate)
+
+  names(zero_part_coef) <- ifelse(names(zero_part_coef)=="alc_rounded_1", "alc_daily_g_1", names(zero_part_coef))
 
   zero_part_lp <- as.numeric(zero_part_coef['(Intercept)']) +
     as.numeric(zero_part_coef['age3_225-64']) * data_prediction$age2564 +
@@ -42,10 +45,8 @@ transition_alcohol_regression <- function(data, model){
     as.numeric(zero_part_coef['race.factor_2Other, non-Hispanic']) * data_prediction$raceother +
     as.numeric(zero_part_coef['edu3_2Low']) * data_prediction$edulow +
     as.numeric(zero_part_coef['edu3_2Med']) * data_prediction$edumed +
-    as.numeric(zero_part_coef['alc_rounded_1_scaled']) * data_prediction$alc_scaled +
-    as.numeric(zero_part_coef['abstainer_1']) * data_prediction$abstainer +
-    as.numeric(zero_part_coef['cat1_1']) * data_prediction$cat1 +
-    as.numeric(zero_part_coef['cat2_1']) * data_prediction$cat2
+    as.numeric(zero_part_coef['alc_daily_g_1']) * data_prediction$microsim.init.alc.gpd +
+    as.numeric(zero_part_coef['abstainer_1']) * data_prediction$abstainer
     # as.numeric(zero_part_coef['age3_225.64.abstainer_1']) * data_prediction$abstainer*data_prediction$age2564 +
     # as.numeric(zero_part_coef['age3_265..abstainer_1']) * data_prediction$abstainer*data_prediction$age65 +
     # as.numeric(zero_part_coef['alc_rounded_1.cat2_1']) * data_prediction$cat2*data_prediction$microsim.init.alc.gpd +
@@ -54,7 +55,11 @@ transition_alcohol_regression <- function(data, model){
   # Compute the probability of zero using the logistic function
   zero_prob <- 1 / (1+exp(-zero_part_lp))
 
-  count_part_coef <- model %>% filter(type=="count") %>% filter(estimate=="PE")
+  count_part_coef <- model %>% filter(type=="drinkermod") %>% dplyr::select(parameter, Estimate) %>%
+    pivot_wider(names_from=parameter, values_from=Estimate)
+
+  names(count_part_coef) <- ifelse(names(count_part_coef)=="alc_rounded_1", "alc_daily_g_1", names(count_part_coef))
+
 
   count_part_lp <- as.numeric(count_part_coef['(Intercept)']) +
     as.numeric(count_part_coef['age3_225-64']) * data_prediction$age2564 +
@@ -65,10 +70,10 @@ transition_alcohol_regression <- function(data, model){
     as.numeric(count_part_coef['race.factor_2Other, non-Hispanic']) * data_prediction$raceother +
     as.numeric(count_part_coef['edu3_2Low']) * data_prediction$edulow +
     as.numeric(count_part_coef['edu3_2Med']) * data_prediction$edumed +
-    as.numeric(count_part_coef['alc_rounded_1_scaled']) * data_prediction$alc_scaled +
-    as.numeric(count_part_coef['abstainer_1']) * data_prediction$abstainer +
-    as.numeric(count_part_coef['cat1_1']) * data_prediction$cat1 +
-    as.numeric(count_part_coef['cat2_1']) * data_prediction$cat2
+    as.numeric(count_part_coef['alc_daily_g_1']) * data_prediction$microsim.init.alc.gpd +
+    as.numeric(count_part_coef['abstainer_1']) * data_prediction$abstainer
+    # as.numeric(count_part_coef['alc_daily_g_1:cat2_1']) * data_prediction$cat2*data_prediction$microsim.init.alc.gpd +
+    # as.numeric(count_part_coef['alc_daily_g_1:cat3_1']) * data_prediction$cat3*data_prediction$microsim.init.alc.gpd
     # as.numeric(count_part_coef['age3_225.64.abstainer_1']) * data_prediction$abstainer*data_prediction$age2564 +
     # as.numeric(count_part_coef['age3_265..abstainer_1']) * data_prediction$abstainer*data_prediction$age65 +
     # as.numeric(count_part_coef['alc_rounded_1.cat2_1']) * data_prediction$cat2*data_prediction$microsim.init.alc.gpd +
@@ -77,6 +82,10 @@ transition_alcohol_regression <- function(data, model){
   expected_counts <- exp(count_part_lp)
 
   predicted_values <- ifelse(runif(nrow(data_prediction)) < zero_prob, 0, expected_counts)
+
+  # abstainers <- ifelse(predicted_values==0, 1,0)
+  #
+  # mean(abstainers)
 
   data_prediction$predicted_values <- predicted_values
 

@@ -87,11 +87,13 @@ nesarc_selected$alc_rounded_2_scaled <- round((nesarc_selected$alc_rounded_2-mea
 
 head(round(scale(nesarc_selected$alc_rounded_1)))
 
+summary(nesarc_selected$abstainer_2)
+
 # predicting the probability of being an abstainer 
-abstainermod <- glmer(abstainer_2 ~ abstainer_1 + age3_2 + female.factor_2 + 
-                      race.factor_2 + edu3_2 + cat1_1 + cat2_1 + (1|idnum),
-                      data=nesarc_selected, weights=scaledweight1,
-                      family=binomial) 
+abstainermod <- glm(abstainer_2 ~ age3_2 + female.factor_2 +
+                      race.factor_2 + edu3_2 + alc_daily_g_1 + abstainer_1,
+                    family=binomial,
+                      data=nesarc_selected, weights=scaledweight2) 
 
 summary(abstainermod)
 
@@ -101,37 +103,89 @@ summary <- summary(abstainermod)
 
 nesarc_selected$predicted_abstainers <- predict(abstainermod, type="response")
 
+summary(nesarc_selected$predicted_abstainers)
+summary(nesarc_selected$abstainer_1)
+
 # now drinkers model 
-drinkers <- nesarc_selected %>% filter(alc_rounded_1!=0)
+drinkers <- nesarc_selected %>% filter(alc_rounded_2!=0)
 
 drinkers$alc1_scaled <- round((drinkers$alc_daily_g_1-mean(drinkers$alc_daily_g_1))/sd(drinkers$alc_daily_g_1))
 drinkers$alc2_scaled <- round((drinkers$alc_daily_g_2-mean(drinkers$alc_daily_g_2))/sd(drinkers$alc_daily_g_2))
 
-drinkermod <- glmer(alc2_scaled ~ alc1_scaled + abstainer_1 + age3_2 + female.factor_2 + 
-                        race.factor_2 + edu3_2 + cat1_1 + cat2_1 + (1|idnum),
-                      data=drinkers, weights=scaledweight1,
-                      family=poisson) 
+drinkers$logalc1 <- log(drinkers$alc_daily_g_1+0.000001)
+drinkers$logalc2 <- log(drinkers$alc_daily_g_2)
+
+drinkers <- drinkers %>% 
+  mutate(logalcscaled = as.numeric(scale(logalc2)))
+
+summary(drinkers$logalcscaled)
+sd(drinkers$logalcscaled)
+
+length(unique(drinkers$idnum))
+drinkers$id <- 1:nrow(drinkers)
+drinkers$id <- as.factor(drinkers$id)
+drinkers <- drinkers %>% drop_na(logalc1, logalc2, abstainer_1, 
+                                 age3_2, female.factor_2, race.factor_2,
+                                 edu3_2)
+
+test <- drinkers %>% dplyr::select(idnum, age3_2, female.factor_2,
+                                     race.factor_2, edu3_2, alc_daily_g_1,
+                                   logalcscaled,
+                                   abstainer_1) %>% 
+  distinct()
+
+length(levels(drinkers$id))
+nrow(drinkers)
+drinkers$alcsq <- drinkers$alc_daily_g_1^2
+library(lme4)
+
+drinkers <- nesarc_selected %>% dplyr::select(idnum, weight_wave2, 
+                                              age3_2, female.factor_2,
+                                              race.factor_2, 
+                                              edu3_2, alc_daily_g_1, alc_daily_g_2,
+                                              abstainer_1) %>% 
+  filter(alc_daily_g_2 !=0) %>% 
+  pivot_longer(alc_daily_g_1:alc_daily_g_2) %>% 
+  arrange(idnum, name) %>%
+  group_by(idnum) %>%
+  mutate(lagged_alc = lag(value))
+
+drinkermod <- lmer(value ~ lagged_alc + (1 | idnum),
+                      data=drinkers) 
 summary(drinkermod)
 
 coef(abstainermod)
 summaryabstainer <- summary(abstainermod)
-coefabstainers <- data.frame(summaryabstainer$coefficients)
+coefabstainers$parameter <- rownames(coefabstainers)
+coefabstainers <- data.frame(summaryabstainer$coefficients) %>% 
+  mutate(type="abstainermod",
+         parameter = rownames(.)) %>% 
+  dplyr::select(type, parameter, Estimate, Std..Error, Pr...z..) %>% 
+  rename(p = Pr...z..)
 
 summarydrinker <- summary(drinkermod)
-coefdrinkers <- data.frame(summarydrinker$coefficients)
+coefdrinkers <- data.frame(summarydrinker$coefficients) %>% 
+  mutate(type="drinkermod",
+         parameter = rownames(.)) %>% 
+  dplyr::select(type, parameter, Estimate, Std..Error, Pr...t..) %>% 
+  rename(p = Pr...t..)
 
-coefSE <- rbind(c("PE","zero",coefabstainers$Estimate),
-                c("PE","count", coefdrinkers$Estimate),
-                c("SE","zero", coefabstainers$Std.Err),
-                c("SE","count", coefdrinkers$Std.Err))
-coefSE <- data.frame(coefSE)
-names(coefSE)[1:2] <- c("estimate","type")
-names(coefSE)[3:15] <- rownames(zero_part_coef)
-# coefSE <- coefSE[,-ncol(coefSE)] 
+rownames(coefabstainers) <- NULL
+rownames(coefdrinkers) <- NULL
+
+coefSE <- rbind(coefabstainers, coefdrinkers)
+
+# coefSE <- rbind(c("PE","zero",coefabstainers$Estimate),
+#                 c("PE","count", coefdrinkers$Estimate),
+#                 c("SE","zero", coefabstainers$Std.Err),
+#                 c("SE","count", coefdrinkers$Std.Err))
+# coefSE <- data.frame(coefSE)
+# names(coefSE)[1:2] <- c("estimate","type")
+# names(coefSE)[3:15] <- rownames(zero_part_coef)
+# # coefSE <- coefSE[,-ncol(coefSE)] 
 
 # save a copy of the coefficients 
-write.csv(coefSE, paste0(models, "regression_NESARC_GLMM_binom.csv"), row.names=F)
-
+write.csv(coefSE, paste0(models, "regression_NESARC_LM_log.csv"), row.names=F)
 
 random_intercepts <- ranef(abstainermod)$idnum[, 1]
 predictors <- nesarc_selected[c("abstainer_1", "age3_2", "female.factor_2", "race.factor_2", "edu3_2", "cat1_1", "cat2_1")]

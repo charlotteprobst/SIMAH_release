@@ -54,7 +54,9 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 # source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
 alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/1yrprob_multinomial_model.csv")
 
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_GLMM_binom.csv")
+alcohol_transitions2 <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_LM_log.csv")
+
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/zeroinfl_regression_poisson_BRFSS.csv")
 
 
 targets <- generate_targets_alcohol(brfss)

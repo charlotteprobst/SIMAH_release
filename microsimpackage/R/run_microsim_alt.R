@@ -236,7 +236,7 @@ basepop <- outward_migration_rate(basepop,migration_rates,y)
 # update alcohol use categories
 if(updatingalcohol==1){
   basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
-  # # basepop <- transition_alcohol_determ(basepop, brfss, y)
+  # basepop <- transition_alcohol_determ(basepop, brfss, y)
   basepop <- update_alcohol_cat(basepop)
   #
   # # print("updating alcohol use")
