@@ -16,6 +16,7 @@ setwd("~/Google Drive/SIMAH Sheffield")
 source("SIMAH_code/psid/2_education_model/1_setup_markov_model.R")
 
 data <- read_csv("SIMAH_workplace/education_transitions/new_PSID_weighted_IDs.csv")
+data <- adjust_income_inflation(data)
 
 # do the first analysis on the split time periods 
 
@@ -41,9 +42,11 @@ datat2income <- extract_coefficients_6cat(modelt2_income, "income", "2009-2019",
 datat2incomeint <- extract_coefficients_6cat(modelt2_income_int, "incomeint", "2009-2019", datat2)
 
 coefs <- rbind(
-  # datat1baseline, datat1income,
+  # datat1baseline, 
+  datat1income,
                datat1incomeint,
-               # datat2baseline, datat2income,
+               # datat2baseline,
+  datat2income,
                datat2incomeint) %>% 
   dplyr::select(Variable, Transition, model, time, Estimate, newLower, newUpper) %>% 
   rename(Upper=newUpper, Lower=newLower) %>% 
@@ -74,28 +77,25 @@ coefs <- rbind(
 
 # create a table 
 table <- coefs %>% 
+  filter(model=="Income") %>% 
+  ungroup() %>% 
+  dplyr::select(-model) %>% 
   mutate(Estimate = round(Estimate, digits=2),
     finalest = paste0(Estimate, " (", Lower, ",", Upper, ")")) %>% 
-  dplyr::select(model, time, Variable, Transition, finalest) %>% 
+  dplyr::select(time, Variable, Transition, finalest) %>% 
   pivot_wider(names_from=Transition, values_from=finalest)
 write.csv(table, "SIMAH_workplace/education_transitions/final_models/income_model_table_16_new.csv", row.names=F)
 
-coefs <- rbind(
-  datat1income,datat2income) %>%
-  dplyr::select(Variable, Transition, model, time, Estimate, newLower, newUpper) %>% 
-  rename(Upper=newUpper, Lower=newLower) %>% 
-  mutate(Variable = recode(Variable, "sex1"="Women","racefinal2black"="Black",
-                           "racefinal2Asian/PI"="Asian/PI","racefinal2hispanic"="Hispanic",
-                           "racefinal2Native"="Native American","racefinal2other"="Others",
-                           "incomescaled"="Household income",
-                           "racefinal2black:incomescaled"="Black*Household income",
-                           "racefinal2hispanic:incomescaled"="Hispanic*Household income",
-                           "racefinal2Asian/PI:incomescaled"="Asian/PI*Household income",
-                           "racefinal2other:incomescaled"="Others*Household income"),
-         Variable = factor(Variable,
-                           levels=c("Women","Black","Hispanic","Asian/PI","Others","Household income")),
-         time = factor(time, levels=c("1999-2009","2009-2019")),
-         model = recode(model, "baseline"="Baseline","income" = "Income", "incomeint" = "Interaction"))
+table <- coefs %>% 
+  filter(model=="Interaction") %>% 
+  ungroup() %>% 
+  dplyr::select(-model) %>% 
+  mutate(Estimate = round(Estimate, digits=2),
+         finalest = paste0(Estimate, " (", Lower, ",", Upper, ")")) %>% 
+  dplyr::select(time, Variable, Transition, finalest) %>% 
+  pivot_wider(names_from=Transition, values_from=finalest)
+write.csv(table, "SIMAH_workplace/education_transitions/final_models/income_model_table_16_new_sensitivity.csv", row.names=F)
+
 
 table_alt <- coefs %>% 
   mutate(Estimate = round(Estimate, digits=2),

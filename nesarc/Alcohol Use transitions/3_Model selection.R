@@ -7,12 +7,15 @@ library(tidyverse)  # data management
 library(msm)        # model transition probabilities
 
 # Specify the data and output file locations
-data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
-models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"          # Location of saved MSM models
+data    <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Processed data/"  # Location of data
+models  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
+
+# data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
+# models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"          # Location of saved MSM models
 
 
 # Load data / functions
-nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded.rds")) 
+nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded_new.rds")) 
 
 # Data when age is continuous (ages less than 90 (le90); remove those aged >90 since the exact age is unknown)
 nesarc_expanded_le90 <- nesarc_expanded %>%
@@ -174,7 +177,7 @@ msm3a <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_a
 msm3b <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges,
               center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000),
               covariates = ~ female_w1 + age7 + edu3 + race_w1)
-        saveRDS(msm3b, paste0(models, "msm3b.RDS")) # Save Results
+        saveRDS(msm3b, paste0(models, "msm3b_new.RDS")) # Save Results
 
         
         
@@ -293,7 +296,7 @@ Q <- crudeinits.msm(alc4 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
 # Unadjusted Model; AlcUse (4 categories)
 msm3b_crude <- msm (alc4 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q,
                     center=FALSE, control = list(trace=1, maxit=600, fnscale = 3000000))
-    saveRDS(msm3b_crude, paste0(models, "msm3b_crude.RDS")) 
+    saveRDS(msm3b_crude, paste0(models, "msm3b_crude_new.RDS")) 
 
 # HED Model -----------------------------------------------------------------------------------
 
@@ -311,12 +314,12 @@ Q <- crudeinits.msm(hed ~ years, idnum, data=nesarc_expanded, qmatrix=Q)
 # Run MSM model (unadjusted)
 hed_crude.msm <- msm (hed ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q, 
                       center=FALSE, control = list(trace=1, maxit=500, fnscale = 3000000))
-saveRDS(hed_crude.msm, paste0(models, "hed_crude.msm.RDS"))
+saveRDS(hed_crude.msm, paste0(models, "hed_crude.msm_new.RDS"))
 
 
 # Run MSM model (adjusted for covariates)
 hed.msm <- msm (hed ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q, 
                 center=FALSE, control = list(trace=1, maxit=500, fnscale = 3000000),
                 covariates = ~ female_w1 + age7 + edu3 + race_w1)  # For functions to work, the order of covariates should be: sex, age, edu, race
-saveRDS(hed.msm, paste0(models, "hed.msm.RDS"))
+saveRDS(hed.msm, paste0(models, "hed.msm_new.RDS"))
 

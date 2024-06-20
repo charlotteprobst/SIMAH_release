@@ -4,7 +4,7 @@
 \alias{postprocess_mortality}
 \title{Calculates baseline mortality rates for different diseases}
 \usage{
-postprocess_mortality(DiseaseSummary, diseases, death_counts, inflation_factor)
+postprocess_mortality(DiseaseSummary, diseases, death_counts)
 }
 \description{
 Calculates baseline mortality rates for different diseases
