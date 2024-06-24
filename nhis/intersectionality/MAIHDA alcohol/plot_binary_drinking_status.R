@@ -46,19 +46,25 @@ plot_data <- plot_data %>%
                     ifelse(grepl("25-59", intersectional_names), "25-59", "60+")))
 
 # Plot of additive versus total estimates, both genders together
+plot_data <- plot_data %>%
+  mutate(education_men_add = ifelse(sex == "Men", as.numeric(education) - 0.15, as.numeric(education)),
+         education_men_total = ifelse(sex == "Men", as.numeric(education) + 0.15, as.numeric(education)),
+         education_women_add = ifelse(sex == "Women", as.numeric(education) - 0.15, as.numeric(education)),
+         education_women_total = ifelse(sex == "Women", as.numeric(education) + 0.15, as.numeric(education)))
+
 combined_plot <- plot_data %>%
-  ggplot(aes(x = education)) +
-  geom_point(data = filter(plot_data, sex == "Men"), aes(y = pAmn, color = "Men, additive effects only"), alpha = 0.5) +
-  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = pAlo, ymax = pAhi, color = "Men, additive effects only")) +
-  geom_point(data = filter(plot_data, sex == "Men"), aes(y = pmn, color = "Men, total effects")) +
-  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(ymin = plo, ymax = phi, color = "Men, total effects")) +
-  geom_point(data = filter(plot_data, sex == "Women"), aes(y = pAmn, color = "Women, additive effects only"), alpha = 0.5) +
-  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(ymin = pAlo, ymax = pAhi, color = "Women, additive effects only")) +
-  geom_point(data = filter(plot_data, sex == "Women"), aes(y = pmn, color = "Women, total effects")) +
-  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(ymin = plo, ymax = phi, color = "Women, total effects")) +
+  ggplot() +
+  geom_point(data = filter(plot_data, sex == "Men"), aes(x = education_men_add, y = pAmn, color = "Men, additive effects only"), alpha = 0.5) +
+  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(x = education_men_add, ymin = pAlo, ymax = pAhi, color = "Men, additive effects only"), width = 0.3) +
+  geom_point(data = filter(plot_data, sex == "Men"), aes(x = education_men_total, y = pmn, color = "Men, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Men"), aes(x = education_men_total, ymin = plo, ymax = phi, color = "Men, total effects"), width = 0.3) +
+  geom_point(data = filter(plot_data, sex == "Women"), aes(x = education_women_add, y = pAmn, color = "Women, additive effects only"), alpha = 0.5) +
+  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(x = education_women_add, ymin = pAlo, ymax = pAhi, color = "Women, additive effects only"), width = 0.3) +
+  geom_point(data = filter(plot_data, sex == "Women"), aes(x = education_women_total, y = pmn, color = "Women, total effects")) +
+  geom_errorbar(data = filter(plot_data, sex == "Women"), aes(x = education_women_total, ymin = plo, ymax = phi, color = "Women, total effects"), width = 0.3) +
   facet_grid(cols = vars(race), rows = vars(age)) +
   theme(axis.title.x = element_blank(), 
-        axis.text.x = element_text(angle = 90, size=12),
+        axis.text.x = element_text(angle = 90, size = 12, hjust = 0.5, vjust = 0.5),
         legend.position = "bottom",
         legend.text = element_text(size = 12),
         strip.text = element_text(size = 12),
@@ -67,7 +73,7 @@ combined_plot <- plot_data %>%
   labs(y = "% current drinkers", color = "Sex") +
   scale_color_manual(values = c("Men, additive effects only" = "lightblue", "Men, total effects" = "darkblue", "Women, additive effects only" = "orange", "Women, total effects" = "darkred")) +
   guides(color = guide_legend(title = NULL, ncol = 4)) +
-  scale_x_discrete(labels = c("high school or less" = "low", "some college" = "med.", "college+" = "high")) + 
+  scale_x_continuous(breaks = c(1, 2, 3), labels = c("low", "med.", "high")) + 
   scale_y_continuous(limits = c(0, 100))
 
 combined_plot
