@@ -42,7 +42,7 @@ cons <- read.csv("SIMAH_workplace/microsim/1_generating_population/constraints_I
   
 # read in the individual-level data 
 brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS")
-
+brfss$brfssID <- 1:nrow(brfss)
 # process the individual-level data into the correct format and sort out any missing data for categories
 # do this for each state 
 
@@ -55,7 +55,7 @@ years <- c(2001)
 brfss <- brfss %>% filter(YEAR %in% years)
 
 # which variables do you want
-variables <- c("State","region","sex","race","age_var","agecat","education","household_income","BMI",
+variables <- c("brfssID", "State","region","sex","race","age_var","agecat","education","household_income","BMI",
                "drinkingstatus","drinkingstatus_detailed", "formerdrinker","gramsperday",
                "frequency","quantity_per_occasion")
 

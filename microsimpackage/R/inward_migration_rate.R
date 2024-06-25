@@ -25,7 +25,7 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
   summary$toadd <- summary$n*summary$migrationinrate
 
   summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
-  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
+  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd) %>% distinct()
 
   cats <- unique(tojoin$cat)
 
@@ -72,7 +72,7 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
     do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
     # do(slice_sample(.,n=toadd, replace = T)) %>%
     mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-    dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
+    dplyr::select(brfssID, microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                   microsim.init.alc.gpd, microsim.init.BMI,
                   microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
 

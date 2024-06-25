@@ -6,12 +6,17 @@
 library(tidyverse)  # data management
 library(ZIM)
 
+models  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Models/"          # Location of saved MSM models
+
 # Load data / functions
-deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/NESARC_optimisation_output/full_pop_deterministic.csv") 
+deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/education_reps/full_pop_deterministic10000_withID.csv") 
 
 deterministic_selected <- deterministic_pop %>% 
   mutate(abstainer=ifelse(AlcCAT=="Non-drinker",1,0)) %>% 
-  dplyr::select(microsim.init.id, year, agecat, 
+  mutate(agecat = cut(microsim.init.age,
+                      breaks=c(0,24,64,100),
+                      labels=c("18-24","25-64","65+"))) %>% 
+  dplyr::select(brfssID, microsim.init.id, year, agecat, 
                 microsim.init.race, microsim.init.sex,
                 microsim.init.education, microsim.init.alc.gpd,
                 AlcCAT, abstainer) %>% 
@@ -33,16 +38,236 @@ deterministic_selected <- deterministic_pop %>%
                                               ifelse(race.factor_2=="SPA","Hispanic", NA)))),
          edu3_2 = ifelse(edu3_2=="LEHS","Low",
                          ifelse(edu3_2=="SomeC","Med","High")),
+         edu3_2 = ifelse(edu3_2 =="High" & age3_2=="18-24", "Med", edu3_2),
          race.factor_2 = factor(race.factor_2, levels=c("Black, non-Hispanic",
                                                         "Hispanic","Other, non-Hispanic",
                                                         "White, non-Hispanic")))
 deterministic_selected$race.factor_2 <- relevel(deterministic_selected$race.factor_2,
                                                 ref="White, non-Hispanic")
 
-m1 <-  zeroinfl(alc_rounded ~ age3_2 + female.factor_2 +
-                  race.factor_2 + edu3_2 + alc_daily_g_1 + abstainer_1 | 
-                  age3_2 + female.factor_2 +
-                  race.factor_2 + edu3_2 + alc_daily_g_1 + abstainer_1,
+# now try Barbosa method for multinom log regs
+deterministic_selected <- deterministic_selected %>% 
+  arrange(microsim.init.id, year) %>% 
+  #create a lagged variable for alcohol category
+  mutate(lagged_cat = lag(AlcCAT),
+         cat1_lag = ifelse(lagged_cat=="Low risk", 1,0),
+         cat2_lag = ifelse(lagged_cat=="Medium risk", 1,0),
+         cat3_lag = ifelse(lagged_cat=="High risk", 1,0),
+         cat1 = ifelse(AlcCAT=="Low risk", 1,0),
+         cat2 = ifelse(AlcCAT=="Medium risk", 1,0),
+         cat3 = ifelse(AlcCAT=="High risk", 1,0),
+         lagged_age = lag(age3_2),
+         lagged_education = lag(edu3_2))
+
+deterministic_selected$AlcCAT <- relevel(factor(deterministic_selected$AlcCAT),
+                                         ref='Non-drinker')
+
+deterministic_selected$logalc_lagged <- log(deterministic_selected$alc_daily_g_1+0.00001)
+
+deterministic_selected$scaledalc <- scale(deterministic_selected$logalc_lagged)
+
+library(GLMMadaptive)
+deterministic_selected <- deterministic_selected %>% filter(year>=2001)
+deterministic_selected$time <- deterministic_selected$year-2001
+summary(deterministic_selected$time)
+deterministic_selected$strata <- paste(deterministic_selected$lagged_age,
+                                        deterministic_selected$female.factor_2,
+                                        deterministic_selected$race.factor_2,
+                                        deterministic_selected$lagged_education, sep="_")
+
+# model for abstainers
+
+library(lme4)
+
+abstainermod <- glmer(abstainer ~ time + abstainer_1 + cat1_lag + (1|strata), family=binomial, data=deterministic_selected) 
+
+summary(abstainermod)
+amodel <- coef(abstainermod)[[1]]
+amodel$strata <- row.names(amodel)
+amodel <- amodel %>% pivot_longer("(Intercept)":cat1_lag) %>% 
+  rename(parameter=name, Estimate=value) %>% 
+  mutate(type="abstainermod")
+
+# now do the drinker model 
+drinkers <- deterministic_selected %>% filter(microsim.init.alc.gpd!=0)
+drinkers <- drinkers %>% 
+  mutate(logalc = log(microsim.init.alc.gpd),
+         logalcscaled = as.numeric(scale(logalc)))
+
+# drinker model
+
+drinkermod <- lmer(logalc ~ 
+                     alc_daily_g_1 + lagged_cat + time+ 
+                     lagged_age + lagged_education + race.factor_2 + 
+                     female.factor_2 + 
+                     (1 |microsim.init.id), 
+                   data=drinkers) 
+summary(drinkermod)
+coef(drinkermod)
+ranef(drinkermod)
+drinkers$predicted <- exp(predict(drinkermod))
+drinkers$error <- drinkers$predicted - drinkers$alc_daily_g_1
+
+drinkers$microsim.init.alc.gpd <- drinkers$predicted
+drinkers$formerdrinker <- 0
+drinkers$oldcat <- drinkers$AlcCAT
+drinkers$microsim.init.sex <- ifelse(drinkers$female.factor_2=="Women","f","m")
+drinkers <- code_alcohol_categories(drinkers)
+
+test1 <- drinkers %>% group_by(oldcat,strata) %>% tally() %>% ungroup() %>% mutate(prop=n/sum(n)) %>% dplyr::select(-n) %>% 
+  rename(AlcCAT=oldcat)
+test2 <- drinkers %>% group_by(AlcCAT,strata) %>% tally() %>% ungroup() %>% mutate(prop_predicted=n/sum(n)) %>% dplyr::select(-n) 
+test1 <- left_join(test1, test2) %>% mutate(error = abs(prop-prop_predicted))
+
+# drinkers$predictedunscaled <- (drinkers$predicted - mean(drinkers$logalc))*sd(drinkers$logalc)
+# drinkers$predictedunscaledexp <- exp(drinkers$predictedunscaled)
+library(lmerTest)
+summary(drinkermod)
+coef(summary(as(drinkermod,"merModLmerTest")))
+dmodel <- coef(drinkermod)[[1]]
+dmodel$strata <-row.names(dmodel)
+dmodel <- dmodel %>% pivot_longer("(Intercept)":`female.factor_2Women`) %>% 
+  rename(parameter=name, Estimate=value) %>% 
+  mutate(type="drinkermod")
+
+model <- rbind(amodel,dmodel)
+
+write.csv(model, paste0(models, "deterministic_mixedeff_individualri.csv"), row.names=F)
+
+deterministic_selected$predicted <- predict(abstainermod,type="response")
+deterministic_selected$random <- runif(nrow(deterministic_selected))
+deterministic_selected$predicted_abstainer <- ifelse(deterministic_selected$random<=deterministic_selected$predicted,1,0)
+summary(deterministic_selected$abstainer)
+summary(deterministic_selected$predicted_abstainer)
+
+test <- deterministic_selected %>% group_by(strata) %>% summarise(abstainer=mean(abstainer),
+                                                                  predicted = mean(predicted_abstainer),
+                                                                  error = abstainer-predicted)
+
+
+
+library(nnet)
+fit <- multinom(AlcCAT ~ cat1_lag + cat2_lag + cat3_lag + age3_2*female.factor_2 + race.factor_2 + edu3_2 + time, 
+                data=deterministic_selected)
+
+summary(fit)
+exp(coef(fit))
+deterministic_selected$predicted <- predict(fit, deterministic_selected)
+
+deterministic_selected$transition_probabilities <- predict(fit, deterministic_selected, type="probs")
+
+test <- deterministic_selected %>% 
+  group_by(year,age3_2, race.factor_2, female.factor_2, edu3_2, AlcCAT) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(year, age3_2, race.factor_2, female.factor_2, edu3_2) %>% 
+  mutate(prop=n/sum(n)) %>% 
+  dplyr::select(-n)
+
+test2 <- deterministic_selected %>% 
+  group_by(year,age3_2, race.factor_2, female.factor_2, edu3_2, predicted) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(year, age3_2, race.factor_2, female.factor_2, edu3_2) %>% 
+  mutate(proppredicted=n/sum(n)) %>% 
+  rename(AlcCAT=predicted) %>% 
+  dplyr::select(-n)
+
+test <- left_join(test, test2)
+
+# predictors are previous alcohol use, all demographics and some interactions effects 
+# count model parameters | zero model parameters 
+library(lme4)
+
+deterministic_formodel <- deterministic_selected %>% 
+  dplyr::select(year, abstainer, age3_2, race.factor_2, female.factor_2,
+                edu3_2, alc_daily_g_1, lagged_cat)
+
+fsa.abstainer <- FSA(abstainer ~ lagged_cat + age3_2 + female.factor_2 + 
+                       race.factor_2 + edu3_2, data=deterministic_formodel,
+                     fitfunc=glm, quad=FALSE, m=2, numrs=10,
+                     interactions=T)
+summary(fsa.abstainer)
+
+drinkers <- deterministic_selected %>% filter(microsim.init.alc.gpd!=0) %>% 
+  dplyr::select(year, microsim.init.alc.gpd, age3_2, race.factor_2, female.factor_2,
+                edu3_2, alc_daily_g_1, lagged_cat, alc_daily_g_1) %>% 
+  mutate(logalc = log(microsim.init.alc.gpd))
+
+fsa.drinker <- FSA(logalc ~ lagged_cat + alc_daily_g_1 + age3_2 + female.factor_2 + 
+                       race.factor_2 + edu3_2, data=drinkers,
+                     fitfunc=lm, quad=FALSE, m=2, numrs=10,
+                     interactions=T)
+summary(fsa.drinker)
+
+
+abstainermod <- glmer(abstainer ~ age3_2 + female.factor_2 +
+                        race.factor_2 + edu3_2 + 
+                        abstainer_1 + alc_daily_g_1 + (1|year),
+                      family=binomial,
+                      data=deterministic_selected) 
+summary(abstainermod)
+coef(abstainermod)
+saveRDS(abstainermod, paste0(models, "abstainermod_yearrandom.RDS"))
+
+
+
+coef(abstainermod)
+
+abstainermod <- glmer(abstainer ~ age3_2 + female.factor_2 +
+                        race.factor_2 + edu3_2 + 
+                        alc_daily_g_1 + (1|lagged_cat),
+                      family=binomial,
+                      data=deterministic_selected) 
+summary(abstainermod)
+saveRDS(abstainermod, paste0(models, "abstainermod_alccatrandom.RDS"))
+coef(abstainermod)
+  
+drinkers <- deterministic_selected %>% filter(microsim.init.alc.gpd!=0)
+drinkers <- drinkers %>% 
+  mutate(logalc = log(microsim.init.alc.gpd),
+         logalcscaled = as.numeric(scale(logalc)))
+
+drinkermod <- lmer(logalc ~ age3_2 + female.factor_2 +
+                   race.factor_2 + edu3_2 + 
+                   alc_daily_g_1 + abstainer_1 + (1|year),
+                 data=drinkers) 
+saveRDS(drinkermod, paste0(models, "drinkermod_yearrandom.RDS"))
+
+drinkermod <- lmer(logalc ~ age3_2 + female.factor_2 +
+                     race.factor_2 + edu3_2 + 
+                     alc_daily_g_1 + (1|lagged_cat),
+                   data=drinkers) 
+saveRDS(drinkermod, paste0(models, "drinkermod_alccatrandom.RDS"))
+
+abstainermod <- read_rds(paste0(models, "abstainermod_yearrandom.RDS"))
+drinkermod <- read_rds(paste0(models, "drinkermod_yearrandom.RDS"))
+
+coefsabstainer <- (coef(abstainermod))[[1]] %>% 
+  mutate(year = rownames(.)) %>% 
+  pivot_longer(`(Intercept)`:alc_daily_g_1) %>% 
+  pivot_wider(names_from=name, values_from=value) %>% 
+  mutate(type="abstainermod")
+
+coefsdrinker <- (coef(drinkermod))[[1]] %>% 
+  mutate(year = rownames(.)) %>% 
+  pivot_longer(`(Intercept)`:alc_daily_g_1) %>% 
+  pivot_wider(names_from=name, values_from=value) %>% 
+  mutate(type="drinkermod")
+
+coefs <- rbind(coefsabstainer, coefsdrinker)
+write.csv(coefs, paste0(models, "regression_yearrandom_deterministicpop.csv"), row.names=F)
+
+coef(drinkermod)
+library(pscl)
+deterministic_selected <- deterministic_selected %>% filter(year>=2001)
+m1 <-  zeroinfl(alc_rounded ~ age3_2 + female.factor_2 + 
+                  race.factor_2 + edu3_2 + alc_daily_g_1 +
+                  cat1_lag + cat2_lag*alc_daily_g_1 + 
+                  cat3_lag*alc_daily_g_1 |
+                  age3_2 + female.factor_2 + 
+                  race.factor_2 + edu3_2 + abstainer_1 + 
+                  cat1_lag + cat2_lag,
                 data = deterministic_selected,
                 dist = "poisson")
 summary(m1)
@@ -57,7 +282,7 @@ count_part_coef <- data.frame(type="drinkermod",
                               Std..Error=summary(m1)$coefficients$count[, "Std. Error"])
 coefSE <- rbind(zero_part_coef, count_part_coef)
 
-write.csv(coefSE, paste0(models, "zeroinfl_regression_poisson_BRFSS.csv"), row.names=F)
+write.csv(coefSE, paste0(models, "zeroinfl_regression_poisson_deterministic.csv"), row.names=F)
 
 # now try Barbosa method for multinom log regs
 deterministic_selected <- deterministic_selected %>% 
@@ -79,31 +304,10 @@ summary(fit)
 coef(fit)
 
 
-library(GLMMadaptive)
-
-# do a zero inflated lagged model 
-mixed <- mixed_model(fixed = alc_rounded ~ age3_2 + female.factor_2 +
-                       race.factor_2 + edu3_2 + 
-                       alc_daily_g_1 + abstainer_1, 
-                     random= ~ 1 | microsim.init.id, 
-                     data=deterministic_selected,
-                     family=zi.poisson(),
-                     zi_fixed = ~ age3_2 + female.factor_2 +
-                       race.factor_2 + edu3_2 + 
-                       alc_daily_g_1 + abstainer_1, 
-                     control = list(max_coef_value = 500, iter_EM = 0))
 
 
 
-# predictors are previous alcohol use, all demographics and some interactions effects 
-# count model parameters | zero model parameters 
-abstainermod <- glmer(abstainer ~ age3_2 + female.factor_2 +
-                      race.factor_2 + edu3_2 + 
-                      alc_daily_g_1 + abstainer_1 + (1|year),
-                    family=binomial,
-                    data=deterministic_selected) 
 
-summary(abstainermod)
 
 drinkers <- deterministic_selected %>% filter(microsim.init.alc.gpd!=0)
 drinkers <- drinkers %>% 

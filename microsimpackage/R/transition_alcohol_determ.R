@@ -10,7 +10,7 @@ transition_alcohol_determ <- function(data, brfssdata, y){
   brfssdata <- as.data.table(brfssdata)
 
   # subset by year - y+1
-  brfssdata <- brfssdata[YEAR==y+1 | YEAR==y+2]
+  brfssdata <- brfssdata[YEAR==y+1]
 
   # create required age categories in both data
   data[, c("agecat") := .(cut(microsim.init.age,
@@ -39,11 +39,16 @@ transition_alcohol_determ <- function(data, brfssdata, y){
   brfssdata <- merge(brfssdata, Ns, by = c("microsim.init.sex", "agecat", "microsim.init.race","microsim.init.education"))
 
   distribution <- data %>%
+    mutate(random_no = runif(nrow(.))) %>%
     group_by(microsim.init.sex, agecat, microsim.init.race, microsim.init.education) %>%
     mutate(microsim.init.alc.gpd_random = ifelse(microsim.init.alc.gpd==0,
-                                                 rtruncnorm(n(), a=0, b=10, mean=0, sd=20),
-             microsim.init.alc.gpd +
-             rnorm(n(), mean=0, sd=0.1))) %>% #allow some people to change their alc use - but most don't
+                                                 floor(rgamma(100, 1.8, rate=2)),
+                                                 ifelse(random_no>=0.8,
+                                                        microsim.init.alc.gpd*1+rtruncnorm(n(), a=0,b=1, mean=0, sd=20),
+                                                        microsim.init.alc.gpd)),
+           microsim.init.alc.gpd_random = ifelse(microsim.init.alc.gpd_random>200, 200,
+                                                 ifelse(microsim.init.alc.gpd_random<0, 0, microsim.init.alc.gpd_random))) %>%
+    #allow some people to change their alc use - but most don't - some up some down
     arrange(microsim.init.alc.gpd_random) %>%
     mutate(rank = ntile(microsim.init.alc.gpd_random, unique(torank)))
 

@@ -23,14 +23,14 @@ sample_from_markov <- function(model, nsamples, inflation, originalsample,inflat
   # now sample from multivariate normal distribution
   samples <- mvrnorm(n=nsamples, estimates, covmat)
 
-  lhs_samples <- randomLHS(nsamples, ncol(samples))
+  # lhs_samples <- randomLHS(nsamples, ncol(samples))
+  # #
+  # # # Scale samples to the desired range
+  # scaled_lhs_samples <- t(apply(lhs_samples, 1, function(x) min(samples) + (max(samples) - min(samples)) * x))
+  # #
+  # colnames(scaled_lhs_samples) <- colnames(samples)
   #
-  # # Scale samples to the desired range
-  scaled_lhs_samples <- t(apply(lhs_samples, 1, function(x) min(samples) + (max(samples) - min(samples)) * x))
-  #
-  colnames(scaled_lhs_samples) <- colnames(samples)
-  #
-  samples <- scaled_lhs_samples
+  # samples <- scaled_lhs_samples
   samplenums <- data.frame(samplenum=1:nrow(samples))
   newsamples <- cbind(samplenums, samples)
   return(newsamples)

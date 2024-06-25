@@ -16,7 +16,7 @@ microsim.init.id <- 1:nrow(basepop)
 basepop <- cbind(microsim.init.id, basepop)
 
 # read in BRFSS data for migrants and 18-year-olds entering the model
-brfss <- load_brfss(model,SelectedState, DataDirectory)
+brfss <- load_brfss("SIMAH",SelectedState, DataDirectory)
 
 # read in death counts data
 death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)

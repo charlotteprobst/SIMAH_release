@@ -215,27 +215,9 @@ if(updatingeducation==1){
   basepop <- rbind(totransition, tostay)
 }
 
-
-#delete anyone over 79
-###then age everyone by 1 year and update age category
-basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
-                              agecat = cut(microsim.init.age,
-                                           breaks=c(0,19,24,34,44,54,64,74,100),
-                                           labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
-                                                    "65-74","75-79")))
-basepop <- subset(basepop, microsim.init.age<=79)
-
-# add and remove migrants
-if(y<2019){
-model <- "SIMAH"
-basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
-basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
-basepop <- outward_migration_rate(basepop,migration_rates,y)
-}
-
 # update alcohol use categories
 if(updatingalcohol==1){
-  basepop <- transition_alcohol_regression(basepop, alcohol_transitions)
+  basepop <- transition_alcohol_regression(basepop, alcohol_transitions,y)
   # basepop <- transition_alcohol_determ(basepop, brfss, y)
   basepop <- update_alcohol_cat(basepop)
   #
@@ -276,6 +258,25 @@ if(updatingalcohol==1){
   # basepop$totransition <-  NULL
   # basepop$prop_former_drinker <- NULL
   # basepop$n <- NULL
+}
+
+
+
+#delete anyone over 79
+###then age everyone by 1 year and update age category
+basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
+                              agecat = cut(microsim.init.age,
+                                           breaks=c(0,19,24,34,44,54,64,74,100),
+                                           labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
+                                                    "65-74","75-79")))
+basepop <- subset(basepop, microsim.init.age<=79)
+
+# add and remove migrants
+if(y<2019){
+model <- "SIMAH"
+basepop <- inward_births_rate(basepop, migration_rates, y, brfss, model)
+basepop <- inward_migration_rate(basepop, migration_rates, y, brfss)
+basepop <- outward_migration_rate(basepop,migration_rates,y)
 }
 
 }
@@ -332,7 +333,7 @@ implausibility <- max(CatSummary$implausibility, na.rm=T)
   # add former drinkers and lifetime abstainers to this summary TODO
   # Summary <- CatSummary
   # Summary <- list(CatSummary, MeanSummary)
-} 
+}
 # formerdrinkers <- list()
 # for(i in 1:length(PopPerYear)){
 #   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%

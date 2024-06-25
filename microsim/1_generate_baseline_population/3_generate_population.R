@@ -25,7 +25,7 @@ setwd(WorkingDirectory)
 selectedstate <- "USA"
 
 # what size population
-n <- 1000000
+n <- 10000
 
 # read in the processed data containing the population weights to apply
 # step (2) to generate the weights must have been run at least once before doing this
@@ -48,7 +48,7 @@ processed_population <- population %>%
          #                      ifelse(race=="Hispanic","SPA",
          #                             ifelse(race=="Others","OTH",NA))))
          ) %>% 
-  dplyr::select(age_var, race, sex, education, drinkingstatus,gramsperday, formerdrinker,
+  dplyr::select(brfssID, age_var, race, sex, education, drinkingstatus,gramsperday, formerdrinker,
                 household_income, BMI) %>% 
   rename(microsim.init.age=age_var, microsim.init.race=race, microsim.init.sex=sex,
          microsim.init.education=education, microsim.init.alc.gpd=gramsperday,

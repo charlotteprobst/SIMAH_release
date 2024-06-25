@@ -13,144 +13,6 @@ models  <- "~/Google Drive/SIMAH Sheffield/SIMAH_workplace/nesarc/Models/"      
 # data    <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/2_Processed data/"  # Location of data
 # models  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Alcohol Transitions/Models/"          # Location of saved MSM models
 
-
-# Load data / functions
-nesarc_expanded <- readRDS(paste0(data, "nesarc_clean_expanded_new.rds")) 
-
-# Data when age is continuous (ages less than 90 (le90); remove those aged >90 since the exact age is unknown)
-nesarc_expanded_le90 <- nesarc_expanded %>%
-  filter (age<90) %>% group_by(idnum) %>% filter(n() > 1) %>% ungroup() %>% 
-  mutate (age_sq = age ^ 2, 
-    age.c = (age - mean(age)) / sd(age),
-    age_sq.c = (age_sq - mean(age_sq)) / sd(age_sq)) 
-
-
-# MSM 1: AlcUse (6levels) ---------------------------------------------------------------------------------------------
-
-# Specify allowed transition
-# Only allow adjacent transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
-Q <- rbind ( c(0,    0,     0.25, 0,    0,    0),
-             c(0,    0,     0.25, 0,    0,    0),
-             c(0,    0.25,  0,    0.25, 0,    0),
-             c(0,    0,     0.25, 0,    0.25, 0),
-             c(0,    0,     0,    0.25, 0,    0.25), 
-             c(0,    0,     0,    0,    0.25, 0))
-
-# Specify initial values
-Q_allAges  <- crudeinits.msm(alc6 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)       # When age is categorical
-Q_le90 <- crudeinits.msm(alc6 ~ years, idnum, data=nesarc_expanded_le90, qmatrix=Q)  # When age is continuous 
-
-
-# MSM 1: All ages **************************************************************************************
-# MSM 1A: Age (3 categories) (all ages)
-msm1a <- msm ( alc6 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges, 
-              center=FALSE, control = list(trace=1, maxit=1000, fnscale = 3000000),
-              covariates = ~ female_w1 + age3 + edu3 + race_w1)
-        saveRDS(msm1a, paste0(models, "msm1a.RDS")) 
-
-
-# MSM 1B: Age (7 categories) (all ages)
-msm1b <- msm ( alc6 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges,
-              center=FALSE, control = list(trace=1, maxit=1000, fnscale = 3000000),
-              covariates = ~ female_w1 + age7 + edu3 + race_w1)
-        saveRDS(msm1b, paste0(models, "msm1b.RDS"))
-        
-    
-# MSM 1: Ages less than 90years (le90) *********************************************************************************      
-# MSM 1A: Age (3 categories) 
-msm1a_le90 <- msm (alc6 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90, 
-              center=FALSE, control = list(trace=1, maxit=1000, fnscale = 3000000),
-              covariates = ~ female_w1 + age3 + edu3 + race_w1)
-      saveRDS(msm1a_le90, paste0(models, "msm1a_le90.RDS")) 
-
-
-# MSM 1B: Age (7 categories)
-msm1b_le90 <- msm ( alc6 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90,
-              center=FALSE, control = list(trace=1, maxit=1000, fnscale = 3000000),
-              covariates = ~ female_w1 + age7 + edu3 + race_w1)
-      saveRDS(msm1b_le90, paste0(models, "msm1b_le90.RDS"))
-        
-        
-# MSM 1C: Age (continuous)
-msm1c_le90 <- msm(alc6 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90,
-            center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),
-            covariates = ~ female_w1 + age.c + edu3 + race_w1)
-        saveRDS(msm1c_le90, paste0(models, "msm1c_le90.RDS")) 
-
-
-# MSM 1D: Age (squared)
-msm1d_le90 <- msm(alc6 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90,
-            center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),
-            covariates = ~ female_w1 + age.c + age_sq.c + edu3 + race_w1)
-        saveRDS(msm1d_le90, paste0(models, "msm1d_le90.RDS")) 
-
-
-
-
-
-# MSM 2: AlcUse (5levels) ----------------------------------------------------------------------------------------
-
-# Specify allowed transitions
-# Only allow adjacent transitions, except for transitions back to lifetime abstainers, and abstainer->former drinker
-
-Q <- rbind ( c(0,     0,    0.25,  0,    0),
-             c(0,     0,    0.25,  0,    0),
-             c(0,     0.25, 0,     0.25, 0),
-             c(0,     0,    0.25,  0,    0.25),
-             c(0,     0,    0,     0.25, 0))
-
-# Specifies initial values
-Q_allAges  <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded, qmatrix=Q)      # When age is categorical
-Q_le90 <- crudeinits.msm(alc5 ~ years, idnum, data=nesarc_expanded_le90, qmatrix=Q) # When age is continuous 
-
-
-
-# MSM 2: All ages **************************************************************************************
-# MSM 2A: Age (3 categories)
-msm2a <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges, 
-             center=FALSE, control = list(trace=1, maxit=500, fnscale = 3000000),
-              covariates = ~ female_w1 + age3 + edu3 + race_w1)
-        saveRDS(msm2a, paste0(models, "msm2a.RDS")) 
-
-
-# MSM 2B: Age (7 categories)
-msm2b <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded, qmatrix = Q_allAges, 
-              center=FALSE,control = list(trace=1, maxit=600, fnscale = 3000000),
-              covariates = ~ female_w1 + age7 + edu3 + race_w1)
-        saveRDS(msm2b, paste0(models, "msm2b.RDS")) 
-
-        
-        
-# MSM 2: Ages less than 90years (le90) *********************************************************************************      
-# MSM 2A: Age (3 categories)
-msm2a_le90 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90, 
-              center=FALSE, control = list(trace=1, maxit=500, fnscale = 3000000),
-              covariates = ~ female_w1 + age3 + edu3 + race_w1)
-      saveRDS(msm2a_le90, paste0(models, "msm2a_le90.RDS")) 
-
-
-# MSM 2B: Age (7 categories)
-msm2b_le90 <- msm (alc5 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90, 
-            center=FALSE,control = list(trace=1, maxit=600, fnscale = 3000000),
-            covariates = ~ female_w1 + age7 + edu3 + race_w1)
-      saveRDS(msm2b_le90, paste0(models, "msm2b_le90.RDS")) 
-
-# MSM 2C: Age (continuous)
-msm2c_le90 <- msm(alc5 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90,
-            center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),
-            covariates = ~ female_w1 + age.c + edu3 + race_w1)
-        saveRDS(msm2c_le90, paste0(models, "msm2c_le90.RDS")) 
-
-
-# MSM 2D: Age (squared)
-msm2d_le90 <- msm(alc5 ~ years, subject=idnum, data = nesarc_expanded_le90, qmatrix = Q_le90,
-            center=FALSE, control = list(trace=1, maxit=5000, fnscale = 750000),
-            covariates = ~ female_w1 + age.c + age_sq.c + edu3 + race_w1)
-        saveRDS(msm2d_le90, paste0(models, "msm2d_le90.RDS")) 
-
-
-
-
 # MSM 3: AlcUse (4levels) ---------------------------------------------------------------------------------------------
 
 # Specify allowed transitions; only allow adjacent transitions
@@ -161,7 +23,9 @@ Q <- rbind ( c(0,    0.25,  0,    0),
         
 nesarc_expanded <- nesarc_expanded %>% filter(age<=79)
 
-Poplong <- do.call(rbind,PopPerYear) %>% 
+deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/NESARC_optimisation_output/full_pop_deterministic10000.csv") 
+
+Poplong <- deterministic_pop %>% 
   dplyr::select(microsim.init.id, year, microsim.init.sex,microsim.init.race,
                 microsim.init.age, microsim.init.education, AlcCAT) %>% 
   group_by(microsim.init.id) %>% 
@@ -185,19 +49,20 @@ Poplong$age3 <- cut(Poplong$microsim.init.age,
                             breaks=c(0,24,64,100),
                             labels=c("18-24","25-64","65+"))
 
-nesarc_expanded$race_w1 <- relevel(nesarc_expanded$race_w1, ref="Other, non-Hispanic")
-
-
 Poplong$microsim.init.sex <- as.factor(Poplong$microsim.init.sex)
 Poplong$microsim.init.education <- as.factor(Poplong$microsim.init.education)
 Poplong$microsim.init.race <- as.factor(Poplong$microsim.init.race)
+
+Poplong$microsim.init.race <- relevel(Poplong$microsim.init.race, ref="OTH")
+
+Poplong <- Poplong %>% filter(year>=2001)
 
 # MSM 3: All ages **************************************************************************************
 # MSM 3A: Age (3 categories)
 msm3a <- msm (catnum ~ year, subject=microsim.init.id, data = Poplong, qmatrix = Q_allAges, 
               center=FALSE, control = list(trace=1, maxit=600, fnscale = 2632448),
                   covariates = ~ microsim.init.sex + age3 + microsim.init.education + microsim.init.race)
-        saveRDS(msm3a, paste0(models, "msm_brfss.RDS")) 
+        saveRDS(msm3a, paste0(models, "msm_deterministic.RDS")) 
 
    
 # MSM 3B: Age (7 categories)

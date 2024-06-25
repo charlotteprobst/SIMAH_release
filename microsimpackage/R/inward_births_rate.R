@@ -70,27 +70,27 @@ inward_births_rate <- function(basepop, migration_rates, y, brfss, model){
                                  percentmissing = 0)
   }
 
-  if(model=="SIMAH"){
+  # if(model=="SIMAH"){
     toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
       # mutate(toadd=round(toadd, digits=0)) %>%
       do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
       # do(slice_sample(.,n=toadd, replace = T)) %>%
       mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-      dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
+      dplyr::select(brfssID, microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                     microsim.init.alc.gpd, microsim.init.BMI,
                     microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
-  }else if(model=="CASCADE"){
-    toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
-      # mutate(toadd=round(toadd, digits=0)) %>%
-      do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
-      # do(slice_sample(.,n=toadd, replace = T)) %>%
-      mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-      dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                    microsim.init.alc.gpd, microsim.init.BMI,
-                    microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT,
-                    chronicB, chronicC, yearsincedrink, Cirrhosis_risk, grams_10years)
-
-  }
+  # }else if(model=="CASCADE"){
+  #   toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
+  #     # mutate(toadd=round(toadd, digits=0)) %>%
+  #     do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
+  #     # do(slice_sample(.,n=toadd, replace = T)) %>%
+  #     mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
+  #     dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
+  #                   microsim.init.alc.gpd, microsim.init.BMI,
+  #                   microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT,
+  #                   chronicB, chronicC, yearsincedrink, Cirrhosis_risk, grams_10years)
+  #
+  # }
   from <- max(basepop$microsim.init.id)+1
   to <- (nrow(toadd)) + max(basepop$microsim.init.id)
   microsim.init.id <- from:to

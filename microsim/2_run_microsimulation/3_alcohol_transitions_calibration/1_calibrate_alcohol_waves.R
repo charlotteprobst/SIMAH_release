@@ -52,12 +52,12 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 # set up samples for calibration for education transitions
 # source(paste0(ScriptDirectory,"0_generate_calibration_samples_regression.R"))
 # source(paste0(ScriptDirectory,"0_generate_calibration_samples.R"))
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/1yrprob_multinomial_model.csv")
-
-alcohol_transitions2 <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_LM_log.csv")
-
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/zeroinfl_regression_poisson_BRFSS.csv")
-
+# alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/1yrprob_multinomial_model.csv")
+# 
+# alcohol_transitions2 <- read_csv("SIMAH_workplace/nesarc/Models/regression_NESARC_LM_log.csv")
+# 
+# alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_yearrandom_deterministicpop.csv")
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/deterministic_mixedeff_individualri.csv")
 
 targets <- generate_targets_alcohol(brfss)
 targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
@@ -91,7 +91,7 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2014, output="alcohol",
+                     minyear=2000, maxyear=2010, output="alcohol",
                      targets)
     }
 
@@ -99,7 +99,7 @@ while(wave <= num_waves){
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
   
-  Output <- read_csv(paste0(OutputDirectory, "/output-", wave, ".csv"))
+  # Output <- read_csv(paste0(OutputDirectory, "/output-", wave, ".csv"))
   
   # # # calculate the alcohol targets - modifiable
   # targets <- generate_targets_alcohol(brfss)

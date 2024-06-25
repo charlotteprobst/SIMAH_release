@@ -4,7 +4,7 @@
 \alias{transition_alcohol_regression}
 \title{Transitions alcohol consumption of individuals - through regression model}
 \usage{
-transition_alcohol_regression(data, model)
+transition_alcohol_regression(data, model, y)
 }
 \description{
 Transitions alcohol consumption of individuals - through regression model
