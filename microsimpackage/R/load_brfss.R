@@ -29,7 +29,7 @@ load_brfss <- function(model="SIMAH", SelectedState, WorkingDirectory){
 #                                                                                  "USA")))))))))
 # if(model=="SIMAH"){
 selectedregion <- "USA"
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>%
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>%
   filter(region==selectedregion) %>%
   filter(age_var<=79) %>% filter(YEAR>=1999) %>%
   rename(microsim.init.education = education_summary,
