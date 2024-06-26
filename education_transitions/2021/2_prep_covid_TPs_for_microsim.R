@@ -32,5 +32,5 @@ transitions <- transitions %>% dplyr::select(cat, StateTo, Prob) %>%
   group_by(cat) %>% mutate(cumsum=cumsum(Prob)) %>% ungroup() %>% dplyr::select(-c(Prob))
 transitions$cumsum <- ifelse(transitions$cumsum>=0.9999, 1, transitions$cumsum)
 
-saveRDS(transitions, paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/final_ed_transitions_covid.RDS"))
+saveRDS(transitions, paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/final_ed_transitions_covid.RDS"))
 
