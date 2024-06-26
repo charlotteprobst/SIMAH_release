@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' load_education_transitions
-load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDirectory){
+load_education_transitions_covid <- function(SelectedState, basepop, brfss, WorkingDirectory){
   # allocate basepop and migrants a "tunnel state" within some college cat - dependent on age/sex and race
   if(SelectedState=="USA"){
     somec <- read.csv(paste0(WorkingDirectory,"somecollege_ACS.csv"))
@@ -104,7 +104,7 @@ load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDir
   # constraints on age for tunnel states
   # basepop <- basepop %>%
   #   mutate(microsimnewED = ifelse(microsim.init.age==18 & microsim.init.education=="SomeC", "SomeC1", microsimnewED))
-  transitions <- readRDS(paste0(WorkingDirectory,"final_ed_transitions_COVID", SelectedState, ".RDS"))
+  transitions <- readRDS(paste0(WorkingDirectory,"final_ed_transitions_covid.RDS"))
 list <- list(transitions, basepop, brfss)
 return(list)
 }

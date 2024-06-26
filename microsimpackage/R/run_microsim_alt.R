@@ -17,7 +17,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="mortality",
+                         minyear=2018, maxyear=2020, output="population",
                          targets){
 set.seed(seed)
 # Summary <- list()

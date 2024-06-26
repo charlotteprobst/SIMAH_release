@@ -35,7 +35,7 @@ source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 # alcohol_transitions <- read.csv("SIMAH_workplace/microsim/1_input_data/alcohol_transitions_new.csv")
 alcohol_transitions <- readRDS(paste0(DataDirectory, "final_alc_transitionsUSA.RDS"))
 
-output_type <- "mortality"
+output_type <- "demographic"
 
 # random number seed - sample random number 
 seed <- as.numeric(sample(1:100, 1))
@@ -47,9 +47,9 @@ samplenum <- 1
 lhs <- lhs[[1]]
 
 # set minyear and maxyear 
-minyear <- 2000
-maxyear <- 2005
-updatingeducation <- 0
+minyear <- 2018
+maxyear <- 2021
+updatingeducation <- 1
 Output <- list()
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
@@ -61,7 +61,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2003, output="mortality")
+                           minyear=2018, maxyear=2020, output="demographic")
 
 alcohol_type <- "categorical"
 
