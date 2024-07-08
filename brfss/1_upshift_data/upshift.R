@@ -132,7 +132,6 @@ final_version$brfssID <- 1:nrow(final_version)
 
 saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS")
 
-
 # select variables and save the upshifted data 
 data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth, 
                                race_eth_detailed, sex_recode, age_var, employment, 

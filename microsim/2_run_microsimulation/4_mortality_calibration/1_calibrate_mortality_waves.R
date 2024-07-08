@@ -52,9 +52,9 @@ source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # set up samples for calibration for education transitions
-# source(paste0(ScriptDirectory,"0_generate_calibration_samples_multinom.R"))
+source(paste0(ScriptDirectory,"0_generate_calibration_samples_multinom.R"))
 
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/ordinal_model.csv")
+# alcohol_transitions <- read_csv(paste0(OutputDirectory, "/lhs_regression-4.csv"))
 
 # transitionsList <- list()
 # for(i in unique(alcohol_transitions$sample)){

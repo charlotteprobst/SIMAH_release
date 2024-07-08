@@ -1,5 +1,8 @@
 # read in the NESARC regression model 
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/zeroinfl_regression_poisson_deterministic.csv")
+alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/multinom_model.csv")
+ses <- read_csv("SIMAH_workplace/nesarc/Models/multinom_model_ses.csv")
+
+
 
 mean_zero <- alcohol_transitions %>% filter(type=="abstainermod") %>% 
   dplyr::select(parameter, Estimate) %>% pivot_wider(names_from=parameter, values_from=Estimate) %>% as.numeric(.)

@@ -17,14 +17,18 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="mortality",
-                         targets){
+                         minyear=2000, maxyear=2005, output="mortality"){
 set.seed(seed)
 # Summary <- list()
-# DeathSummary <- list()
-# DiseaseSummary <- list()
+DeathSummary <- list()
+DiseaseSummary <- list()
 PopPerYear <- list()
 CatSummary <- list()
+targets <- generate_targets_alcohol(brfss)
+targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
+# read in the categorical to continuous regression
+contmodel <- read_csv("SIMAH_workplace/nesarc/Models/cat_cont_model.csv")
+DM_men <- "off"
 # birth_rates <- list()
 # migration_rates <- list()
 # names <- names(lhs)
@@ -217,50 +221,18 @@ if(updatingeducation==1){
 
 # update alcohol use categories
 if(updatingalcohol==1){
-  basepop <- transition_alcohol_regression(basepop, alcohol_transitions,y)
+  # basepop <- transition_alcohol_regression(basepop, alcohol_transitions,y)
   # basepop <- transition_alcohol_determ(basepop, brfss, y)
-  basepop <- update_alcohol_cat(basepop)
-  #
-  # # print("updating alcohol use")
-  # # if(y %in% transitionyears==TRUE){
-  # basepop <- basepop %>% ungroup() %>% mutate(
-  # agecat = cut(microsim.init.age,
-  #              breaks=c(0,20,25,29,39,49,64,100),
-  #              labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
-  #   agecat = cut(microsim.init.age,
-  #                breaks=c(0,24,64,100),
-  #                labels=c("18-24","25-64","65+")),
-  #   cat = paste(agecat, microsim.init.sex,
-  #                                     microsim.init.race, microsim.init.education,
-  #                                     AlcCAT, sep="_"),
-  #                               prob = runif(nrow(.)))
-  # basepop <- basepop %>% group_by(cat) %>% do(transition_alcohol(., alcohol_transitions))
-  # basepop$AlcCAT <- basepop$newALC
-  # basepop$newALC <- NULL
-  # basepop$cat <- NULL
-  # basepop$prob <- NULL
-  # basepop <- basepop %>%
-  #   mutate(totransition = ifelse(AlcCAT == newALC, 0, ifelse(AlcCAT != newALC, 1, NA)),
-  #          AlcCAT = newALC) %>% ungroup() %>% dplyr::select(-c(cat, prob, newALC))
+  # basepop <- transition_alcohol_multinom_regression(basepop, alcohol_transitions, y)
+  basepop <- transition_alcohol_ordinal_regression(basepop, alcohol_transitions, y)
 
-  # }
-  # allocate a numeric gpd for individuals based on model
-  # allocate every year even when transitions are only every two years?
-
-  ######### COMMENTED OUT FOR CATEGORICAL CALIBRATION TO SAVE TIME
-  # NEEDS TO BE COMMENTED BACK IN!!
-  # basepop <- allocate_gramsperday(basepop, y, catcontmodel, DataDirectory)
-  #
-  # basepop <- update_former_drinker(basepop)
-  # # print(summary(basepop$formerdrinker))
-  # basepop$microsim.init.alc.gpd <- basepop$newgpd
-  # basepop$newgpd <- NULL
-  # basepop$totransition <-  NULL
-  # basepop$prop_former_drinker <- NULL
-  # basepop$n <- NULL
+  basepop$totransitioncont <- NULL
+#
+#   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
+#   basepop <- allocate_gramsperday(basepop, contmodel)
+#   # allocate former drinker status
+#   basepop <- update_former_drinker(basepop)
 }
-
-
 
 #delete anyone over 79
 ###then age everyone by 1 year and update age category
