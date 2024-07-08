@@ -112,10 +112,7 @@ rm(list)
 # load in the education transition rates for covid
 list <- load_education_transitions_covid(SelectedState, basepop, brfss, DataDirectory)
 education_transitions_covid <- list[[1]]
-basepop <- list[[2]]
-brfss <- list[[3]]
 rm(list)
-
 
 # load in alcohol transition rates
 #### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?

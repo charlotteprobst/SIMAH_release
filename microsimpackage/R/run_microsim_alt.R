@@ -17,14 +17,15 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2018, maxyear=2020, output="population",
-                         targets){
+                         minyear=2018, maxyear=2020, output="population"){
 set.seed(seed)
 # Summary <- list()
 # DeathSummary <- list()
 # DiseaseSummary <- list()
 PopPerYear <- list()
 CatSummary <- list()
+targets <- generate_targets_alcohol(brfss)
+targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
 # birth_rates <- list()
 # migration_rates <- list()
 # names <- names(lhs)
