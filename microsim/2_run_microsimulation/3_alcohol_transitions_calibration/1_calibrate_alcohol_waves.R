@@ -52,7 +52,7 @@ source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # set up samples for calibration for education transitions
-# source(paste0(ScriptDirectory,"0_generate_calibration_samples_multinom.R"))
+source(paste0(ScriptDirectory,"0_generate_calibration_samples_ordinal.R"))
 
 alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/ordinal_model.csv")
 
@@ -120,7 +120,7 @@ while(wave <= num_waves){
     mutate(percentile = ntile(max, 100))
   topsamples <- unique(subset(implausibility, percentile<=15)$samplenum)
 
-  lhs <- resample_multinom_model(transitionsList, topsamples, nsamples)
+  lhs <- resample_ordinal_model(transitionsList, topsamples, nsamples)
   
   transitionsList <- list()
   for(i in unique(lhs$sample)){

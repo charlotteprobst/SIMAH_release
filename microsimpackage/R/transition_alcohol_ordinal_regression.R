@@ -67,13 +67,26 @@ transition_alcohol_ordinal_regression <- function(data, model,y){
     as.numeric(coefs['race.factor_2Black, non-Hispanic']) * data_prediction$raceblack +
     as.numeric(coefs['race.factor_2Hispanic']) * data_prediction$racehispanic +
     as.numeric(coefs['race.factor_2Other, non-Hispanic']) * data_prediction$raceother +
-    as.numeric(coefs['female.factor_2Women:lagged_age25-64'])*data_prediction$Women*data_prediction$age2564 +
-    as.numeric(coefs['female.factor_2Women:lagged_age65+'])*data_prediction$Women*data_prediction$age65 +
+    as.numeric(coefs['lagged_age25-64:female.factor_2Women'])*data_prediction$Women*data_prediction$age2564 +
+    as.numeric(coefs['lagged_age65+:female.factor_2Women'])*data_prediction$Women*data_prediction$age65 +
     as.numeric(coefs['female.factor_2Women:lagged_educationLow'])*data_prediction$Women*data_prediction$edulow +
     as.numeric(coefs['female.factor_2Women:lagged_educationMed'])*data_prediction$Women*data_prediction$edumed +
     as.numeric(coefs['female.factor_2Women:race.factor_2Black, non-Hispanic'])*data_prediction$Women*data_prediction$raceblack +
     as.numeric(coefs['female.factor_2Women:race.factor_2Hispanic'])*data_prediction$Women*data_prediction$racehispanic +
-    as.numeric(coefs['female.factor_2Women:race.factor_2Other, non-Hispanic'])*data_prediction$Women*data_prediction$raceother
+    as.numeric(coefs['female.factor_2Women:race.factor_2Other, non-Hispanic'])*data_prediction$Women*data_prediction$raceother+
+    as.numeric(coefs['cat1_lag:lagged_age25-64'])*data_prediction$age2564*data_prediction$cat1+
+    as.numeric(coefs['cat1_lag:lagged_age65+'])*data_prediction$age65*data_prediction$cat1+
+    as.numeric(coefs['lagged_age25-64:cat2_lag'])*data_prediction$age2564*data_prediction$cat2+
+    as.numeric(coefs['lagged_age65+:cat2_lag'])*data_prediction$age65*data_prediction$cat2+
+    as.numeric(coefs['lagged_age25-64:cat3_lag'])*data_prediction$age2564*data_prediction$cat3+
+    as.numeric(coefs['lagged_age65+:cat3_lag'])*data_prediction$age65*data_prediction$cat3+
+    as.numeric(coefs['cat1_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat1+
+    as.numeric(coefs['cat1_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat1+
+    as.numeric(coefs['cat2_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat2+
+    as.numeric(coefs['cat2_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat2+
+    as.numeric(coefs['cat3_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat3+
+    as.numeric(coefs['cat3_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat3
+
 
   intercept1 <- as.numeric(coefs["Non-drinker|Low risk"])
   intercept2 <- as.numeric(coefs["Low risk|Medium risk"])

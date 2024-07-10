@@ -3,23 +3,40 @@ OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_
 
 Pop <- do.call(rbind,PopPerYear)
 
-meanbrfss <- brfss %>% group_by(YEAR, microsim.init.sex) %>% 
+meanbrfss <- brfss %>% 
+  mutate(agecat=cut(microsim.init.age,
+                    breaks=c(0,24,64,100),
+                    labels=c("18-24","25-64","65+"))) %>% 
+  group_by(YEAR, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% 
   filter(microsim.init.alc.gpd!=0) %>% 
   summarise(meanbrfss = mean(microsim.init.alc.gpd),
             se = std.error(microsim.init.alc.gpd)) %>% 
   rename(year=YEAR)
 
-meansimulation <- Pop %>% group_by(year, microsim.init.sex) %>% 
+meansimulation <- Pop %>% 
+  mutate(agecat=cut(microsim.init.age,
+                    breaks=c(0,24,64,100),
+                    labels=c("18-24","25-64","65+"))) %>% 
+  group_by(year, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% 
   filter(microsim.init.alc.gpd!=0) %>% 
   summarise(meansimulation = mean(microsim.init.alc.gpd))
 
 meansimulation <- left_join(meansimulation, meanbrfss) %>% 
   pivot_longer(meansimulation:meanbrfss)
 
-ggplot(data=meansimulation, aes(x=year, y=value, colour=name)) + geom_line() + 
-  facet_grid(cols=vars(microsim.init.sex)) + ylim(0,NA)
-ggsave(paste0(OutputDirectory, "/compare_mean_drinking_everyonetransitions.png"), width=33, height=19, units="cm")
+meansimulation <- meansimulation %>% 
+  mutate(microsim.init.race = case_when(microsim.init.race=="BLA" ~ "Black",
+                                        microsim.init.race=="WHI" ~ "White",
+                                        microsim.init.race=="SPA" ~ "Hispanic",
+                                        microsim.init.race=="OTH" ~ "Others"),
+         microsim.init.education = factor(microsim.init.education, 
+                                          levels=c("LEHS","SomeC","College")))
+meansimulation$se <- ifelse(meansimulation$name=="meansimulation", NA, meansimulation$se)
 
+ggplot(data=subset(meansimulation, microsim.init.race=="Hispanic" | microsim.init.race=="Others"), aes(x=year, y=value, colour=name, fill=name)) + 
+  geom_line(linewidth=1) + geom_ribbon(aes(ymin=value-(1.96*se), max=value+(1.96*se)), colour=NA, alpha=0.6) + 
+  facet_grid(cols=vars(microsim.init.sex,microsim.init.education), rows=vars(microsim.init.race,agecat),scales="free") + ylim(0,NA)
+ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagehispanicothers.png"), width=33, height=19, units="cm")
 
 
 

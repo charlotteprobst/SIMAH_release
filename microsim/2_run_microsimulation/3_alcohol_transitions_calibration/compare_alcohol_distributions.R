@@ -52,3 +52,4 @@ ggplot(data=subset(drinkers, gramsperday>0),
 # does the upshift change the time trends in category membership
 # do categorical to cont transformation using old model (potentially non upshifted with adjustment for increasing mean to upshift)
 # all of this on new ordinal version of the model (if it works)
+

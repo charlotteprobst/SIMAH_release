@@ -1,8 +1,8 @@
 # where to save the outputs 
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/multinom_int_calibration_cont")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration")
 
 # which model
-outputname <- "output-1"
+outputname <- "output-4"
 
 # process output from simulation and save
 Output <- do.call(rbind, CatSummary) %>% mutate(samplenum=1)
@@ -25,8 +25,14 @@ Output <- read_csv(paste0(OutputDirectory, "/", outputname, ".csv")) %>%
 
 scaleFUN <- function(x) sprintf("%.2f", x)
 
+Output$microsim.init.education <- factor(Output$microsim.init.education,
+                                         levels=c("LEHS","SomeC","College"))
+
 for(i in unique(Output$AlcCAT)){
   for(j in unique(Output$microsim.init.race)){
+    race <- ifelse(j=="WHI","White",
+                   ifelse(j=="BLA","Black",
+                          ifelse(j=="SPA", "Hispanic","Others")))
 ggplot(subset(Output, AlcCAT==i & microsim.init.race==j), aes(x=year, y=propsimulation, colour=as.factor(samplenum))) + 
   geom_line(linewidth=1) + 
   # geom_point() +
@@ -37,13 +43,18 @@ ggplot(subset(Output, AlcCAT==i & microsim.init.race==j), aes(x=year, y=propsimu
   theme(legend.position="none",
         legend.title=element_blank()) + 
   scale_y_continuous(limits=c(0,NA), labels=scaleFUN) + 
-  scale_x_continuous(breaks=c(2000,2002,2004,2006,2008,2010)) + 
+  scale_x_continuous(breaks=c(2000,2004,2008,2012,2016,2020)) + 
   # ylim(0,NA) +
   facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
-  ggtitle(paste0("Deterministic method", i, "-", j))
+  ggtitle(paste0("Deterministic method", i, "-", race))
 ggsave(paste0(OutputDirectory, "/plots/",outputname, i, j, ".png"), dpi=300, width=33, height=19, units='cm')
   }
 }
+
+regression <- read_csv(paste0(OutputDirectory, "/lhs_regression-4.csv")) %>% 
+  group_by(name) %>% summarise(mean = mean(Value), se =std.error(Value),
+                               lower = mean - (1.96*se), upper = mean + (1.96*se),
+                               PE = exp(mean), lowerCI = exp(lower), upperCI=exp(upper))
 
 test <- Output %>% group_by(samplenum) %>% 
   filter(microsim.init.race!="OTH") %>% 

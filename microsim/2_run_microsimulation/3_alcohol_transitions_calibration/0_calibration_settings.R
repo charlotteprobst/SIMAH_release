@@ -17,11 +17,11 @@ sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
 sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
 
 # maximum number of potential calibration waves
-num_waves <- 15
+num_waves <- 20
 
 # improvement threshold to stop simulation - set at 0.5% 
 # this means the calibration will stop when implausibility does not improve by more than 0.5%
-improvement_threshold <- 0.005
+improvement_threshold <- 0.0005
 
 #set up starting point for implausibility - this is what the first comparison will be made against 
 prev_mean_implausibility <- 100

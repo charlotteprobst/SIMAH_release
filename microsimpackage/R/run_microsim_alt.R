@@ -226,10 +226,10 @@ if(updatingalcohol==1){
   # basepop <- transition_alcohol_multinom_regression(basepop, alcohol_transitions, y)
   basepop <- transition_alcohol_ordinal_regression(basepop, alcohol_transitions, y)
 
-  basepop$totransitioncont <- NULL
+  # basepop$totransitioncont <- NULL
 #
 #   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
-#   basepop <- allocate_gramsperday(basepop, contmodel)
+  basepop <- allocate_gramsperday_sampled(basepop)
 #   # allocate former drinker status
 #   basepop <- update_former_drinker(basepop)
 }

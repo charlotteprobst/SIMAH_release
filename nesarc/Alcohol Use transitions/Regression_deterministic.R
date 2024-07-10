@@ -72,15 +72,26 @@ deterministic_selected$AlcCAT <- factor(deterministic_selected$AlcCAT,
                                         levels=c("Non-drinker","Low risk",
                                                  "Medium risk","High risk"))
 library(MASS)
-fit <- polr(AlcCAT ~ cat1_lag + cat2_lag + cat3_lag +
+fit <- polr(AlcCAT ~ cat1_lag*lagged_age + cat2_lag*lagged_age + cat3_lag*lagged_age +
               female.factor_2*lagged_age + female.factor_2*lagged_education + 
-              female.factor_2*race.factor_2, 
+              female.factor_2*race.factor_2 + lagged_education*cat1_lag + 
+              lagged_education*cat2_lag + lagged_education*cat3_lag, 
             data=deterministic_selected, Hess=TRUE)
 summary(fit)
+
 
 TPmodel <- data.frame(summary(fit)$coefficients)
 TPmodel$name <- rownames(TPmodel)
 write.csv(TPmodel, paste0(models, "ordinal_model.csv"), row.names=F)
+
+(ci <- confint(fit))
+exp(cbind(coef(fit),t(ci)))
+TPmodel <- data.frame(exp(summary(fit)$coefficients)[1:30], exp(ci))
+
+model <- exp(cbind(coef(fit),t(ci)))
+newdat <- data.frame(expand.grid(cat1_lag=c(0,1), cat2_lag=c(0,1),cat3_lag=c(0,1)))
+
+(phat <- predict(object = fit, newdat, type="p"))
 
 
 deterministic_selected$probs <- predict(fit, deterministic_selected,
@@ -142,11 +153,33 @@ ggplot(data=subset(deterministic_selected, microsim.init.alc.gpd!=0),
 
 
 deterministic_selected$logalc <- log(deterministic_selected$microsim.init.alc.gpd)
-lowrisk <- deterministic_selected %>% filter(AlcCAT=="Low risk")
-mediumrisk <- deterministic_selected %>% filter(AlcCAT=="Medium risk")
-highrisk <- deterministic_selected %>% filter(AlcCAT=="High risk")
+drinkers <- deterministic_selected %>% filter(microsim.init.alc.gpd>0) %>% 
+  mutate(cat = paste0(AlcCAT, female.factor_2))
+lambdas <- list()
+for(i in unique(drinkers$cat)){
+  data <- drinkers %>% filter(cat==i)
+  b <- boxcox(lm(data$microsim.init.alc.gpd ~ 1))
+  lambda <- b$x[which.max(b$y)]
+  newdata <- data.frame(cat=unique(data$cat), lambda = lambda)
+  lambdas[[i]] <- newdata
+}
+lambdas <- do.call(rbind,lambdas)
 
-lr_model <- lm(logalc ~ alc_daily_g_1 + cat1_lag + cat2_lag + cat3_lag + 
+drinkers <- left_join(drinkers, lambdas)
+
+lowriskmen <- drinkers %>% filter(AlcCAT=="Low risk" & female.factor_2=="Men") %>% 
+  mutate(transcons = (microsim.init.alc.gpd^lambda -1)/lambda)
+sample <- lowriskmen %>% sample_n(5000)
+shapiro.test(sample$transcons)
+
+mediumrisk <- deterministic_selected %>% filter(AlcCAT=="Medium risk") %>% 
+  mutate(transcons = (microsim.init.alc.gpd^lambda -1)/lambda)
+
+highrisk <- deterministic_selected %>% filter(AlcCAT=="High risk") %>% 
+  mutate(transcons = (microsim.init.alc.gpd^lambda -1)/lambda)
+
+
+lr_model <- lm(transcons ~ alc_daily_g_1 + cat1_lag + cat2_lag + cat3_lag + 
                  female.factor_2*alc_daily_g_1 + 
                  lagged_education + 
                  lagged_age + race.factor_2, data = lowrisk)
@@ -161,7 +194,7 @@ lowrisk$predicted <- ifelse(lowrisk$female.factor_2=="Men" & lowrisk$predicted>4
 mr_model <- lm(logalc ~ alc_daily_g_1 + cat1_lag + cat2_lag + 
                  female.factor_2*alc_daily_g_1 + 
                  lagged_education + 
-                 lagged_age + race.factor_2, data = mediumrisk)
+                 lagged_age + race.factor_2 + time, data = mediumrisk)
 
 summary(mr_model)
 mediumrisk$predicted <- exp(predict(mr_model, mediumrisk))
@@ -229,6 +262,33 @@ coefs <- rbind(lr_coefs, mr_coefs, hr_coefs) %>%
   pivot_wider(names_from=variable, values_from=coef)
 write.csv(coefs, paste0(models, "cat_cont_model.csv"), row.names=F)
 
+
+# fit a beta distribution to the data
+drinkers <- drinkers %>% mutate(group = paste(AlcCAT, race.factor_2, edu3_2, age3_2, female.factor_2, sep="_"))
+
+drinkers <- drinkers %>% 
+  group_by(group) %>% 
+  mutate(min = min(microsim.init.alc.gpd),
+         max = max(microsim.init.alc.gpd))
+
+fitdistribution_beta <- function(data, group){
+  groupdata <- drinkers %>% filter(group==i) %>% 
+    mutate(scaled = ((microsim.init.alc.gpd - min) + 10e-10) / ((max - min) + 10e-9))
+  distribution <- fitdist(groupdata$scaled, distr="beta")
+  shape1 <- distribution$estimate[[1]]
+  shape2 <- distribution$estimate[[2]]
+  dist <- data.frame(group=i, shape1=shape1, shape2=shape2, min=unique(groupdata$min), 
+                     max=unique(groupdata$max))
+  return(dist)
+}
+
+distributions <- list()
+
+for(i in unique(drinkers$group)){
+  distributions[[paste(i)]] <- fitdistribution_beta(dat, i)
+}
+
+distribution <- do.call(rbind, distributions)
 
 # library(GLMMadaptive)
 # # deterministic_selected <- deterministic_selected %>% filter(year>=2001)

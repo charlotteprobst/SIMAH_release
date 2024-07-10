@@ -3,7 +3,7 @@
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory
 DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/multinom_int_calibration_cont")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration")
 
 dir.create(OutputDirectory)
 
