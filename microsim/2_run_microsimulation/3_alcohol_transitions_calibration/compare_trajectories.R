@@ -33,10 +33,10 @@ meansimulation <- meansimulation %>%
                                           levels=c("LEHS","SomeC","College")))
 meansimulation$se <- ifelse(meansimulation$name=="meansimulation", NA, meansimulation$se)
 
-ggplot(data=subset(meansimulation, microsim.init.race=="Hispanic" | microsim.init.race=="Others"), aes(x=year, y=value, colour=name, fill=name)) + 
+ggplot(data=subset(meansimulation, microsim.init.race=="White" | microsim.init.race=="Black"), aes(x=year, y=value, colour=name, fill=name)) + 
   geom_line(linewidth=1) + geom_ribbon(aes(ymin=value-(1.96*se), max=value+(1.96*se)), colour=NA, alpha=0.6) + 
   facet_grid(cols=vars(microsim.init.sex,microsim.init.education), rows=vars(microsim.init.race,agecat),scales="free") + ylim(0,NA)
-ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagehispanicothers.png"), width=33, height=19, units="cm")
+ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagewhiteblack_byyear.png"), width=33, height=19, units="cm")
 
 
 

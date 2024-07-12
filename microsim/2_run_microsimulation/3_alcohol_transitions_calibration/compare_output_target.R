@@ -2,7 +2,7 @@
 OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration")
 
 # which model
-outputname <- "output-4"
+outputname <- "output_determ_twint"
 
 # process output from simulation and save
 Output <- do.call(rbind, CatSummary) %>% mutate(samplenum=1)
@@ -47,7 +47,7 @@ ggplot(subset(Output, AlcCAT==i & microsim.init.race==j), aes(x=year, y=propsimu
   # ylim(0,NA) +
   facet_grid(cols=vars(microsim.init.sex, agecat), rows=vars(microsim.init.education)) +
   ggtitle(paste0("Deterministic method", i, "-", race))
-ggsave(paste0(OutputDirectory, "/plots/",outputname, i, j, ".png"), dpi=300, width=33, height=19, units='cm')
+ggsave(paste0(OutputDirectory, "/plots/newint",outputname, i, j, ".png"), dpi=300, width=33, height=19, units='cm')
   }
 }
 

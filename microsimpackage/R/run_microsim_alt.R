@@ -229,7 +229,7 @@ if(updatingalcohol==1){
   # basepop$totransitioncont <- NULL
 #
 #   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
-  basepop <- allocate_gramsperday_sampled(basepop)
+  basepop <- allocate_gramsperday_sampled(basepop,y)
 #   # allocate former drinker status
 #   basepop <- update_former_drinker(basepop)
 }

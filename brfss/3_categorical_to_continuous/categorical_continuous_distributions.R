@@ -44,24 +44,28 @@ dat <- dat %>% mutate(agecat = cut(age_var,
 dat <- dat %>% mutate(education_summary = ifelse(agecat=="18-24" & education_summary=="College","SomeC",
                                                  education_summary))
 
-dat <- dat %>% mutate(group = paste(AlcCAT, agecat, race_eth, education_summary, sex_recode, sep="_"))
+dat <- dat %>% mutate(yearcat = ifelse(YEAR<=2005, 1,
+                                       ifelse(YEAR>=2006 & YEAR<=2010, 2,
+                                              ifelse(YEAR>=2011 & YEAR<=2015, 3,4))))
 
-fitdistribution_gamma <- function(data, group){
-  groupdata <- dat %>% filter(group==i)
-  distribution <- fitdist(groupdata$gramsperday_upshifted, distr="gamma")
-  shape <- distribution$estimate[[1]]
-  rate <- distribution$estimate[[2]]
-  dist <- data.frame(group=i, shape=shape, rate=rate)
-  return(dist)
-}
+dat <- dat %>% mutate(group = paste(yearcat, AlcCAT, agecat, race_eth, education_summary, sex_recode, sep="_"))
 
-distributions <- list()
-
-for(i in unique(dat$group)){
-  distributions[[paste(i)]] <- fitdistribution_gamma(dat, i)
-}
-
-distribution <- do.call(rbind, distributions)
+# fitdistribution_gamma <- function(data, group){
+#   groupdata <- dat %>% filter(group==i)
+#   distribution <- fitdist(groupdata$gramsperday_upshifted, distr="gamma")
+#   shape <- distribution$estimate[[1]]
+#   rate <- distribution$estimate[[2]]
+#   dist <- data.frame(group=i, shape=shape, rate=rate)
+#   return(dist)
+# }
+# 
+# distributions <- list()
+# 
+# for(i in unique(dat$group)){
+#   distributions[[paste(i)]] <- fitdistribution_gamma(dat, i)
+# }
+# 
+# distribution <- do.call(rbind, distributions)
 
 # explore beta distribution - first normalise between 0 and 1 (store the method so it is reversible)
 dat <- dat %>% 
@@ -77,11 +81,12 @@ fitdistribution_beta <- function(data, group){
   race_eth <- unique(groupdata$race_eth)
   education_summary <- unique(groupdata$education_summary)
   sex_recode <- unique(groupdata$sex_recode)
+  year_cat <- unique(groupdata$yearcat)
   distribution <- fitdist(groupdata$scaled, distr="beta")
   shape1 <- distribution$estimate[[1]]
   shape2 <- distribution$estimate[[2]]
   dist <- data.frame(group=i, AlcCAT=alccat, agecat=agecat, race_eth=race_eth, education_summary = education_summary, 
-                     sex_recode = sex_recode, shape1=shape1, shape2=shape2, min=unique(groupdata$min), 
+                     sex_recode = sex_recode, year_cat = year_cat, shape1=shape1, shape2=shape2, min=unique(groupdata$min), 
                      max=unique(groupdata$max))
   return(dist)
 }

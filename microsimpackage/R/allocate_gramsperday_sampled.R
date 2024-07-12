@@ -5,7 +5,7 @@
 #' @export
 #' @examples
 #' allocate_gramsperday_sampled
-allocate_gramsperday_sampled <- function(basepop){
+allocate_gramsperday_sampled <- function(basepop,y){
   prepdata <- basepop %>% filter(AlcCAT!="Non-drinker" & totransitioncont == 1) %>%
     mutate(age_var = microsim.init.age, sex_recode = ifelse(microsim.init.sex=="m","Male","Female"),
            agecat = cut(microsim.init.age,
@@ -17,8 +17,10 @@ allocate_gramsperday_sampled <- function(basepop){
                                                                                     ifelse(microsim.init.race=="WHI","White",
                                                                                            ifelse(microsim.init.race=="SPA","Hispanic",
                                                                                                   ifelse(microsim.init.race=="OTH","Other",NA)))),
+           yearcat = ifelse(y<=2005, 1,ifelse(y>=2006 & y<=2010, 2,
+                                                         ifelse(y>=2011 & y<=2015, 3,4))),
            # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
-           group = paste(AlcCAT, agecat, race_eth, microsim.init.education, sex_recode, sep="_"))
+           group = paste(yearcat, AlcCAT, agecat, race_eth, microsim.init.education, sex_recode, sep="_"))
 
   distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv") %>%
     dplyr::select(group, shape1, shape2, min, max)

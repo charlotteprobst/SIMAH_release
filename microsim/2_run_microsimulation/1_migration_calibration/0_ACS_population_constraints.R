@@ -25,12 +25,15 @@ popcounts <- data %>%
                               "OTH")),
          RACE = ifelse(HISPAN==0, RACE,
                        "SPA"),
+         EDUC = ifelse(EDUC<=6, "LEHS",
+                       ifelse(EDUC>=7 & EDUC<=9, "SomeC",
+                                            ifelse(EDUC>=10, "College",NA))),
          agecat = cut(AGE,
                       breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
                       labels=c("18","19-24","25-29","30-34","35-39","40-44",
                                "45-49","50-54","55-59","60-64","65-69",
                                "70-74","75-79")),) %>% 
-  group_by(YEAR,agecat,SEX,RACE) %>% 
+  group_by(YEAR,agecat,SEX,RACE,EDUC) %>% 
   summarise(
     TotalPop=sum(PERWT)) %>% 
   rename(Year=YEAR, microsim.init.sex=SEX,microsim.init.race=RACE) %>% 
@@ -59,7 +62,7 @@ popcounts <- popcounts %>%
   dplyr::select(-c(TotalPop,TotalPop_impute)) %>% 
   rename(TotalPop = TotalPop_final)
 
-write.csv(popcounts, "SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv", row.names=F)
+write.csv(popcounts, "SIMAH_workplace/microsim/census_data/ACS_population_constraints_educ.csv", row.names=F)
 
 summarypop <- popcounts %>% 
   mutate(microsim.init.race = recode(microsim.init.race, "WHI"="White",

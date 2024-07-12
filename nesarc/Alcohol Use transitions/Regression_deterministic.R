@@ -73,16 +73,17 @@ deterministic_selected$AlcCAT <- factor(deterministic_selected$AlcCAT,
                                                  "Medium risk","High risk"))
 library(MASS)
 fit <- polr(AlcCAT ~ cat1_lag*lagged_age + cat2_lag*lagged_age + cat3_lag*lagged_age +
+              cat1_lag*female.factor_2 + cat2_lag*female.factor_2 + cat3_lag*female.factor_2 + 
               female.factor_2*lagged_age + female.factor_2*lagged_education + 
               female.factor_2*race.factor_2 + lagged_education*cat1_lag + 
-              lagged_education*cat2_lag + lagged_education*cat3_lag, 
+              lagged_education*cat2_lag + lagged_education*cat3_lag +
+              lagged_age*female.factor_2*lagged_education, 
             data=deterministic_selected, Hess=TRUE)
 summary(fit)
 
-
 TPmodel <- data.frame(summary(fit)$coefficients)
 TPmodel$name <- rownames(TPmodel)
-write.csv(TPmodel, paste0(models, "ordinal_model.csv"), row.names=F)
+write.csv(TPmodel, paste0(models, "ordinal_model_ints.csv"), row.names=F)
 
 (ci <- confint(fit))
 exp(cbind(coef(fit),t(ci)))
