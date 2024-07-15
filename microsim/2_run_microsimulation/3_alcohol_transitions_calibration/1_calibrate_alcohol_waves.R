@@ -59,9 +59,6 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 # alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/regression_yearrandom_deterministicpop.csv")
 alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/deterministic_mixedeff_individualri.csv")
 
-targets <- generate_targets_alcohol(brfss)
-targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
-
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
 while(wave <= num_waves){
