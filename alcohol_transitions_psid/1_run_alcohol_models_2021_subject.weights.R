@@ -94,12 +94,13 @@ datat2 <- datat2 %>% ungroup() %>%
   group_by(uniqueID) %>% 
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
-length(unique(datat2$uniqueID)) # 14,462
+length(unique(datat2$uniqueID)) 
 
 Q2 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat2)
 modelt2 <- msm(final_alc_cat~year, uniqueID, data=datat2, qmatrix=Q2,
                center=FALSE,
                covariates=~age_cat + sex + race + education,
+               subject.weights=datat2$sampleweight_downscaled, 
                control=list(trace=1, maxit=1000, fnscale = 3000000))
 
 # MODEL 3: 2019-2021 
@@ -143,7 +144,7 @@ modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
 
 # Save all models
 saveRDS(modelt1, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
-saveRDS(modelt2, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019.RDS")
+saveRDS(modelt2, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019_incl_sample_weights.RDS")
 saveRDS(modelt3, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021_incl_sample_weights.RDS")
 saveRDS(modelt4, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_model_4_timeperiod.RDS")
 
