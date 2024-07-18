@@ -5,60 +5,85 @@
 #' @export
 #' @examples
 #' allocate_gpd
-allocate_gramsperday <- function(basepop, y, model, DataDirectory){
-  prepdata <- basepop %>% filter(AlcCAT!="Non-drinker" & totransition == 1) %>%
-    mutate(age_var = microsim.init.age, sex_recode = ifelse(microsim.init.sex=="m","Male","Female"),
-           YEAR = y, education_summary = microsim.init.education, race_eth = ifelse(microsim.init.race=="BLA","Black",
-                                                                                    ifelse(microsim.init.race=="WHI","White",
-                                                                                           ifelse(microsim.init.race=="SPA","Hispanic",
-                                                                                                  ifelse(microsim.init.race=="OTH","Other",NA)))),
-           # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
-           group = paste(AlcCAT, race_eth, microsim.init.education, sex_recode, sep="_"))
+allocate_gramsperday <- function(data, model){
 
-  distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv")
-  prepdata <- left_join(prepdata, distribution)
+  totransition <- data %>% filter(totransitioncont==1)
 
-samplegpd <- function(data){
-    # shape <- unique(data$shape)
-    # rate <- unique(data$rate)
-    shape1 <- unique(data$shape1)
-    shape2 <- unique(data$shape2)
-    min <- unique(data$min)
-    max <- unique(data$max)
-    # newgpd <- rgamma(nrow(data), shape, rate)
-    raw <- rbeta(nrow(data), shape1, shape2)
-    newgpd <- ((max - min + 10e-10)*raw) + (min - 10e-9)
-    # newgpd <- order(newgpd)
-    data <- data[order(data$microsim.init.alc.gpd),]
-    newgpd <- sort(newgpd)
-    data$newgpd <- newgpd
-    data$newgpd <- ifelse(data$newgpd > 200, 200, data$newgpd)
-    return(data)
+  data_prediction <- totransition %>%
+    mutate(agecat = cut(microsim.init.age,
+                        breaks=c(0,24,64,100),
+                        labels=c("18-24","25-64","65+"))) %>%
+    dplyr::select(agecat, microsim.init.sex,
+                  microsim.init.race, microsim.init.education,
+                  microsim.init.alc.gpd,
+                  AlcCAT, formerdrinker) %>%
+    mutate(Women = ifelse(microsim.init.sex=="f", 1,0),
+           age2564 = ifelse(agecat=="25-64", 1,0),
+           age65 = ifelse(agecat=="65+", 1,0),
+           raceblack = ifelse(microsim.init.race=="BLA",1,0),
+           racehispanic = ifelse(microsim.init.race=="SPA",1,0),
+           raceother = ifelse(microsim.init.race=="OTH",1,0),
+           edulow = ifelse(microsim.init.education=="LEHS", 1,0),
+           edumed = ifelse(microsim.init.education=="SomeC", 1,0),
+           cat1 = ifelse(AlcCAT=="Low risk", 1,0),
+           cat2 = ifelse(AlcCAT=="Medium risk", 1,0),
+           cat3 = ifelse(AlcCAT=="High risk", 1,0))
+
+  model[is.na(model)] <- 0
+
+  predictors <- list()
+  for(i in unique(model$cat)){
+    coefs <- model %>% filter(cat==i)
+    predictors[[paste(i)]] <- as.numeric(coefs['(Intercept)']) +
+      as.numeric(coefs['alc_daily_g_1'])*data_prediction$microsim.init.alc.gpd +
+      as.numeric(coefs['cat1_lag'])*data_prediction$cat1 +
+      as.numeric(coefs['cat2_lag'])*data_prediction$cat2 +
+      as.numeric(coefs['cat3_lag'])*data_prediction$cat3 +
+      as.numeric(coefs['female.factor_2Women'])*data_prediction$Women +
+      as.numeric(coefs['lagged_age25-64'])*data_prediction$age2564 +
+      as.numeric(coefs['lagged_age65+'])*data_prediction$age65 +
+      as.numeric(coefs['lagged_educationLow']) * data_prediction$edulow +
+      as.numeric(coefs['lagged_educationMed']) * data_prediction$edumed +
+      as.numeric(coefs['race.factor_2Black, non-Hispanic']) * data_prediction$raceblack +
+      as.numeric(coefs['race.factor_2Hispanic']) * data_prediction$racehispanic +
+      as.numeric(coefs['race.factor_2Other, non-Hispanic']) * data_prediction$raceother +
+      as.numeric(coefs['alc_daily_g_1:female.factor_2Women'])*data_prediction$microsim.init.alc.gpd*data_prediction$Women
+
+    predictors[[paste(i)]] <- exp(predictors[[paste(i)]])
   }
 
-prepdata <- prepdata %>% group_by(group) %>% do(samplegpd(.)) %>%
-  mutate(microsim.init.alc.gpd = newgpd) %>% ungroup() %>%
-  dplyr::select(microsim.init.id, newgpd)
+  data_prediction$predictedlr <- predictors[["Low risk"]]
+  data_prediction$predictedmr <- predictors[["Medium risk"]]
+  data_prediction$predictedhr <- predictors[["High risk"]]
 
-  # # lambda <- 0.129 #lambda for transforming consumption taken from M.Strong / D.Moyo script
-  # back.tran <- function(x, lambda){(lambda * x + 1) ^ (1/lambda)}
-  #
-  # women <- prepdata %>% filter(sex_recode=="Female")
-  # women$newgpd <- back.tran(predict(model[[1]], women), lambda=-0.22)
-  # women <- women %>% dplyr::select(microsim.init.id, newgpd)
-  #
-  # men <- prepdata %>% filter(sex_recode=="Male")
-  # men$newgpd <- back.tran(predict(model[[2]], men), lambda=0.06)
-  # men <- men %>% dplyr::select(microsim.init.id, newgpd)
-  # prepdata <- rbind(men, women)
-  basepop <- left_join(basepop, prepdata)
-  # basepop$microsim.init.alc.gpd <- ifelse(basepop$AlcCAT=="Non-drinker", 0,
-  #                                         basepop$newgpd)
-  # basepop$newgpd <- NULL
-  basepop$newgpd <-  ifelse(basepop$totransition==1 & basepop$AlcCAT!="Non-drinker", basepop$newgpd, 
-                            ifelse(basepop$totransition==0 & basepop$AlcCAT!="Non-drinker", basepop$microsim.init.alc.gpd,
-                                   ifelse(basepop$AlcCAT=="Non-drinker", 0, NA)))
-    
-  return(basepop)
+  data_prediction$predicted <- ifelse(data_prediction$AlcCAT=="Low risk",
+                                      data_prediction$predictedlr,
+                                      ifelse(data_prediction$AlcCAT=="Medium risk",
+                                             data_prediction$predictedmr,
+                                             ifelse(data_prediction$AlcCAT=="High risk",
+                                                    data_prediction$predictedhr,NA)))
+
+# now cap the predicted values within the category bounds
+  data_prediction$predicted_capped <- case_when(
+    data_prediction$AlcCAT=="Low risk" & data_prediction$Women==1 & data_prediction$predicted>20 ~ 20,
+    data_prediction$AlcCAT=="Low risk" & data_prediction$Women==0 & data_prediction$predicted>40 ~ 40,
+    data_prediction$AlcCAT=="Medium risk" & data_prediction$Women==1 & data_prediction$predicted<20 ~ 20,
+    data_prediction$AlcCAT=="Medium risk" & data_prediction$Women==1 & data_prediction$predicted>40 ~ 40,
+    data_prediction$AlcCAT=="Medium risk" & data_prediction$Women==0 & data_prediction$predicted<40 ~ 40,
+    data_prediction$AlcCAT=="Medium risk" & data_prediction$Women==0 & data_prediction$predicted>60 ~ 60,
+    data_prediction$AlcCAT=="High risk" & data_prediction$Women==1 & data_prediction$predicted<40 ~ 40,
+    data_prediction$AlcCAT=="High risk" & data_prediction$Women==0 & data_prediction$predicted<60 ~ 60,
+    data_prediction$AlcCAT=="High risk" & data_prediction$predicted>200 ~ 200,
+    .default = data_prediction$predicted)
+
+  totransition$microsim.init.alc.gpd <- data_prediction$predicted_capped
+
+  data_new <- rbind(totransition, subset(data, totransitioncont==0))
+
+  data_new$microsim.init.alc.gpd <- ifelse(data_new$AlcCAT=="Non-drinker", 0,
+                                           data_new$microsim.init.alc.gpd)
+  data_new$totransitioncont <- NULL
+
+  return(data_new)
 }
 

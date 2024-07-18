@@ -9,7 +9,7 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 500
+nsamples <- 400
 nreps <- 5
 
 # generate list of samples to be run with random number seeds
@@ -17,11 +17,11 @@ sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
 sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
 
 # maximum number of potential calibration waves
-num_waves <- 1
+num_waves <- 15
 
 # improvement threshold to stop simulation - set at 0.5% 
 # this means the calibration will stop when implausibility does not improve by more than 0.5%
-improvement_threshold <- 0.0005
+improvement_threshold <- 0.005
 
 #set up starting point for implausibility - this is what the first comparison will be made against 
 prev_mean_implausibility <- 100
@@ -46,21 +46,10 @@ edmodels <- edmodels %>% bind_rows()
 
 sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
 
-# add the final alcohol TPs 
-if(contcalibration==1){
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
-alcohol_transitions$...1 <- NULL
-
-alcohol_transitionsList <- list()
-for(i in 1:max(alcohol_transitions$sample)){
-  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)
-}
-
-alcmodels <- list()
-for(i in 1:ceiling(nrow(sampleseeds)/length(alcohol_transitionsList))){
-  alcmodels[[paste(i)]] <- data.frame(alcohol_model = sample(1:length(alcohol_transitionsList), replace=F))
-}
-alcmodels <- alcmodels %>% bind_rows()
-
-sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
-}
+# read in the targets
+# targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%
+#   group_by(YEAR, AGECAT, RACE, SEX) %>%
+#   mutate(target=TPop/sum(TPop),
+#          SE=sqrt(target*(1-target)/sum(OrigSample)),
+#          variance = (SE^2) * OrigSample) %>%
+#   dplyr::select(-c(TPop:OrigSample))

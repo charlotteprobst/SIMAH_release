@@ -3,6 +3,7 @@
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory
 DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/multinom_int_calibration_cont")
 
 dir.create(OutputDirectory)
 
@@ -38,7 +39,8 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- NULL
+diseases <- c("LVDC","HLVDC","DM","IHD","ISTR","HYPHD",
+               "AUD","UIJ","MVACC","IJ")
 
 # switch between CASCADE and SIMAH models 
 model <- "SIMAH"

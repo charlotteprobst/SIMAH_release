@@ -8,6 +8,28 @@ setwd(WorkingDirectory)
 
 if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
 
+# in order to run this file you will need to download this data from IPUMS https://usa.ipums.org/usa/ with the following sample: 
+# Sample	Density	Note
+# 2000 5%	5.0%	
+# VARIABLES:18(hide)
+#   H	SAMPLE	IPUMS sample identifier	--
+#   H	SERIAL	Household serial number	--
+#   H	HHWT	Household weight	--
+#   H	CLUSTER	Household cluster for variance estimation	--
+#   H	STATEFIP	State (FIPS code)	--
+#   H	STRATA	Household strata for variance estimation	--
+#   H	GQ	Group quarters status	--
+#   P	PERNUM	Person number in sample unit	--
+#   P	PERWT	Person weight	--
+#   P	SEX	Sex	--
+#   P	AGE	Age	details
+# P	RACE (general)	Race [general version]	--
+#   P	RACED (detailed)	Race [detailed version]	--
+#   P	HISPAN (general)	Hispanic origin [general version]	--
+#   P	HISPAND (detailed)	Hispanic origin [detailed version]	--
+#   P	EDUC (general)	Educational attainment [general version]	--
+#   P	EDUCD (detailed)	Educational attainment [detailed version]	--
+
 ddi <- read_ipums_ddi("SIMAH_workplace/ACS/usa_00038.xml")
 data <- read_ipums_micro(ddi)
 

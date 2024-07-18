@@ -1,4 +1,4 @@
-#' Runs microsimulation - alternative version with different ordering
+#' Runs microsimulation - deterministic version to get deterministic alcohol use pop
 #'
 #' This function runs the microsimulation
 #' @param
@@ -6,8 +6,8 @@
 #' @import data.table
 #' @export
 #' @examples
-#' run_microsim_alt
-run_microsim_alt <- function(seed,samplenum,basepop,brfss,
+#' run_microsim_determ
+run_microsim_determ <- function(seed,samplenum,basepop,brfss,
                          death_counts,
                          updatingeducation, education_transitions,
                          migration_rates,
@@ -24,9 +24,10 @@ DeathSummary <- list()
 DiseaseSummary <- list()
 PopPerYear <- list()
 CatSummary <- list()
-meandrinking <- list()
 targets <- generate_targets_alcohol(brfss)
 targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
+# read in the categorical to continuous regression
+contmodel <- read_csv("SIMAH_workplace/nesarc/Models/cat_cont_model.csv")
 DM_men <- "off"
 # birth_rates <- list()
 # migration_rates <- list()
@@ -48,7 +49,6 @@ if(policy==1 & y ==year_policy){
 }
 
 # calculate implausibility in each year - break if implausibility is over threshold
-  if(output=="alcoholcat"){
   CatSummary[[paste(y)]] <- basepop %>%
     mutate(agecat = cut(microsim.init.age,
                         breaks=c(0,24,64,100),
@@ -70,20 +70,6 @@ if(policy==1 & y ==year_policy){
   #                                                                           "agecat","microsim.init.education","AlcCAT"))
 
   CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2)
-  }
-
-if(output=="alcoholcont"){
-  meandrinking[[paste(y)]] <- basepop %>%
-    mutate(samplenum=samplenum,
-           seed=seed,
-           year=y) %>%
-    filter(microsim.init.alc.gpd>0) %>%
-    mutate(agecat=cut(microsim.init.age,
-                      breaks=c(0,24,64,100),
-                      labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, samplenum, seed, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>%
-    summarise(meansimulation = mean(microsim.init.alc.gpd))
-}
 
   # implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
   # print(implausibility)
@@ -235,10 +221,17 @@ if(updatingeducation==1){
 
 # update alcohol use categories
 if(updatingalcohol==1){
-  basepop <- transition_alcohol_ordinal_regression(basepop,alcohol_transitions, y)
+  # basepop <- transition_alcohol_regression(basepop, alcohol_transitions,y)
+  basepop <- transition_alcohol_determ(basepop, brfss, y)
+  # basepop <- transition_alcohol_multinom_regression(basepop, alcohol_transitions, y)
+  # basepop <- transition_alcohol_ordinal_regression(basepop, alcohol_transitions, y)
+
+  # basepop$totransitioncont <- NULL
+#
 #   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
-  basepop <- allocate_gramsperday_sampled(basepop,y,catcontmodel)
-  #   basepop <- update_former_drinker(basepop)
+  # basepop <- allocate_gramsperday_sampled(basepop,y)
+#   # allocate former drinker status
+#   basepop <- update_former_drinker(basepop)
 }
 
 #delete anyone over 79
@@ -285,7 +278,7 @@ if(output=="population"){
     PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, microsim.init.sex, microsim.init.race, microsim.init.education, microsim.init.age, agecat)]
   }
     Summary <- do.call(rbind,PopPerYear)
-}else if(output=="alcoholcat"){
+}else if(output=="alcohol"){
   # CatSummary <- do.call(rbind,PopPerYear) %>%
   #   mutate(agecat = cut(microsim.init.age,
   #                       breaks=c(0,24,64,100),
@@ -297,13 +290,22 @@ if(output=="population"){
   #     mutate(propsimulation=n/sum(n)) %>%
   #     dplyr::select(-n) %>%
   #     mutate_at(vars(microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT), as.character)
-Summary <- do.call(rbind,CatSummary) %>%
+CatSummary <- do.call(rbind,CatSummary) %>%
   mutate(seed=seed, samplenum=samplenum)
 implausibility <- max(CatSummary$implausibility, na.rm=T)
-}else if(output=="alcoholcont"){
-  Summary <- do.call(rbind, meandrinking)
+  # MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
+  #                                                     samplenum=as.factor(samplenum),
+  #                                                     microsim.init.sex=as.factor(microsim.init.sex),
+  #                                                     microsim.init.race=as.factor(microsim.init.race),
+  #                                                     microsim.init.education=as.factor(microsim.init.education),
+  #                                                     agecat=as.factor(agecat)) %>%
+  #   group_by(year, samplenum, microsim.init.sex, microsim.init.education, .drop=FALSE) %>%
+  #   filter(microsim.init.alc.gpd!=0) %>%
+  #   summarise(meangpd = mean(microsim.init.alc.gpd))
+  # add former drinkers and lifetime abstainers to this summary TODO
+  # Summary <- CatSummary
+  # Summary <- list(CatSummary, MeanSummary)
 }
-
 # formerdrinkers <- list()
 # for(i in 1:length(PopPerYear)){
 #   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%
@@ -311,5 +313,6 @@ implausibility <- max(CatSummary$implausibility, na.rm=T)
 # }
 # migration_rates <- do.call(rbind,migration_rates)
 # birth_rates <- do.call(rbind,birth_rates)
-return(Summary)
+Pop <- do.call(rbind,PopPerYear)
+return(Pop)
 }

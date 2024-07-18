@@ -5,7 +5,7 @@
 #' @examples
 #' transition_alcohol_determ
 transition_alcohol_determ <- function(data, brfssdata, y){
-  # create a dataset with the required variables dummy coded
+ # create a dataset with the required variables dummy coded
   data <- as.data.table(data)
   brfssdata <- as.data.table(brfssdata)
 
@@ -14,8 +14,8 @@ transition_alcohol_determ <- function(data, brfssdata, y){
 
   # create required age categories in both data
   data[, c("agecat") := .(cut(microsim.init.age,
-                              breaks = c(0, 24, 64, 100),
-                              labels = c("18-24","25-64","65+")))]
+                                        breaks = c(0, 24, 64, 100),
+                                        labels = c("18-24","25-64","65+")))]
   brfssdata[, c("agecat") := .(cut(microsim.init.age,
                                    breaks = c(0, 24, 64, 100),
                                    labels = c("18-24","25-64","65+")))]
@@ -42,10 +42,8 @@ transition_alcohol_determ <- function(data, brfssdata, y){
     mutate(random_no = runif(nrow(.))) %>%
     group_by(microsim.init.sex, agecat, microsim.init.race, microsim.init.education) %>%
     mutate(microsim.init.alc.gpd_random = ifelse(microsim.init.alc.gpd==0,
-                                                 floor(rgamma(100, 1.8, rate=2)),
-                                                 ifelse(random_no>=0.8,
-                                                        microsim.init.alc.gpd*1+rtruncnorm(n(), a=0,b=1, mean=0, sd=20),
-                                                        microsim.init.alc.gpd)),
+                                                 floor(rgamma(n(), 1.8, rate=2)),
+                                                microsim.init.alc.gpd*rtruncnorm(n(), a=0,b=2, mean=0, sd=30)),
            microsim.init.alc.gpd_random = ifelse(microsim.init.alc.gpd_random>200, 200,
                                                  ifelse(microsim.init.alc.gpd_random<0, 0, microsim.init.alc.gpd_random))) %>%
     #allow some people to change their alc use - but most don't - some up some down
@@ -66,7 +64,7 @@ transition_alcohol_determ <- function(data, brfssdata, y){
   distribution <- merge(distribution, brfssdata, by = c("microsim.init.sex", "agecat", "microsim.init.race",
                                                         "microsim.init.education", "rank"))
 
-  distribution <- distribution[, .(microsim.init.id, newGPD)]
+distribution <- distribution[, .(microsim.init.id, newGPD)]
 
   data <- left_join(data, distribution, by=c("microsim.init.id"))
 

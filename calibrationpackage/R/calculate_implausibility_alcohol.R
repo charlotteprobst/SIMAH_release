@@ -19,11 +19,11 @@ calculate_implausibility_alcohol<- function(data, targets){
   # get rid of grouping by seed
   data <- data %>%
     group_by(year, samplenum, microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT) %>%
-    summarise(propsimulation = mean(propsimulation))
+    summarise(propsimulation = mean(propsimulation, na.rm=T),
+              proptarget = mean(proptarget, na.rm=T),
+              se = mean(se, na.rm=T))
 
-  data <- left_join(data,targets)
-
-  data <- left_join(data, variance)
+  data <- left_join(data, variance, by=c("year","microsim.init.sex","microsim.init.race","agecat","microsim.init.education","AlcCAT"))
   #
   implausibility <- data %>%
     group_by(year, samplenum, microsim.init.sex, microsim.init.race, microsim.init.education, agecat,
@@ -36,11 +36,9 @@ calculate_implausibility_alcohol<- function(data, targets){
               # v_o = mean(variance),
               # todo - check implausibility equation in Andrianakis paper
               # should be SE^2?
-              implausibility = abs(propsimulation-proptarget)/sqrt(v_s+se^2))
-  # %>%
-  #   group_by(samplenum) %>%
-  #   summarise(implausibility=max(implausibility, na.rm=T)) %>%
-  #   ungroup() %>%
-  #   mutate(percentile=ntile(implausibility,100))
+              implausibility = abs(propsimulation-proptarget)/sqrt(v_s+se^2)) %>%
+    group_by(samplenum) %>%
+    summarise(mean = mean(implausibility, na.rm=T),
+              max = max(implausibility, na.rm=T))
   return(implausibility)
 }
