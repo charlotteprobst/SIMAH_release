@@ -38,12 +38,11 @@ load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDir
   }
 
   samplefunction <- function(data, somec, selected){
-    if(grepl("18",selected)==TRUE){
-      sampled <- rep("LEHS", times=nrow(data))
-    }else{
+    # if(grepl("18",selected)==TRUE){
+    #   sampled <- rep("LEHS", times=nrow(data))
+    # }else{
       somec <- somec %>% filter(cat==selected)
       sampled <- sample(somec$EDUCdetailed, size=nrow(data), replace=T, prob=c(somec$percent))
-    }
     return(sampled)
   }
   selected <- i
@@ -100,6 +99,11 @@ load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDir
   brfss$microsim.init.education <- ifelse(brfss$microsim.init.education=="SomeC1"|
                                             brfss$microsim.init.education=="SomeC2"|
                                             brfss$microsim.init.education=="SomeC3","SomeC",brfss$microsimnewED)
+
+
+  # constraints on age for tunnel states
+  # basepop <- basepop %>%
+  #   mutate(microsimnewED = ifelse(microsim.init.age==18 & microsim.init.education=="SomeC", "SomeC1", microsimnewED))
   transitions <- readRDS(paste0(WorkingDirectory,"final_ed_transitions", SelectedState, ".RDS"))
 list <- list(transitions, basepop, brfss)
 return(list)

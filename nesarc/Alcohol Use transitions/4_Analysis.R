@@ -43,6 +43,17 @@ CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", 
   print(noSpaces = TRUE, contDigits = 1, printToggle = FALSE, test=FALSE, format="p") %>%  
   write.csv(paste0(output,"Table 1 - Descriptives of expanded data_new.csv")) 
 
+CustomTable <- nesarc_expanded %>% 
+  mutate(age3 = cut(age,
+                    breaks=c(0,24,64,100),
+                    labels=c("18-24","25-64","65+"))) %>% 
+  group_by(wave, age3, female, race.factor, edu3, alc4.factor) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  group_by(wave, age3, female, race.factor, edu3) %>% 
+  mutate(prop=n/sum(n))
+
+write.csv(CustomTable, paste0(output,"NESARC_proportions.csv"))
 
 # Descriptives at basleine and follow-up of included participants 
 CreateTableOne(vars= variables, factorVars = factor_vars, strata="wave.factor", data=nesarc) %>%

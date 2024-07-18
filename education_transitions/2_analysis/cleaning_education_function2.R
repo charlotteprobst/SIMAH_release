@@ -3,7 +3,7 @@
 # function 1 - give IDs of everyone that has backwards transitions in the data
 getIDs <- function(data){
   
-changes <- data %>% group_by(newID) %>% arrange(year, bygroup=T) %>% select(year, newID, sex, highestEd, educNUM) %>% mutate(lagged = lag(highestEd, 1),
+changes <- data %>% group_by(newID) %>% arrange(year, bygroup=T) %>% dplyr::select(year, newID, sex, highestEd, educNUM) %>% mutate(lagged = lag(highestEd, 1),
                                                                                                 diff = highestEd-lagged,
                                                                                                 tag = ifelse(diff<0,1,0)) %>% 
   fill(tag, .direction=c("downup")) %>% filter(tag==1) %>% group_by(newID)
@@ -16,7 +16,7 @@ changes <- changes %>% group_by(newID) %>% mutate(lagged=lead(highestEd,1),
          highestEd = ifelse(tag==1, NA,
                             highestEd)) %>% 
   fill(highestEd, .direction=c("updown")) %>% 
-  select(-c(lagged, diff, tag))
+  dplyr::select(-c(lagged, diff, tag))
 data <- data[!data$newID %in% backIDs,]
 data <- rbind(data, changes)
 return(backIDs)
