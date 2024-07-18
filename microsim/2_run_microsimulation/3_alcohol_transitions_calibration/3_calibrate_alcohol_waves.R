@@ -54,15 +54,6 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 # set up samples for calibration for education transitions
 source(paste0(ScriptDirectory,"0_generate_calibration_samples_ordinal.R"))
 
-alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/ordinal_model_ints.csv")
-
-# transitionsList <- list()
-# for(i in unique(alcohol_transitions$sample)){
-#   transitionsList[[paste(i)]] <- alcohol_transitions %>% filter(sample==i) %>% 
-#     ungroup() %>% 
-#     dplyr::select(-sample)
-# }
-
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
 while(wave <= num_waves){
@@ -92,9 +83,9 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2014, output="alcohol")
+                     minyear=2000, maxyear=2014, output="alcoholcat")
     }
-
+    
   Output <- do.call(rbind,Output)
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)

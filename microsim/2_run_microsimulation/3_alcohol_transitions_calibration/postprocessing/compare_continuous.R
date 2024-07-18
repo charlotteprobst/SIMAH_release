@@ -1,5 +1,5 @@
 # where to save the outputs 
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/multinom_int_calibration")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration")
 
 Pop <- do.call(rbind,PopPerYear)
 
@@ -31,12 +31,16 @@ meansimulation <- meansimulation %>%
                                         microsim.init.race=="OTH" ~ "Others"),
          microsim.init.education = factor(microsim.init.education, 
                                           levels=c("LEHS","SomeC","College")))
+
+
+# meansimulation <- data %>% pivot_longer(meansimulation:meantarget)
+
 meansimulation$se <- ifelse(meansimulation$name=="meansimulation", NA, meansimulation$se)
 
-ggplot(data=subset(meansimulation, microsim.init.race=="White" | microsim.init.race=="Black"), aes(x=year, y=value, colour=name, fill=name)) + 
+ggplot(data=subset(meansimulation, microsim.init.race=="WHI" | microsim.init.race=="BLA"), aes(x=year, y=value, colour=name, fill=name)) + 
   geom_line(linewidth=1) + geom_ribbon(aes(ymin=value-(1.96*se), max=value+(1.96*se)), colour=NA, alpha=0.6) + 
   facet_grid(cols=vars(microsim.init.sex,microsim.init.education), rows=vars(microsim.init.race,agecat),scales="free") + ylim(0,NA)
-ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagewhiteblack_byyear.png"), width=33, height=19, units="cm")
+ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagewhiteblack_byyear_cap150.png"), width=33, height=19, units="cm")
 
 
 

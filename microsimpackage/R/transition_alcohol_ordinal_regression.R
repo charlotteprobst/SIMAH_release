@@ -27,97 +27,67 @@ transition_alcohol_ordinal_regression <- function(data, model,y){
                   microsim.init.race, microsim.init.education,
                   microsim.init.alc.gpd,
                   AlcCAT, formerdrinker) %>%
-    mutate(female.factor_2Women = ifelse(microsim.init.sex=="f", 1,0),
-           `lagged_age25-64` = ifelse(agecat=="25-64", 1,0),
-           `lagged_age65+` = ifelse(agecat=="65+", 1,0),
-           `race.factor_2Black, non-Hispanic` = ifelse(microsim.init.race=="BLA",1,0),
-           `race.factor_2Hispanic` = ifelse(microsim.init.race=="SPA",1,0),
-           `race.factor_2Other, non-Hispanic` = ifelse(microsim.init.race=="OTH",1,0),
-           lagged_educationLow = ifelse(microsim.init.education=="LEHS", 1,0),
-           lagged_educationMed = ifelse(microsim.init.education=="SomeC", 1,0),
+    mutate(Women = ifelse(microsim.init.sex=="f", 1,0),
+           age2564 = ifelse(agecat=="25-64", 1,0),
+           age65 = ifelse(agecat=="65+", 1,0),
+           raceblack = ifelse(microsim.init.race=="BLA",1,0),
+           racehispanic = ifelse(microsim.init.race=="SPA",1,0),
+           raceother = ifelse(microsim.init.race=="OTH",1,0),
+           edulow = ifelse(microsim.init.education=="LEHS", 1,0),
+           edumed = ifelse(microsim.init.education=="SomeC", 1,0),
            formerdrinker = ifelse(formerdrinker==1,1,0),
            abstainer = ifelse(microsim.init.alc.gpd==0, 1,0),
-           cat1_lag = ifelse(AlcCAT=="Low risk", 1,0),
-           cat2_lag = ifelse(AlcCAT=="Medium risk", 1,0),
-           cat3_lag = ifelse(AlcCAT=="High risk", 1,0),
+           cat1 = ifelse(AlcCAT=="Low risk", 1,0),
+           cat2 = ifelse(AlcCAT=="Medium risk", 1,0),
+           cat3 = ifelse(AlcCAT=="High risk", 1,0),
            alc_scaled = (microsim.init.alc.gpd-mean(microsim.init.alc.gpd)) / sd(microsim.init.alc.gpd))
 
-  # replicate the model call
-  design_matrix <- model.matrix(~ cat1_lag + `lagged_age25-64` + `lagged_age65+` + cat2_lag + cat3_lag +
-                                  female.factor_2Women + lagged_educationLow + lagged_educationMed +
-                                  `race.factor_2Black, non-Hispanic` + `race.factor_2Hispanic` + `race.factor_2Other, non-Hispanic` +
-                                  cat1_lag*`lagged_age25-64` + cat1_lag*`lagged_age65+` +
-                                  `lagged_age25-64`*cat2_lag + `lagged_age65+`*cat2_lag + `lagged_age25-64`*cat3_lag + `lagged_age65+`*cat3_lag +
-                                  cat1_lag*female.factor_2Women + cat2_lag*female.factor_2Women + cat3_lag*female.factor_2Women +
-                                  `lagged_age25-64`*female.factor_2Women + `lagged_age65+`*female.factor_2Women +
-                                  lagged_educationLow*female.factor_2Women + lagged_educationMed*female.factor_2Women +
-                                  `race.factor_2Black, non-Hispanic`*female.factor_2Women + `race.factor_2Hispanic`*female.factor_2Women + `race.factor_2Other, non-Hispanic`*female.factor_2Women +
-                                  cat1_lag*lagged_educationLow + cat1_lag*lagged_educationMed + cat2_lag*lagged_educationLow + cat2_lag*lagged_educationMed + cat3_lag*lagged_educationLow + cat3_lag*lagged_educationMed +
-                                  `lagged_age25-64`*lagged_educationLow + `lagged_age65+`*lagged_educationLow + `lagged_age25-64`*lagged_educationMed +
-                                  `lagged_age25-64`*female.factor_2Women*lagged_educationLow + `lagged_age65+`*female.factor_2Women*lagged_educationLow + `lagged_age25-64`*female.factor_2Women*lagged_educationMed,
-                                data=data_prediction)
+  # add 0s for reference cat
+  # reference <- data.frame(cat="Non-drinker", t(rep(0,ncol(model)-1)))
+  # reference <- data.frame(t(rep(0,ncol(model)-1)),cat="Non-drinker")
+
+  # names(reference) <- names(model)
+  # model <- rbind(model, reference)
+
+  time <- y-2000
 
   coefs <- model %>% dplyr::select(name, Value) %>%
     pivot_wider(names_from=name, values_from=Value)
 
-  to <- length(coefs)-3
-  linearcoefs <- coefs[1:to]
-  linearcoefs <- as.numeric(linearcoefs)
 
-  data_prediction$linearpred <- as.numeric(design_matrix %*% linearcoefs)
+  data_prediction$linearpred <-
+    as.numeric(coefs['cat1_lag'])*data_prediction$cat1 +
+    as.numeric(coefs['cat2_lag'])*data_prediction$cat2 +
+    as.numeric(coefs['cat3_lag'])*data_prediction$cat3 +
+    as.numeric(coefs['female.factor_2Women'])*data_prediction$Women +
+    as.numeric(coefs['lagged_age25-64'])*data_prediction$age2564 +
+    as.numeric(coefs['lagged_age65+'])*data_prediction$age65 +
+    as.numeric(coefs['lagged_educationLow']) * data_prediction$edulow +
+    as.numeric(coefs['lagged_educationMed']) * data_prediction$edumed +
+    as.numeric(coefs['race.factor_2Black, non-Hispanic']) * data_prediction$raceblack +
+    as.numeric(coefs['race.factor_2Hispanic']) * data_prediction$racehispanic +
+    as.numeric(coefs['race.factor_2Other, non-Hispanic']) * data_prediction$raceother +
+    as.numeric(coefs['lagged_age25-64:female.factor_2Women'])*data_prediction$Women*data_prediction$age2564 +
+    as.numeric(coefs['lagged_age65+:female.factor_2Women'])*data_prediction$Women*data_prediction$age65 +
+    as.numeric(coefs['female.factor_2Women:lagged_educationLow'])*data_prediction$Women*data_prediction$edulow +
+    as.numeric(coefs['female.factor_2Women:lagged_educationMed'])*data_prediction$Women*data_prediction$edumed +
+    as.numeric(coefs['female.factor_2Women:race.factor_2Black, non-Hispanic'])*data_prediction$Women*data_prediction$raceblack +
+    as.numeric(coefs['female.factor_2Women:race.factor_2Hispanic'])*data_prediction$Women*data_prediction$racehispanic +
+    as.numeric(coefs['female.factor_2Women:race.factor_2Other, non-Hispanic'])*data_prediction$Women*data_prediction$raceother+
+    as.numeric(coefs['cat1_lag:lagged_age25-64'])*data_prediction$age2564*data_prediction$cat1+
+    as.numeric(coefs['cat1_lag:lagged_age65+'])*data_prediction$age65*data_prediction$cat1+
+    as.numeric(coefs['lagged_age25-64:cat2_lag'])*data_prediction$age2564*data_prediction$cat2+
+    as.numeric(coefs['lagged_age65+:cat2_lag'])*data_prediction$age65*data_prediction$cat2+
+    as.numeric(coefs['lagged_age25-64:cat3_lag'])*data_prediction$age2564*data_prediction$cat3+
+    as.numeric(coefs['lagged_age65+:cat3_lag'])*data_prediction$age65*data_prediction$cat3+
+    as.numeric(coefs['cat1_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat1+
+    as.numeric(coefs['cat1_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat1+
+    as.numeric(coefs['cat2_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat2+
+    as.numeric(coefs['cat2_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat2+
+    as.numeric(coefs['cat3_lag:lagged_educationLow'])*data_prediction$edulow*data_prediction$cat3+
+    as.numeric(coefs['cat3_lag:lagged_educationMed'])*data_prediction$edumed*data_prediction$cat3
 
-  coef_names <- names(coefs)[1:to]
-  design_matrix <- as.data.frame(design_matrix)
 
-  # Calculate the linear predictor using named coefficients
-  data_prediction$linearpred <- rowSums(sapply(coef_names, function(name) coefs[name] * design_matrix[, name]))
-
-
-
-#
-#   data_prediction$linearpred <-
-#     as.numeric(coefs['cat1_lag'])*data_prediction$cat1 +
-#     as.numeric(coefs['cat2_lag'])*data_prediction$cat2 +
-#     as.numeric(coefs['cat3_lag'])*data_prediction$cat3 +
-#     as.numeric(coefs['female.factor_2Women'])*data_prediction$Women +
-#     as.numeric(coefs['lagged_age25-64'])*data_prediction$age2564 +
-#     as.numeric(coefs['lagged_age65+'])*data_prediction$age65 +
-#     as.numeric(coefs['lagged_educationLow'])*data_prediction$edulow +
-#     as.numeric(coefs['lagged_educationMed'])*data_prediction$edumed +
-#     as.numeric(coefs['race.factor_2Black, non-Hispanic'])*data_prediction$raceblack +
-#     as.numeric(coefs['race.factor_2Hispanic'])*data_prediction$racehispanic +
-#     as.numeric(coefs['race.factor_2Other, non-Hispanic'])*data_prediction$raceother +
-#     as.numeric(coefs['cat1_lag:lagged_age25-64'])*data_prediction$cat1*data_prediction$age2564 +
-#     as.numeric(coefs['cat1_lag:lagged_age65+'])*data_prediction$cat1*data_prediction$age65 +
-#     as.numeric(coefs['lagged_age25-64:cat2_lag'])*data_prediction$age2564*data_prediction$cat2 +
-#     as.numeric(coefs['lagged_age65+:cat2_lag'])*data_prediction$age65*data_prediction$cat2 +
-#     as.numeric(coefs['lagged_age25-64:cat3_lag'])*data_prediction$age2564*data_prediction$cat3 +
-#     as.numeric(coefs['lagged_age65+:cat3_lag'])*data_prediction$age65*data_prediction$cat3 +
-#     as.numeric(coefs['cat1_lag:female.factor_2Women'])*data_prediction$cat1*data_prediction$Women +
-#     as.numeric(coefs['cat2_lag:female.factor_2Women'])*data_prediction$cat2*data_prediction$Women +
-#     as.numeric(coefs['cat3_lag:female.factor_2Women'])*data_prediction$cat3*data_prediction$Women +
-#     as.numeric(coefs['lagged_age25-64:female.factor_2Women'])*data_prediction$age2564*data_prediction$Women +
-#     as.numeric(coefs['lagged_age65+:female.factor_2Women'])*data_prediction$age65*data_prediction$Women +
-#     as.numeric(coefs['female.factor_2Women:lagged_educationLow'])*data_prediction$Women*data_prediction$edulow +
-#     as.numeric(coefs['female.factor_2Women:lagged_educationMed'])*data_prediction$Women*data_prediction$edumed +
-#     as.numeric(coefs['female.factor_2Women:race.factor_2Black, non-Hispanic'])*data_prediction$Women*data_prediction$raceblack +
-#     as.numeric(coefs['female.factor_2Women:race.factor_2Hispanic'])*data_prediction$Women*data_prediction$racehispanic +
-#     as.numeric(coefs['female.factor_2Women:race.factor_2Other, non-Hispanic'])*data_prediction$Women*data_prediction$raceother +
-#     as.numeric(coefs['cat1_lag:lagged_educationLow'])*data_prediction$cat1*data_prediction$edulow +
-#     as.numeric(coefs['cat1_lag:lagged_educationMed'])*data_prediction$cat1*data_prediction$edumed +
-#     as.numeric(coefs['cat2_lag:lagged_educationLow'])*data_prediction$cat2*data_prediction$edulow +
-#     as.numeric(coefs['cat2_lag:lagged_educationMed'])*data_prediction$cat2*data_prediction$edumed +
-#     as.numeric(coefs['cat3_lag:lagged_educationLow'])*data_prediction$cat3*data_prediction$edulow +
-#     as.numeric(coefs['cat3_lag:lagged_educationMed'])*data_prediction$cat3*data_prediction$edumed +
-#     as.numeric(coefs['lagged_age25-64:lagged_educationLow'])*data_prediction$age2564*data_prediction$edulow +
-#     as.numeric(coefs['lagged_age65+:lagged_educationLow'])*data_prediction$age65*data_prediction$edulow +
-#     as.numeric(coefs['lagged_age25-64:lagged_educationMed'])*data_prediction$age2564*data_prediction$edumed +
-#     # as.numeric(coefs['lagged_age65+:lagged_educationMed'])*data_prediction$age65*data_prediction$edumed +
-#     as.numeric(coefs['lagged_age25-64:female.factor_2Women:lagged_educationLow'])*data_prediction$age2564*data_prediction$Women*data_prediction$edulow +
-#     as.numeric(coefs['lagged_age65+:female.factor_2Women:lagged_educationLow'])*data_prediction$age65*data_prediction$Women*data_prediction$edulow +
-#     as.numeric(coefs['lagged_age25-64:female.factor_2Women:lagged_educationMed'])*data_prediction$age2564*data_prediction$Women*data_prediction$edumed
-#     # as.numeric(coefs['lagged_age65+:female.factor_2Women:lagged_educationMed'])*data_prediction$age65*data_prediction$Women*data_prediction$edumed
-#
   intercept1 <- as.numeric(coefs["Non-drinker|Low risk"])
   intercept2 <- as.numeric(coefs["Low risk|Medium risk"])
   intercept3 <- as.numeric(coefs["Medium risk|High risk"])

@@ -2,7 +2,7 @@
 
 # read in base population
 if(model=="SIMAH"){
-  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, "V4.csv"),
+  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
 }else if(model=="CASCADE"){
   basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
