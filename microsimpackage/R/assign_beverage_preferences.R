@@ -26,7 +26,7 @@ assign_beverage_preferences <- function(data){
                                  education=="HS grad/GED" ~ "LEHS",
                                  education=="less than HS" ~ "LEHS",
                                  education=="some college" ~ "SomeC",
-                                 education=="some college plus" ~ "SomeCPlus",
+                                 education=="some college plus" ~ "SomeC",
                                  education=="4-yr college/advanced degree" ~ "College"),
            microsim.init.sex = case_when(sex=="male" ~ "m",
                                          sex=="female" ~ "f")) %>%
@@ -78,12 +78,69 @@ assign_beverage_preferences <- function(data){
       (age >= 45 & age <= 54 & race=="WHI") ~ "45-54 yrs",
       (age >= 55 & age <= 64 & race=="WHI") ~ "55-64 yrs",
       (age >=65 & race=="WHI") ~ "65+ yrs"),
+    
+    ## Why that? Check and potentially drop these two lines of code 
    microsim.init.education=ifelse(race!="WHI"& education=="SomeC","SomeCPlus",
                                  ifelse(race!="WHI"& education=="College","SomeCPlus",education))) %>%
+    
     dplyr::select(-c(age,race,education))
 
   # now combine the two together
   data <- left_join(data, beverages)
+
+  
+  
+  beverages <- beverages %>%
+    mutate(cat = factor(paste0(microsim.init.race, "_", microsim.init.sex, "_", age_group, "_",
+                               microsim.init.education, "_", risk)))
+  
+  pdat <- data %>% filter(!is.na(beerpse) & !is.na(winepse) & !is.na(liqpse)) %>% 
+    filter(microsim.init.drinkingstatus == 1) %>% 
+    mutate(risk = ifelse(AlcCAT == "Low risk", "low risk", 
+                         ifelse(AlcCAT == "Medium risk", "medium risk",
+                                ifelse(AlcCAT == "High risk", "high risk", NA))), 
+           cat = factor(paste0(microsim.init.race, "_", microsim.init.sex, "_", age_group, "_", 
+                               microsim.init.education, "_", risk)))
+  
+library(truncnorm)
+  
+beerp <- list()
+liqp <- list()
+winep <- list()
+
+# Cumulative probability required for sampling?
+# Predict probability from fractional regression model instead of mean/SDs by beverage?
+# https://stats.stackexchange.com/questions/70855/generating-random-variables-from-a-mixture-of-normal-distributions
+
+  for(i in seq_along(levels(pdat$cat))) {
+    
+    name <- levels(pdat$cat)[i]
+    
+    temp <- pdat %>% filter(cat %in% c(levels(cat)[i]))
+    bev <- beverages %>% filter(cat %in% c(levels(cat)[i]))
+    
+    beerp[[paste0(name)]] <- rtruncnorm(nrow(temp), a = 0, b = 1, 
+                                        m = bev$beerpmn, sd = bev$beerpse)
+    liqp[[paste0(name)]] <- rtruncnorm(nrow(temp), a = 0, b = 1, 
+                                       m = bev$liqpmn, sd = bev$liqpse)
+
+  }
+
+  
+test <- NULL
+
+for(i in seq_along(levels(pdat$cat))){
+  
+  test <- rbind(test, cbind(cat = levels(pdat$cat)[i], beerp = beerp[[paste0(name)]], liqp = liqp[[paste0(name)]]))
+    
+}
+
+check <- as.data.frame(test) %>% 
+  mutate(winep = 1 - as.numeric(beerp) - as.numeric(liqp),
+         rsum = as.numeric(beerp) + as.numeric(winep) + as.numeric(liqp)) %>%
+  filter(winep >= 0)
+  
+
 
   data <- data %>%
     mutate(beergpd = beerpmn*microsim.init.alc.gpd,
