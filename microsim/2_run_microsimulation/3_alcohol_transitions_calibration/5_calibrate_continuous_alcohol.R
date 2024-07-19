@@ -56,6 +56,12 @@ source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 # generate latin hypercube for different distributions
 source(paste0(ScriptDirectory, "0_generate_calibration_samples_continuous.R"))
 
+# catcontmodel <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv") %>%
+#   dplyr::select(group, shape1, shape2, min, max)
+
+# catcontmodel <- read.csv(paste0(OutputDirectory, "/lhs_regression-1.csv")) %>% 
+#   filter(sample==64) %>% dplyr::select(-X)
+
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
 while(wave <= num_waves){

@@ -19,7 +19,7 @@ allocate_gramsperday_sampled <- function(basepop,y,catcontmodel){
                                                                                                   ifelse(microsim.init.race=="OTH","Other",NA)))),
            yearcat = ifelse(y<=2010, "2000-2010","2011+"),
            # lambda = ifelse(sex_recode=="Male",0.06, -0.22),
-           group = paste(AlcCAT, education_summary, agecat, sex_recode, sep="_"))
+           group = paste(AlcCAT, education_summary, agecat, race_eth, sex_recode, sep="_"))
 
   prepdata <- left_join(prepdata, catcontmodel, by=c("group"))
 

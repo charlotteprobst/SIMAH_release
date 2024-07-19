@@ -1,15 +1,23 @@
 library(stringr)
 distribution <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv") %>%
   dplyr::select(group, shape1, shape2, min, max)
+# groups <- read.csv(paste0(OutputDirectory, "/groupstocalibrate.csv")) %>%
+#   mutate(sex = ifelse(microsim.init.sex=="f","Female","Male"),
+#          group = paste(microsim.init.education, agecat, sex, sep="_"))
+# groups <- unique(groups$group)
 
 # # groups to calibrate 
-groups <- read.csv(paste0(OutputDirectory, "/groupstocalibrate.csv")) %>%
-  mutate(sex = ifelse(microsim.init.sex=="f","Female","Male"),
-         group = paste(microsim.init.education, agecat, sex, sep="_"))
-groups <- unique(groups$group)
+groups <- c("Low risk_LEHS_65\\+_White_Male","Low risk_LEHS_65\\+_Hispanic_Male",
+            "Low risk_SomeC_65\\+_White_Male","Low risk_SomeC_65\\+_Hispanic_Male",
+            "Low risk_LEHS_65\\+_Black_Male","Low risk_LEHS_65\\+_Other_Male",
+            "Low risk_SomeC_65\\+_Black_Male","Low risk_SomeC_65\\+_Black_Male")
+
+# Ensure your groups pattern is formatted correctly for regex matching
+pattern <- paste(groups, collapse="|")
 
 # filter distribution based on matching
-distributiontosample <- distribution %>% filter(str_detect(group, paste(groups, collapse="|")))
+distributiontosample <- distribution %>% 
+  filter(str_detect(group, pattern))
 
 means <- distributiontosample %>% dplyr::select(group, shape1, shape2) %>% 
   pivot_longer(shape1:shape2) %>% 
@@ -17,7 +25,7 @@ means <- distributiontosample %>% dplyr::select(group, shape1, shape2) %>%
   dplyr::select(groupname, value)
 
 ses <- means %>% 
-  mutate(se=value*0.1) %>% 
+  mutate(se=value*0.6) %>% 
   dplyr::select(groupname, se) %>% 
   pivot_wider(names_from=groupname, values_from=se)
 
@@ -40,7 +48,7 @@ generate_lhs <- function(means, ses, nsamples) {
   scaled_sample <- matrix(nrow = nsamples, ncol = num_parameters)
   
   for (i in 1:num_parameters) {
-    scaled_sample[, i] <- qnorm(lhs_sample[, i], mean = means[i], sd = ses[i])
+    scaled_sample[, i] <- qtruncnorm(lhs_sample[, i], a=0, b=Inf, mean = means[i], sd = ses[i])
   }
   
   return(scaled_sample)

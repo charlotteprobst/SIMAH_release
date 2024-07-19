@@ -47,7 +47,7 @@ dat <- dat %>% mutate(yearcat = cut(YEAR,
                                     labels=c("2000-2010",
                                              "2011+")))
 unique(dat$yearcat)
-dat <- dat %>% mutate(group = paste(AlcCAT, education_summary, agecat, sex_recode, sep="_"))
+dat <- dat %>% mutate(group = paste(AlcCAT, education_summary, agecat, race_eth, sex_recode, sep="_"))
 dat <- dat %>% filter(gramsperday_upshifted<200)
 
 dat <- dat %>% 

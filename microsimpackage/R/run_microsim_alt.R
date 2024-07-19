@@ -81,7 +81,7 @@ if(output=="alcoholcont"){
     mutate(agecat=cut(microsim.init.age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, samplenum, seed, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>%
+    group_by(year, samplenum, seed, microsim.init.sex, agecat, microsim.init.education, microsim.init.race, AlcCAT) %>%
     summarise(meansimulation = mean(microsim.init.alc.gpd))
 }
 
