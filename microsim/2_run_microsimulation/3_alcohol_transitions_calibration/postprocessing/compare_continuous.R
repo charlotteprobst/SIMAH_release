@@ -8,7 +8,7 @@ meanbrfss <- brfss %>%
                     breaks=c(0,24,64,100),
                     labels=c("18-24","25-64","65+"))) %>% 
   filter(microsim.init.alc.gpd!=0) %>% 
-  group_by(YEAR, microsim.init.sex, agecat, microsim.init.education, microsim.init.race, AlcCAT) %>% 
+  group_by(YEAR, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% 
   summarise(meanbrfss = mean(microsim.init.alc.gpd),
             se = std.error(microsim.init.alc.gpd)) %>% 
   rename(year=YEAR)
@@ -18,7 +18,7 @@ meansimulation <- Pop %>%
                     breaks=c(0,24,64,100),
                     labels=c("18-24","25-64","65+"))) %>% 
   filter(microsim.init.alc.gpd!=0) %>% 
-  group_by(year, microsim.init.sex, agecat, microsim.init.education, microsim.init.race, AlcCAT) %>% 
+  group_by(year, microsim.init.sex, agecat, microsim.init.education, microsim.init.race) %>% 
   summarise(meansimulation = mean(microsim.init.alc.gpd))
 
 meansimulation <- left_join(meansimulation, meanbrfss) %>% 
@@ -33,17 +33,17 @@ meansimulation <- meansimulation %>%
                                           levels=c("LEHS","SomeC","College")))
 
 
-meansimulation <- data %>% pivot_longer(meansimulation:meantarget)
+# meansimulation <- data %>% pivot_longer(meansimulation:meantarget)
 
 meansimulation$se <- ifelse(meansimulation$name=="meansimulation", NA, meansimulation$se)
 
 subset <- meansimulation %>% filter(samplenum==495)
 
-ggplot(data=subset(meansimulation, microsim.init.race=="White" & AlcCAT=="Low risk" | 
-                     microsim.init.race=="Black" & AlcCAT=="Low risk"), aes(x=year, y=value, colour=name, fill=name)) + 
+ggplot(data=subset(meansimulation, microsim.init.race=="Hispanic" | 
+                     microsim.init.race=="Others"), aes(x=year, y=value, colour=name, fill=name)) + 
   geom_line(linewidth=1) + geom_ribbon(aes(ymin=value-(1.96*se), max=value+(1.96*se)), colour=NA, alpha=0.6) + 
   facet_grid(cols=vars(microsim.init.sex,microsim.init.education), rows=vars(microsim.init.race,agecat),scales="free") + ylim(0,NA)
-ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_calibrated.png"), width=33, height=19, units="cm")
+ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_calibrated_hispothers.png"), width=33, height=19, units="cm")
 
 
 
