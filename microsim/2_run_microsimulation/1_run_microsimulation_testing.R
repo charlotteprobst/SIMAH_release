@@ -31,15 +31,12 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
-<<<<<<< HEAD
 # install("SIMAH_code/microsimpackage", dep=T)
-=======
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
 library(microsimpackage)
 library(calibrationpackage)
->>>>>>> 61fdb2b1a316ea05077cc83f4769b384b34202dc
 
 source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
 
@@ -90,35 +87,6 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            age_inflated,
                            update_base_rate,
                            minyear=2000, maxyear=2005, output_type)
-
-<<<<<<< HEAD
-alcohol_type <- "categorical"
-
-# Output <- readRDS("SIMAH_workplace/microsim/2_output_data/output_baserate_multiple.RDS")
-
-
-if(output_type=="demographics"){ # this doesn't run for output_type == mortality
-  summary <- summarise_education_output(Output, SelectedState, DataDirectory)
-}else if(output_type=="alcohol"){
-  if(alcohol_type=="categorical"){
-    summary <- summarise_alcohol_output(Output[[1]], SelectedState, DataDirectory)
-}else if(alcohol_type=="continuous"){
-    summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
-  }
-}else if(output_type=="mortality"){
-  summary <- summarise_mortality_output(Output,SelectedState, DataDirectory, diseases, 2010)
-} # legacy - can be customised for each user
-
-# data frame containing mortality outputs
-summary_mortality <- summary[[1]]
-# plots for mortality
-summary[[2]] # Men
-summary[[3]] # Women
-
-# save a copy of the plot
-ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
-       width=33, height=19, units="cm")
-=======
 # postprocessing - not currently working!
 # alcohol_type <- "categorical"
 # 
