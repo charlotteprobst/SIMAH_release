@@ -51,9 +51,9 @@ calculate_implausibility_alcohol_mean <- function(data, brfss){
               # todo - check implausibility equation in Andrianakis paper
               # should be SE^2?
               implausibility = abs(meansimulation-meantarget)/sqrt(v_s+se^2)) %>%
-    group_by(samplenum, microsim.init.sex, microsim.init.race, microsim.init.education, agecat) %>%
+    group_by(samplenum, microsim.init.sex, microsim.init.race, microsim.init.education, agecat, AlcCAT) %>%
     filter(microsim.init.sex=="m") %>% filter(agecat=="65+") %>% filter(AlcCAT=="Low risk") %>%
-    group_by(samplenum) %>%
+    # group_by(samplenum) %>%
     filter(year!=2000) %>%
     summarise(mean = mean(implausibility, na.rm=T),
               max = max(implausibility, na.rm=T))

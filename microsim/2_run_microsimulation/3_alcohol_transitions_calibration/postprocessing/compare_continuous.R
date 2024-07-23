@@ -37,13 +37,13 @@ meansimulation <- data %>% pivot_longer(meansimulation:meantarget)
 
 meansimulation$se <- ifelse(meansimulation$name=="meansimulation", NA, meansimulation$se)
 
-subset <- meansimulation %>% filter(samplenum==64)
+subset <- meansimulation %>% filter(samplenum==495)
 
-ggplot(data=subset(meansimulation, microsim.init.race=="SPA" & AlcCAT=="Low risk" | 
-                     microsim.init.race=="OTH" & AlcCAT=="Low risk"), aes(x=year, y=value, colour=name, fill=name)) + 
+ggplot(data=subset(meansimulation, microsim.init.race=="White" & AlcCAT=="Low risk" | 
+                     microsim.init.race=="Black" & AlcCAT=="Low risk"), aes(x=year, y=value, colour=name, fill=name)) + 
   geom_line(linewidth=1) + geom_ribbon(aes(ymin=value-(1.96*se), max=value+(1.96*se)), colour=NA, alpha=0.6) + 
   facet_grid(cols=vars(microsim.init.sex,microsim.init.education), rows=vars(microsim.init.race,agecat),scales="free") + ylim(0,NA)
-ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_byeducationraceagewhiteblack_byyear_cap150.png"), width=33, height=19, units="cm")
+ggsave(paste0(OutputDirectory, "/compare_mean_drinking_betadistributions_calibrated.png"), width=33, height=19, units="cm")
 
 
 
