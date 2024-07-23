@@ -37,26 +37,43 @@ dat <- dat %>% assign_alc_cat()
 
 dat <- dat %>% filter(gramsperday_upshifted>0)
 
-dat <- dat %>% mutate(group = paste(AlcCAT, race_eth, education_summary, sex_recode, sep="_"))
+dat <- dat %>% mutate(agecat = cut(age_var,
+                                   breaks=c(0,24,64,100),
+                                   labels=c("18-24","25-64","65+")))
 
-fitdistribution_gamma <- function(data, group){
-  groupdata <- dat %>% filter(group==i)
-  distribution <- fitdist(groupdata$gramsperday_upshifted, distr="gamma")
-  shape <- distribution$estimate[[1]]
-  rate <- distribution$estimate[[2]]
-  dist <- data.frame(group=i, shape=shape, rate=rate)
-  return(dist)
-}
+dat <- dat %>% mutate(education_summary = ifelse(agecat=="18-24" & education_summary=="College","SomeC",
+                                                 education_summary))
 
-distributions <- list()
+dat <- dat %>% mutate(yearcat = cut(YEAR,
+                                    breaks=c(0,2005,2010,2022)))
+                                    labels=c(1,2,3,4,5,6,7)))
 
-for(i in unique(dat$group)){
-  distributions[[paste(i)]] <- fitdistribution_gamma(dat, i)
-}
+dat <- dat %>% mutate(group = paste(yearcat, AlcCAT, agecat, race_eth, education_summary, sex_recode, sep="_"))
+dat <- dat %>% filter(gramsperday_upshifted<151)
 
-distribution <- do.call(rbind, distributions)
+ggplot(data=dat, aes(y=gramsperday_upshifted, x=yearcat, group=yearcat)) + geom_boxplot()
+
+
+getwd()
+# fitdistribution_gamma <- function(data, group){
+#   groupdata <- dat %>% filter(group==i)
+#   distribution <- fitdist(groupdata$gramsperday_upshifted, distr="gamma")
+#   shape <- distribution$estimate[[1]]
+#   rate <- distribution$estimate[[2]]
+#   dist <- data.frame(group=i, shape=shape, rate=rate)
+#   return(dist)
+# }
+# 
+# distributions <- list()
+# 
+# for(i in unique(dat$group)){
+#   distributions[[paste(i)]] <- fitdistribution_gamma(dat, i)
+# }
+# 
+# distribution <- do.call(rbind, distributions)
 
 # explore beta distribution - first normalise between 0 and 1 (store the method so it is reversible)
+
 dat <- dat %>% 
   group_by(group) %>% 
   mutate(min = min(gramsperday_upshifted),
@@ -65,10 +82,17 @@ dat <- dat %>%
 fitdistribution_beta <- function(data, group){
   groupdata <- dat %>% filter(group==i) %>% 
     mutate(scaled = ((gramsperday_upshifted - min) + 10e-10) / ((max - min) + 10e-9))
+  alccat <- unique(groupdata$AlcCAT)
+  agecat <- unique(groupdata$agecat)
+  race_eth <- unique(groupdata$race_eth)
+  education_summary <- unique(groupdata$education_summary)
+  sex_recode <- unique(groupdata$sex_recode)
+  year_cat <- unique(groupdata$yearcat)
   distribution <- fitdist(groupdata$scaled, distr="beta")
   shape1 <- distribution$estimate[[1]]
   shape2 <- distribution$estimate[[2]]
-  dist <- data.frame(group=i, shape1=shape1, shape2=shape2, min=unique(groupdata$min), 
+  dist <- data.frame(group=i, AlcCAT=alccat, agecat=agecat, race_eth=race_eth, education_summary = education_summary, 
+                     sex_recode = sex_recode, year_cat = year_cat, shape1=shape1, shape2=shape2, min=unique(groupdata$min), 
                      max=unique(groupdata$max))
   return(dist)
 }

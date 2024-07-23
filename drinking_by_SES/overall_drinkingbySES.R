@@ -89,7 +89,8 @@ NESARC <- read.csv("SIMAH_workplace/drinking_by_SES/NESARC_mean_alc_cats.csv") %
                             ifelse(education=="Middle.SES","SomeC",
                                    ifelse(education=="High.SES","College",NA)))) %>% 
   rename(year=Year, alc_cat=Category.) %>% mutate(data="NESARC",
-                                                 value = value/100)
+                                                 value = value/100,
+                                                 year=round(year))
 
 Microsimold <- read.csv("SIMAH_workplace/microsim/2_output_data/AlcCats_originalTP.csv") %>% 
   filter(name=="Microsimulation") %>% 
@@ -149,7 +150,17 @@ ggplot(data=subset(combined, alc_cat=="Former drinker"), aes(x=year, y=value, co
   ylim(0,NA) + xlim(2000,2020) + ylab("prevalence")
 ggsave("SIMAH_workplace/drinking_by_SES/formerdrinker_prevalence.png", dpi=300, width=33, height=19, units="cm")
 
+# comparing the magnitude of the difference between NESARC and BRFSS 
 
-
+NESARC <- NESARC %>% filter(year!=2012)
+test <- rbind(BRFSS,NESARC)  %>% drop_na() %>% 
+  # pivot_wider(names_from=data, values_from=value) %>% 
+  drop_na() %>% 
+  mutate(education = factor(education, levels=c("LEHS","SomeC","College")))
   
+
+ggplot(test, aes(x=year, y=value, colour=data)) + geom_line(linewidth=1) + 
+  facet_grid(cols=vars(sex,education), rows=vars(alc_cat), scales="free") + ylab("proportion")
+  
+ggsave("SIMAH_workplace/drinking_by_SES/BRFSS_NESARC.png", dpi=300, width=33, height=19, units="cm")
 

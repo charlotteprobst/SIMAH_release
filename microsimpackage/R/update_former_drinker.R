@@ -33,7 +33,7 @@ update_former_drinker <- function(data){
   temp3$prob <- runif(nrow(temp3))
 
   data <- temp3 %>% mutate(
-      formerdrinker = ifelse(newgpd==0 & prob<=prop_former_drinker, 1, 0)) %>% dplyr::select(-prob)
+      formerdrinker = ifelse(microsim.init.alc.gpd==0 & prob<=prop_former_drinker, 1, 0)) %>% dplyr::select(-c(prob,n,prop_former_drinker))
 
   return(data)
 }

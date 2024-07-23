@@ -11,6 +11,8 @@ library(sjlabelled)
 wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
 # wd <- "G:/My Drive/SIMAH Sheffield/"
+# SB laptop directory
+wd <- "C:/Users/cmp21seb/Documents/SIMAH/"
 setwd(wd)
 
 ####read in the joined up data files 
@@ -20,7 +22,7 @@ gc()
 # read in R script with the functions
 source("SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
-years <- 1984:2020 # Extend this, if 2021 data is added 
+years <- 1984:2022 
 for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
@@ -43,7 +45,7 @@ dataFiles <- lapply(dataFiles, recode_age)
 dataFiles <- lapply(dataFiles, recode_sex)
 
 # recode race / ethnicity 
-dataFiles <- lapply(dataFiles, recode_race)
+dataFiles <- lapply(dataFiles, recode_race) 
 
 gc()
 # recode educational attainment 

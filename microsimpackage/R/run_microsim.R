@@ -28,6 +28,9 @@ names(lhs) <- names
 for(y in minyear:maxyear){
 print(y)
 
+# save a population summary
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+
 # add and remove migrants
 if(y>=2001){
   basepop <- inward_migration(basepop,migration_counts,y, brfss,"SIMAH")
@@ -97,9 +100,6 @@ if(updatingalcohol==1 & y>=2000){
   }
 
 }
-
-  # save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
 # simulate mortality from specific diseases
 print("simulating disease mortality")
