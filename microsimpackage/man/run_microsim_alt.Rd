@@ -12,6 +12,7 @@ run_microsim_alt(
   death_counts,
   updatingeducation,
   education_transitions,
+  COVID_specific_tps,
   migration_rates,
   updatingalcohol,
   alcohol_transitions,
@@ -28,7 +29,7 @@ run_microsim_alt(
   age_inflated,
   update_base_rate,
   minyear = 2000,
-  maxyear = 2005,
+  maxyear = 2022,
   output = "mortality"
 )
 }

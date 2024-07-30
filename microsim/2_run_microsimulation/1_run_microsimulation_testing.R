@@ -25,7 +25,6 @@ options(dplyr.summarise.inform = FALSE)
 WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 # WorkingDirectory <- "C:/Users/peter/Documents/GitHub/"
 
-
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
@@ -45,9 +44,6 @@ education_transitions <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/mic
 for(i in 1:length(education_transitions)){
   education_transitions[[i]]$cat <- gsub("1999-2019+_","",education_transitions[[i]]$cat)
 }
-for(i in 1:length(education_transitions_covid)) {
-  education_transitions_covid[[i]]$cat <- paste0(education_transitions_covid[[i]]$cat, "_1999-2019")
-}
 
 # read in calibrated alcohol transitions 
 alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
@@ -58,6 +54,7 @@ samplenum <- sample(1:300, 1, replace=F)
 
 education_transitions <- education_transitions[[samplenum]]
 education_transitions_covid <- education_transitions_covid[[samplenum]]
+
 alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
 
 # read in the categorical to continuous distributions
@@ -76,7 +73,7 @@ samplenum <- 1
 lhs <- lhs[[1]]
 
 # set minyear and maxyear
-minyear <- 2015
+minyear <- 2000
 maxyear <- 2022
 updatingeducation <- 1
 
@@ -84,6 +81,7 @@ Output <- list()
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,
+                           COVID_specific_tps=1,
                            migration_rates,
                            updatingalcohol, alcohol_transitions,
                            catcontmodel, drinkingdistributions,

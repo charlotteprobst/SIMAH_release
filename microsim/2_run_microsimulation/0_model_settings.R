@@ -21,6 +21,9 @@ migrationdeaths <- 1
 # switch on and off education updates
 updatingeducation <- 1
 
+# switch on and off use of COVID-specific education TPs
+COVID_specific_tps <- 1
+
 # switch on and off alcohol updates
 updatingalcohol <- 1
 
@@ -112,9 +115,6 @@ rm(list)
 education_transitions_covid <- readRDS("SIMAH_workplace/microsim/2_output_data/education_calibration/covid/transitionsList-1-COVID.RDS")
 for(i in 1:length(education_transitions_covid)){
   education_transitions_covid[[i]]$StateTo <- gsub("State ","",education_transitions_covid[[i]]$StateTo)
-}
-for(i in 1:length(education_transitions_covid)) {
-  education_transitions_covid[[i]]$cat <- paste0(education_transitions_covid[[i]]$cat, "_2020-2022")
 }
 
 # load in alcohol transition rates
