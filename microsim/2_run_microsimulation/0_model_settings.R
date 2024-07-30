@@ -8,7 +8,6 @@ set.seed(42)
 options(scipen=999)
 
 ######################EDIT ONLY BELOW HERE ##################################################
-source("SIMAH_code/microsimpackage/R/load_education_transitions_covid.R")
 
 ####which geography -  needs to be written as USA or full state name 
 SelectedState <- "USA"
@@ -109,10 +108,14 @@ basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
 
-# load in the education transition rates for covid
-list <- load_education_transitions_covid(SelectedState, basepop, brfss, DataDirectory)
-education_transitions_covid <- list[[1]]
-rm(list)
+# load in the education transition rates for during COVID (300 samples)
+education_transitions_covid <- readRDS("SIMAH_workplace/microsim/2_output_data/education_calibration/covid/transitionsList-1-COVID.RDS")
+for(i in 1:length(education_transitions_covid)){
+  education_transitions_covid[[i]]$StateTo <- gsub("State ","",education_transitions_covid[[i]]$StateTo)
+}
+for(i in 1:length(education_transitions_covid)) {
+  education_transitions_covid[[i]]$cat <- paste0(education_transitions_covid[[i]]$cat, "_2020-2022")
+}
 
 # load in alcohol transition rates
 #### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?

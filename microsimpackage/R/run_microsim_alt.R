@@ -221,7 +221,15 @@ if(updatingeducation==1){
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
   totransition <- setup_education(totransition,y)
-  totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
+  
+# Choose which TPs to use (pre-COVID or COVID based on year)  
+  # nb. currently set up to use COVID TPs from 2020 onwards.  
+  totransition <- if (y <= 2019) {
+    totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
+  } else {
+    totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions_covid))
+  }
+  
   totransition$microsimnewED <- totransition$newED
   totransition$microsim.init.education <- ifelse(totransition$microsimnewED=="LEHS","LEHS",
                                                  ifelse(totransition$microsimnewED=="SomeC1","SomeC",
