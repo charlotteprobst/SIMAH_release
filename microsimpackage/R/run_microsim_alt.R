@@ -221,7 +221,11 @@ if(updatingeducation==1){
   # print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
-  totransition <- setup_education(totransition,y)
+  if (y <= 2019) {
+    totransition <- setup_education(totransition, y)
+  } else {
+    totransition <- setup_education_covid(totransition, y)
+  }
   
 # Check if COVID-specific TPs should be used
   if (COVID_specific_tps == 1) {
