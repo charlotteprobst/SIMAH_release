@@ -229,8 +229,9 @@ cat_complex_plots_female <- cat_complex_plots %>% filter (sex=="female")
 
 ggplot(data=cat_complex_plots_male, aes(x=year, y=percent, colour=type)) + geom_line() +
   theme_bw() +
-  scale_x_continuous(limits = c(2015, 2022), breaks = seq(2015, 2022, by = 1), labels = seq(2015, 2022, by = 1)) + 
+  scale_x_continuous(limits = c(2000, 2022), breaks = seq(2000, 2022, by = 4), labels = seq(2000, 2022, by = 4)) + 
   theme(legend.title=element_blank(),
+        legend.position="bottom",
         strip.background = element_rect(fill="white"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   geom_vline(aes(xintercept=2019), linetype="dashed", colour="red")+
@@ -240,8 +241,9 @@ ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_
 
 ggplot(data=cat_complex_plots_female, aes(x=year, y=percent, colour=type)) + geom_line() +
   theme_bw() +
-  scale_x_continuous(limits = c(2015, 2022), breaks = seq(2015, 2022, by = 1), labels = seq(2015, 2022, by = 1)) + 
+  scale_x_continuous(limits = c(2000, 2022), breaks = seq(2000, 2022, by = 4), labels = seq(2000, 2022, by = 4)) + 
   theme(legend.title=element_blank(),
+        legend.position="bottom",
         strip.background = element_rect(fill="white"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   geom_vline(aes(xintercept=2019), linetype="dashed", colour="red")+
@@ -375,7 +377,7 @@ ggplot(data = brfss_targets_male_black, aes(x = year, y = percent * 100)) +
   geom_line(aes(color = final_alc_cat)) +
   geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
   theme_bw() +
-  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = )) + 
   theme(legend.title = element_blank(),
         strip.background = element_rect(fill = "white"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
