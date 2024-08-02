@@ -173,16 +173,17 @@ ggsave("SIMAH_workplace/education_transitions/2021/plots/edu_cat_age26_stacked_b
 
 # DIRECTLY COMPARE THE NON-SWITCHING AND SWITCHING TPS FOR THE YEARS 2020,2021 AND 2022 AND PLOT THE DIFFERENCE
 
-Output_switching <- Output_switching %>% 
+# Look at where people who are 30 in a given year end up
+Output_switching_1 <- Output_switching %>% 
   mutate(type="switching") %>%
   group_by(microsim.init.race, microsim.init.sex, agecat, year) %>%
   mutate(Percentage = n / sum(n) * 100) 
 
-Output_standard <- Output_standard %>% mutate(type="standard") %>%
+Output_standard_1 <- Output_standard %>% mutate(type="standard") %>%
   group_by(microsim.init.race, microsim.init.sex, agecat, year) %>%
   mutate(Percentage = n / sum(n) * 100)
 
-combined <- inner_join(Output_standard, Output_switching, by = join_by(year, microsim.init.sex, microsim.init.race, microsim.init.age, microsim.init.education, agecat, samplenum, seed)) 
+combined <- inner_join(Output_standard_1, Output_switching_1, by = join_by(year, microsim.init.sex, microsim.init.race, microsim.init.age, microsim.init.education, agecat, samplenum, seed)) 
 combined_2020 <- combined %>% filter(year>=2020)
 combined_2020 <- combined_2020 %>% 
   mutate(difference_n=n.y-n.x,
@@ -228,4 +229,52 @@ ggplot(combined_2020_30, aes(x = factor(year), y = percent_dif, fill = microsim.
     strip.text = element_text(size = 10),
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.spacing.x = unit(2, "lines"))
+
+# Look at what the total proportions are (all ages)
+Output_switching_2 <- Output_switching %>%
+  mutate(type="switching") %>%
+  group_by(microsim.init.race, microsim.init.sex, microsim.init.education, year) %>%
+  mutate(n_race_sex_edu_year=sum(n)) %>%
+  ungroup() %>%
+  group_by(microsim.init.race, microsim.init.sex, year) %>%
+  mutate(n_race_sex_year = sum(n),
+         Percentage = n_race_sex_edu_year / n_race_sex_year * 100)%>%
+  ungroup()
+
+Output_standard_2 <- Output_standard %>% 
+  mutate(type="standard") %>%
+  group_by(microsim.init.race, microsim.init.sex, microsim.init.education, year) %>%
+  mutate(n_race_sex_edu_year=sum(n)) %>%
+  ungroup() %>%
+  group_by(microsim.init.race, microsim.init.sex, year) %>%
+  mutate(n_race_sex_year = sum(n),
+         Percentage = n_race_sex_edu_year / n_race_sex_year * 100)%>%
+  ungroup()
+
+combined_2 <- inner_join(Output_standard_2, Output_switching_2, by = join_by(year, microsim.init.sex, microsim.init.race, microsim.init.age, microsim.init.education, agecat, samplenum, seed)) 
+combined_2_2020 <- combined_2 %>% filter(year>=2020)
+combined_2_2020 <- combined_2_2020 %>% 
+  mutate(percent_dif=Percentage.y-Percentage.x) 
+
+# Plot the % differences
+# As a line plot
+
+combined_2_2020 <- combined_2_2020 %>% filter(microsim.init.race!="OTH")
+ggplot(combined_2_2020, aes(x = year, y = percent_dif, color = microsim.init.education)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  
+  facet_grid(microsim.init.sex ~ microsim.init.race) +
+  labs(
+    title = "Percent Difference by Year and Education Category",
+    x = "Year",
+    y = "Percent Difference",
+    color = "Education"
+  ) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 2)) +  # Adjust x-axis breaks to show years as integers
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+ggsave(paste0(WorkingDirectory,"SIMAH_workplace/education_transitions/2021/plots/difference_in_educ_cats_when_using_COVID_tps.png"), dpi=300, width = 12, height = 7)
   
