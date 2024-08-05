@@ -13,7 +13,7 @@ remove_individuals <- function(data = basepop, disease, age_inflated, inflation_
     filter(!!sym(paste0('mort_', disease)) == 1) %>%
     group_by(cat) %>%
     add_tally() %>%
-    mutate(ageCAT = cut(microsim.init.age,
+    mutate(ageCAT = cut(age,
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
@@ -42,10 +42,10 @@ remove_individuals <- function(data = basepop, disease, age_inflated, inflation_
 
     # conditional on the original risk
   # Get the IDs to be removed
-  ids <- removed$microsim.init.id
+  ids <- removed$ID
   # Remove the individuals with the specified IDs
   data <- data %>%
-    filter(!microsim.init.id %in% ids)
+    filter(!ID %in% ids)
 
   # Remove the unnecessary columns for the current disease
   data <- data %>%

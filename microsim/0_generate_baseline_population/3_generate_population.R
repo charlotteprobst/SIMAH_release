@@ -43,19 +43,17 @@ population <- data %>%
 processed_population <- population %>% 
   mutate(formerdrinker = ifelse(drinkingstatus_detailed=="Former drinker", 1,0),
          sex = ifelse(sex=="M","m","f"),
-         # race = ifelse(race=="Black","BLA",
-         #               ifelse(race=="White","WHI",
-         #                      ifelse(race=="Hispanic","SPA",
-         #                             ifelse(race=="Others","OTH",NA))))
+         race = ifelse(race=="BLA","Black",
+                       ifelse(race=="WHI","White",
+                              ifelse(race=="SPA","Hispanic",
+                                     ifelse(race=="OTH","Others",NA))))
          ) %>% 
-  dplyr::select(brfssID, age_var, race, sex, education, drinkingstatus,gramsperday, formerdrinker,
+  dplyr::select(age_var, race, sex, education, drinkingstatus,gramsperday, formerdrinker,
                 household_income, BMI) %>% 
-  rename(microsim.init.age=age_var, microsim.init.race=race, microsim.init.sex=sex,
-         microsim.init.education=education, microsim.init.alc.gpd=gramsperday,
-         microsim.init.drinkingstatus=drinkingstatus,
-         microsim.init.income=household_income, microsim.init.BMI=BMI) %>% 
-  mutate(microsim.init.spawn.year=2000,
-         agecat = cut(microsim.init.age,
+  rename(alc_gpd=gramsperday, age=age_var,
+         income=household_income, BMI=BMI) %>% 
+  mutate(spawn_year=2000,
+         agecat = cut(age,
                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,100),
                       labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
                                "50-54","55-59","60-64","65-69","70-80")))

@@ -1,17 +1,22 @@
-# SIMAH project 2022 - script for setting up microsimulation model settings
-library(dplyr)
-library(readr)
-library(microsimpackage)
+# SIMAH project 2024 - script for setting up microsimulation model settings
 
-set.seed(42)
+# set up working directories and data output directories 
+###set working directory to the main "Microsimulation" folder in your directory
+DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/testing")
+
+dir.create(OutputDirectory)
 
 options(scipen=999)
 
-######################EDIT ONLY BELOW HERE ##################################################
-source("SIMAH_code/microsimpackage/R/load_education_transitions_covid.R")
-
 ####which geography -  needs to be written as USA or full state name 
 SelectedState <- "USA"
+
+# list of states - for calibration looping through states
+States <- c("California","Colorado","Florida","Indiana",
+            "Louisiana","Massachusetts","Michigan","Minnesota",
+            "Missouri","New York", "Oregon", "Pennsylvania",
+            "Tennessee","Texas","USA")
 
 ####Size of population 
 PopulationSize <- 1000000
@@ -20,10 +25,10 @@ PopulationSize <- 1000000
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 1
+updatingeducation <- 0
 
 # switch on and off alcohol updates
-updatingalcohol <- 1
+updatingalcohol <- 0
 
 # switch between modelling mortality and morbidity (mortality = 1)
 mortality <- 1
@@ -34,19 +39,14 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- c("LVDC","HLVDC","AUD","IHD","ISTR","DM","HYPHD","MVACC", "IJ","UIJ")
-
-# DM: change to "on" if we want to model the DM men risk function, if "off" the RR for men=1
-DM_men <- "off"
-
-# switch between CASCADE and SIMAH models 
-model <- "SIMAH"
+diseases <- NULL
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "mortality"
 
-# whether we want SES interaction effects   
-sesinteraction <- 0
+# whether we want SES interaction effects for liver cirrhosis 
+# note this is a temporary variable and may change to a more general SES interaction flag 
+liverinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
@@ -74,88 +74,20 @@ WholePopSize <- read.csv(paste0(DataDirectory,"fullpopcounts.csv")) %>%
 proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
+# parameter settings for calibration
+n_samples <- 1
 
-#####first read in and process all the necessary data files 
-
-# read in base population
-if(model=="SIMAH"){
-  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
-                      show_col_types = FALSE)
-}else if(model=="CASCADE"){
-  basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
-}
-
-# save a copy of original population files
-baseorig <- basepop
-
-# set microsim individuals IDs 
-microsim.init.id <- 1:nrow(basepop)
-basepop <- cbind(microsim.init.id, basepop)
-
-# read in BRFSS data for migrants and 18-year-olds entering the model
-brfss <- load_brfss(model,SelectedState, DataDirectory)
-
-# read in death counts data
-death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
-
-# read in migration in and out counts and project rates forwards to 2025 (in case needed)
-# migration_counts <- load_migration_counts(SelectedState, DataDirectory)
-migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
-
-# load in the education transition rates
-list <- load_education_transitions(SelectedState, basepop, brfss, DataDirectory)
-education_transitions <- list[[1]]
-basepop <- list[[2]]
-brfss <- list[[3]]
-rm(list)
-
-# load in the education transition rates for covid
-list <- load_education_transitions_covid(SelectedState, basepop, brfss, DataDirectory)
-education_transitions_covid <- list[[1]]
-rm(list)
-
-# load in alcohol transition rates
-#### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
-list <- load_alcohol_transitions(SelectedState, basepop, brfss, DataDirectory)
-alcohol_transitions <- list[[1]]
-basepop <- list[[2]]
-brfss <- list[[3]]
-rm(list)
-
-# load in model parameters - using latin hypercube sampling 
-# number of settings required 
-
-n_samples <- 10
-
-# whether to just use the point estimate - for now this is set to 1
+# whether to just use the point estimate - set this to 1 for education and alcohol transitions 
 PE <- 1
-if(sesinteraction==1){
-  lhs <- sensitivity_sample_lhs(n_samples, PE)
-}else if(sesinteraction==0){
-  lhs <- sample_lhs(n_samples, PE)
-}
-
-samples <- do.call(rbind,lhs)
-
-for(i in 1:length(lhs)){
-  lhs[[i]]$samplenum <- i
-}
-
-write.csv(do.call(rbind,lhs), "SIMAH_workplace/microsim/2_output_data/lhsSamples.csv")
 
 update_base_rate <- 1
 
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-
 inflation_factors <- c(50, 10)
 
 # note age categories should be in 10 year categories - except 75-79
 age_inflated <- list(
-    c("18-24","25-34","35-44","45-54"), 
-    c("55-64","65-74", "75-79"))
-
-if(length(diseases)>=1){
-  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)
-}
+    c("18-24","25-34","35-44","45-54","55-64"), 
+    c("65-74", "75-79"))

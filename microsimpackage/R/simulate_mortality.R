@@ -45,12 +45,12 @@ simulate_mortality <- function(data = basepop, diseases){
     if (i==1) {
       data <- data %>%
         mutate(!!mort_expr := ifelse(!!risk_expr > prob, 1, 0),
-               !!yll_expr := ifelse(!!mort_expr == 1, 79 - microsim.init.age, 0))
+               !!yll_expr := ifelse(!!mort_expr == 1, 79 - age, 0))
     } else if (i>1) {
       prev_risk_expr <- sym(paste0("risk_", quo_name(diseases[i-1])))
       data <- data %>%
         mutate(!!mort_expr := ifelse(!!risk_expr > prob & !!prev_risk_expr < prob, 1, 0),
-               !!yll_expr := ifelse(!!mort_expr == 1, 79 - microsim.init.age, 0))
+               !!yll_expr := ifelse(!!mort_expr == 1, 79 - age, 0))
     }
   }
   return(data)

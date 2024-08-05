@@ -7,14 +7,14 @@
 #' AUD including SES interaction effects
 #' Results given in standard drinks per day (14 grams per day)
 AUDInteraction <- function(data,lhs){
-  data$microsim.init.alc.gpd <- ifelse(data$microsim.init.alc.gpd>=150, 150,
-                                       data$microsim.init.alc.gpd)
+  data$alc_gpd <- ifelse(data$alc_gpd>=150, 150,
+                                       data$alc_gpd)
   data <- data %>%
-    mutate(ageCAT = cut(microsim.init.age,
+    mutate(ageCAT = cut(age,
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
-           cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
+           cat = paste0(sex, ageCAT, education)) %>%
     dplyr::select(-ageCAT)
     B_AUD_LEHS <- as.numeric(lhs["B_AUD_LEHS"])
     B_AUD_SomeC <- as.numeric(lhs["B_AUD_SomeC"])
@@ -50,46 +50,46 @@ AUDInteraction <- function(data,lhs){
   # AUD_SomeCxFD_WOMEN <- as.numeric(lhs["AUD_SomeCxFD_WOMEN"])
 
   data <- data %>%
-    mutate(RR_AUD = ifelse(microsim.init.education=="LEHS",
-                           exp(B_AUD_LEHS + B_AUD_GPD*(microsim.init.alc.gpd/14) + B_AUD_LEHSxGPD*(microsim.init.alc.gpd/14)),
-                           ifelse(microsim.init.education=="SomeC",
-                                  exp(B_AUD_SomeC + B_AUD_GPD*(microsim.init.alc.gpd/14) + B_AUD_SomeCxGPD*(microsim.init.alc.gpd/14)),
-                                  exp(B_AUD_GPD*(microsim.init.alc.gpd/14)))),
-           RR_AUD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS",
+    mutate(RR_AUD = ifelse(education=="LEHS",
+                           exp(B_AUD_LEHS + B_AUD_GPD*(alc_gpd/14) + B_AUD_LEHSxGPD*(alc_gpd/14)),
+                           ifelse(education=="SomeC",
+                                  exp(B_AUD_SomeC + B_AUD_GPD*(alc_gpd/14) + B_AUD_SomeCxGPD*(alc_gpd/14)),
+                                  exp(B_AUD_GPD*(alc_gpd/14)))),
+           RR_AUD = ifelse(formerdrinker==1 & education=="LEHS",
                            exp(AUD_FD_LEHS + AUD_FD + AUD_LEHSxFD),
-                           ifelse(formerdrinker==1 & microsim.init.education=="SomeC",
+                           ifelse(formerdrinker==1 & education=="SomeC",
                                   exp(AUD_FD_SomeC + AUD_FD + AUD_SomeCxFD),
-                                  ifelse(formerdrinker==1 & microsim.init.education=="College",
+                                  ifelse(formerdrinker==1 & education=="College",
                                          exp(AUD_FD), RR_AUD))))
       return(data)
 }
-   
-    # mutate(RR_AUD = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
-    #                             exp(B_AUD_LEHS_MEN + B_AUD_GPD_MEN*microsim.init.alc.gpd + B_AUD_LEHSxGPD_MEN*microsim.init.alc.gpd),
-    #                             ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m",
-    #                                   exp(B_AUD_SomeC_MEN + B_AUD_GPD_MEN*microsim.init.alc.gpd + B_AUD_SomeCxGPD_MEN*microsim.init.alc.gpd),
-    #                                   ifelse(microsim.init.education=="College" & microsim.init.sex=="m",
-    #                                          exp(B_AUD_GPD_MEN*microsim.init.alc.gpd),
-    #                                          ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="f",
-    #                                                 exp(B_AUD_LEHS_WOMEN + B_AUD_GPD_WOMEN*microsim.init.alc.gpd + B_AUD_LEHSxGPD_WOMEN*microsim.init.alc.gpd),
-    #                                                 ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="f",
-    #                                                       exp(B_AUD_SomeC_WOMEN + B_AUD_GPD_WOMEN*microsim.init.alc.gpd + B_AUD_SomeCxGPD_WOMEN*microsim.init.alc.gpd),
-    #                                                       ifelse(microsim.init.education=="College" & microsim.init.sex=="f",
-    #                                                              exp(B_AUD_GPD_WOMEN*microsim.init.alc.gpd), NA)))))),
-    #        RR_AUD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="m",
-    #                              exp(AUD_FD_LEHS_MEN + AUD_FD_MEN*microsim.init.alc.gpd + AUD_LEHSxFD_MEN*microsim.init.alc.gpd),
-    #                              ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="m",
-    #                                     exp(AUD_FD_SomeC_MEN + AUD_FD_MEN*microsim.init.alc.gpd + AUD_SomeCxFD_MEN*microsim.init.alc.gpd),
-    #                                     ifelse(formerdrinker==1 & microsim.init.education=="College" & microsim.init.sex=="m",
-    #                                            exp(AUD_FD_MEN*microsim.init.alc.gpd),
-    #                                            ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="f",
-    #                                                   exp(AUD_FD_LEHS_WOMEN + AUD_FD_WOMEN*microsim.init.alc.gpd + AUD_LEHSxFD_WOMEN*microsim.init.alc.gpd),
-    #                                                   ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="f",
-    #                                                         exp(AUD_FD_SomeC_WOMEN + AUD_FD_WOMEN*microsim.init.alc.gpd + AUD_SomeCxFD_WOMEN*microsim.init.alc.gpd),
-    #                                                         ifelse(formerdrinker==1 & microsim.init.education=="College" & microsim.init.sex=="f",
-    #                                                                exp(AUD_FD_WOMEN*microsim.init.alc.gpd), RR_AUD)))))))
+
+    # mutate(RR_AUD = ifelse(education=="LEHS" & sex=="m",
+    #                             exp(B_AUD_LEHS_MEN + B_AUD_GPD_MEN*alc_gpd + B_AUD_LEHSxGPD_MEN*alc_gpd),
+    #                             ifelse(education=="SomeC" & sex=="m",
+    #                                   exp(B_AUD_SomeC_MEN + B_AUD_GPD_MEN*alc_gpd + B_AUD_SomeCxGPD_MEN*alc_gpd),
+    #                                   ifelse(education=="College" & sex=="m",
+    #                                          exp(B_AUD_GPD_MEN*alc_gpd),
+    #                                          ifelse(education=="LEHS" & sex=="f",
+    #                                                 exp(B_AUD_LEHS_WOMEN + B_AUD_GPD_WOMEN*alc_gpd + B_AUD_LEHSxGPD_WOMEN*alc_gpd),
+    #                                                 ifelse(education=="SomeC" & sex=="f",
+    #                                                       exp(B_AUD_SomeC_WOMEN + B_AUD_GPD_WOMEN*alc_gpd + B_AUD_SomeCxGPD_WOMEN*alc_gpd),
+    #                                                       ifelse(education=="College" & sex=="f",
+    #                                                              exp(B_AUD_GPD_WOMEN*alc_gpd), NA)))))),
+    #        RR_AUD = ifelse(formerdrinker==1 & education=="LEHS" & sex=="m",
+    #                              exp(AUD_FD_LEHS_MEN + AUD_FD_MEN*alc_gpd + AUD_LEHSxFD_MEN*alc_gpd),
+    #                              ifelse(formerdrinker==1 & education=="SomeC" & sex=="m",
+    #                                     exp(AUD_FD_SomeC_MEN + AUD_FD_MEN*alc_gpd + AUD_SomeCxFD_MEN*alc_gpd),
+    #                                     ifelse(formerdrinker==1 & education=="College" & sex=="m",
+    #                                            exp(AUD_FD_MEN*alc_gpd),
+    #                                            ifelse(formerdrinker==1 & education=="LEHS" & sex=="f",
+    #                                                   exp(AUD_FD_LEHS_WOMEN + AUD_FD_WOMEN*alc_gpd + AUD_LEHSxFD_WOMEN*alc_gpd),
+    #                                                   ifelse(formerdrinker==1 & education=="SomeC" & sex=="f",
+    #                                                         exp(AUD_FD_SomeC_WOMEN + AUD_FD_WOMEN*alc_gpd + AUD_SomeCxFD_WOMEN*alc_gpd),
+    #                                                         ifelse(formerdrinker==1 & education=="College" & sex=="f",
+    #                                                                exp(AUD_FD_WOMEN*alc_gpd), RR_AUD)))))))
 
 
 # test for exploring the RR dose response curve
-#test <- basepop %>% dplyr::select(microsim.init.sex, microsim.init.education, microsim.init.alc.gpd, RR_AUD) %>% distinct()
-#ggplot(test, aes(x=microsim.init.alc.gpd, y=RR_AUD)) + geom_point() + facet_grid(cols=vars(microsim.init.education), rows=vars(microsim.init.sex), scales="free")
+#test <- basepop %>% dplyr::select(sex, education, alc_gpd, RR_AUD) %>% distinct()
+#ggplot(test, aes(x=alc_gpd, y=RR_AUD)) + geom_point() + facet_grid(cols=vars(education), rows=vars(sex), scales="free")

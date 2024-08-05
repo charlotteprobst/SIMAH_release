@@ -24,15 +24,15 @@ fix_initial_education <- function(basepop){
     ungroup() %>% group_by(cat) %>%
     mutate(cumsum=cumsum(proptarget))
 
-  toimpute <- basepop %>% filter(microsim.init.age<=24)
+  toimpute <- basepop %>% filter(age<=24)
 
   toimpute <- toimpute %>%
     mutate(YEAR=YEAR,
-           AGECAT = microsim.init.age,
-           RACE = ifelse(microsim.init.race=="BLA","Black",
-                         ifelse(microsim.init.race=="WHI","White",
-                                ifelse(microsim.init.race=="SPA","Hispanic","Other"))),
-           SEX = ifelse(microsim.init.sex=="m","Men","Women"),
+           AGECAT = age,
+           RACE = ifelse(race=="BLA","Black",
+                         ifelse(race=="WHI","White",
+                                ifelse(race=="SPA","Hispanic","Other"))),
+           SEX = ifelse(sex=="m","Men","Women"),
            cat = paste0(YEAR, AGECAT,RACE,SEX)) %>% dplyr::select(-c(AGECAT, RACE, SEX))
 
   transition_ed <- function(data, transitions){
@@ -45,11 +45,11 @@ fix_initial_education <- function(basepop){
   }
   toimpute$prob <- runif(nrow(toimpute))
   toimpute <- toimpute %>% ungroup() %>% group_by(cat) %>% do(transition_ed(., targets)) %>%
-    mutate(microsim.init.education = newED) %>%
+    mutate(education = newED) %>%
     ungroup() %>%
     dplyr::select(-c(cat, prob, newED))
 
-  tojoin <- basepop %>% filter(microsim.init.age>=25)
+  tojoin <- basepop %>% filter(age>=25)
   basepop <- rbind(toimpute, tojoin)
   return(basepop)
 }

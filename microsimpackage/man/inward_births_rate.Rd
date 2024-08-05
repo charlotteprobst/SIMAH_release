@@ -4,7 +4,7 @@
 \alias{inward_births_rate}
 \title{Adds new births- using rates version}
 \usage{
-inward_births_rate(basepop, migration_rates, y, brfss, model)
+inward_births_rate(basepop, migration_rates, y, brfss)
 }
 \description{
 Adds new births- using rates version

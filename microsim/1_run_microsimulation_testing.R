@@ -34,7 +34,11 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
+# load model settings 
+source("SIMAH_code/microsim/0_model_settings.R")
+
+# load microsim files
+source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # read in calibrated education transitions
 education_transitions <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
@@ -52,8 +56,7 @@ education_transitions <- education_transitions[[samplenum]]
 alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
 
 # read in the categorical to continuous distributions
-catcontmodel <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv") %>%
-  dplyr::select(group, shape1, shape2, min, max)
+catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/continuous_calibration/calibration_continuous_distribution.csv")
 
 output_type <- "mortality"
 
@@ -62,9 +65,6 @@ seed <- as.numeric(sample(1:100, 1))
 
 # sample number - set to 1 when just running 1 simulation 
 samplenum <- 1
-
-# set lhs to the first element of the lhs list- for testing 
-lhs <- lhs[[1]]
 
 # set minyear and maxyear 
 minyear <- 2000
