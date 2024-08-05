@@ -4,6 +4,20 @@ library(dplyr)
 recode_state <- function(data) {
   data <- data %>%
     mutate(
+   # State = recode(X_STATE,
+    #               "1"="Alabama", "2"="Alaska", "4"="Arizona","5"="Arkansas",
+   # "6"="California", "8"="Colorado", "9"="Connecticut", "10"="Delaware",
+   # "12"="Florida","13"="Georgia","15"="Hawaii","16"="Idaho","17"="Illinois",
+   # "18"="Indiana","19"="Iowa","20"="Kansas","21"="Kentucky","22"="Louisiana",
+   # "23"="Maine","24"="Maryland", "25"="Massachusetts", "26"="Michigan",
+   # "27"="Minnesota", "28"="Mississippi", "29"="Missouri", "30"="Montana",
+   # "31"="Nebraska","32"="Nevada", "33"="New Hampshire", "34"="New Jersey",
+   # "35"="New Mexico", "36"="New York", "37"="North Carolina", "38"="North Dakota",
+   # "39"="Ohio", "40"="Oklahoma", "41"="Oregon", "42"="Pennsylvania", "44"="Rhode Island",
+   # "45"="South Carolina", "46"="South Dakota", "47"="Tennessee", "48"="Texas", "49"="Utah",
+   # "50"="Vermont", "51"="Virginia", "53"="Washington", "54"="West Virginia", "55"="Wisconsin",
+   # "56"="Wyoming", "11"="DC", "66"="Guam", "72"="Puerto Rico",
+   # .default="territories"))
       State = if ("State" %in% names(data)) {
         State
       } else if ("X.STATE" %in% names(data)) {
@@ -88,7 +102,51 @@ recode_education <- function(data) {
   return(data)
 }
 
-recode_race <- function(data) {
+recode_race <- function(data){
+  data <- data %>% 
+    mutate(hispanic_comb = ifelse(YEAR<=2000, HISPANIC,
+                                  ifelse(YEAR>=2001 & YEAR<=2012, HISPANC2,
+                                         ifelse(YEAR>=2013, X_HISPANC, NA))),
+      hispanic_comb = ifelse(hispanic_comb==1, 1,
+                             ifelse(hispanic_comb==2, 0, NA)),
+      race_comb = ifelse(YEAR<2001, ORACE,
+                              ifelse(YEAR>=2001 & YEAR<=2012, RACE2,
+                                     ifelse(YEAR>=2013, X_RACE, NA))),
+      race_eth_detailed = ifelse(YEAR<2001 & race_comb == 1 & hispanic_comb==0, "Non-Hispanic White",
+                        ifelse(YEAR<2001 & race_comb==2 & hispanic_comb==0, "Non-Hispanic Black",
+                               ifelse(YEAR<2001 & race_comb==3 & hispanic_comb==0, "Non-Hispanic Asian/PI",
+                                      ifelse(YEAR<2001 & race_comb==4 & hispanic_comb==0, "Non-Hispanic Native American",
+                                             ifelse(YEAR<2001 & race_comb==5 & hispanic_comb==0, "Non-Hispanic Other",
+                                                    ifelse(YEAR<2001 & hispanic_comb==1, "Hispanic",
+                                                           ifelse(YEAR<2001 & race_comb>=7, NA, NA))))))),
+      race_eth_detailed = ifelse(YEAR>=2001 & race_comb ==1, "Non-Hispanic White",
+                                 ifelse(YEAR>=2001 & race_comb==2, "Non-Hispanic Black",
+                                        ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==3, "Non-Hispanic Asian/PI",
+                                               ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==4, "Non-Hispanic Asian/PI",
+                                                      ifelse(YEAR>=2001 & YEAR<=2012 & race_comb==5, "Non-Hispanic Native American",
+                                                             ifelse(YEAR>=2001 & race_comb==6, "Non-Hispanic Other",
+                                                                    ifelse(YEAR>=2001 & race_comb==7, "Non-Hispanic Other",
+                                                                           ifelse(YEAR>=2001 & race_comb==8, "Hispanic",
+                                                                                  ifelse(YEAR>2012 & race_comb==3, "Non-Hispanic Native American",
+                                                                                         ifelse(YEAR>2012 & race_comb==4, "Non-Hispanic Asian/PI",
+                                                                                                ifelse(YEAR>2012 & race_comb==5, "Non-Hispanic Asian/PI",
+                                                                                                       race_eth_detailed))))))))))),
+      race_eth = ifelse(race_eth_detailed == "Non-Hispanic Asian/PI", "Non-Hispanic Other",
+                        ifelse(race_eth_detailed=="Non-Hispanic Native American", "Non-Hispanic Other",
+                               race_eth_detailed))
+      
+      
+    )
+                                      
+  return(data)
+}
+
+recode_age <- function(data){
+  data <- data %>% 
+    mutate(age_var = ifelse(YEAR<=2012, AGE, X_AGE80),
+           age_var = ifelse(age_var<=9, NA, age_var))
+
+  recode_race <- function(data) {
   if (!"race_eth" %in% names(data)) {
     data <- data %>% 
       mutate(hispanic_comb = ifelse(YEAR <= 2000, HISPANIC,
@@ -319,11 +377,11 @@ recode_BMI <- function(data){
 
 for(i in names(dataFiles)){
   print(i)
-  print(summary(dataFiles[[i]]$X.BMI))
-  print(summary(dataFiles[[i]]$X.BMI2))
-  print(summary(dataFiles[[i]]$X.BMI3))
-  print(summary(dataFiles[[i]]$X.BMI4))
-  print(summary(dataFiles[[i]]$X.BMI5))
+  print(summary(dataFiles[[i]]$X_BMI))
+  print(summary(dataFiles[[i]]$X_BMI2))
+  print(summary(dataFiles[[i]]$X_BMI3))
+  print(summary(dataFiles[[i]]$X_BMI4))
+  print(summary(dataFiles[[i]]$X_BMI5))
   
 }
 
@@ -370,7 +428,7 @@ recode_alc_prevalence <- function(data){
   if (!"drinkingstatus" %in% names(data)) {
   data <- data %>%
     mutate(drinkingstatus = ifelse(YEAR<=2000, DRINKANY,
-                                   ifelse(YEAR>=2005 & YEAR<=2010, DRNKANY4,NA)),
+                                   ifelse(YEAR>2005 & YEAR<=2010, DRNKANY4, NA)),
            drinkingstatus = ifelse(drinkingstatus==2, 0,
                                    ifelse(drinkingstatus==1, 1,
                                           ifelse(alc_frequency==0, 0, NA))))
@@ -399,14 +457,14 @@ recode_alc_frequency <- function(data){
                                     ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                            ifelse(alc_frequency==777, NA,
                                                   ifelse(alc_frequency==888, 0,
-                                                         ifelse(alc_frequency==999,NA, alc_frequency)))))))
+                                                         ifelse(alc_frequency==999, NA, alc_frequency)))))))
     }else if(data$YEAR[1]>=2001 & data$YEAR[1]<=2004){
       data <- data %>% mutate(
         alc_frequency = ifelse(alc_frequency<110, (alc_frequency-100)*52/12,
                                       ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                              ifelse(alc_frequency==777, NA,
                                                     ifelse(alc_frequency==888, 0,
-                                                           ifelse(alc_frequency==999,NA,alc_frequency))))))
+                                                           ifelse(alc_frequency==999, NA,alc_frequency))))))
     }else if(data$YEAR[1]>=2005 & data$YEAR[1]<=2010){
       data <- data %>% mutate(
         alc_frequency = ifelse(DRNKANY4==2, 0,
@@ -414,7 +472,7 @@ recode_alc_frequency <- function(data){
                                       ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                              ifelse(alc_frequency==777, NA,
                                                     ifelse(alc_frequency==888, 0,
-                                                           ifelse(alc_frequency==999,NA, alc_frequency)))))))
+                                                           ifelse(alc_frequency==999, NA, alc_frequency)))))))
     }else if(data$YEAR[1]>=2011){
       data <- data %>% mutate(
       raw_frequency = alc_frequency,
@@ -422,7 +480,7 @@ recode_alc_frequency <- function(data){
                                     ifelse(alc_frequency>200 & alc_frequency<=231, alc_frequency-200,
                                            ifelse(alc_frequency==777, NA,
                                                   ifelse(alc_frequency==888, 0,
-                                                         ifelse(alc_frequency==999,NA,alc_frequency))))))
+                                                         ifelse(alc_frequency==999, NA, alc_frequency))))))
     }else if(data$YEAR[1]<=1988){
       data <- data %>% mutate(
         beer_freq = ifelse(DRKBEER<110 & DRKBEER>=100, (DRKBEER-100)*52/12,
@@ -447,7 +505,7 @@ recode_alc_frequency <- function(data){
                                              alc_frequency))))
     }
                                                   
-  data$alc_frequency <- round(data$alc_frequency,digits=0)
+  data$alc_frequency <- round(data$alc_frequency, digits=0)
   data$alc_frequency <- ifelse(data$alc_frequency==31, 30, 
                                ifelse(data$alc_frequency>31, 30, data$alc_frequency))
   # recode the missing drinking prevalence values now we have frequency values 
@@ -574,6 +632,7 @@ subset_data <- function(data){
                   household_income,
                   height_cm, weight_kg, BMI_final, drinkingstatus, 
                   mentalhealth, physicalhealth,
+                  X_STSTR, X_PSU,
                   alc_frequency, quantity_per_occasion, gramsperday, hed)
   return(data)
 }
