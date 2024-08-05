@@ -22,20 +22,20 @@ extractTPs_basic <- function(model, year) {
 extractTPs_subgroups <- function(model,combo){
   probs <- list()
   for(i in 1:nrow(combo)){
-    agecat <- combo$agecat[i]
+    age_cat <- combo$age_cat[i]
     sex <- combo$sex[i]
     race <- combo$race[i]
     education <- combo$education[i]
-    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(agecat,sex,race,education))
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(age_cat = age_cat, sex = sex, race = race, education = education))
     probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
     probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
-    probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.4,
-                                                            names_to="StateTo", values_to="prob") %>% 
+    probs[[paste(i)]] <- probs[[paste(i)]] %>% 
+      pivot_longer(cols=State.1:State.4,names_to="StateTo", values_to="prob") %>% 
       mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
                                  endsWith(StateTo,"2") ~ "State 2",
                                  endsWith(StateTo,"3") ~ "State 3",
                                  endsWith(StateTo,"4") ~ "State 4"), 
-      agecat=agecat,
+      age_cat=age_cat,
              sex=sex,
              race=race,
              education=education)

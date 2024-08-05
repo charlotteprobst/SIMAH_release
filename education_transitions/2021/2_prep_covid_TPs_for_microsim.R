@@ -8,7 +8,7 @@ transitionProbability$StateTo <- as.character(transitionProbability$StateTo)
 transitionProbability$StateFrom <- parse_number(transitionProbability$StateFrom)
 transitionProbability$StateTo <- parse_number(transitionProbability$StateTo)
 
-transitionProbability$Time <- "2019-2021"
+#transitionProbability$Time <- "2019-2021"
 
 # transitionProbability %>% group_by(agecat, sex, racefinal2, StateFrom, Time) %>% summarise(sum(Upper))
 
@@ -23,8 +23,8 @@ transitionProbability <- transitionProbability %>%
 
 transitions <- transitionProbability %>% group_by(age, sex, race, StateFrom) %>%
   mutate(cumsum=cumsum(Prob),
-         sex=recode(sex,"1"="female", "0"="male"), #check
-         cat = paste(Time, age, sex, race, "STATEFROM", StateFrom, sep="_"))
+         sex=recode(sex,"1"="f", "0"="m"), #check
+         cat = paste(age, sex, race, "STATEFROM", StateFrom, sep="_"))
 
 transitions <- data.frame(transitions)
 transitions <- transitions %>% dplyr::select(cat, StateTo, Prob) %>% 

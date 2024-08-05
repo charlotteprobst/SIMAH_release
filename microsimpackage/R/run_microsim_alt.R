@@ -10,6 +10,7 @@
 run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          death_counts,
                          updatingeducation, education_transitions,
+                         COVID_specific_tps,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, drinkingdistributions,
@@ -17,7 +18,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="mortality"){
+                         minyear=2000, maxyear=2022, output="mortality"){
 set.seed(seed)
 # Summary <- list()
 DeathSummary <- list()
@@ -220,8 +221,36 @@ if(updatingeducation==1){
   # print("updating education")
   totransition <- basepop %>% filter(microsim.init.age<=34)
   tostay <- basepop %>% filter(microsim.init.age>34)
-  totransition <- setup_education(totransition,y)
-  totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
+  if (y <= 2019) {
+    totransition <- setup_education(totransition, y)
+  } else {
+    totransition <- setup_education_covid(totransition, y)
+  }
+  
+# Check if COVID-specific TPs should be used
+  if (COVID_specific_tps == 1) {
+    # Conditional transition based on the year
+    if (y <= 2019) {
+      print("applying pre-covid tps")
+      # Apply transitions using pre-COVID TPs
+      totransition <- totransition %>%
+        group_by(cat) %>%
+        do(transition_ed(., education_transitions))
+    } else {
+      print("applying covid tps")
+      # Apply transitions using COVID-specific TPs
+      totransition <- totransition %>%
+        group_by(cat) %>%
+        do(transition_ed(., education_transitions_covid))
+    }
+  } else {
+    print("applying pre-covid tps")
+    # Apply transitions using pre-COVID TPs throughout
+    totransition <- totransition %>%
+      group_by(cat) %>%
+      do(transition_ed(., education_transitions))
+  }
+  
   totransition$microsimnewED <- totransition$newED
   totransition$microsim.init.education <- ifelse(totransition$microsimnewED=="LEHS","LEHS",
                                                  ifelse(totransition$microsimnewED=="SomeC1","SomeC",
