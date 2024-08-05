@@ -2,8 +2,8 @@
 
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory
-DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/testing")
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/testing")
 
 dir.create(OutputDirectory)
 
@@ -39,14 +39,14 @@ mortality <- 1
 # "AUD"   "UIJ"   "MVACC" "IJ"
 
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
-diseases <- NULL
+diseases <- c("LVDC")
 
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
 output_type <- "mortality"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
-liverinteraction <- 0
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios

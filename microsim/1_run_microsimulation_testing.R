@@ -83,28 +83,3 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            age_inflated,
                            update_base_rate,
                            minyear=2000, maxyear=2003, output="mortality")
-
-# postprocessing - not currently working!
-# alcohol_type <- "categorical"
-# 
-# if(output_type=="demographics"){
-#   summary <- summarise_education_output(Output, SelectedState, DataDirectory)
-# }else if(output_type=="alcohol"){
-#   if(alcohol_type=="categorical"){
-#     summary <- summarise_alcohol_output(Output, SelectedState, DataDirectory)
-#   }else if(alcohol_type=="continuous"){
-#     summary <- summarise_alcohol_output_continuous(Output[[2]], SelectedState, DataDirectory)
-#   }
-# }else if(output_type=="mortality"){
-#   summary1 <- summarise_mortality_output(Output, SelectedState, DataDirectory, diseases, 2010)
-#   summary2 <- summarise_mortality_output(Output2, SelectedState, DataDirectory, diseases, 2000)
-# }
-# # data frame containing mortality outputs
-# summary_mortality <- summary[[1]]
-# # plots for mortality 
-# summary[[2]]
-# 
-# # save a copy of the plot
-# ggsave("SIMAH_workplace/microsim/2_output_data/mortality_summary_multiple_calibration_best.png", plot, dpi=300,
-#        width=33, height=19, units="cm")
-
