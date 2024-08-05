@@ -85,17 +85,6 @@ if(output=="alcoholcont"){
     summarise(meansimulation = mean(microsim.init.alc.gpd))
 }
 
-  # implausibility <- max(CatSummary[[paste(y)]]$implausibility,na.rm=T)
-  # print(implausibility)
-
-  # if(y>2003 & implausibility>threshold){
-  #   break
-  # }
-  #
-  # if(y==2004){
-  #   print('survived past 2003')
-  # }
-
 # save a population summary
 PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
 
@@ -198,6 +187,8 @@ DiseaseSummary[[paste(y)]] <- basepop %>%
   group_by(agecat, microsim.init.sex, microsim.init.race, microsim.init.education) %>% tally() %>%
   mutate(year=y)
 
+DiseaseSummary[[paste(y)]]$max_risk <- unique(basepop$max_risk)
+
 # now join together to make a diseases dataframe for that year
 for(disease in diseases){
   DiseaseSummary[[paste(y)]] <-
@@ -211,7 +202,7 @@ for (disease in diseases) {
   basepop <- remove_individuals(basepop, disease, age_inflated, inflation_factors)
 }
 
-basepop <- basepop %>% dplyr::select(-c(cat,prob))
+basepop <- basepop %>% dplyr::select(-c(cat,prob,max_risk))
 
 }
 
@@ -237,8 +228,13 @@ if(updatingeducation==1){
 if(updatingalcohol==1){
   basepop <- transition_alcohol_ordinal_regression(basepop,alcohol_transitions, y)
 #   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
+  if(is.null(catcontmodel)==FALSE){
   basepop <- allocate_gramsperday_sampled(basepop,y,catcontmodel)
-  #   basepop <- update_former_drinker(basepop)
+  # allocate former drinker status - for now this is not tracked over time
+  basepop <- update_former_drinker(basepop)
+  }else if(is.null(catcontmodel)==TRUE){
+  basepop$totransitioncont <- NULL
+  }
 }
 
 #delete anyone over 79

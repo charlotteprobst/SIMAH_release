@@ -25,7 +25,7 @@ simulate_mortality <- function(data = basepop, diseases){
     }
 
     max_risk <- max(data[,paste(risk_expr)])
-    print(paste(max_risk, risk_expr))
+    # print(paste(max_risk, risk_expr))
 
     # if(max_risk>1){
     # # # if(any(data[, paste(risk_expr), drop = FALSE], na.rm = TRUE) > 1){
@@ -35,6 +35,7 @@ simulate_mortality <- function(data = basepop, diseases){
   }
 
   data$prob <- runif(nrow(data))
+  data$max_risk <- max_risk
 
   for (i in 1:length(diseases)) {
     disease <- diseases[i]

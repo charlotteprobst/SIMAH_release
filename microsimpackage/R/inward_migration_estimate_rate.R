@@ -25,7 +25,7 @@ inward_migration_estimate_rate <- function(basepop, migration_counts, y, brfss){
   migration$rate <- migration$toadd/migration$n
 
   summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
-  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
+  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd) %>% distinct()
 
   cats <- unique(tojoin$cat)
 

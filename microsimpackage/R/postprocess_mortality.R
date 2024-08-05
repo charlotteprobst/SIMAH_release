@@ -46,7 +46,7 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
            cause = gsub("mort_", "", cause)) %>%
     dplyr::select(-name) %>%
     pivot_wider(names_from=type, values_from=value) %>%
-    dplyr::select(year, microsim.init.sex,microsim.init.race, agecat, microsim.init.education, cause, popcount, simulated, observed, yll) %>%
+    dplyr::select(year, microsim.init.sex,microsim.init.race, agecat, microsim.init.education, cause, popcount, simulated, observed, yll, max_risk) %>%
     rename(simulated_mortality_n = simulated, observed_mortality_n = observed,
            sex = microsim.init.sex, race=microsim.init.race, education=microsim.init.education) %>%
     mutate(sex = ifelse(sex=="f","Women","Men"),

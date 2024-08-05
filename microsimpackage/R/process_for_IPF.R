@@ -12,16 +12,16 @@ process_for_IPF <- function(data, selectedstate, variables){
                          "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
            sex = recode(sex_recode,"Male"="M","Female"="F"),
            education = education_summary,
-           agecat = cut(age_var,
-                        breaks=c(0,24,34,44,54,64,79),
-                        labels=c("18.24","25.34","35.44","45.54","55.64","65.79")),
+           agecat = cut(age_var, breaks=c(0,24,29,34,39,44,49,54,59,64,69,79),
+                        labels=c("18.24","25.29","30.34","35.39","40.44",
+                                 "45.49","50.54","55.59","60.64","65.69","70.79")),
            frequency = ifelse(frequency_upshifted==0 & gramsperday_upshifted>0, 1, frequency_upshifted),
            quantity_per_occasion = (gramsperday_upshifted/14 * 30) / frequency_upshifted,
            quantity_per_occasion = ifelse(gramsperday_upshifted==0, 0, quantity_per_occasion),
            gramsperday = gramsperday_upshifted,
            formerdrinker=ifelse(drinkingstatus_detailed=="Former drinker", 1,0))
 
-  selected <- data %>% filter(State==selectedstate) %>%
+  selected <- data %>% filter(state==selectedstate) %>%
     ungroup() %>%
     dplyr::select(all_of(variables)) %>% drop_na(agecat,race,sex,education)
 

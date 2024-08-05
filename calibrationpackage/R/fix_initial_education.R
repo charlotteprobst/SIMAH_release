@@ -5,7 +5,7 @@
 #' @examples
 #' fix initial education
 fix_initial_education <- function(basepop){
-  targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets_indage.csv") %>%
+  targets <- read.csv("SIMAH_workplace/microsim/education_calibration/education_targets_indage.csv") %>%
     filter(AGE<=24) %>%
     mutate(AGECAT = cut(AGE,
                         breaks=c(0,18,19,20,21,22,23,24),

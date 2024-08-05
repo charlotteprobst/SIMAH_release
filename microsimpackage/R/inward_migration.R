@@ -11,7 +11,7 @@ inward_migration <- function(basepop, migration_counts, y, brfss, model){
     dplyr::select(agecat, microsim.init.race, microsim.init.sex, toadd) %>% drop_na()
 
   summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
-  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
+  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd) %>% distinct()
 
   cats <- unique(tojoin$cat)
 
@@ -54,7 +54,7 @@ inward_migration <- function(basepop, migration_counts, y, brfss, model){
                                  percentmissing = 0)
   }
 
-  if(model=="SIMAH"){
+  if(model=="SIMAH" & max(tojoin$toadd)>0){
     toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
       # mutate(toadd=round(toadd, digits=0)) %>%
       do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
@@ -63,23 +63,15 @@ inward_migration <- function(basepop, migration_counts, y, brfss, model){
       dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
                     microsim.init.alc.gpd, microsim.init.BMI,
                     microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
-  }else if(model=="CASCADE"){
-    toadd <- left_join(pool, tojoin, by=c("cat")) %>% filter(toadd!=0) %>% group_by(cat) %>%
-      # mutate(toadd=round(toadd, digits=0)) %>%
-      do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
-      # do(slice_sample(.,n=toadd, replace = T)) %>%
-      mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-      dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                    microsim.init.alc.gpd, microsim.init.BMI,
-                    microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT,
-                    chronicB, chronicC, yearsincedrink, Cirrhosis_risk, grams_10years)
-
+    from <- max(basepop$microsim.init.id)+1
+    to <- (nrow(toadd)) + max(basepop$microsim.init.id)
+    microsim.init.id <- from:to
+    toadd <- cbind(microsim.init.id, toadd)
+    basepopnew <- rbind(basepop, toadd)
   }
-  from <- max(basepop$microsim.init.id)+1
-  to <- (nrow(toadd)) + max(basepop$microsim.init.id)
-  microsim.init.id <- from:to
-  toadd <- cbind(microsim.init.id, toadd)
-  basepopnew <- rbind(basepop, toadd)
+  if(max(tojoin$toadd)==0){
+    basepopnew <- basepop
+  }
   # list <- list(basepop,summarymissing)
   return(basepopnew)
 }
