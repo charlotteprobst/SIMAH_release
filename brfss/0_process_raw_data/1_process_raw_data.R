@@ -12,7 +12,8 @@ library(sjlabelled)
 #wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
 # wd <- "G:/My Drive/SIMAH Sheffield/"
-wd <- setwd("/Users/carolinkilian/Desktop/")
+#wd <- setwd("/Users/carolinkilian/Desktop/")
+#wd <- "C:/Users/cmp21seb/Documents/SIMAH/"
 setwd(wd)
 
 ####read in the joined up data files 
@@ -22,7 +23,7 @@ gc()
 # read in R script with the functions
 source("/Users/carolinkilian/Desktop/SIMAH_code/brfss/0_process_raw_data/1_processing_functions.R")
 
-years <- 2000:2019 # Extend this, if 2021 data is added 
+years <- 1984:2022 
 for(i in 1:length(dataFiles)){
   dataFiles[[i]]$YEAR <- years[i]
 }
@@ -31,6 +32,9 @@ for(i in 1:length(dataFiles)){
 dataFiles <- lapply(dataFiles, remove_all_labels)
 gc()
 options(memory.limit=10000000)
+
+# dataFiles2 <- dataFiles[35:37]
+# dataFiles <- dataFiles2
 
 # recode state names
 dataFiles <- lapply(dataFiles, recode_state)
@@ -42,7 +46,7 @@ dataFiles <- lapply(dataFiles, recode_age)
 dataFiles <- lapply(dataFiles, recode_sex)
 
 # recode race / ethnicity 
-dataFiles <- lapply(dataFiles, recode_race)
+dataFiles <- lapply(dataFiles, recode_race) 
 
 gc()
 # recode educational attainment 
@@ -108,6 +112,26 @@ dataFilesSubset <- lapply(dataFiles, subset_data)
 #   print(unique(dataFilesSubset[[i]]$YEAR))
 #   print(summary(as.factor(dataFilesSubset[[i]]$surveyyear)))
 # }
+
+# For exploring SC trends 
+# data <- do.call(rbind, dataFilesSubset)
+
+# saveRDS(data, "SIMAH_workplace/brfss/processed_data/brfss_2018_2020_raw.RDS")
+# 
+# SC <- data %>% 
+#   filter(State=="South Carolina") %>% 
+#   group_by(YEAR, sex_recode) %>% 
+#   filter(drinkingstatus==1) %>% 
+#   summarise(meanfreq = mean(alc_frequency, na.rm=T),
+#             meanquant = mean(quantity_per_occasion, na.rm=T),
+#             meangpd = mean(gramsperday, na.rm=T)
+#             ) %>% 
+#   pivot_longer(meanfreq:meangpd) %>% drop_na()
+# 
+# ggplot(data=SC, aes(x=YEAR, y=value, colour=sex_recode)) + geom_line() + 
+#   facet_grid(cols=vars(name)) + theme_bw()
+# ggsave("SIMAH_workplace/brfss/processed_data/plot_SC.png", dpi=300,
+#        width=33, height=19, units="cm")
 
 # save an RDS of the processed data
 saveRDS(dataFilesSubset, "/Users/carolinkilian/Desktop/SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")

@@ -15,13 +15,13 @@ fun <- function(x){
 }
 
 if(SelectedState=="USA"){
-deathcounts <- read.csv(paste0(DataDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %>%
+deathcounts <- read.csv(paste0(DataDirectory,"allethn_sumCOD_0022_SIMAH.csv")) %>%
   mutate(Sex=recode(sex, "1"="m","2"="f"),
                       agecat = recode(age_gp, "18"="18-24","25"="25-29",
                                          "30"="30-34","35"="35-39","40"="40-44",
                                          "45"="45-49","50"="50-54","55"="55-59",
                                          "60"="60-64","65"="65-69","70"="70-74","75"="75-79","80"="80+"),
-                      Race = recode(race, "White"="WHI","Black"="BLA","Hispanic"="SPA","Other"="OTH"),
+                      Race = recode(race, "1-WNH"="WHI","2-BNH"="BLA","3-Hisp"="SPA","4-Others"="OTH"),
                       edclass = recode(edclass, "4+yrs"="College")) %>%
   mutate(cat=paste(Sex,agecat,Race,edclass, sep="")) %>%   filter(agecat!="80+") %>%
   dplyr::select(year,cat, LVDCmort, HLVDCmort, DMmort,
@@ -61,13 +61,13 @@ deathcounts <- read.csv(paste0(DataDirectory,"allethn_sumCOD_0020_SIMAH.csv")) %
                    IHDmort, ISTRmort, HYPHDmort, AUDmort, UIJmort, MVACCmort, IJmort, RESTmort), fun)
 
 }
-latest <- deathcounts %>% filter(year==2020)
-rep <- as.data.frame(sapply(latest, rep.int, times=10))
-rep$year <- rep(2021:2030, each=288)
-summary(rep$year)
-deathcounts <- rbind(deathcounts,rep)
-deathcounts <- deathcounts %>% mutate_at(vars(LVDCmort:RESTmort), as.numeric)
-rm(latest,rep)
+# latest <- deathcounts %>% filter(year==2020)
+# rep <- as.data.frame(sapply(latest, rep.int, times=10))
+# rep$year <- rep(2021:2030, each=288)
+# summary(rep$year)
+# deathcounts <- rbind(deathcounts,rep)
+# deathcounts <- deathcounts %>% mutate_at(vars(LVDCmort:RESTmort), as.numeric)
+# rm(latest,rep)
 }
   return(deathcounts)
 }

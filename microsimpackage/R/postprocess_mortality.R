@@ -5,10 +5,10 @@
 #' @export
 #' @examples
 #' base rates
-postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflation_factor){
+postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
-  death_counts <- death_counts %>% pivot_longer(LVDCmort:RESTmort) %>%
+  death_counts_new <- death_counts %>% pivot_longer(cols = contains("mort")) %>%
     separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
     mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
                            ifelse(agecat=="35-39" | agecat=="40-44","35-44",
@@ -16,48 +16,43 @@ postprocess_mortality <- function(DiseaseSummary,diseases, death_counts, inflati
                                          ifelse(agecat=="55-59" | agecat=="60-64", "55-64",
                                                 ifelse(agecat=="65-69" | agecat=="70-74", "65-74",
                                                        agecat)))))) %>%
-    group_by(year, sex, agecat, education, name) %>%
+    group_by(year, sex, agecat, race, education, name) %>%
     summarise(value=sum(value)) %>%
     mutate(name = gsub("mort", "", name)) %>%
     filter(name %in% diseases) %>%
     mutate(
-      value = value*inflation_factor, #inflate mortality rate by 100 for HLVDC
       education = ifelse(education=="Some", "SomeC",
                          ifelse(education=="Coll","College",education)),
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
-    dplyr::select(year, cat, name, value) %>%
+    dplyr::select(year, agecat, sex, race, education, name, value) %>%
+    rename(microsim.init.sex=sex, microsim.init.race=race, microsim.init.education=education) %>%
     pivot_wider(names_from=name, values_from=value)
-  Diseases <- left_join(Diseases, death_counts)
+
+    Diseases <- left_join(Diseases, death_counts_new, by=c("agecat","microsim.init.sex","microsim.init.race",
+                                                           "microsim.init.education","year"))
+
   Diseases <- Diseases %>%
-    separate(cat, into=c("sex","agecat","education"), sep=c(1,6,9)) %>%
-    mutate(education = ifelse(education=="LEH", "LEHS",
-                              ifelse(education=="Som","SomeC","College"))) %>%
-    rename(popcount = n, simulated = !!as.name(paste0('mort',quo_name(disease))), observed = !!as.name(paste0(quo_name(disease))))
-  return(Diseases)
+    rename(popcount = n)
 
 
-  # Summary <- do.call(rbind, DeathSummary) %>%
-  #   mutate(agecat = as.factor(agecat),
-  #          microsim.init.sex=as.factor(microsim.init.sex),
-  #          microsim.init.race=as.factor(microsim.init.race),
-  #          microsim.init.education = as.factor(microsim.init.education),
-  #          year = as.factor(year),
-  #          cause=as.factor(cause)) %>%
-  #   group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education,
-  #            cause, .drop=FALSE) %>% tally(name="ndeaths")
-  #
-  # PopSummary <- do.call(rbind,PopPerYear) %>%
-  #   mutate(agecat = cut(microsim.init.age,
-  #                       breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
-  #                       labels=c("18-24","25-29","30-34","35-39",
-  #                                "40-44","45-49","50-54","55-59","60-64","65-69",
-  #                                "70-74","75-79")),
-  #          microsim.init.sex=as.factor(microsim.init.sex),
-  #          microsim.init.race=as.factor(microsim.init.race),
-  #          microsim.init.education = as.factor(microsim.init.education),
-  #          year = as.factor(year)) %>%
-  #   group_by(year, agecat, microsim.init.sex, microsim.init.race, microsim.init.education, .drop=FALSE) %>%
-  #   tally(name="totalpop")
-  # Summary <- list(Summary,PopSummary)
-  # return(Summary)
+  first <- paste0("mort_",diseases[1])
+  last <- paste0(tail(names(Diseases), n=1))
+
+  long_format <- Diseases %>% pivot_longer(all_of(first):all_of(last)) %>%
+    mutate(type =
+             case_when(grepl("mort", name) ~ "simulated",
+                       grepl("yll", name) ~ "yll", .default="observed"),
+           cause = gsub("yll_", "", name),
+           cause = gsub("mort_", "", cause)) %>%
+    dplyr::select(-name) %>%
+    pivot_wider(names_from=type, values_from=value) %>%
+    dplyr::select(year, microsim.init.sex,microsim.init.race, agecat, microsim.init.education, cause, popcount, simulated, observed, yll) %>%
+    rename(simulated_mortality_n = simulated, observed_mortality_n = observed,
+           sex = microsim.init.sex, race=microsim.init.race, education=microsim.init.education) %>%
+    mutate(sex = ifelse(sex=="f","Women","Men"),
+           race = ifelse(race=="WHI","White",
+                         ifelse(race=="BLA","Black",
+                                ifelse(race=="SPA","Hispanic",
+                                       ifelse(race=="OTH","Others", NA)))))
+  return(long_format)
 }

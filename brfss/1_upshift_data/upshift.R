@@ -3,7 +3,6 @@
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(foreign)
-library(SASxport)
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -15,13 +14,15 @@ library(splitstackshape)
 library(truncnorm)
 
 # CB laptop directory
-wd <- "~/Google Drive/SIMAH Sheffield/"
+# wd <- "~/Google Drive/SIMAH Sheffield/"
 # CB desktop directory
 # wd <- "G:/My Drive/SIMAH Sheffield/"
+# SB desktop directory
+wd <- "C:/Users/cmp21seb/Documents/SIMAH/"
 setwd(wd)
 
 ####read in the joined up data files 
-data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_selected.RDS")
+data <- readRDS("SIMAH_workplace/brfss/processed_data/brfss_full_2000_2022.RDS")
 gc()
 data <- do.call(rbind, data)
 
@@ -114,21 +115,24 @@ test <- data %>% filter(drinkingstatus_updated==1) %>% filter(gramsperday_upshif
 data <- add_brfss_regions(data)
 
 final_version <- data %>%
-  dplyr::select(YEAR, State, region, race_eth, sex_recode, age_var,
+  dplyr::select(YEAR, surveymonth, surveyyear, State, region, race_eth, sex_recode, age_var,
                 education_summary, household_income,
                 employment, marital_status, BMI,
                 drinkingstatus_detailed, drinkingstatus_updated,
+                gramsperday, alc_frequency, quantity_per_occasion,
                 gramsperday_upshifted,
-                frequency_upshifted,
+                frequency_upshifted, 
                 quantity_per_occasion_upshifted) %>% 
-  rename(gramsperday = gramsperday_upshifted,
-         frequency = frequency_upshifted,
-         quantity_per_occasion = quantity_per_occasion_upshifted,
+  rename(gramsperday_raw = gramsperday,
+         frequency_raw = alc_frequency,
+         quantity_per_occasion_raw = quantity_per_occasion,
          drinkingstatus = drinkingstatus_updated) %>% 
-  mutate(gramsperday = ifelse(gramsperday>200, 200, gramsperday),
-         formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0))
+  mutate(gramsperday_upshifted = ifelse(gramsperday_upshifted>200, 200, gramsperday_upshifted),
+         formerdrinker = ifelse(drinkingstatus_detailed=="formerdrinker",1,0)) %>% filter(YEAR>=2000)
+
+final_version$brfssID <- 1:nrow(final_version)
   
-saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_1984_2020_final.RDS")
+saveRDS(final_version, "SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS")
 
 
 # select variables and save the upshifted data 
@@ -151,41 +155,41 @@ data <- data %>% dplyr::select(YEAR, State, StateOrig, region, race_eth,
          gramsperday = ifelse(gramsperday>200, 200, gramsperday))
 
 # data for Maddy APC 
-USA <- data %>% filter(State=="USA") %>% ungroup() %>% 
-  mutate(birth_year=YEAR-age_var,
-         age_cat = cut(age_var,
-                       breaks=c(0,20,25,30,40,50,60,70,100),
-                       labels=c('18-20','21-25', '26-30', '31-40',
-                                '41-50','51-60','61-70', '71+')),
-         birth_cohort = cut(birth_year,
-                            breaks=c(0,1899,1920,1925,1930,1935,1940,1945,
-                                     1950,1955,1960,1965,1970,1975,1980,
-                                     1985, 1990, 1995, 2000, 2002),
-                            labels=c("<1900","1900-1920","1921-1925","1926-1930",
-                                     "1931-1935","1936-1940","1941-1945","1946-1950",
-                                     "1951-1955","1956-1960","1961-1965","1966-1970",
-                                     "1971-1975","1976-1980","1981-1985","1986-1990",
-                                     "1991-1995","1996-2000","2001-2002")),
-         race_eth = ifelse(race_eth_detailed=="Non-Hispanic White","White",
-                           ifelse(race_eth_detailed=="Non-Hispanic Black","Black",
-                                  ifelse(race_eth_detailed=="Hispanic","Hispanic",
-                                         ifelse(race_eth_detailed=="Non-Hispanic Asian/PI","Asian",
-                                                ifelse(race_eth_detailed=="Non-Hispanic Native American","American Indian","Other ethnicity"))))),
-         marital_status = ifelse(marital_status_detailed=="married","Married",
-                                 ifelse(marital_status_detailed=="separated" | marital_status_detailed=="divorced", "Divorce/separated",
-                                        ifelse(marital_status_detailed=="widowed","Widowed",
-                                               ifelse(marital_status_detailed=="nevermarried" | marital_status_detailed=="unmarriedcouple","Never married",NA)))),
-         employment_status = ifelse(employment_detailed=="employed","Employed",
-                                    ifelse(employment_detailed=="retired","Retired",
-                                           ifelse(employment_detailed=="homemaker" | employment_detailed=="unemployed - <1 year" |
-                                                  employment_detailed=="unemployed - 1+ years" | employment_detailed=="student" |
-                                                    employment_detailed=="unable to work","Unemployed", NA)))) %>% 
-  dplyr::select(YEAR, StateOrig, region, sex_recode, race_eth, age_var, age_cat, birth_year, birth_cohort,
-                household_income,
-                employment_status, marital_status, education_summary, drinkingstatus,
-                gramsperday, frequency, hed) %>% 
-  rename(year=YEAR, sex=sex_recode, age=age_var, education=education_summary,
-         drink_frequency=frequency)
-
-# save the output to a .dta file 
-write.dta(USA, "SIMAH_workplace/brfss/processed_data/BRFSS_for_APC_covariates.dta")
+# USA <- data %>% filter(State=="USA") %>% ungroup() %>% 
+#   mutate(birth_year=YEAR-age_var,
+#          age_cat = cut(age_var,
+#                        breaks=c(0,20,25,30,40,50,60,70,100),
+#                        labels=c('18-20','21-25', '26-30', '31-40',
+#                                 '41-50','51-60','61-70', '71+')),
+#          birth_cohort = cut(birth_year,
+#                             breaks=c(0,1899,1920,1925,1930,1935,1940,1945,
+#                                      1950,1955,1960,1965,1970,1975,1980,
+#                                      1985, 1990, 1995, 2000, 2002),
+#                             labels=c("<1900","1900-1920","1921-1925","1926-1930",
+#                                      "1931-1935","1936-1940","1941-1945","1946-1950",
+#                                      "1951-1955","1956-1960","1961-1965","1966-1970",
+#                                      "1971-1975","1976-1980","1981-1985","1986-1990",
+#                                      "1991-1995","1996-2000","2001-2002")),
+#          race_eth = ifelse(race_eth_detailed=="Non-Hispanic White","White",
+#                            ifelse(race_eth_detailed=="Non-Hispanic Black","Black",
+#                                   ifelse(race_eth_detailed=="Hispanic","Hispanic",
+#                                          ifelse(race_eth_detailed=="Non-Hispanic Asian/PI","Asian",
+#                                                 ifelse(race_eth_detailed=="Non-Hispanic Native American","American Indian","Other ethnicity"))))),
+#          marital_status = ifelse(marital_status_detailed=="married","Married",
+#                                  ifelse(marital_status_detailed=="separated" | marital_status_detailed=="divorced", "Divorce/separated",
+#                                         ifelse(marital_status_detailed=="widowed","Widowed",
+#                                                ifelse(marital_status_detailed=="nevermarried" | marital_status_detailed=="unmarriedcouple","Never married",NA)))),
+#          employment_status = ifelse(employment_detailed=="employed","Employed",
+#                                     ifelse(employment_detailed=="retired","Retired",
+#                                            ifelse(employment_detailed=="homemaker" | employment_detailed=="unemployed - <1 year" |
+#                                                   employment_detailed=="unemployed - 1+ years" | employment_detailed=="student" |
+#                                                     employment_detailed=="unable to work","Unemployed", NA)))) %>% 
+#   dplyr::select(YEAR, StateOrig, region, sex_recode, race_eth, age_var, age_cat, birth_year, birth_cohort,
+#                 household_income,
+#                 employment_status, marital_status, education_summary, drinkingstatus,
+#                 gramsperday, frequency, hed) %>% 
+#   rename(year=YEAR, sex=sex_recode, age=age_var, education=education_summary,
+#          drink_frequency=frequency)
+# 
+# # save the output to a .dta file 
+# write.dta(USA, "SIMAH_workplace/brfss/processed_data/BRFSS_for_APC_covariates.dta")

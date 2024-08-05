@@ -9,14 +9,15 @@ library(metafor)
 library(rms)
 
 library(readxl)
-dataset <- read_excel("CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx", 
+dataset <- read_excel("C:/Users/laura/Documents/CAMH/DIABETES/analysis/SIMAH_workplace/6dataset.xlsx", 
                       col_types = c("numeric", "numeric", "numeric", "numeric", "numeric", "text", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", 
-                                    "numeric", "numeric", "numeric", "numeric", "numeric"))
+                                    "numeric", "numeric", "numeric", "numeric", "numeric",
+                                    "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
 
 ####US SPECIFIC - MALE MODELS
 
@@ -27,7 +28,7 @@ dim(table(male_us$results_id))
 
 ##LINEAR REGRESSION  
 
-linear_male_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male_us,
+linear_male_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose+0, data=male_us, digits =8,
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(linear_male_us)
 
@@ -35,8 +36,8 @@ summary(linear_male_us)
 ms <- seq(0,150,length=150)
 pred_lin_male_us <- predict(linear_male_us, cbind(ms))
 regplot(linear_male_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_lin_male_us, xvals = ms, main="Male - Linear Regression")
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE, 
+        ylim = c(0, 2), pred = pred_lin_male_us, xvals = ms)
 
 weights(linear_male)
 #pch=NA_integer_,
@@ -109,28 +110,30 @@ waldtest(b = coef(linear_female_us), Sigma = vcov(linear_female_us), Terms = 1:n
 
 ##QUADRATIC REGRESSION
 
-quad_female_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female_us, 
+quad_female_us <- rma.mv(yi=lnor, V=se^2, mods = ~ dose + I(dose^2)+0, data=female_us, digits =8, 
                       random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(quad_female_us)
 
 pred_quad_female_us <- predict(quad_female_us, newmods=cbind(fs,fs^2))
 regplot(quad_female_us, mod="dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_quad_female_us, xvals = fs, main="Female - Quadratic Regression")
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE, 
+        ylim = c(0, 2), pred = pred_quad_female_us, xvals = fs)
 
 ##RESTRICTED CUBIC SPLINE
 
-knotsfus <- quantile(female_us$dose, c(.05, .35, .65, .95))
+knotsfus <- quantile(female_us$dose, c(.10, .50, .90))
+#.10, .50, .90
+#.05, .35, .65, .95
 
-rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, 
+rcs_female_us <- rma.mv(yi= lnor ~ rcs(dose, knotsfus)+0, V=se^2, data=female_us, digits = 8, 
                      random = ~ 1 | cohort_id/line_id, method = "REML")
 summary(rcs_female_us)
 
 pred_rcs_female_us <- predict(rcs_female_us, newmods=rcspline.eval(fs, knotsfus, inclx=TRUE))
 regplot(rcs_female_us, mod="rcs(dose, knotsfus)dose", xlab="Alcohol intake, grams/day", ylab="Relative Risk",
-        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), 
-        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs, main="RCS Regression")
-
+        transf=exp, digits=2L, las=1, bty="l", xlim = c(0,100), shade =FALSE,
+        ylim = c(0, 2), pred = pred_rcs_female_us, xvals = fs)
+abline(h=1)
 #use var.comp function
 i2 <- var.comp(rcs_female)
 summary(i2)
@@ -141,8 +144,70 @@ i2$plot
 #ERASE ESTIMATES FROM GRAPH: pch=NA_integer_, 
 
 #prediction rcs model
-predict(rcs_female_us, newmods= rcspline.eval(100, knotsfus, inclx=TRUE), transf=exp)
+predict(rcs_female_us, newmods= rcspline.eval(30, knotsfus, inclx=TRUE), transf=exp)
 
 fitstats(linear_female_us, quad_female_us, rcs_female_us)
 
 anova(quad_female_us, rcs_female_us, refit=TRUE)
+
+
+###FORMULAS
+
+##MEN
+#linear in the log
+
+(exp(0-0.002661*x))
+var(beta1) = 0.001506^2
+
+##WOMEN
+#quadratic
+
+(exp(0-0.023792*x+0.000341*x^2))
+var(beta1) = 0.004744^2
+var(beta2) = 0.000099^2
+
+#restrictive cubic spline
+
+### VARIABLE BASED FUNCTIONS
+knotsfus
+sprintf("%.10f", knotsfus)
+
+knots_T		<- c(2.20, 10.44, 24.60, 54.25)
+kd			<- (knots_T[4] - knots_T[1])^(2/3)
+
+DIST_1		<- function(alc_1){alc_1}
+DIST_2		<- function(alc_1){ pmax((alc_1 - knots_T[1])/kd, 0)^3 + ((knots_T[3] - knots_T[1]) * pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[1]) * 
+                                                                    (pmax((alc_1 - knots_T[3])/kd, 0)^3))/ (knots_T[4] - knots_T[3]) }
+DIST_3		<- function(alc_1){ pmax((alc_1 - knots_T[2])/kd, 0)^3 + ((knots_T[3] - knots_T[2]) * pmax((alc_1 - knots_T[4])/kd, 0)^3 - (knots_T[4] - knots_T[2]) * 
+                                                                    (pmax((alc_1 - knots_T[3])/kd, 0)^3))/(knots_T[4] - knots_T[3]) }
+
+### VALUE BASED FUNCTIONS
+#DIST_2
+( pmax((x - 2.20)/13.94057, 0)^3 + ((24.60 - 2.20) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 2.20) * (pmax((x - 24.60)/13.94057, 0)^3))  / (54.25 - 24.60)  )
+#DIST_3
+( pmax((x - 10.44)/13.94057, 0)^3 + ((24.60 - 10.44) * pmax((x - 54.25)/13.94057, 0)^3 - (54.25 - 10.44) * (pmax((x - 24.60)/13.94057, 0)^3)) / (54.25 - 24.60) )
+
+30*-0.02561281 + DIST_2(30)*0.04322303
+exp(-0.3944864)
+
+#Using 3 knots
+
+### VARIABLE BASED FUNCTIONS
+knotsfus
+sprintf("%.10f", knotsfus)
+
+knots_T		<- c(2.79, 14, 43.74)
+kd			<- (knots_T[3] - knots_T[1])^(2/3)
+
+DIST_1		<- function(alc_1){alc_1}
+DIST_2		<- function(alc_1){ pmax((alc_1 - knots_T[1])/kd, 0)^3 + ((knots_T[2] - knots_T[1]) * pmax((alc_1 - knots_T[3])/kd, 0)^3 - (knots_T[3] - knots_T[1]) * 
+                                                                    (pmax((alc_1 - knots_T[2])/kd, 0)^3))/ (knots_T[3] - knots_T[2]) }
+### VALUE BASED FUNCTIONS
+#DIST_2
+( pmax((x - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((x - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((x - 14)/11.88053, 0)^3))  / (43.74 - 14)  )
+
+x <- 20
+
+#function = beta1*x + beta2*DIST_2[x]
+
+30*-0.02561281 + 0.04322303*( pmax((30 - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((30 - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((30 - 14)/11.88053, 0)^3))  / (43.74 - 14)  )

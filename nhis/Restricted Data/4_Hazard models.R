@@ -15,11 +15,11 @@ library(srvyr)
 library(foreach)    # loops 
 library(tidycmprsk)
 
+
 memory.limit(size=1e+13)
 options(scipen=999)
 
 
-# Yachen
 data_path    <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Data/"
 output_tables <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models//"
 output_models <- "C:/Users/yzhu/Desktop/SIMAH project/SIMAH/SIMAH_workplace/nhis/Restricted access data/Output/Hazard Models/Models/"
@@ -115,8 +115,8 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
     cat("    Completed", "\n")
     
     
-    
-    # Fine-Gray interaction model 
+    ## tidycmprsk package
+    # Fine-Gray interaction model
     cat("    Crr Interaction model in progress", "\n")  # progress indicator
     if(data_name == "all"){
       crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
@@ -124,15 +124,15 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
       crr_int <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES * lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
     }
     cat("    Completed", "\n")  # progress indicator
-    
-    # Fine-Gray joint effect model 
-    cat("    Crr Joint effects model in progress", "\n")  
+
+    # Fine-Gray joint effect model
+    cat("    Crr Joint effects model in progress", "\n")
     if(data_name == "all"){
       crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + female + married2 + race4 + srvy_yr22, data = data)
     } else if(data_name %in% c("female", "male")){
       crr_joint <- crr(Surv(yrs_followup, cause_of_death_crr) ~ SES_lifestyle + bl_age + married2 + race4 + srvy_yr22, data = data)
     }
-    cat("    Completed", "\n")    
+    cat("    Completed", "\n")
     
     
     
@@ -411,8 +411,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
                   select(variable, RERI_crr, CI_RERI_crr, p.value_RERI_crr), 
                 by = "variable") %>%
       mutate(variable = str_remove(variable, fixed("SES")), 
-             variable = str_remove(variable, fixed("lifestyle"))) %>%
-      add_row(variable = death_name, .before=1) 
+             variable = str_remove(variable, fixed("lifestyle"))) 
     cat("    Completed", "\n")
     
     
@@ -432,7 +431,7 @@ table4to9 <- function(data, design, deaths_list, SES, lifestyle, table_label){
 
 
 # Test the function:
-death_list <- "heart_death" # specify cause of death for testing
+death_list <- "heart_death"   # specify cause of death for testing
 
 nhis_female <- sample_frac(nhis_female, 0.10) # select x% of sample for testing
 nhis_female_svy <- nhis_female %>%
@@ -452,56 +451,6 @@ death_list <- c("All9_death", "Alcohol_death", "Despair_death", "MVA_death", "OU
 table4to9(nhis25_all, nhis25_all_svy, death_list, edu3, alc5, "table4a") # All participants
 table4to9(nhis25_female, nhis25_female_svy, death_list, edu3, alc5, "table4a") # Females
 table4to9(nhis25_male, nhis25_male_svy,   death_list, edu3, alc5, "table4a") # Males
-
-
-
-##### compute RERI and merge with the output table based on previously saved model ----------------------------------------------------
-
-
-## categories excluding the reference
-educat <- c("edu3Highschool", "edu3Some college")
-alccat <- c("alc5Former drinker", "alc5Lifetime abstainer", "alc5Category II", "alc5Category III")
-
-edu3 <- rep(educat, 4)
-alc5 <- rep(alccat, each = 2)
-RERI <- CI.lo <- CI.hi <- p.value <- rep(NA, 8)
-
-add_int <- data.frame(edu3, alc5, RERI, CI.lo, CI.hi, p.value)
-
-
-foreach(i = 1:8)%do%{
-  
-  rs <- additive_interactions( cox_int, add_int[i, "edu3"], add_int[i, "alc5"] )
-  
-  add_int[i, "RERI"] <- rs[1,2]
-  add_int[i, "CI.lo"] <- rs[1,3]
-  add_int[i, "CI.hi"] <- rs[1,4]
-  add_int[i, "p.value"] <- rs[1,5]
-  
-}
-
-# load the cox_int_results for saved model first, and then merge with the add_int table for RERI and CI
-# cox_int_results <- readRDS(cox_int, paste0(output_models, table_label, "_", death_name,"_", SES_name, "_", lifestyle_name, "_", data_name, "_cox_int.rds"))
-
-cox_int_results_RERI <- cox_int_results %>%
-  left_join(  cox_int_results %>% 
-                filter(str_detect(variable, ":")) %>% select(variable) %>%
-                separate(variable, into = c("edu3", "alc5"), sep = ":", remove = FALSE) %>% 
-                left_join(add_int %>%
-                            mutate(RERI = round(RERI, 2),
-                                   CI.lo = round(CI.lo, 2),
-                                   CI.hi = round(CI.hi, 2),
-                                   CI_RERI = paste0("(", CI.lo,", ", CI.hi, ")"),
-                                   p.value_RERI = round(p.value, 3),
-                                   p.value_RERI = ifelse(p.value_RERI <.001, "<.001", p.value_RERI)
-                            ) %>%
-                            select(-CI.lo, -CI.hi, -p.value) %>%
-                            mutate(edu3 = str_remove(edu3, fixed("edu3")), 
-                                   alc5 = str_remove(alc5, fixed("alc5"))), 
-                          by = c("edu3", "alc5")),
-              by = "variable" )
-
-
 
 
 

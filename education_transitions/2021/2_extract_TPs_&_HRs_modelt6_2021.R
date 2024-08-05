@@ -1,0 +1,193 @@
+## Education transitions analysis to 2021
+# Model 6.  Model with a covariate for time period (2013-2018; 2019-2021)
+
+# Setup
+setwd("C:/Users/cmp21seb/Documents/SIMAH/")
+library(tidyverse)  # data management
+library(skimr)      # descriptive statistics
+library(janitor)    # data management
+library(msm)        # model transition probabilities
+library(tableone)   # create descriptives table
+library(knitr)      # create descriptives table
+options(scipen = 999)
+
+# Source functions
+source("SIMAH_code/education_transitions/2021/functions/0_adjust_CIs_2021.R")
+source("SIMAH_code/education_transitions/2021/functions/0_extractTPs_2021.R")
+source("SIMAH_code/education_transitions/2021/functions/0_predict_HRs_2021.R")
+
+# Load model data
+data <- readRDS("SIMAH_workplace/education_transitions/2021/data_to_model/prepped_data_for_markov_2021.rds")
+
+# Prep data
+data$racefinal2 <- data$final_race_using_method_hierarchy
+data$racefinal2 <- as.character(data$final_race_using_method_hierarchy) 
+data$racefinal2 <- ifelse(data$racefinal2=="Asian/PI","other",data$racefinal2) 
+data$racefinal2 <- ifelse(data$racefinal2=="Native","other",data$racefinal2) 
+data$racefinal2 <- as.factor(data$racefinal2) 
+
+# Generate subsets of data
+datat6 <- data %>% filter(year>=2013) 
+datat6$timevary <- cut(datat6$year,
+                         breaks=c(0,2018, 2021),
+                         labels=c("2012-2018", "2019-2021"))
+men <- datat6 %>% filter(sex==0)
+women <- datat6 %>% filter(sex==1)
+white <- datat6 %>% filter(racefinal2=="white")
+black <- datat6 %>% filter(racefinal2=="black")
+hispanic <- datat6 %>% filter(racefinal2=="hispanic")
+other <- datat6 %>% filter(racefinal2=="other")
+white_men <- datat6 %>% filter(racefinal2=="white", sex==0)
+black_men <- datat6 %>% filter(racefinal2=="black", sex==0)
+hispanic_men <- datat6 %>% filter(racefinal2=="hispanic", sex==0)
+other_men <- datat6 %>% filter(racefinal2=="other", sex==0)
+white_women <- datat6 %>% filter(racefinal2=="white", sex==1)
+black_women <- datat6 %>% filter(racefinal2=="black", sex==1)
+hispanic_women <- datat6 %>% filter(racefinal2=="hispanic", sex==1)
+other_women <- datat6 %>% filter(racefinal2=="other", sex==1)
+
+# Load MSM Models of interest
+# nb. Stratified models for 'Other' men/women models did not converge so not included here
+modelt6 <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/covid_modelt6.RDS")
+modelt6_men <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_men.RDS")
+modelt6_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_women.RDS")
+modelt6_white <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_white.RDS")
+modelt6_black <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_black.RDS")
+modelt6_hispanic <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_hispanic.RDS")
+modelt6_other <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_other.RDS")
+modelt6_white_men <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_white_men.RDS")
+modelt6_black_men <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_black_men.RDS")
+modelt6_hispanic_men <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_hispanic_men.RDS")
+modelt6_white_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_white_women.RDS")
+modelt6_black_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_black_women.RDS")
+modelt6_hispanic_women <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_hispanic_women.RDS")
+modelt6_interaction_race <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_race.RDS")
+modelt6_interaction_sex <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_interaction_sex.RDS")
+modelt6_age_cont <- readRDS("SIMAH_workplace/education_transitions/2021/final_models/modelt6_age_cont.RDS")
+
+# Extract TPs for all model 6 models (i.e., narrow time period covariate)
+modelt6_TPs <- extractTPs_basic(modelt6, 1)
+modelt6_TPs_men <- extractTPs_basic(modelt6_men, 1) # stratified - men 
+modelt6_TPs_women <- extractTPs_basic(modelt6_women, 1) # stratified - women  
+modelt6_TPs_white <- extractTPs_basic(modelt6_white, 1) # stratified - white 
+modelt6_TPs_black <- extractTPs_basic(modelt6_black, 1) # stratified - black 
+modelt6_TPs_hispanic <- extractTPs_basic(modelt6_hispanic, 1) # stratified - hispanic 
+modelt6_TPs_other <- extractTPs_basic(modelt6_other, 1) # stratified - other 
+modelt6_TPs_black_men <- extractTPs_basic(modelt6_black_men, 1) # stratified - Black men 
+modelt6_TPs_white_men <- extractTPs_basic(modelt6_white_men, 1) # stratified - White men 
+modelt6_TPs_hispanic_men <- extractTPs_basic(modelt6_hispanic_men, 1) # stratified - Hispanic men 
+modelt6_TPs_black_women <- extractTPs_basic(modelt6_black_women, 1) # stratified - Black women 
+modelt6_TPs_white_women <- extractTPs_basic(modelt6_white_women, 1) # stratified - White women 
+modelt6_TPs_hispanic_women <- extractTPs_basic(modelt6_hispanic_women, 1) # stratified - Hispanic women 
+modelt6_TPs_interaction_race <- extractTPs_basic(modelt6_interaction_race, 1) # race interaction
+modelt6_TPs_interaction_sex <- extractTPs_basic(modelt6_interaction_sex, 1) # sex interaction
+modelt6_TPs_age_cont <- extractTPs_basic(modelt6_age_cont, 1) # age continuous
+
+# Save results
+write_csv(modelt6_TPs, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6.csv")
+write_csv(modelt6_TPs_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_men.csv")
+write_csv(modelt6_TPs_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_women.csv")
+write_csv(modelt6_TPs_white, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white.csv")
+write_csv(modelt6_TPs_black, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black.csv")
+write_csv(modelt6_TPs_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic.csv")
+write_csv(modelt6_TPs_other, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_other.csv")
+write_csv(modelt6_TPs_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_men.csv")
+write_csv(modelt6_TPs_white_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white_men.csv")
+write_csv(modelt6_TPs_hispanic_men, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic_men.csv")
+write_csv(modelt6_TPs_black_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_women.csv")
+write_csv(modelt6_TPs_white_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white_women.csv")
+write_csv(modelt6_TPs_hispanic_women, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic_women.csv")
+write_csv(modelt6_TPs_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_race.csv")
+write_csv(modelt6_TPs_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_sex.csv")
+write_csv(modelt6_TPs_age_cont,"SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_age_cont.csv")
+
+# Extract all possible combos of individuals to transition
+combo_2_all <- expand.grid(timevary = unique(datat6$timevary), agecat = unique(datat6$agecat), sex = unique(datat6$sex), racefinal2=unique(datat6$racefinal2))
+combo_2_age_time_race <- expand.grid(timevary = unique(men$timevary), agecat = unique(men$agecat), racefinal2=unique(men$racefinal2))
+combo_2_age_time_sex <- expand.grid(timevary = unique(white$timevary), agecat = unique(white$agecat), sex=unique(white$sex))
+combo_2_age_time <- expand.grid(timevary = unique(black_men$timevary), agecat = unique(black_men$agecat))
+
+modelt6_TPs_detail <- extractTP_incl_time(modelt6, combo_2_all) 
+modelt6_interaction_race_TPs_detail <- extractTP_incl_time(modelt6_interaction_race, combo_2_all)
+modelt6_TPs_men_detail <- extractTP_interaction_sex(modelt6_men,combo_2_age_time_race) 
+modelt6_TPs_women_detail <- extractTP_interaction_sex(modelt6_women,combo_2_age_time_race) 
+modelt6_TPs_white_detail <- extractTP_interaction_race(modelt6_white,combo_2_age_time_sex) 
+modelt6_TPs_black_detail <- extractTP_interaction_race(modelt6_black,combo_2_age_time_sex)
+modelt6_TPs_hispanic_detail <- extractTP_interaction_race(modelt6_hispanic,combo_2_age_time_sex)
+modelt6_TPs_other_detail <- extractTP_interaction_race(modelt6_other,combo_2_age_time_sex)
+modelt6_TPs_black_men_detail <- extractTP_interaction_race_sex(modelt6_black_men,combo_2_age_time)
+modelt6_TPs_white_men_detail <- extractTP_interaction_race_sex(modelt6_white_men,combo_2_age_time)
+modelt6_TPs_hispanic_men_detail <- extractTP_interaction_race_sex(modelt6_hispanic_men,combo_2_age_time)
+modelt6_TPs_black_women_detail <- extractTP_interaction_race_sex(modelt6_black_women,combo_2_age_time)
+modelt6_TPs_white_women_detail <- extractTP_interaction_race_sex(modelt6_white_women,combo_2_age_time)
+modelt6_TPs_hispanic_women_detail <- extractTP_interaction_race_sex(modelt6_hispanic_women,combo_2_age_time)
+
+# Save results
+write_csv(modelt6_TPs_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6.csv")
+write_csv(modelt6_interaction_race_TPs_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_interaction_race.csv")
+write_csv(modelt6_TPs_men_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_men_detail.csv")
+write_csv(modelt6_TPs_women_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_women_detail.csv")
+write_csv(modelt6_TPs_white_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white_detail.csv")
+write_csv(modelt6_TPs_black_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_detail.csv")
+write_csv(modelt6_TPs_hispanic_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic_detail.csv")
+write_csv(modelt6_TPs_other_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_other_detail.csv")
+write_csv(modelt6_TPs_black_men_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_men_detail.csv")
+write_csv(modelt6_TPs_white_men_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white_men_detail.csv")
+write_csv(modelt6_TPs_hispanic_men_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic_men_detail.csv")
+write_csv(modelt6_TPs_black_women_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_black_women_detail.csv")
+write_csv(modelt6_TPs_white_women_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_white_women_detail.csv")
+write_csv(modelt6_TPs_hispanic_women_detail, "SIMAH_workplace/education_transitions/2021/annual_education_TPs_model_6_hispanic_women_detail.csv")
+
+########################################
+# Hazard ratios
+modelt6_HRs <- predict_HRs(modelt6)
+modelt6_HRs_men <- predict_HRs(modelt6_men)
+modelt6_HRs_women <- predict_HRs(modelt6_women)
+modelt6_HRs_white <- predict_HRs(modelt6_white)
+modelt6_HRs_black <- predict_HRs(modelt6_black)
+modelt6_HRs_hispanic <- predict_HRs(modelt6_hispanic)
+modelt6_HRs_other <- predict_HRs(modelt6_other)
+modelt6_HRs_white_men <- predict_HRs(modelt6_white_men)
+modelt6_HRs_black_men <- predict_HRs(modelt6_black_men)
+modelt6_HRs_hispanic_men <- predict_HRs(modelt6_hispanic_men)
+modelt6_HRs_white_women <- predict_HRs(modelt6_white_women)
+modelt6_HRs_black_women <- predict_HRs(modelt6_black_women)
+modelt6_HRs_hispanic_women <- predict_HRs(modelt6_hispanic_women)
+modelt6_HRs_interaction_race <- predict_HRs(modelt6_interaction_race)
+modelt6_HRs_interaction_sex <- predict_HRs(modelt6_interaction_sex)
+modelt6_HRs_age_cont <- predict_HRs(modelt6_age_cont)
+
+# Adjust the CIs to reflect the true (rather than replicated) population size
+modelt6_HRs_adjusted <- adjust_CIs(modelt6, "2012-2021", datat6)
+modelt6_HRs_adjusted_men <- adjust_CIs(modelt6_men, "2012-2021", men)
+modelt6_HRs_adjusted_women <- adjust_CIs(modelt6_women, "2012-2021", women)
+modelt6_HRs_adjusted_white <- adjust_CIs(modelt6_white, "2012-2021", white)
+modelt6_HRs_adjusted_black <- adjust_CIs(modelt6_black, "2012-2021", black)
+modelt6_HRs_adjusted_hispanic <- adjust_CIs(modelt6_hispanic, "2012-2021", hispanic)
+modelt6_HRs_adjusted_other <- adjust_CIs(modelt6_other, "2012-2021", other)
+modelt6_HRs_adjusted_white_men <- adjust_CIs(modelt6_white_men, "2012-2021", white_men)
+modelt6_HRs_adjusted_black_men <- adjust_CIs(modelt6_black_men, "2012-2021", black_men)
+modelt6_HRs_adjusted_hispanic_men <- adjust_CIs(modelt6_hispanic_men, "2012-2021", hispanic_men)
+modelt6_HRs_adjusted_white_women <- adjust_CIs(modelt6_white_women, "2012-2021", white_women)
+modelt6_HRs_adjusted_black_women <- adjust_CIs(modelt6_black_women, "2012-2021", black_women)
+modelt6_HRs_adjusted_hispanic_women <- adjust_CIs(modelt6_hispanic_women, "2012-2021", hispanic_women)
+modelt6_HRs_adjusted_interaction_race <- adjust_CIs(modelt6_interaction_race, "2012-2021", datat6)
+modelt6_HRs_adjusted_interaction_sex <- adjust_CIs(modelt6_interaction_sex, "2012-2021", datat6)
+modelt6_HRs_adjusted_age_cont <- adjust_CIs(modelt6_age_cont, "2012-2021", datat6)
+
+write_csv(modelt6_HRs_adjusted, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6.csv")
+write_csv(modelt6_HRs_adjusted_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_men.csv")
+write_csv(modelt6_HRs_adjusted_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_women.csv")
+write_csv(modelt6_HRs_adjusted_white, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_white.csv")
+write_csv(modelt6_HRs_adjusted_black, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_black.csv")
+write_csv(modelt6_HRs_adjusted_hispanic, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_hispanic.csv")
+write_csv(modelt6_HRs_adjusted_other, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_other.csv")
+write_csv(modelt6_HRs_adjusted_white_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_white_men.csv")
+write_csv(modelt6_HRs_adjusted_black_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_black_men.csv")
+write_csv(modelt6_HRs_adjusted_hispanic_men, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_hispanic_men.csv")
+write_csv(modelt6_HRs_adjusted_white_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_white_women.csv")
+write_csv(modelt6_HRs_adjusted_black_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_black_women.csv")
+write_csv(modelt6_HRs_adjusted_hispanic_women, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_hispanic_women.csv")
+write_csv(modelt6_HRs_adjusted_interaction_race, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_interaction_race.csv")
+write_csv(modelt6_HRs_adjusted_interaction_sex, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_interaction_sex.csv")
+write_csv(modelt6_HRs_adjusted_age_cont, "SIMAH_workplace/education_transitions/2021/annual_education_adjustedHRs_model6_age_cont.csv")
