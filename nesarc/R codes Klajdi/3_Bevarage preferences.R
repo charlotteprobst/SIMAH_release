@@ -14,7 +14,7 @@ library(survey)
 #data    <- "C:/Users/klajd/Documents/2021 CAMH/SIMAH/SIMAH_workplace/nesarc/Processed data/"  # Location of data
 #output  <- "C:/Users/klajd/OneDrive/SIMAH/SIMAH_workspace/nesarc/Beverage preferences/"  # Location of output
 data    <- "/Users/carolinkilian/Desktop/SIMAH_workplace/nesarc/2_Processed data/"  # Location of data
-output  <- "/Users/carolinkilian/Desktop/SIMAH_workplace/nesarc/"  # Location of output
+out  <- "/Users/carolinkilian/Desktop/SIMAH_workplace/nesarc/"  # Location of output
 
 # Load data and edit data -----------------------------------------------------------------------------------------------
 
@@ -72,13 +72,29 @@ data %>%
   tabyl(bev_pref, wave) %>% 
   adorn_percentages("row") %>% adorn_pct_formatting(digits = 0) %>%
   adorn_ns()
-
+                              
 # count obs by category
+obs <- data %>%
+  group_by(sex, age3, edu3, race4, AlcUse4) %>% 
+  summarise(n = n()) %>% ungroup() %>% 
+  complete(sex, age3, edu3, race4, AlcUse4) %>% filter(AlcUse4 != "Non-drinker")
+
+# select groups with n < 10
+select <- obs %>% filter(n < 10 | is.na(n)) %>% mutate(cat = paste0(sex, age3, edu3, race4)) %>% pull(cat)
+
+# combine Cat II and III for n < 10
+data <- data %>% mutate(cat = paste0(sex, age3, edu3, race4),
+                        AlcUse4 = case_when(
+                          cat %in% select & AlcUse4 == "Category II" ~ "Cat II + III",
+                          cat %in% select & AlcUse4 == "Category III" ~ "Cat II + III",
+                          TRUE ~ AlcUse4))
+
+# calculate new n by group
 obs <- data %>% 
   group_by(sex, age3, edu3, race4, AlcUse4) %>% 
   summarise(n = n())
 
-# Weighted proportions by subgroup and alcohol cateogry --------------------------------------------------------------
+# Weighted proportions by subgroup and alcohol category --------------------------------------------------------------
 
 # for svydesign RSQLite issue, see: https://www.rdocumentation.org/packages/survey/versions/4.4-2/topics/svydesign 
 library(RSQLite)
@@ -89,7 +105,7 @@ wdata <- svydesign(ids = ~cluster, strata = ~stratum, weights = ~weight, nest = 
 summary(svyglm(beers_prop_wcoolers ~ wine_prop, design=wdata))
 summary(svyglm(beers_prop_wcoolers ~ liquor_prop, design=wdata))
 
-# get weightes mean and SEs
+# get weighted mean and SEs
 beer <- svyby(~beers_prop_wcoolers, by = ~sex+age3+edu3+race4+AlcUse4, design = wdata, svymean) %>% 
   mutate(beer_se = se) %>% dplyr::select(-se)
 wine <- svyby(~wine_prop, by = ~sex+age3+edu3+race4+AlcUse4, design = wdata, svymean) %>% 
@@ -97,10 +113,39 @@ wine <- svyby(~wine_prop, by = ~sex+age3+edu3+race4+AlcUse4, design = wdata, svy
 liquor <- svyby(~liquor_prop, by = ~sex+age3+edu3+race4+AlcUse4, design = wdata, svymean) %>% 
   mutate(liquor_se = se) %>% dplyr::select(-se)
 
-out_data <- left_join(obs, beer) %>% left_join(., wine) %>% left_join(., liquor)
+out_data <- left_join(obs, beer) %>% left_join(., wine) %>% left_join(., liquor) %>%
+  mutate(beers_prop_wcoolers = case_when(n < 10 ~ NA, TRUE ~ beers_prop_wcoolers), 
+         wine_prop = case_when(n < 10 ~ NA, TRUE ~ wine_prop), 
+         liquor_prop = case_when(n < 10 ~ NA, TRUE ~ liquor_prop)) 
 
-write.csv(out_data, paste0(output, "NESARC1+3_beverage preference.csv"))
+# duplicate Cat II and III rows and add to output data
+sub1 <- out_data %>% filter(AlcUse4 == "Cat II + III") %>% mutate(AlcUse4 = "Category II")
+sub2 <- out_data %>% filter(AlcUse4 == "Cat II + III") %>% mutate(AlcUse4 = "Category III")
 
+output <- out_data %>% filter(AlcUse4 != "Cat II + III") %>% rbind(., sub1, sub2) %>% 
+  mutate(cat = paste0(sex, edu3, race4, AlcUse4))
+
+# impute missing data by using props from age group 26-49
+imp1 <- output %>% filter(is.na(beers_prop_wcoolers) & age3 == "18-25") %>% pull(cat)
+imp1 <- output %>% filter(cat %in% imp1 & age3 == "26-49") %>% mutate(age3 = "18-25")
+
+imp2 <- output %>% filter(is.na(beers_prop_wcoolers) & age3 == "50+") %>% pull(cat)
+imp2 <- output %>% filter(cat %in% imp2 & age3 == "26-49") %>% mutate(age3 = "50+")
+ 
+output <- output %>% filter(!is.na(beers_prop_wcoolers)) %>% rbind(., imp1, imp2) 
+
+write.csv(output, paste0(out, "NESARC1+3_beverage preference.csv"))
+
+# visualize beverage preferences
+
+pdat <- output %>% dplyr::select(c("sex", "age3", "edu3", "race4", "AlcUse4", "n", "beers_prop_wcoolers", "wine_prop", "liquor_prop")) %>% 
+  pivot_longer(cols = c("beers_prop_wcoolers", "wine_prop", "liquor_prop"), 
+               names_to = "beverage", values_to = "prop")
+
+ggplot(pdat[pdat$age3 == "26-49" & pdat$n >= 10,]) + 
+  geom_col(aes(x = AlcUse4, y = prop, group = as.factor(beverage), fill = as.factor(beverage))) + 
+  facet_grid(rows = vars(sex, edu3), cols = vars(race4)) + 
+  ggtitle("26-49")
 
 # OLD CODE BY KLAJDI -------------------------------------------------------------------------------------------------
 

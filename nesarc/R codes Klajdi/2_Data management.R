@@ -239,8 +239,8 @@ nesarc1 <- nesarc1 %>%
           coolers_prop, beers_prop, wine_prop, liquor_prop, beers_prop_wcoolers) %>% 
 
   # remove those with missing data 
-  filter(!is.na(alc6)) %>%   # 44 observations removed; n=34,609
-  filter (!is.na(hed))       # 28 observations removed; n=34,581
+  filter(!is.na(alc6)) #%>%   # 275 observations removed; n=42,818
+  #filter (!is.na(hed))       
 
   
   # remove those with missing data 
@@ -463,8 +463,8 @@ nesarc3 <- nesarc3 %>%
          coolers_prop, beers_prop, beers_prop_wcoolers, wine_prop, liquor_prop) %>%
   
   # remove those with missing data 
-  filter(!is.na(alc5)) %>%   # 88 observations removed; n=36,221
-  filter (!is.na(hed))       # 83 observations removed; n=36,138
+  filter(!is.na(alc5)) #%>%   # 88 observations removed; n=36,221
+  #filter (!is.na(hed))       # 83 observations removed; n=36,138
 
 
 # label values (first listed category is the reference)
