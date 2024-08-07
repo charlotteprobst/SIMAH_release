@@ -12,7 +12,7 @@ library(fitdistrplus)
 wd <- "~/Google Drive/SIMAH Sheffield/"
 setwd(wd)
 # read data
-dat <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2020_final.RDS") %>% filter(YEAR>=2000) %>% 
+dat <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>% filter(YEAR>=2000) %>% 
   filter(State=="USA")
 
 assign_alc_cat <- function(data){

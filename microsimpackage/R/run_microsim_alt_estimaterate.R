@@ -17,7 +17,7 @@ run_microsim_alt_estimaterate <- function(seed,samplenum,basepop,brfss,
                          policy=0, percentreduction=0.1, year_policy, inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2019, output="demographics"){
+                         minyear=2000, maxyear=2022, output="demographics"){
 set.seed(seed)
 Summary <- list()
 DeathSummary <- list()
@@ -39,12 +39,12 @@ basepop <- apply_death_counts(basepop, death_counts, y, diseases)
 
 #delete anyone over 79
 ###then age everyone by 1 year and update age category
-basepop <- basepop %>% mutate(microsim.init.age = microsim.init.age+1,
-                              agecat = cut(microsim.init.age,
+basepop <- basepop %>% mutate(age = age+1,
+                              agecat = cut(age,
                                            breaks=c(0,19,24,34,44,54,64,74,100),
                                            labels=c("15-19","20-24","25-34","35-44","45-54","55-64",
                                                     "65-74","75-79")))
-basepop <- subset(basepop, microsim.init.age<=79)
+basepop <- subset(basepop, age<=79)
 
 # add and remove migrants
 if(y<2024){
@@ -77,35 +77,35 @@ if(output=="mortality"){
   }else if(output=="demographics"){
     # add seed to the output file here TODO
   for(i in 1:length(PopPerYear)){
-    PopPerYear[[i]]$agecat <- cut(PopPerYear[[i]]$microsim.init.age,
+    PopPerYear[[i]]$agecat <- cut(PopPerYear[[i]]$age,
                                                   breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
                                                   labels=c("18","19-24","25-29","30-34","35-39","40-44",
                                                            "45-49","50-54","55-59","60-64","65-69",
                                                            "70-74","75-79"))
     PopPerYear[[i]] <- as.data.table(PopPerYear[[i]])
-    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, microsim.init.sex, microsim.init.race, agecat)]
+    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, sex, race, agecat)]
   }
     Summary <- do.call(rbind,PopPerYear)
 }else if(output=="alcohol"){
   CatSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                   samplenum=as.factor(samplenum),
-                                                  microsim.init.sex=as.factor(microsim.init.sex),
-                                                  microsim.init.race=as.factor(microsim.init.race),
-                                                  microsim.init.education=as.factor(microsim.init.education),
-                                                  agecat = cut(microsim.init.age,
+                                                  sex=as.factor(sex),
+                                                  race=as.factor(race),
+                                                  education=as.factor(education),
+                                                  agecat = cut(age,
                                                                     breaks=c(0,20,25,29,39,49,64,100),
                                                                     labels=c("18-20","21-25","26-29","30-39","40-49","50-64","65+")),
                                                   agecat=as.factor(agecat),
                                                   AlcCAT=as.factor(AlcCAT)) %>%
-    group_by(year, samplenum, microsim.init.sex,microsim.init.race, microsim.init.education,
+    group_by(year, samplenum, sex,race, education,
              AlcCAT, .drop=FALSE) %>% tally()
   MeanSummary <- do.call(rbind,PopPerYear) %>% mutate(year=as.factor(as.character(year)),
                                                       samplenum=as.factor(samplenum),
-                                                      microsim.init.sex=as.factor(microsim.init.sex),
-                                                      microsim.init.race=as.factor(microsim.init.race),
-                                                      microsim.init.education=as.factor(microsim.init.education),
+                                                      sex=as.factor(sex),
+                                                      race=as.factor(race),
+                                                      education=as.factor(education),
                                                       agecat=as.factor(agecat)) %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.education, .drop=FALSE) %>%
+    group_by(year, samplenum, sex, education, .drop=FALSE) %>%
     filter(microsim.init.alc.gpd!=0) %>%
     summarise(meangpd = mean(microsim.init.alc.gpd))
   # add former drinkers and lifetime abstainers to this summary TODO

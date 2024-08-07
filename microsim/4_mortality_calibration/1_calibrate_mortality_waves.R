@@ -29,8 +29,8 @@ options(dplyr.summarise.inform = FALSE)
 
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
-WorkingDirectory <- "/home/cbuckley"
-# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+WorkingDirectory <- "/home/cbuckley/"
+WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
@@ -41,11 +41,11 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/4_mortality_calibration/")
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/mortality_calibration/version2")
+ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/4_mortality_calibration/")
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/mortality_calibration/random_number_sampling")
 
 # read in all model settings
-source(paste0(ScriptDirectory, "/0_model_settings.R"))
+source(paste0(ScriptDirectory, "0_model_settings.R"))
 
 # read in settings for calibration
 source(paste0(ScriptDirectory,"0_calibration_settings.R"))

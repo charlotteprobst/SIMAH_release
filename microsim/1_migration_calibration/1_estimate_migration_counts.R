@@ -47,19 +47,18 @@ seed <- as.numeric(sample(1:100, 1))
 # sample number - set to 1 when just running 1 simulation 
 samplenum <- 1
 
-# set lhs to the first element of the lhs list- for testing 
-lhs <- lhs[[1]]
+# set lhs to null - detailed mortality modelling not implemented here so this is fine
+lhs <- NULL
 
 migration_counts <- read.csv("SIMAH_workplace/microsim/population_data/migration_in_USA.csv") %>% 
   mutate(BirthsInN = BirthsInN*proportion,
          MigrationInN = MigrationInN*proportion,
          MigrationOutN = MigrationOutN*proportion)
 
-population_counts <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv") %>% 
+population_counts <- read.csv("SIMAH_workplace/microsim/population_data/ACS_population_constraints.csv") %>% 
   mutate(TotalPop=round(TotalPop*proportion),
          Year=Year-1)
 
-basepop$brfssID <- NULL
 # checking how the original migration counts fit the population data
 Output <- list()
 Output <- run_microsim_alt_adjustmigration(seed=1,samplenum=1,basepop,brfss,
@@ -83,15 +82,15 @@ write.csv(migration_counts_new, paste0("SIMAH_workplace/microsim/1_input_data/mi
 popsummary <- Output[[1]] %>% 
   rename(microsim=n)
 
-population_counts <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_constraints.csv") %>% 
+population_counts <- read.csv("SIMAH_workplace/microsim/population_data/ACS_population_constraints.csv") %>% 
   mutate(TotalPop=round(TotalPop*proportion)) %>% 
   rename(year=Year, ACS=TotalPop)
 popsummary <- left_join(popsummary, population_counts) %>% 
   pivot_longer(microsim:ACS)
 
-ggplot(data=subset(popsummary,microsim.init.sex=="f"), aes(x=year, y=value, colour=name, linetype=name)) + 
-  geom_line(alpha=1) + facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+ggplot(data=subset(popsummary,sex=="f"), aes(x=year, y=value, colour=name, linetype=name)) + 
+  geom_line(alpha=1) + facet_grid(cols=vars(agecat), rows=vars(race))
 
-ggplot(data=subset(popsummary,microsim.init.sex=="m"), aes(x=year, y=value, colour=name, linetype=name)) + 
-  geom_line(alpha=1) + facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+ggplot(data=subset(popsummary,sex=="m"), aes(x=year, y=value, colour=name, linetype=name)) + 
+  geom_line(alpha=1) + facet_grid(cols=vars(agecat), rows=vars(race))
 

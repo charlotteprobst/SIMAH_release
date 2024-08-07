@@ -60,20 +60,20 @@ births <- data %>%
   # filter(MIGRATE1!=4) %>% 
   filter(SAMPLE!=200004) %>% 
   mutate(SEX=recode(SEX,"1"="m","2"="f"),
-         RACE = ifelse(RACE==1, "WHI",
-                       ifelse(RACE==2,"BLA",
-                              "OTH")),
+         RACE = ifelse(RACE==1, "White",
+                       ifelse(RACE==2,"Black",
+                              "Others")),
          RACE = ifelse(HISPAN==0, RACE,
-                       "SPA")) %>% 
+                       "Hispanic")) %>% 
   group_by(YEAR,AGE,SEX,RACE) %>% 
   summarise(
     MigrationInN=sum(PERWT)) %>% 
-  rename(Year=YEAR, agecat=AGE, microsim.init.sex=SEX,microsim.init.race=RACE) %>% 
+  rename(Year=YEAR, agecat=AGE, sex=SEX,race=RACE) %>% 
   mutate(agecat=as.character(agecat))
 
 ggplot(data=births, aes(x=Year, y=MigrationInN)) + 
   geom_line() + 
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.race))
+  facet_grid(cols=vars(sex), rows=vars(race))
 
 # now check and impute the values for 2001 - 2005 (dates where group quarters not included)
 # also imputed 2020 and 2021 (COVID years, unreliable data)
@@ -82,13 +82,13 @@ births$MigrationInN_impute <- ifelse(births$Year>=2001 & births$Year<=2005, NA,
                                             births$MigrationInN))
 
 births <- births %>% 
-  group_by(agecat, microsim.init.sex, microsim.init.race) %>% 
+  group_by(agecat, sex, race) %>% 
   mutate(MigrationInN_impute = na.approx(MigrationInN_impute))
 
 ggplot(data=births, aes(x=Year, y=MigrationInN)) + 
   geom_line() + 
   geom_line(aes(x=Year, y=MigrationInN_impute), colour="red") + 
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.race))
+  facet_grid(cols=vars(sex), rows=vars(race))
 
 ggsave("SIMAH_workplace/ACS/compare_imputation_18yearolds_incl_2022.png",
        dpi=300, width=33, height=19, units="cm")
@@ -110,11 +110,11 @@ migrants <- data %>%
                                "45-49","50-54","55-59","60-64","65-69",
                                "70-74","75-79")),
     SEX=recode(SEX,"1"="m","2"="f"),
-         RACE = ifelse(RACE==1, "WHI",
-                       ifelse(RACE==2,"BLA",
-                              "OTH")),
+         RACE = ifelse(RACE==1, "White",
+                       ifelse(RACE==2,"Black",
+                              "Others")),
          RACE = ifelse(HISPAN==0, RACE,
-                       "SPA"),
+                       "Hispanic"),
     EDUC = ifelse(EDUC<=6, "LEHS",
                   ifelse(EDUC==7, "SomeC1",
                          ifelse(EDUC==8, "SomeC2",
@@ -122,7 +122,7 @@ migrants <- data %>%
                                        ifelse(EDUC>=10, "College",NA)))))) %>% 
   group_by(YEAR,agecat,SEX,RACE) %>% 
   summarise(MigrationInN=sum(PERWT)) %>% 
-  rename(Year=YEAR,microsim.init.sex=SEX,microsim.init.race=RACE)
+  rename(Year=YEAR,sex=SEX,race=RACE)
 
 # now check and impute the values for 2001 - 2005 (dates where group quarters not included)
 toimpute <- migrants %>% filter(agecat=="19-24" | agecat=="25-29")
@@ -132,7 +132,7 @@ toimpute$MigrationInN_impute <- ifelse(toimpute$Year>=2001 & toimpute$Year<=2005
                                        ifelse(toimpute$Year>2019, NA, toimpute$MigrationInN))
 
 toimpute <- toimpute %>% 
-  group_by(agecat, microsim.init.sex, microsim.init.race) %>% 
+  group_by(agecat, sex, race) %>% 
   mutate(MigrationInN_impute = ifelse(is.na(MigrationInN_impute), 
                                       na.approx(MigrationInN_impute), MigrationInN_impute),
          MigrationInN_impute = ifelse(Year>2019, MigrationInN, MigrationInN_impute))
@@ -140,7 +140,7 @@ toimpute <- toimpute %>%
 ggplot(data=toimpute, aes(x=Year, y=MigrationInN, colour=agecat)) + 
   geom_line() + 
   geom_line(aes(x=Year, y=MigrationInN_impute, colour=agecat), linetype="dashed") +
-  facet_grid(cols=vars(microsim.init.sex), rows=vars(microsim.init.race))
+  facet_grid(cols=vars(sex), rows=vars(race))
 
 ggsave("SIMAH_workplace/ACS/compare_imputation_19-24yearolds.png",
        dpi=300, width=33, height=19, units="cm")
@@ -173,8 +173,8 @@ migrants$MigrationOutN <- 0
 # no information about past year inward migration for year 2000 (the question was previous 5 years)
 # set prior to 0 for this year and allow calibration process to adjust this
 missingyear <- data.frame(expand.grid(Year=2000, agecat=unique(migrants$agecat),
-                                      microsim.init.sex=unique(migrants$microsim.init.sex),
-                                      microsim.init.race=unique(migrants$microsim.init.race),
+                                      sex=unique(migrants$sex),
+                                      race=unique(migrants$race),
                                       BirthsInN=NA,
                                       MigrationInN=0,
                                       MigrationOutN=0))
@@ -185,18 +185,18 @@ write.csv(migrants, "SIMAH_workplace/microsim/population_data/migration_in_USA.c
 
 # summary of COVID years migrants and births
 test=subset(migrants,agecat=="18") %>% 
-  dplyr::select(Year, microsim.init.sex,microsim.init.race, BirthsInN) %>% drop_na() %>% 
+  dplyr::select(Year, sex,race, BirthsInN) %>% drop_na() %>% 
   mutate(BirthsInN_impute = ifelse(Year==2020, NA, BirthsInN),
          BirthsInN_impute = ifelse(is.na(BirthsInN_impute), 
                 na.approx(BirthsInN_impute), BirthsInN_impute),
-         microsim.init.race = recode(microsim.init.race, "WHI"="White",
-                                     "BLA"="Black","SPA"="Hispanic","OTH"="Others"),
-         microsim.init.sex = recode(microsim.init.sex, "m"="Men","f"="Women"))
+         race = recode(race, "White"="Whitete",
+                                     "Black"="Blackck","Hispanic"="Hispanic","Others"="Others"),
+         sex = recode(sex, "m"="Men","f"="Women"))
 
 ggplot(data=test, aes(x=Year, y=BirthsInN)) + 
   geom_line(linewidth=1) + 
   geom_line(aes(x=Year, y=BirthsInN_impute), linetype="dashed") + 
-  facet_grid(cols=vars(microsim.init.race), rows=vars(microsim.init.sex)) +
+  facet_grid(cols=vars(race), rows=vars(sex)) +
   xlim(2015, 2022) + theme_bw() + 
   ylab("Total N 'births' aged 18") + 
   geom_vline(xintercept=2020, linetype="dashed")
@@ -205,17 +205,17 @@ ggsave("SIMAH_workplace/ACS/newbirths_COVIDperiod.png",
        dpi=300, width=33, height=19, units="cm")
 
 migrants <- migrants %>% 
-  mutate(microsim.init.race = recode(microsim.init.race, "WHI"="White",
-                                              "BLA"="Black","SPA"="Hispanic","OTH"="Others"),
-         microsim.init.sex = recode(microsim.init.sex, "m"="Men","f"="Women"))
+  mutate(race = recode(race, "White"="Whitete",
+                                              "Black"="Blackck","Hispanic"="Hispanic","Others"="Others"),
+         sex = recode(sex, "m"="Men","f"="Women"))
 
-summarymigrants <- migrants %>% group_by(Year, microsim.init.sex,
-                                         microsim.init.race) %>% 
+summarymigrants <- migrants %>% group_by(Year, sex,
+                                         race) %>% 
   summarise(MigrationInN = sum(MigrationInN,na.rm=T))
 
 ggplot(data=summarymigrants, aes(x=Year, y=MigrationInN)) + 
   geom_line(linewidth=1) + 
-  facet_grid(cols=vars(microsim.init.race), rows=vars(microsim.init.sex)) +
+  facet_grid(cols=vars(race), rows=vars(sex)) +
   xlim(2015, 2022) + theme_bw() + 
   ylab("Total N migrants entering USA") + 
   geom_vline(xintercept=2020, linetype="dashed")

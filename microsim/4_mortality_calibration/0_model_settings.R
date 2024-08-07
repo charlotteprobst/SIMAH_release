@@ -40,11 +40,8 @@ mortality <- 1
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
 diseases <- c("LVDC","AUD","UIJ","IJ")
 
-# switch between CASCADE and SIMAH models 
-model <- "SIMAH"
-
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
-output_type <- "alcohol"
+output_type <- "mortality"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
@@ -76,6 +73,9 @@ WholePopSize <- read.csv(paste0(DataDirectory,"fullpopcounts.csv")) %>%
 proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
+# parameter settings for calibration
+n_samples <- 1
+
 # whether to just use the point estimate - set this to 1 for education and alcohol transitions 
 PE <- 0
 
@@ -84,9 +84,13 @@ update_base_rate <- 1
 # if modelling mortality from specific causes - set up base mortality rates for the causes modelled
 # set inflation factor 
 # define inflation for different categories - i.e. 1 for those not being used and 50 for those inflated
-inflation_factors <- c(20, 2)
+inflation_factors <- c(50, 10)
 
 # note age categories should be in 10 year categories - except 75-79
 age_inflated <- list(
-    c("18-24","25-34","35-44"), 
-    c("45-54","55-64","65-74", "75-79"))
+    c("18-24","25-34","35-44","45-54","55-64"), 
+    c("65-74", "75-79"))
+
+# causes of death for applying base rate inflation factor
+# add to these as needed 
+base_rate_inflate <- c("LVDC","IJ")

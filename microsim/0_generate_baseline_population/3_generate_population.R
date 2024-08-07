@@ -25,7 +25,7 @@ setwd(WorkingDirectory)
 selectedstate <- "USA"
 
 # what size population
-n <- 1000000
+n <- 10000
 
 # read in the processed data containing the population weights to apply
 # step (2) to generate the weights must have been run at least once before doing this

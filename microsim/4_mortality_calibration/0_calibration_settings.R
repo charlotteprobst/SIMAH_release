@@ -9,15 +9,15 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 300
-nreps <- 10
+nsamples <- 1
+nreps <- 30
 
 # generate list of samples to be run with random number seeds
-sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
+sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps, scenario=c(0,1))
 sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
 
 # maximum number of potential calibration waves
-num_waves <- 15
+num_waves <- 1
 
 # improvement threshold to stop simulation - set at 0.5% 
 # this means the calibration will stop when implausibility does not improve by more than 0.5%
@@ -30,7 +30,7 @@ prev_mean_implausibility <- 100
 wave <- 1
 
 # read in the education models for alcohol model calibration 
-education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
+education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
 
 for(i in 1:length(education_transitionsList)){
   education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
@@ -47,7 +47,7 @@ edmodels <- edmodels %>% bind_rows()
 sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
 
 # add the final alcohol TPs 
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
+alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"))
 alcohol_transitions$...1 <- NULL
 
 alcohol_transitionsList <- list()
@@ -62,4 +62,4 @@ alcmodels <- alcmodels %>% bind_rows()
 
 sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 
-catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/continuous_calibration/calibration_continuous_distribution.csv")
+catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")

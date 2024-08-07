@@ -1,29 +1,23 @@
 #####first read in and process all the necessary data files 
 
 # read in base population
-if(model=="SIMAH"){
-  basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
+basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
                       show_col_types = FALSE)
-}else if(model=="CASCADE"){
-  basepop <- read_csv(paste0(WorkingDirectory, SelectedState, "basepopCASCADE", PopulationSize, ".csv"))
-}
-
-# save a copy of original population files
-baseorig <- basepop
 
 # set microsim individuals IDs 
-microsim.init.id <- 1:nrow(basepop)
-basepop <- cbind(microsim.init.id, basepop)
+ID <- 1:nrow(basepop)
+basepop <- cbind(ID, basepop)
 
 # read in BRFSS data for migrants and 18-year-olds entering the model
-brfss <- load_brfss(model,SelectedState, DataDirectory)
+brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS")
+brfss <- process_brfss(brfss,SelectedState)
 
 # read in death counts data
-death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
+death_counts <- load_death_counts(proportion, SelectedState, DataDirectory)
 
-# read in migration in and out counts and project rates forwards to 2025 (in case needed)
-# migration_counts <- load_migration_counts(SelectedState, DataDirectory)
-migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv")
+# read in migration in and out counts
+# these can be generated in the folder 1_migration_calibration if needed 
+migration_rates <- read.csv(paste0("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_", SelectedState, ".csv"))
 
 # load in the education transition rates
 # fix educational attainment at baseline - correct by years of age 
@@ -48,13 +42,10 @@ brfss <- code_alcohol_categories(brfss)
 # no longer read in alcohol transitions here -> this is generated in a separate script 
 alcohol_transitions <- NULL
 
-# set up latin hypercube for mortality parameters 
-lhs <- sample_lhs(n_samples, PE)
+# set up latin hypercube for mortality parameters - PE only (sampling is elsewhere)
+mortality_parameters <- sample_lhs(n_samples, 1)
+mortality_parameters <- mortality_parameters[[1]]
 
-samples <- do.call(rbind,lhs)
-
-for(i in 1:length(lhs)){
-  lhs[[i]]$samplenum <- i
+if(length(diseases)>=1){
+  base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)
 }
-
-lhs <- ifelse(PE==1, lhs[[1]], lhs)

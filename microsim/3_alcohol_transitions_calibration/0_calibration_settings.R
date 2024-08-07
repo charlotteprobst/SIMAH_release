@@ -30,7 +30,7 @@ prev_mean_implausibility <- 100
 wave <- 1
 
 # read in the education models for alcohol model calibration 
-education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
+education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
 
 for(i in 1:length(education_transitionsList)){
   education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
@@ -48,7 +48,7 @@ sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
 
 # add the final alcohol TPs 
 if(contcalibration==1){
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
+alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"))
 alcohol_transitions$...1 <- NULL
 
 alcohol_transitionsList <- list()

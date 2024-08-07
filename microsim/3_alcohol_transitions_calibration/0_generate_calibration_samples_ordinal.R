@@ -3,7 +3,7 @@ library(stringr)
 # alcohol_transitions <- read_csv("SIMAH_workplace/nesarc/Models/multinom_model_race_cont.csv")
 # ses <- read_csv("SIMAH_workplace/nesarc/Models/multinom_model_ses_race_cont.csv")
 
-alcohol_transitions <- read_csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/deterministic_regression/ordinal_model_new.csv")
+alcohol_transitions <- read_csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/alcohol_ordinal_model.csv")
 
 means <- alcohol_transitions %>% dplyr::select(name,Value) %>% 
   pivot_wider(names_from=name, values_from=Value)

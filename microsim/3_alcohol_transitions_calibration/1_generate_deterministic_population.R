@@ -30,7 +30,7 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
 WorkingDirectory <- "/home/cbuckley"
-# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
@@ -41,11 +41,11 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/3_alcohol_transitions_calibration/")
+ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/3_alcohol_transitions_calibration/")
 
 # read in all model settings
-source(paste0(ScriptDirectory, "/0_model_settings.R"))
-OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/deterministic_regression")
+source(paste0(ScriptDirectory, "0_model_settings.R"))
+OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/")
 dir.create(OutputDirectory)
 
 # for deterministic population - reduce population size to 10,000
@@ -58,11 +58,13 @@ proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
 # read in settings for calibration
+contcalibration <- 0
 source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 
 # load all microsim files
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
+set.seed <- 10
 Output <- run_microsim_determ(1,1,basepop,brfss,
                  death_counts,
                  updatingeducation,education_transitionsList[[1]],

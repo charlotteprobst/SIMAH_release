@@ -33,7 +33,7 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/1_migration_calibration/")
+ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/1_migration_calibration/")
 
 # read in all model settings
 source(paste0(ScriptDirectory, "0_model_settings.R"))
@@ -47,12 +47,10 @@ seed <- as.numeric(sample(1:100, 1))
 # sample number - set to 1 when just running 1 simulation 
 samplenum <- 1
 
-# set lhs to the first element of the lhs list- for testing 
-lhs <- lhs[[1]]
+lhs <- NULL
 
 migration_counts <- read.csv(paste0("SIMAH_workplace/microsim/1_input_data/migration_in_calibrated_", SelectedState, ".csv"))
 
-basepop$brfssID <- NULL
 # checking how the original migration counts fit the population data
 Output <- list()
 Output <- run_microsim_alt_estimaterate(seed=1,samplenum=1,basepop,brfss,
@@ -68,21 +66,21 @@ Output <- run_microsim_alt_estimaterate(seed=1,samplenum=1,basepop,brfss,
                        minyear=2000, maxyear=2022, output="demographics")
 Output
 
-birth_rates <- Output[[2]] %>% dplyr::select(year,agecat,microsim.init.race,microsim.init.sex,rate) %>% 
+birth_rates <- Output[[2]] %>% dplyr::select(year,agecat,race,sex,rate) %>% 
   rename(birthrate=rate) %>% mutate(migrationinrate=NA)
 library(scales)
 scaleFUN <- function(x) sprintf("%.2f", x)
-ggplot(data=birth_rates, aes(x=year, y=birthrate, colour=microsim.init.sex)) + 
+ggplot(data=birth_rates, aes(x=year, y=birthrate, colour=sex)) + 
   geom_line() + 
-  facet_grid(rows=vars(microsim.init.race)) + 
+  facet_grid(rows=vars(race)) + 
   ylim(0,0.05) + 
   scale_y_continuous(labels=scaleFUN, limits=c(0,0.05))
 ggsave("SIMAH_workplace/microsim/2_output_data/migration/birth_rates.png", dpi=300, width=33, height=19, units="cm")
   
-migration_rates <- Output[[3]]%>% dplyr::select(year,agecat,microsim.init.race,microsim.init.sex,rate_in, rate_out)
-ggplot(data=migration_rates, aes(x=year, y=rate_in, colour=microsim.init.sex)) + 
+migration_rates <- Output[[3]]%>% dplyr::select(year,agecat,race,sex,rate_in, rate_out)
+ggplot(data=migration_rates, aes(x=year, y=rate_in, colour=sex)) + 
   geom_line() +
-  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race)) + 
+  facet_grid(cols=vars(agecat), rows=vars(race)) + 
   scale_y_continuous(labels=scaleFUN, limits=c(0,NA))
 ggsave("SIMAH_workplace/microsim/2_output_data/migration/migration_rates.png", dpi=300, width=33, height=19, units="cm")
 

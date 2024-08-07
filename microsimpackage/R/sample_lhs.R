@@ -12,6 +12,7 @@
 #' sample_lhs
 sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
+  # add link to the google doc for mortality risk functions
     prior <- list(
       LVDC <- list(
         c("qnorm", 0.04167190, 0.00974742), #MBLIVER1 SD 0.00974742

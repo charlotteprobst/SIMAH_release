@@ -70,9 +70,9 @@ Population <- read.csv("SIMAH_workplace/microsim/census_data/ACS_population_cons
 
 compare <- rbind(PopSummary, Population)
 
-ggplot(subset(compare,microsim.init.sex=="m"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
-  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+ggplot(subset(compare,sex=="m"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
+  facet_grid(cols=vars(agecat), rows=vars(race))
 
-ggplot(subset(compare,microsim.init.sex=="f"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
-  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race))
+ggplot(subset(compare,sex=="f"), aes(x=year, y=TotalPop, colour=type)) + geom_line() + 
+  facet_grid(cols=vars(agecat), rows=vars(race))
   

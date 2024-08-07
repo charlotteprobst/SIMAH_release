@@ -5,8 +5,13 @@
 library(tidyverse)  # data management
 library(ZIM)
 
+# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+
+# set wd and install the microsim and calibration packages
+setwd(paste(WorkingDirectory))
+
 # Load in deterministic population
-deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/deterministic_regression/full_pop_deterministic10000_withID.csv") 
+deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/alcohol_calibration/deterministic_regression/full_pop_deterministic10000_withID.csv") 
 
 deterministic_pop <- code_alcohol_categories(deterministic_pop)
 
@@ -82,4 +87,4 @@ summary(fit)
 
 TPmodel <- data.frame(summary(fit)$coefficients)
 TPmodel$name <- rownames(TPmodel)
-write.csv(TPmodel, "/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/deterministic_regression/ordinal_model_new.csv", row.names=F)
+write.csv(TPmodel, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/alcohol_ordinal_model.csv", row.names=F)

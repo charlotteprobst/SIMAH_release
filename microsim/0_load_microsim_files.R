@@ -17,7 +17,7 @@ death_counts <- load_death_counts(proportion, SelectedState, DataDirectory)
 
 # read in migration in and out counts
 # these can be generated in the folder 1_migration_calibration if needed 
-migration_rates <- read.csv("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_USA.csv") %>% 
+migration_rates <- read.csv(paste0("SIMAH_workplace/microsim/1_input_data/birth_migration_rates", SelectedState, ".csv")) %>% 
   rename(race=microsim.init.race, sex=microsim.init.sex) %>% 
   mutate(race = case_when(race=="WHI" ~ "White",
                           race=="BLA" ~ "Black",
@@ -48,8 +48,8 @@ brfss <- code_alcohol_categories(brfss)
 alcohol_transitions <- NULL
 
 # set up latin hypercube for mortality parameters - PE only (sampling is elsewhere)
-lhs <- sample_lhs(n_samples, 1)
-lhs <- lhs[[1]]
+mortality_parameters <- sample_lhs(n_samples, 1)
+mortality_parameters <- mortality_parameters[[1]]
 
 if(length(diseases)>=1){
   base_counts <- setup_base_counts(death_counts,diseases, inflation_factors, age_inflated)

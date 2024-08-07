@@ -32,10 +32,14 @@ data <- remove_attributes(data, "lbl")
 data <- remove_attributes(data, "int+lbl")
 data <- zap_ipums_attributes(data)
 
+data <- data %>% filter(SAMPLE!=200004)
+
 list <- list()
 # 
 for(i in unique(data$YEAR)){
   list[[paste(i)]] <- data %>% filter(YEAR==i)
+    
+
   list[[paste(i)]] <- list[[paste(i)]] %>% 
     filter(AGE>=18 & AGE<=79) %>% 
     mutate(AGECAT = cut(AGE, breaks = c(0, 24, 34, 44, 54, 64, 79),

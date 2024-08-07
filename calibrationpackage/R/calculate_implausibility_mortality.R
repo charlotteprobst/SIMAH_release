@@ -33,7 +33,7 @@ calculate_implausibility_mortality<- function(data, agest=0, agestyear=2010, mod
 
   # add a model discrepancy term - adjustable parameter
   data$v_m_rel <- data$observed_mortality_rate*model_error
-  data$v_m_abs <- 2
+  data$v_m_abs <- 1
   #
   implausibility <- data %>%
     group_by(year, samplenum, sex, agecat, education, cause) %>%
@@ -68,13 +68,12 @@ calculate_implausibility_mortality<- function(data, agest=0, agestyear=2010, mod
       summarise(agest_simulated_mortality_rate = sum(simulated_mortality_rate_weighted),
                 agest_observed_mortality_rate = sum(observed_mortality_rate_weighted))
 
-
     variance <- data %>%
       group_by(year, samplenum, sex,education,cause) %>%
       summarise(variance = var(agest_simulated_mortality_rate)) %>%
       ungroup() %>%
       group_by(year, sex, education, cause) %>%
-      summarise(v_s = mean(variance, na.rm=T))
+      summarise(v_s = mean(variance, na.rm=T)) #v_s = variance due to stochasticity
 
     # remove grouping by seed - take average
     data <- data %>%
@@ -87,11 +86,12 @@ calculate_implausibility_mortality<- function(data, agest=0, agestyear=2010, mod
 
     # add a model discrepancy term
     data$v_m_rel <- data$agest_observed_mortality_rate*model_error
-    data$v_m_abs <- 2
+    data$v_m_abs <- 1
 
     implausibility <- data %>%
       group_by(year, samplenum, sex, education, cause) %>%
-      mutate(implausibility_rel = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_rel),
+      mutate(implausibility_orig = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s),
+        implausibility_rel = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_rel),
              implausibility_abs = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_abs)) %>%
       group_by(samplenum) %>%
       summarise(mean = mean(implausibility, na.rm=T),

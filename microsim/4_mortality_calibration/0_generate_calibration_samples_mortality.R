@@ -1,6 +1,6 @@
 # set up latin hypercube for mortality parameters 
 
-lhs <- sample_lhs(nsamples, PE)
+lhs <- sample_lhs(nsamples, 0)
 
 for(i in 1:length(lhs)){
   lhs[[i]] <- data.frame(lhs[[i]])

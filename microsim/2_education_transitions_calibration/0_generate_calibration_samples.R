@@ -1,6 +1,6 @@
 # SIMAH project 2024 - script for generating samples from markov model for calibration
 
-model <- readRDS("SIMAH_workplace/education_transitions/final_models/formodel_model_alltimes2005_age18-34_agecats.RDS")
+model <- readRDS("SIMAH_workplace/education_transitions/final_psid_education_model.RDS")
 
 originalsample <- 9064
 inflatedsample <- 2057084

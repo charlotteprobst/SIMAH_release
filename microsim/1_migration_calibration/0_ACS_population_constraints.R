@@ -36,8 +36,8 @@ if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr pack
 #   P	AGE	Age	details
 # P	RACE (general)	Race [general version]	--
 #   P	RACED (detailed)	Race [detailed version]	--
-#   P	HISPAN (general)	Hispanic origin [general version]	--
-#   P	HISPAND (detailed)	Hispanic origin [detailed version]	--
+#   P	HIHispanicN (general)	Hispanic origin [general version]	--
+#   P	HIHispanicND (detailed)	Hispanic origin [detailed version]	--
 #   P	EDUC (general)	Educational attainment [general version]	--
 #   P	EDUCD (detailed)	Educational attainment [detailed version]	--
 #   P	MIGRATE5 (general)	Migration status, 5 years [general version]	--
@@ -56,19 +56,19 @@ popcounts <- data %>%
   # remove the ACS sample without group quarters for 2000
   filter(SAMPLE!=200004) %>% 
   mutate(SEX=recode(SEX,"1"="m","2"="f"),
-         RACE = ifelse(RACE==1, "WHI",
-                       ifelse(RACE==2,"BLA",
-                              "OTH")),
+         RACE = ifelse(RACE==1, "White",
+                       ifelse(RACE==2,"Black",
+                              "Others")),
          RACE = ifelse(HISPAN==0, RACE,
-                       "SPA"),
-         RACE_ALT = ifelse(RACED==100, "WHI",
-                           ifelse(RACED==200, "BLA",
-                                  ifelse(RACED>=300 & RACED<=700, "OTH",
-                                         ifelse(RACED==801, "BLA",
-                                                ifelse(RACED>=802 & RACED<=827, "OTH",
-                                                       ifelse(RACED>=830 & RACED<=845, "BLA",
-                                                              ifelse(RACED>=850, "OTH", NA))))))),
-         RACE_ALT = ifelse(HISPAN==0, RACE_ALT, "SPA"),
+                       "Hispanic"),
+         RACE_ALT = ifelse(RACED==100, "White",
+                           ifelse(RACED==200, "Black",
+                                  ifelse(RACED>=300 & RACED<=700, "Others",
+                                         ifelse(RACED==801, "Black",
+                                                ifelse(RACED>=802 & RACED<=827, "Others",
+                                                       ifelse(RACED>=830 & RACED<=845, "Black",
+                                                              ifelse(RACED>=850, "Others", NA))))))),
+         RACE_ALT = ifelse(HISPAN==0, RACE_ALT, "Hispanic"),
          EDUC = ifelse(EDUC<=6, "LEHS",
                        ifelse(EDUC>=7 & EDUC<=9, "SomeC",
                                             ifelse(EDUC>=10, "College",NA))),
@@ -80,22 +80,22 @@ popcounts <- data %>%
   group_by(YEAR,agecat,SEX,RACE) %>% 
   summarise(
     TotalPop=sum(PERWT)) %>% 
-  rename(Year=YEAR, microsim.init.sex=SEX,microsim.init.race=RACE) %>% 
+  rename(Year=YEAR, sex=SEX,race=RACE) %>% 
   mutate(agecat=as.character(agecat)) 
 
 toimpute <- popcounts %>% 
   filter(agecat=="18" | agecat=="19-24" | agecat=="25-29") %>% ungroup() %>% 
   mutate(TotalPop_impute = ifelse(Year>=2001 & Year<=2005, NA, TotalPop)) %>% 
-  group_by(agecat, microsim.init.sex, microsim.init.race) %>% 
+  group_by(agecat, sex, race) %>% 
   mutate(TotalPop_impute = na.approx(TotalPop_impute)) %>% 
   dplyr::select(-TotalPop)
 
 popcounts <- left_join(popcounts, toimpute)
 # draw a plot to check
-ggplot(data=subset(popcounts,microsim.init.sex=="m"), aes(x=Year, y=TotalPop)) + 
+ggplot(data=subset(popcounts,sex=="m"), aes(x=Year, y=TotalPop)) + 
   geom_line() + 
   geom_line(aes(x=Year, y=TotalPop_impute), colour="red") +
-  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race)) + 
+  facet_grid(cols=vars(agecat), rows=vars(race)) + 
   geom_vline(aes(xintercept=2006), linetype="dashed")
 
 # ggsave("SIMAH_workplace/ACS/compare_imputation_agecats.png",
@@ -109,21 +109,21 @@ popcounts <- popcounts %>%
 write.csv(popcounts, "SIMAH_workplace/microsim/population_data/ACS_population_constraints.csv", row.names=F)
 
 summarypop <- popcounts %>% 
-  mutate(microsim.init.race = recode(microsim.init.race, "WHI"="White",
-                                     "BLA"="Black","SPA"="Hispanic","OTH"="Others"),
-         microsim.init.sex = recode(microsim.init.sex, "m"="Men","f"="Women"),
+  mutate(race = recode(race, "White"="Whitete",
+                                     "Black"="Blackck","Hispanic"="Hispanic","Others"="Others"),
+         sex = recode(sex, "m"="Men","f"="Women"),
          agecat = case_when(
            agecat == "18" | agecat == "19-24" ~ "18-24",
            agecat == "25-29" | agecat == "30-34" | agecat == "35-39" | agecat == "40-44" ~ "25-44",
            agecat == "45-49" | agecat == "50-54" | agecat == "55-59" | agecat == "60-64" ~ "45-64",
            agecat == "65-69" | agecat == "70-74" | agecat == "75-79" ~ "65-79"
          )) %>% 
-  group_by(Year, microsim.init.sex, microsim.init.race, agecat) %>% 
+  group_by(Year, sex, race, agecat) %>% 
   summarise(TotalPop=sum(TotalPop))
 
-ggplot(data=summarypop, aes(x=Year, y=TotalPop, colour=microsim.init.sex)) + 
+ggplot(data=summarypop, aes(x=Year, y=TotalPop, colour=sex)) + 
   geom_line(linewidth=1) + 
-  facet_grid(cols=vars(agecat), rows=vars(microsim.init.race), scales="free") +
+  facet_grid(cols=vars(agecat), rows=vars(race), scales="free") +
   xlim(2015, 2022) + theme_bw() + 
   ylab("Total N US population") + 
   geom_vline(xintercept=2020, linetype="dashed") + 
