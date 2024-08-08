@@ -36,19 +36,19 @@ best <- summary_output %>%
             max = max(propsimulation),
             proptarget = mean(target))
 
-ggplot(data=subset(best, SEX=="Men"), 
+ggplot(data=subset(targets, SEX=="Men"), 
        aes(x=as.numeric(YEAR), colour=as.factor(EDUC))) + 
   # geom_line(linewidth=1) + 
-  geom_ribbon(aes(ymin=min, ymax=max, colour=as.factor(EDUC), fill=as.factor(EDUC)),
-              alpha=0.5) + 
-  geom_line(aes(x=YEAR,y=proptarget,colour=as.factor(EDUC)), linewidth=1,
-            linetype="dashed") +
+  # geom_ribbon(aes(ymin=min, ymax=max, colour=as.factor(EDUC), fill=as.factor(EDUC)),
+  #             alpha=0.5) + 
+  geom_line(aes(x=YEAR,y=target,colour=as.factor(EDUC)), linewidth=1,
+            linetype="solid") +
   # geom_line(aes(x=YEAR,y=PSID_new), colour="purple",linewidth=1, linetype="dashed") +
   facet_grid(cols=vars(AGECAT), rows=vars(RACE)) + 
   theme_bw() + 
   theme(legend.title=element_blank(),
         legend.position="bottom") +
-  ggtitle("Men - posterior distribution") + 
+  ggtitle("Men - target") + 
   geom_vline(xintercept=2014, linetype="dotted") + 
   xlab("Year") + ylim(0,1)
 ggsave("SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se/validation_men.png",

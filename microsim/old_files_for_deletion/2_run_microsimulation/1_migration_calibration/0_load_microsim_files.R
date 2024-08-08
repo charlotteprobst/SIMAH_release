@@ -18,6 +18,7 @@ basepop <- cbind(microsim.init.id, basepop)
 # read in BRFSS data for migrants and 18-year-olds entering the model
 brfss <- load_brfss(model,SelectedState, DataDirectory)
 
+
 # read in death counts data
 death_counts <- load_death_counts(model, proportion, SelectedState, DataDirectory)
 
@@ -43,6 +44,9 @@ alcohol_transitions <- list[[1]]
 basepop <- list[[2]]
 brfss <- list[[3]]
 rm(list)
+
+# assign baseline beverage preferences 
+basepop <- assign_beverage_preferences(basepop)
 
 # set up latin hypercube for mortality parameters 
 

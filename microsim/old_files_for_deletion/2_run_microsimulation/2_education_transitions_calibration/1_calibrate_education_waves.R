@@ -78,7 +78,11 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
+<<<<<<< HEAD:microsim/2_run_microsimulation/2_education_transitions_calibration/1_calibrate_education_waves.R
+                     minyear=2000, maxyear=2019, output="demographics")
+=======
                      minyear=2000, maxyear=2014, output="demographics")
+>>>>>>> main:microsim/old_files_for_deletion/2_run_microsimulation/2_education_transitions_calibration/1_calibrate_education_waves.R
     }
 
   Output <- do.call(rbind,Output)
