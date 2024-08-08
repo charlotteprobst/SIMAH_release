@@ -5,9 +5,6 @@ model <- readRDS("SIMAH_workplace/education_transitions/final_psid_education_mod
 originalsample <- 9064
 inflatedsample <- 2057084
 
-originalsample <- 1
-inflatedsample <- 1
-
 # first sample from the markov model to get nsamples new estimates
 samples <- sample_from_markov(model, nsamples, inflation=1, originalsample, inflatedsample)
 
