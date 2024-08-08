@@ -41,12 +41,12 @@ source("SIMAH_code/microsim/0_model_settings.R")
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # read in calibrated education transitions
-education_transitions <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
+education_transitions <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
 for(i in 1:length(education_transitions)){
   education_transitions[[i]]$cat <- gsub("1999-2019+_","",education_transitions[[i]]$cat)
 }
 # read in calibrated alcohol transitions 
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
+alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"))
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -56,7 +56,7 @@ education_transitions <- education_transitions[[samplenum]]
 alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
 
 # read in the categorical to continuous distributions
-catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/continuous_calibration/calibration_continuous_distribution.csv")
+catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
 output_type <- "mortality"
 
@@ -78,7 +78,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            migration_rates,
                            updatingalcohol, alcohol_transitions,
                            catcontmodel, drinkingdistributions,
-                           base_counts, diseases, lhs, sesinteraction,
+                           base_counts, diseases, mortality_parameters, sesinteraction,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,

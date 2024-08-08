@@ -17,13 +17,7 @@ death_counts <- load_death_counts(proportion, SelectedState, DataDirectory)
 
 # read in migration in and out counts
 # these can be generated in the folder 1_migration_calibration if needed 
-migration_rates <- read.csv(paste0("SIMAH_workplace/microsim/1_input_data/birth_migration_rates", SelectedState, ".csv")) %>% 
-  rename(race=microsim.init.race, sex=microsim.init.sex) %>% 
-  mutate(race = case_when(race=="WHI" ~ "White",
-                          race=="BLA" ~ "Black",
-                          race=="SPA" ~ "Hispanic",
-                          race=="OTH" ~ "Others"))
-
+migration_rates <- read.csv(paste0("SIMAH_workplace/microsim/1_input_data/birth_migration_rates_", SelectedState, ".csv"))
 # load in the education transition rates
 # fix educational attainment at baseline - correct by years of age 
 basepop$YEAR <- 2000
