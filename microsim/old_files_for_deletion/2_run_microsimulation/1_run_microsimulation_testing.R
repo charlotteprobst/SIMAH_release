@@ -14,20 +14,23 @@ library(lhs)
 library(truncnorm)
 library(data.table)
 library(gridExtra)
+library(rlang)
 options(dplyr.summarise.inform = FALSE)
 
-###set working directory to the main "SIMAH" folder in your directory 
+###set working directory to the main "SIMAH" folder in your directory
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
-# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+# WorkingDirectory <- "C:/Users/peter/Documents/GitHub/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
 # load in microsim R package
 setwd(paste(WorkingDirectory))
 
+# install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
@@ -41,6 +44,7 @@ education_transitions <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/mic
 for(i in 1:length(education_transitions)){
   education_transitions[[i]]$cat <- gsub("1999-2019+_","",education_transitions[[i]]$cat)
 }
+
 # read in calibrated alcohol transitions 
 alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/alcohol_calibration/ordinal_calibration/lhs_regression-4.csv"))
 
@@ -49,32 +53,35 @@ alcohol_transitions <- read_csv(paste0(WorkingDirectory, "/SIMAH_workplace/micro
 samplenum <- sample(1:300, 1, replace=F)
 
 education_transitions <- education_transitions[[samplenum]]
+education_transitions_covid <- education_transitions_covid[[samplenum]]
+
 alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
 
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/1_input_data/CatContDistr_beta.csv") %>%
   dplyr::select(group, shape1, shape2, min, max)
 
-output_type <- "mortality"
+output_type <- "demographics"
 
-# random number seed - sample random number 
+# random number seed - sample random number
 seed <- as.numeric(sample(1:100, 1))
 
-# sample number - set to 1 when just running 1 simulation 
+# sample number - set to 1 when just running 1 simulation
 samplenum <- 1
 
-# set lhs to the first element of the lhs list- for testing 
+# set lhs to the first element of the lhs list- for testing
 lhs <- lhs[[1]]
 
-# set minyear and maxyear 
+# set minyear and maxyear
 minyear <- 2000
-maxyear <- 2005
+maxyear <- 2022
 updatingeducation <- 1
 
 Output <- list()
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,
+                           COVID_specific_tps=1,
                            migration_rates,
                            updatingalcohol, alcohol_transitions,
                            catcontmodel, drinkingdistributions,
@@ -82,8 +89,7 @@ Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            policy=0, percentreduction=0.1, year_policy, inflation_factors,
                            age_inflated,
                            update_base_rate,
-                           minyear=2000, maxyear=2003, output="mortality")
-
+                           minyear=2000, maxyear=2022, output_type)
 # postprocessing - not currently working!
 # alcohol_type <- "categorical"
 # 

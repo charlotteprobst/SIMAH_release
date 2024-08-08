@@ -24,11 +24,12 @@ data <- data %>% mutate(
     age >= 18 & age <= 24 ~ "18-24",
     age >= 25 & age <= 64 ~ "25-64",
     age >= 65 ~ "65+",
-    TRUE ~ NA_character_  # If none of the conditions are met, return NA
+    TRUE ~ NA_character_) # If none of the conditions are met, return NA
   )
-)
 
-data <- data %>% mutate(sex=factor(sex), sex=ifelse(sex=="female",1,0)) 
+data <- data %>% 
+  mutate(sex = ifelse(sex == "female", 1, 0)) %>% 
+  mutate(sex = factor(sex)) 
 
 data <- data %>% drop_na(gpd, education) # 109444
 
@@ -41,7 +42,8 @@ data <- data %>% mutate(final_alc_cat=if_else(is.na(AlcCAT_TAS),
                                               AlcCAT_TAS))
 
 # Unify sample weights (model can't cope with different weights per year)
-data <- data %>% group_by(uniqueID) %>% mutate(sampleweight = round(mean(individualweight_cross.sectional))) %>% 
+data <- data %>% group_by(uniqueID) %>% 
+  mutate(sampleweight = round(mean(individualweight_cross.sectional))) %>% 
   filter(sampleweight!=0)
 
 # Identify smallest sample weight
@@ -70,6 +72,12 @@ length(unique(datat1$uniqueID)) # Number of individuals
 # remove anyone with only one year of data
 datat1 <- datat1 %>% ungroup() %>% group_by(uniqueID) %>% add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
+# Make sure all variables are factors
+datat1 <- datat1 %>% 
+  mutate(sex = factor(sex)) %>%
+  mutate(education = factor(education)) %>%
+  mutate(race = factor(race)) %>%
+  mutate(age_cat = factor(age_cat))
 
 # Specify the initial values to start the search for the maximum likelihood estimates
 Q1 <- crudeinits.msm(final_alc_cat~year, subject=uniqueID, qmatrix=Q, data=datat1)
@@ -79,6 +87,8 @@ modelt1 <- msm(final_alc_cat~year, uniqueID, data=datat1, qmatrix=Q1,
                                    covariates=~age_cat + sex + race + education,
                                    subject.weights=datat1$sampleweight, 
                         control=list(trace=1, maxit=1000, fnscale = 3000000))
+# Warning message:
+# Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
 
 # MODEL 2: 2011-2019
 datat2 <- data %>% filter(year>=2011 & year<=2019)
@@ -89,6 +99,12 @@ datat2 <- datat2 %>% ungroup() %>%
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
 length(unique(datat2$uniqueID)) # 14,462
+# Make sure all variables are factors
+datat2 <- datat2 %>% 
+  mutate(sex = factor(sex)) %>%
+  mutate(education = factor(education)) %>%
+  mutate(race = factor(race)) %>%
+  mutate(age_cat = factor(age_cat))
 
 Q2 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat2)
 modelt2 <- msm(final_alc_cat~year, uniqueID, data=datat2, qmatrix=Q2,
@@ -105,6 +121,12 @@ datat3 <- datat3 %>% ungroup() %>%
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
 length(unique(datat3$uniqueID)) # 10,721
+# Make sure all variables are factors
+datat3 <- datat3 %>% 
+  mutate(sex = factor(sex)) %>%
+  mutate(education = factor(education)) %>%
+  mutate(race = factor(race)) %>%
+  mutate(age_cat = factor(age_cat))
 
 Q3 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat3)
 modelt3 <- msm(final_alc_cat~year, uniqueID, data=datat3, qmatrix=Q3,
@@ -124,6 +146,12 @@ datat4 <- datat4 %>% ungroup() %>% group_by(uniqueID) %>% add_tally(name="totalo
   filter(totalobservations>1) 
 # Relevel the 'timevary' variable to set "2005-2010" as the reference category
 datat4$timevary <- relevel(datat4$timevary, ref = "2005-2010")
+# Make sure all variables are factors
+datat4 <- datat4 %>% 
+  mutate(sex = factor(sex)) %>%
+  mutate(education = factor(education)) %>%
+  mutate(race = factor(race)) %>%
+  mutate(age_cat = factor(age_cat))
 
 Q4 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat4)
 modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
@@ -131,12 +159,9 @@ modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
                covariates=~age_cat + sex + race + education + timevary,
                control=list(trace=1, maxit=1000,fnscale = 96115))
 # Warning message:
-#   In msm(final_alc_cat ~ year, uniqueID, data = datat4, qmatrix = Q4,  :
-#            Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
+# Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
 
 # Save all models
-saveRDS(modelt1, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
-saveRDS(modelt2, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019.RDS")
-saveRDS(modelt3, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021.RDS")
-saveRDS(modelt4, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_model_4_timeperiod.RDS")
+saveRDS(modelt2, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019_incl_sample_weights.RDS")
+saveRDS(modelt3, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021_incl_sample_weights.RDS")
 
