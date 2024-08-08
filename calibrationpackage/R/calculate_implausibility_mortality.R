@@ -42,8 +42,7 @@ calculate_implausibility_mortality<- function(data, agest=0, agestyear=2010, mod
     group_by(samplenum) %>%
     summarise(mean = mean(implausibility, na.rm=T),
               max = max(implausibility, na.rm=T))
-  }
-  if(agest==1){
+  }else if(agest==1){
     causes <- unique(data$cause)
     agest <- data %>% filter(year==agestyear) %>%
       filter(samplenum==1) %>% filter(cause==causes[1]) %>%
@@ -90,9 +89,10 @@ calculate_implausibility_mortality<- function(data, agest=0, agestyear=2010, mod
 
     implausibility <- data %>%
       group_by(year, samplenum, sex, education, cause) %>%
-      mutate(implausibility_orig = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s),
-        implausibility_rel = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_rel),
-             implausibility_abs = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_abs)) %>%
+      mutate(
+        # implausibility_orig = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s),
+        implausibility = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_rel))
+             # implausibility_abs = abs(agest_simulated_mortality_rate-agest_observed_mortality_rate)/sqrt(v_s+v_m_abs)) %>%
       group_by(samplenum) %>%
       summarise(mean = mean(implausibility, na.rm=T),
                 max = max(implausibility, na.rm=T))

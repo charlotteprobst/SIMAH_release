@@ -9,26 +9,26 @@ calculate_implausibility_alcohol<- function(data, targets){
 
   # calculate variance for implausibility equation
   variance <- data %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT) %>%
+    group_by(year, samplenum, sex, race, agecat, education, alc_cat) %>%
     summarise(variance = var(propsimulation)) %>%
     ungroup() %>%
-    group_by(year, microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT) %>%
+    group_by(year, sex, race, agecat, education, alc_cat) %>%
     summarise(v_s = mean(variance, na.rm=T),
               v_s = ifelse(is.na(v_s), 1e-7, v_s))
 
   # get rid of grouping by seed
   data <- data %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.race, agecat, microsim.init.education, AlcCAT) %>%
+    group_by(year, samplenum, sex, race, agecat, education, alc_cat) %>%
     summarise(propsimulation = mean(propsimulation, na.rm=T),
               proptarget = mean(proptarget, na.rm=T),
               se = mean(se, na.rm=T))
 
-  data <- left_join(data, variance, by=c("year","microsim.init.sex","microsim.init.race","agecat","microsim.init.education","AlcCAT"))
+  data <- left_join(data, variance, by=c("year","sex","race","agecat","education","alc_cat"))
   #
   implausibility <- data %>%
-    group_by(year, samplenum, microsim.init.sex, microsim.init.race, microsim.init.education, agecat,
-             AlcCAT) %>%
-    # filter(microsim.init.race!="OTH") %>%
+    group_by(year, samplenum, sex, race, education, agecat,
+             alc_cat) %>%
+    # filter(race!="OTH") %>%
     summarise(propsimulation = mean(propsimulation),
               proptarget = mean(proptarget),
               se = mean(se),
