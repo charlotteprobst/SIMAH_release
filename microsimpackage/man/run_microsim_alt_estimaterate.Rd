@@ -29,7 +29,7 @@ run_microsim_alt_estimaterate(
   age_inflated,
   update_base_rate,
   minyear = 2000,
-  maxyear = 2019,
+  maxyear = 2022,
   output = "demographics"
 )
 }

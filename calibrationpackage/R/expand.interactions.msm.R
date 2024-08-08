@@ -4,7 +4,7 @@
 #' @export
 #' @examples
 #' converts interaction effects for covariate list - may not be needed
-expand.interactions.msm <- function(covariates, covlabels){
+expand_interactions_msm <- function(covariates, covlabels){
   cn.nointer <- names(covariates)
   elist <- strsplit(covlabels, ":")
   elist <- lapply(elist, function(x)covariates[x])

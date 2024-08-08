@@ -6,15 +6,11 @@
 #' apply_death_counts
 
 apply_death_counts <- function(basepop, death_counts, y, diseases){
-  basepop <- basepop %>% mutate(agecat = cut(microsim.init.age,
+  basepop <- basepop %>% mutate(agecat = cut(age,
                                              breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
                                              labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
                                                       "50-54","55-59","60-64","65-69","70-74","75-79")),
-                                microsim.init.education = recode(microsim.init.education,
-                                                                 "highschool"="LEHS",
-                                                                 "somecollege"="SomeC",
-                                                                 "collegeplus"="College"),
-                                cat = paste(microsim.init.sex,agecat,microsim.init.race,microsim.init.education, sep=""))
+                                cat = paste(sex,agecat,race,education, sep=""))
   summary <- basepop %>%
     mutate(n=1) %>%
     complete(cat, fill=list(n=0)) %>%
@@ -67,26 +63,25 @@ apply_death_counts <- function(basepop, death_counts, y, diseases){
     # (by filtering on disease vector)
     deaths <- deaths %>%
       filter(!cause %in% diseases)
-    deaths <- deaths %>% dplyr::select(microsim.init.id)
+    deaths <- deaths %>% dplyr::select(ID)
     # return a list of who died
     return(deaths)
   }
 
-  # print("sampling all-cause mortality")
-  # deaths <- basepop %>%
-  #   group_by(cat) %>%
-  #   do(sample_causes(., rates=rates))
+  print("sampling all-cause mortality")
+  deaths <- basepop %>%
+    group_by(cat) %>%
+    do(sample_causes(., rates=rates))
 
-  # quicker alternative for alcohol calibration purposes
-  rates <- rates %>% group_by(cat) %>% summarise(probdeath=max(cprob))
-  basepop <- left_join(basepop, rates, by=c("cat"))
-
-  basepop$prob <- runif(nrow(basepop))
-  basepop$death <- ifelse(basepop$prob <= basepop$probdeath, 1,0)
-
-  deaths <- basepop %>% filter(death==1)
-
-  basepopremoved <-basepop %>% filter(!microsim.init.id %in% deaths$microsim.init.id) %>%
-    dplyr::select(-c(cat,prob,probdeath,death))
+  # # quicker alternative for alcohol calibration purposes
+  # rates <- rates %>% group_by(cat) %>% summarise(probdeath=max(cprob))
+  # basepop <- left_join(basepop, rates, by=c("cat"))
+  #
+  # basepop$prob <- runif(nrow(basepop))
+  # basepop$death <- ifelse(basepop$prob <= basepop$probdeath, 1,0)
+  #
+  # deaths <- basepop %>% filter(death==1)
+  basepopremoved <-basepop %>% filter(!ID %in% deaths$ID) %>%
+    dplyr::select(-c(cat))
   return(basepopremoved)
 }

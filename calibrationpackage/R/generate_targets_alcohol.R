@@ -7,12 +7,12 @@
 generate_targets_alcohol <- function(data){
   targets <- data %>%
     #group into three age groups
-    mutate(agecat = cut(microsim.init.age,
+    mutate(agecat = cut(age,
                           breaks=c(0,24,64,100),
                           labels=c("18-24","25-64","65+")),
            # set education to be SomeC for SomeC + College for 18-24 group
-           microsim.init.education = ifelse(agecat=="18-24" & microsim.init.education=="College","SomeC",
-                                            microsim.init.education),
+           education = ifelse(agecat=="18-24" & education=="College","SomeC",
+                              education),
            #group years into categories
            # year_cat = cut(YEAR,
            #                breaks=c(0,2003,2006,2009,2012,2015,2018,2021),
@@ -24,9 +24,9 @@ generate_targets_alcohol <- function(data){
                                                   "2017-2019","2020-2021"))
            ) %>%
     rename(year=YEAR) %>%
-    group_by(year, microsim.init.sex,microsim.init.race,agecat, microsim.init.education,AlcCAT, .drop=FALSE) %>% tally() %>%
+    group_by(year, sex,race,agecat, education,alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
-    group_by(year, microsim.init.sex,microsim.init.race, agecat, microsim.init.education) %>%
+    group_by(year, sex,race, agecat, education) %>%
     mutate(proptarget = n/sum(n),
            se = sqrt(proptarget * (1 - proptarget) / sum(n)),
            agecat = as.character(agecat)) %>%

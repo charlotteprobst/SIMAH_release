@@ -41,7 +41,7 @@ factorcov2numeric.msm <- function(covariates, x, mod=NULL) {
   covs.out[names(cfac.new)] <- cfac.new
   ## fixme when called from bootstrap, hasn't worked.
   ## is it because covfactor is all false?  is covdata.mf wrong?  yes both numeric
-  covs.out <- expand.interactions.msm(covs.out, covnames.mm)
+  covs.out <- expand_interactions_msm(covs.out, covnames.mm)
   covs.out
   return(covs.out)
 }

@@ -26,6 +26,8 @@ generate_weights_IPF <- function(data,selectedstate,cons){
   ind_catt <- t(ind_cat) # transpose the dummy variables for ipfp
   x0 <- rep(1, nrow(individual)) # set the initial weights - 1
 
+  cons[is.na(cons)] <- 0 #set any NA constraints to 0
+
   weights <- ipfp(cons, ind_catt, x0, maxit=100, v=T)
   # ind_agg <- colSums(weights*ind_cat)
   # max(abs(ind_agg-cons))

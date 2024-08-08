@@ -9,13 +9,27 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
   disease <- unique(diseases)
   Diseases <- do.call(rbind, DiseaseSummary)
   death_counts_new <- death_counts %>% pivot_longer(cols = contains("mort")) %>%
-    separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
-    mutate(agecat = ifelse(agecat=="25-29" | agecat=="30-34","25-34",
-                           ifelse(agecat=="35-39" | agecat=="40-44","35-44",
-                                  ifelse(agecat=="45-49" | agecat=="50-54", "45-54",
-                                         ifelse(agecat=="55-59" | agecat=="60-64", "55-64",
-                                                ifelse(agecat=="65-69" | agecat=="70-74", "65-74",
-                                                       agecat)))))) %>%
+    # separate(cat, into=c("sex","agecat","race","education"), sep=c(1,6,9,13)) %>%
+    mutate(agecat = ifelse(grepl("25-29",cat) | grepl("30-34",cat), "25-34",
+                           ifelse(grepl("35-39",cat) | grepl("40-44",cat),"35-44",
+                                  ifelse(grepl("45-49",cat) | grepl("50-54",cat), "45-54",
+                                         ifelse(grepl("55-59",cat) | grepl("60-64",cat), "55-64",
+                                                ifelse(grepl("65-69",cat) | grepl("70-74",cat), "65-74",
+                                                       ifelse(grepl("18-24",cat), "18-24",
+                                                              ifelse(grepl("75-79",cat), "75-79",NA))))))),
+           sex = case_when(
+             grepl("f",cat) ~ "f",
+             grepl("m",cat) ~ "m"),
+           education=case_when(
+             grepl("LEHS",cat) ~ "LEHS",
+             grepl("SomeC",cat) ~ "SomeC",
+             grepl("College",cat) ~ "College"),
+           race = case_when(
+             grepl("White", cat) ~ "White",
+             grepl("Black", cat) ~ "Black",
+             grepl("Hispanic",cat) ~ "Hispanic",
+             grepl("Others", cat) ~ "Others")
+           ) %>%
     group_by(year, sex, agecat, race, education, name) %>%
     summarise(value=sum(value)) %>%
     mutate(name = gsub("mort", "", name)) %>%
@@ -25,11 +39,10 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
                          ifelse(education=="Coll","College",education)),
       cat = paste0(sex, agecat, education)) %>% ungroup() %>%
     dplyr::select(year, agecat, sex, race, education, name, value) %>%
-    rename(microsim.init.sex=sex, microsim.init.race=race, microsim.init.education=education) %>%
     pivot_wider(names_from=name, values_from=value)
 
-    Diseases <- left_join(Diseases, death_counts_new, by=c("agecat","microsim.init.sex","microsim.init.race",
-                                                           "microsim.init.education","year"))
+    Diseases <- left_join(Diseases, death_counts_new, by=c("agecat","sex","race",
+                                                           "education","year"))
 
   Diseases <- Diseases %>%
     rename(popcount = n)
@@ -46,13 +59,8 @@ postprocess_mortality <- function(DiseaseSummary, diseases, death_counts){
            cause = gsub("mort_", "", cause)) %>%
     dplyr::select(-name) %>%
     pivot_wider(names_from=type, values_from=value) %>%
-    dplyr::select(year, microsim.init.sex,microsim.init.race, agecat, microsim.init.education, cause, popcount, simulated, observed, yll) %>%
-    rename(simulated_mortality_n = simulated, observed_mortality_n = observed,
-           sex = microsim.init.sex, race=microsim.init.race, education=microsim.init.education) %>%
-    mutate(sex = ifelse(sex=="f","Women","Men"),
-           race = ifelse(race=="WHI","White",
-                         ifelse(race=="BLA","Black",
-                                ifelse(race=="SPA","Hispanic",
-                                       ifelse(race=="OTH","Others", NA)))))
+    dplyr::select(year, sex,race, agecat, education, cause, popcount, simulated, observed, yll, max_risk) %>%
+    rename(simulated_mortality_n = simulated, observed_mortality_n = observed) %>%
+             mutate(sex = ifelse(sex=="f","Women","Men"))
   return(long_format)
 }

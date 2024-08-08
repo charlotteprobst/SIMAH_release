@@ -7,11 +7,11 @@
 #' DIABETES mortality risk
 DM_menoff <- function(data,lhs){
   data <- data %>%
-    mutate(ageCAT = cut(microsim.init.age,
+    mutate(ageCAT = cut(age,
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
-           cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
+           cat = paste0(sex, ageCAT, education)) %>%
     dplyr::select(-ageCAT)
   B_DM_MEN_OFF <- as.numeric(lhs["B_DM_MEN_OFF"])
   B_DM1_WOMEN <- as.numeric(lhs["B_DM1_WOMEN"])
@@ -19,15 +19,15 @@ DM_menoff <- function(data,lhs){
   DM_FORMERDRINKER_MEN <- as.numeric(lhs["DM_FORMERDRINKER_MEN"])
   DM_FORMERDRINKER_WOMEN <- as.numeric(lhs["DM_FORMERDRINKER_WOMEN"])
   data <- data %>%
-     mutate(RR_DM = ifelse(microsim.init.sex=="m",
-           exp(0 + B_DM_MEN_OFF*microsim.init.alc.gpd),
-                  ifelse(microsim.init.sex=="f",
-                        exp(0 + B_DM1_WOMEN*microsim.init.alc.gpd
-                                 + B_DM2_WOMEN*(pmax((microsim.init.alc.gpd - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((microsim.init.alc.gpd - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((microsim.init.alc.gpd - 14)/11.88053, 0)^3))  / (43.74 - 14)  )),
+     mutate(RR_DM = ifelse(sex=="m",
+           exp(0 + B_DM_MEN_OFF*alc_gpd),
+                  ifelse(sex=="f",
+                        exp(0 + B_DM1_WOMEN*alc_gpd
+                                 + B_DM2_WOMEN*(pmax((alc_gpd - 2.79)/11.88053, 0)^3 + ((14 - 2.79) * pmax((alc_gpd - 43.74)/11.88053, 0)^3 - (43.74 - 2.79) * (pmax((alc_gpd - 14)/11.88053, 0)^3))  / (43.74 - 14)  )),
                                                NA)),
-            RR_DM = ifelse(formerdrinker==1 & microsim.init.sex=="m",
+            RR_DM = ifelse(formerdrinker==1 & sex=="m",
                                  exp(DM_FORMERDRINKER_MEN),
-                                 ifelse(formerdrinker==1 & microsim.init.sex=="f",
+                                 ifelse(formerdrinker==1 & sex=="f",
                                         exp(DM_FORMERDRINKER_WOMEN), RR_DM)))
      return(data)
 }

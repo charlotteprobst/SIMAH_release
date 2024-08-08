@@ -7,40 +7,40 @@
 transition_alcohol_ordinal_regression <- function(data, model,y){
  # create a dataset with the required variables dummy coded
   data_prediction <- data %>%
-    mutate(agecat = cut(microsim.init.age,
+    mutate(agecat = cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
-           race = case_when(microsim.init.race=="BLA" ~ "Black, non-Hispanic",
-                            microsim.init.race=="WHI" ~ "White, non-Hispanic",
-                            microsim.init.race=="OTH" ~ "Other, non-Hispanic",
-                            microsim.init.race=="SPA" ~ "Hispanic"),
-           sex = case_when(microsim.init.sex=="f" ~ "Women",
-                           microsim.init.sex=="m" ~ "Men"),
-           ed = case_when(microsim.init.education=="LEHS" ~ "Low",
-                          microsim.init.education=="SomeC" ~ "Med",
-                          microsim.init.education=="College" ~ "High"),
+           race = case_when(race=="Black" ~ "Black, non-Hispanic",
+                            race=="White" ~ "White, non-Hispanic",
+                            race=="Others" ~ "Other, non-Hispanic",
+                            race=="Hispanic" ~ "Hispanic"),
+           sex = case_when(sex=="f" ~ "Women",
+                           sex=="m" ~ "Men"),
+           ed = case_when(education=="LEHS" ~ "Low",
+                          education=="SomeC" ~ "Med",
+                          education=="College" ~ "High"),
            ed = ifelse(ed=="High" & agecat=="18-24", "Med",ed),
            strata = paste(agecat, sex, race, ed, sep="_"),
-           # microsim.init.alc.gpd = ceiling(microsim.init.alc.gpd),
-           abstainer = ifelse(AlcCAT=="Non-drinker" & formerdrinker==0, 1,0)) %>%
-    dplyr::select(strata, brfssID, agecat, microsim.init.sex,
-                  microsim.init.race, microsim.init.education,
-                  microsim.init.alc.gpd,
-                  AlcCAT, formerdrinker) %>%
-    mutate(Women = ifelse(microsim.init.sex=="f", 1,0),
+           # alc_gpd = ceiling(alc_gpd),
+           abstainer = ifelse(alc_cat=="Non-drinker" & formerdrinker==0, 1,0)) %>%
+    dplyr::select(strata, agecat, sex,
+                  race, education,
+                  alc_gpd,
+                  alc_cat, formerdrinker) %>%
+    mutate(Women = ifelse(sex=="f", 1,0),
            age2564 = ifelse(agecat=="25-64", 1,0),
            age65 = ifelse(agecat=="65+", 1,0),
-           raceblack = ifelse(microsim.init.race=="BLA",1,0),
-           racehispanic = ifelse(microsim.init.race=="SPA",1,0),
-           raceother = ifelse(microsim.init.race=="OTH",1,0),
-           edulow = ifelse(microsim.init.education=="LEHS", 1,0),
-           edumed = ifelse(microsim.init.education=="SomeC", 1,0),
+           raceblack = ifelse(race=="BLA",1,0),
+           racehispanic = ifelse(race=="SPA",1,0),
+           raceother = ifelse(race=="OTH",1,0),
+           edulow = ifelse(education=="LEHS", 1,0),
+           edumed = ifelse(education=="SomeC", 1,0),
            formerdrinker = ifelse(formerdrinker==1,1,0),
-           abstainer = ifelse(microsim.init.alc.gpd==0, 1,0),
-           cat1 = ifelse(AlcCAT=="Low risk", 1,0),
-           cat2 = ifelse(AlcCAT=="Medium risk", 1,0),
-           cat3 = ifelse(AlcCAT=="High risk", 1,0),
-           alc_scaled = (microsim.init.alc.gpd-mean(microsim.init.alc.gpd)) / sd(microsim.init.alc.gpd))
+           abstainer = ifelse(alc_gpd==0, 1,0),
+           cat1 = ifelse(alc_cat=="Low risk", 1,0),
+           cat2 = ifelse(alc_cat=="Medium risk", 1,0),
+           cat3 = ifelse(alc_cat=="High risk", 1,0),
+           alc_scaled = (alc_gpd-mean(alc_gpd)) / sd(alc_gpd))
 
   # add 0s for reference cat
   # reference <- data.frame(cat="Non-drinker", t(rep(0,ncol(model)-1)))
@@ -118,11 +118,11 @@ transition_alcohol_ordinal_regression <- function(data, model,y){
                                           ifelse(data_prediction$random>data_prediction$cprob_lowrisk & data_prediction$random<=data_prediction$cprob_mediumrisk, "Medium risk",
                                                  ifelse(data_prediction$random>data_prediction$cprob_mediumrisk, "High risk", NA))))
 
-  data_prediction$totransitioncont <- ifelse(data_prediction$AlcCAT==data_prediction$newcat, 0,
+  data_prediction$totransitioncont <- ifelse(data_prediction$alc_cat==data_prediction$newcat, 0,
                                              ifelse(data_prediction$newcat=="Non-drinker", 0,
-                                             ifelse(data_prediction$AlcCAT!=data_prediction$newcat, 1, NA)))
+                                             ifelse(data_prediction$alc_cat!=data_prediction$newcat, 1, NA)))
 
-  data$AlcCAT <- data_prediction$newcat
+  data$alc_cat <- data_prediction$newcat
   data$totransitioncont <- data_prediction$totransitioncont
   return(data)
 }

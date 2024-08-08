@@ -7,11 +7,11 @@
 #' IHD including SES interaction effects
 IHDInteraction <- function(data,lhs){
   data <- data %>%
-    mutate(ageCAT = cut(microsim.init.age,
+    mutate(ageCAT = cut(age,
                         breaks=c(0,24,34,44,54,64,74,79),
                         labels=c("18-24","25-34","35-44", "45-54",
                                  "55-64","65-74","75-79")),
-           cat = paste0(microsim.init.sex, ageCAT, microsim.init.education)) %>%
+           cat = paste0(sex, ageCAT, education)) %>%
     dplyr::select(-ageCAT)
   B_IHD_LEHS <- as.numeric(lhs["B_IHD_LEHS"])
   B_IHD_SomeC <- as.numeric(lhs["B_IHD_SomeC"])
@@ -32,38 +32,38 @@ IHDInteraction <- function(data,lhs){
   IHD_FD <- as.numeric(lhs["IHD_FD"])
   IHD_LEHSxFD <- as.numeric(lhs["IHD_LEHSxFD"])
   IHD_SomeCxFD <- as.numeric(lhs["IHD_SomeCxFD"])
-  
+
   data <- data %>%
-    mutate(RR_IHD = ifelse(microsim.init.education=="LEHS" & microsim.init.alc.gpd<=20,
+    mutate(RR_IHD = ifelse(education=="LEHS" & alc_gpd<=20,
                                 exp(B_IHD_LEHS + B_IHD_CAT1 + B_IHD_LEHSxCAT1),
-                                ifelse(microsim.init.education=="LEHS" & microsim.init.alc.gpd<=40,
+                                ifelse(education=="LEHS" & alc_gpd<=40,
                                       exp(B_IHD_LEHS + B_IHD_CAT2 + B_IHD_LEHSxCAT2),
-                                      ifelse(microsim.init.education=="LEHS" & microsim.init.alc.gpd<=60,
+                                      ifelse(education=="LEHS" & alc_gpd<=60,
                                              exp(B_IHD_LEHS + B_IHD_CAT3 + B_IHD_LEHSxCAT3),
-                                             ifelse(microsim.init.education=="LEHS" & microsim.init.alc.gpd>60,
+                                             ifelse(education=="LEHS" & alc_gpd>60,
                                                     exp(B_IHD_LEHS + B_IHD_CAT4 + B_IHD_LEHSxCAT4),
-                                                    ifelse(microsim.init.education=="SomeC" & microsim.init.alc.gpd<=20,
+                                                    ifelse(education=="SomeC" & alc_gpd<=20,
                                                           exp(B_IHD_SomeC + B_IHD_CAT1 + B_IHD_SomeCxCAT1),
-                                                          ifelse(microsim.init.education=="SomeC" & microsim.init.alc.gpd<=40,
+                                                          ifelse(education=="SomeC" & alc_gpd<=40,
                                                                  exp(B_IHD_SomeC + B_IHD_CAT2 + B_IHD_SomeCxCAT2),
-                                                                 ifelse(microsim.init.education=="SomeC" & microsim.init.alc.gpd<=60,
+                                                                 ifelse(education=="SomeC" & alc_gpd<=60,
                                                                         exp(B_IHD_SomeC + B_IHD_CAT3 + B_IHD_SomeCxCAT3),
-                                                                        ifelse(microsim.init.education=="SomeC" & microsim.init.alc.gpd>60,
+                                                                        ifelse(education=="SomeC" & alc_gpd>60,
                                                                                exp(B_IHD_SomeC + B_IHD_CAT4 + B_IHD_SomeCxCAT4),
-                                                                               ifelse(microsim.init.education=="College" & microsim.init.alc.gpd<=20,
+                                                                               ifelse(education=="College" & alc_gpd<=20,
                                                                                       exp(B_IHD_CAT1),
-                                                                                      ifelse(microsim.init.education=="College" & microsim.init.alc.gpd<=40,
+                                                                                      ifelse(education=="College" & alc_gpd<=40,
                                                                                              exp(B_IHD_CAT2),
-                                                                                             ifelse(microsim.init.education=="College" & microsim.init.alc.gpd<=60,
+                                                                                             ifelse(education=="College" & alc_gpd<=60,
                                                                                                     exp(B_IHD_CAT3),
-                                                                                                    ifelse(microsim.init.education=="College" & microsim.init.alc.gpd>60,
+                                                                                                    ifelse(education=="College" & alc_gpd>60,
                                                                                                            exp(B_IHD_CAT4), NA)))))))))))),
 
-           RR_IHD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS", 
+           RR_IHD = ifelse(formerdrinker==1 & education=="LEHS",
                                  exp(B_IHD_LEHS + IHD_FD + IHD_LEHSxFD),
-                                 ifelse(formerdrinker==1 & microsim.init.education=="SomeC",
+                                 ifelse(formerdrinker==1 & education=="SomeC",
                                         exp(B_IHD_SomeC + IHD_FD + IHD_SomeCxFD),
-                                        ifelse(formerdrinker==1 & microsim.init.education=="College",
+                                        ifelse(formerdrinker==1 & education=="College",
                                                exp(IHD_FD), RR_IHD))))
   return(data)
 }
@@ -90,7 +90,7 @@ IHDInteraction <- function(data,lhs){
 # B_IHD_SomeCxCAT4_MEN <- as.numeric(lhs["B_IHD_SomeCxCAT4_MEN"])
 # B_IHD_SomeCxCAT1_WOMEN <- as.numeric(lhs["B_IHD_SomeCxCAT1_WOMEN"])
 # B_IHD_SomeCxCAT2_WOMEN <- as.numeric(lhs["B_IHD_SomeCxCAT2_WOMEN"])
-# 
+#
 # #Former drinkers
 # IHD_FD_MEN <- as.numeric(lhs["IHD_FD_MEN"])
 # IHD_FD_WOMEN <- as.numeric(lhs["IHD_FD_WOMEN"])
@@ -99,52 +99,52 @@ IHDInteraction <- function(data,lhs){
 # IHD_LEHSxFD_WOMEN <- as.numeric(lhs["IHD_LEHSxFD_WOMEN"])
 # IHD_SomeCxFD_WOMEN <- as.numeric(lhs["IHD_SomeCxFD_WOMEN"])
 
-# mutate(RR_IHD = ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m" & microsim.init.alc.gpd<=20,
-#                        exp(B_IHD_LEHS_MEN + B_IHD_CAT1_MEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT1_MEN*microsim.init.alc.gpd),
-#                        ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m" & microsim.init.alc.gpd<=40,
-#                               exp(B_IHD_LEHS_MEN + B_IHD_CAT2_MEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT2_MEN*microsim.init.alc.gpd),
-#                               ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m" & microsim.init.alc.gpd<=60,
-#                                      exp(B_IHD_LEHS_MEN + B_IHD_CAT3_MEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT3_MEN*microsim.init.alc.gpd),
-#                                      ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="m",
-#                                             exp(B_IHD_LEHS_MEN + B_IHD_CAT4_MEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT4_MEN*microsim.init.alc.gpd),
-#                                             ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m" & microsim.init.alc.gpd<=20,
-#                                                    exp(B_IHD_SomeC_MEN + B_IHD_CAT1_MEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT1_MEN*microsim.init.alc.gpd),
-#                                                    ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m" & microsim.init.alc.gpd<=40,
-#                                                           exp(B_IHD_SomeC_MEN + B_IHD_CAT2_MEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT2_MEN*microsim.init.alc.gpd),
-#                                                           ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m" & microsim.init.alc.gpd<=60,
-#                                                                  exp(B_IHD_SomeC_MEN + B_IHD_CAT3_MEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT3_MEN*microsim.init.alc.gpd),
-#                                                                  ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="m",
-#                                                                         exp(B_IHD_SomeC_MEN + B_IHD_CAT4_MEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT4_MEN*microsim.init.alc.gpd),
-#                                                                         ifelse(microsim.init.education=="College" & microsim.init.sex=="m" & microsim.init.alc.gpd<=20,
-#                                                                                exp(B_IHD_CAT1_MEN*microsim.init.alc.gpd),
-#                                                                                ifelse(microsim.init.education=="College" & microsim.init.sex=="m" & microsim.init.alc.gpd<=40,
-#                                                                                       exp(B_IHD_CAT2_MEN*microsim.init.alc.gpd),
-#                                                                                       ifelse(microsim.init.education=="College" & microsim.init.sex=="m" & microsim.init.alc.gpd<=60,
-#                                                                                              exp(B_IHD_CAT3_MEN*microsim.init.alc.gpd),
-#                                                                                              ifelse(microsim.init.education=="College" & microsim.init.sex=="m",
-#                                                                                                     exp(B_IHD_CAT4_MEN*microsim.init.alc.gpd),
-#                                                                                                     ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="f" & microsim.init.alc.gpd<=20,
-#                                                                                                            exp(B_IHD_LEHS_WOMEN + B_IHD_CAT1_WOMEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT1_WOMEN*microsim.init.alc.gpd),
-#                                                                                                            ifelse(microsim.init.education=="LEHS" & microsim.init.sex=="f",
-#                                                                                                                   exp(B_IHD_LEHS_WOMEN + B_IHD_CAT2_WOMEN*microsim.init.alc.gpd + B_IHD_LEHSxCAT2_WOMEN*microsim.init.alc.gpd),
-#                                                                                                                   ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="f" & microsim.init.alc.gpd<=20,
-#                                                                                                                          exp(B_IHD_SomeC_WOMEN + B_IHD_CAT1_WOMEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT1_WOMEN*microsim.init.alc.gpd),
-#                                                                                                                          ifelse(microsim.init.education=="SomeC" & microsim.init.sex=="f",
-#                                                                                                                                 exp(B_IHD_SomeC_WOMEN + B_IHD_CAT2_WOMEN*microsim.init.alc.gpd + B_IHD_SomeCxCAT2_WOMEN*microsim.init.alc.gpd),
-#                                                                                                                                 ifelse(microsim.init.education=="College" & microsim.init.sex=="f" & microsim.init.alc.gpd<=20,
-#                                                                                                                                        exp(B_IHD_CAT1_WOMEN*microsim.init.alc.gpd),
-#                                                                                                                                        ifelse(microsim.init.education=="College" & microsim.init.sex=="f",
-#                                                                                                                                               exp(B_IHD_CAT2_WOMEN*microsim.init.alc.gpd), NA)))))))))))))))))),
-#        
-#        RR_IHD = ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="m", 
-#                        exp(B_IHD_LEHS_MEN + IHD_FD_MEN*microsim.init.alc.gpd + IHD_LEHSxFD_MEN*microsim.init.alc.gpd),
-#                        ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="m",
-#                               exp(B_IHD_SomeC_MEN + IHD_FD_MEN*microsim.init.alc.gpd + IHD_SomeCxFD_MEN*microsim.init.alc.gpd),
-#                               ifelse(formerdrinker==1 & microsim.init.education=="College" & microsim.init.sex=="m",
-#                                      exp(IHD_FD_MEN*microsim.init.alc.gpd),
-#                                      ifelse(formerdrinker==1 & microsim.init.education=="LEHS" & microsim.init.sex=="f",
-#                                             exp(B_IHD_LEHS_WOMEN + IHD_FD_WOMEN*microsim.init.alc.gpd + IHD_LEHSxFD_WOMEN*microsim.init.alc.gpd), 
-#                                             ifelse(formerdrinker==1 & microsim.init.education=="SomeC" & microsim.init.sex=="f",
-#                                                    exp(B_IHD_SomeC_WOMEN + IHD_FD_WOMEN*microsim.init.alc.gpd + IHD_SomeCxFD_WOMEN*microsim.init.alc.gpd),
-#                                                    ifelse(formerdrinker==1 & microsim.init.education=="College" & microsim.init.sex=="f",
-#                                                           exp(IHD_FD_WOMEN*microsim.init.alc.gpd), RR_IHD)))))))
+# mutate(RR_IHD = ifelse(education=="LEHS" & sex=="m" & alc_gpd<=20,
+#                        exp(B_IHD_LEHS_MEN + B_IHD_CAT1_MEN*alc_gpd + B_IHD_LEHSxCAT1_MEN*alc_gpd),
+#                        ifelse(education=="LEHS" & sex=="m" & alc_gpd<=40,
+#                               exp(B_IHD_LEHS_MEN + B_IHD_CAT2_MEN*alc_gpd + B_IHD_LEHSxCAT2_MEN*alc_gpd),
+#                               ifelse(education=="LEHS" & sex=="m" & alc_gpd<=60,
+#                                      exp(B_IHD_LEHS_MEN + B_IHD_CAT3_MEN*alc_gpd + B_IHD_LEHSxCAT3_MEN*alc_gpd),
+#                                      ifelse(education=="LEHS" & sex=="m",
+#                                             exp(B_IHD_LEHS_MEN + B_IHD_CAT4_MEN*alc_gpd + B_IHD_LEHSxCAT4_MEN*alc_gpd),
+#                                             ifelse(education=="SomeC" & sex=="m" & alc_gpd<=20,
+#                                                    exp(B_IHD_SomeC_MEN + B_IHD_CAT1_MEN*alc_gpd + B_IHD_SomeCxCAT1_MEN*alc_gpd),
+#                                                    ifelse(education=="SomeC" & sex=="m" & alc_gpd<=40,
+#                                                           exp(B_IHD_SomeC_MEN + B_IHD_CAT2_MEN*alc_gpd + B_IHD_SomeCxCAT2_MEN*alc_gpd),
+#                                                           ifelse(education=="SomeC" & sex=="m" & alc_gpd<=60,
+#                                                                  exp(B_IHD_SomeC_MEN + B_IHD_CAT3_MEN*alc_gpd + B_IHD_SomeCxCAT3_MEN*alc_gpd),
+#                                                                  ifelse(education=="SomeC" & sex=="m",
+#                                                                         exp(B_IHD_SomeC_MEN + B_IHD_CAT4_MEN*alc_gpd + B_IHD_SomeCxCAT4_MEN*alc_gpd),
+#                                                                         ifelse(education=="College" & sex=="m" & alc_gpd<=20,
+#                                                                                exp(B_IHD_CAT1_MEN*alc_gpd),
+#                                                                                ifelse(education=="College" & sex=="m" & alc_gpd<=40,
+#                                                                                       exp(B_IHD_CAT2_MEN*alc_gpd),
+#                                                                                       ifelse(education=="College" & sex=="m" & alc_gpd<=60,
+#                                                                                              exp(B_IHD_CAT3_MEN*alc_gpd),
+#                                                                                              ifelse(education=="College" & sex=="m",
+#                                                                                                     exp(B_IHD_CAT4_MEN*alc_gpd),
+#                                                                                                     ifelse(education=="LEHS" & sex=="f" & alc_gpd<=20,
+#                                                                                                            exp(B_IHD_LEHS_WOMEN + B_IHD_CAT1_WOMEN*alc_gpd + B_IHD_LEHSxCAT1_WOMEN*alc_gpd),
+#                                                                                                            ifelse(education=="LEHS" & sex=="f",
+#                                                                                                                   exp(B_IHD_LEHS_WOMEN + B_IHD_CAT2_WOMEN*alc_gpd + B_IHD_LEHSxCAT2_WOMEN*alc_gpd),
+#                                                                                                                   ifelse(education=="SomeC" & sex=="f" & alc_gpd<=20,
+#                                                                                                                          exp(B_IHD_SomeC_WOMEN + B_IHD_CAT1_WOMEN*alc_gpd + B_IHD_SomeCxCAT1_WOMEN*alc_gpd),
+#                                                                                                                          ifelse(education=="SomeC" & sex=="f",
+#                                                                                                                                 exp(B_IHD_SomeC_WOMEN + B_IHD_CAT2_WOMEN*alc_gpd + B_IHD_SomeCxCAT2_WOMEN*alc_gpd),
+#                                                                                                                                 ifelse(education=="College" & sex=="f" & alc_gpd<=20,
+#                                                                                                                                        exp(B_IHD_CAT1_WOMEN*alc_gpd),
+#                                                                                                                                        ifelse(education=="College" & sex=="f",
+#                                                                                                                                               exp(B_IHD_CAT2_WOMEN*alc_gpd), NA)))))))))))))))))),
+#
+#        RR_IHD = ifelse(formerdrinker==1 & education=="LEHS" & sex=="m",
+#                        exp(B_IHD_LEHS_MEN + IHD_FD_MEN*alc_gpd + IHD_LEHSxFD_MEN*alc_gpd),
+#                        ifelse(formerdrinker==1 & education=="SomeC" & sex=="m",
+#                               exp(B_IHD_SomeC_MEN + IHD_FD_MEN*alc_gpd + IHD_SomeCxFD_MEN*alc_gpd),
+#                               ifelse(formerdrinker==1 & education=="College" & sex=="m",
+#                                      exp(IHD_FD_MEN*alc_gpd),
+#                                      ifelse(formerdrinker==1 & education=="LEHS" & sex=="f",
+#                                             exp(B_IHD_LEHS_WOMEN + IHD_FD_WOMEN*alc_gpd + IHD_LEHSxFD_WOMEN*alc_gpd),
+#                                             ifelse(formerdrinker==1 & education=="SomeC" & sex=="f",
+#                                                    exp(B_IHD_SomeC_WOMEN + IHD_FD_WOMEN*alc_gpd + IHD_SomeCxFD_WOMEN*alc_gpd),
+#                                                    ifelse(formerdrinker==1 & education=="College" & sex=="f",
+#                                                           exp(IHD_FD_WOMEN*alc_gpd), RR_IHD)))))))

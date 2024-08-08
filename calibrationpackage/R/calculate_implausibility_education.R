@@ -6,14 +6,14 @@
 #' @examples
 #' calculate_implausibility_education
 calculate_implausibility_education <- function(data, targets){
-  data <- data %>% mutate(AGECAT = cut(microsim.init.age,
+  data <- data %>% mutate(AGECAT = cut(age,
                                        breaks=c(0,24,34,44,54,64,79),
                                        labels=c("18-24","25-34","35-44","45-54",
                                                 "55-64","65-79")),
-                          SEX = ifelse(microsim.init.sex=="m", "Men","Women"),
-                          RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
+                          SEX = ifelse(sex=="m", "Men","Women"),
+                          RACE = recode(race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                                         "OTH"="Others")) %>%
-    rename(EDUC=microsim.init.education, YEAR=year) %>%
+    rename(EDUC=education, YEAR=year) %>%
     group_by(YEAR, samplenum, seed, SEX, AGECAT,RACE,
              EDUC) %>%
     summarise(n=sum(n)) %>%
