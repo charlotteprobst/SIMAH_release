@@ -7,19 +7,19 @@
 update_alcohol_cat <- function(data){
   data <-
     data %>%
-    mutate(AlcCAT = ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>0 &
-                                         microsim.init.alc.gpd<=40, "Low risk",
-                                       ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>0 &
-                                                microsim.init.alc.gpd<=20, "Low risk",
-                                              ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>40 &
-                                                       microsim.init.alc.gpd<=60, "Medium risk",
-                                                     ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>20 &
-                                                              microsim.init.alc.gpd<=40, "Medium risk",
-                                                            ifelse(microsim.init.sex=="m" & microsim.init.alc.gpd>60,
+    mutate(alc_cat = ifelse(sex=="m" & alc_gpd>0 &
+                                         alc_gpd<=40, "Low risk",
+                                       ifelse(sex=="f" & alc_gpd>0 &
+                                                alc_gpd<=20, "Low risk",
+                                              ifelse(sex=="m" & alc_gpd>40 &
+                                                       alc_gpd<=60, "Medium risk",
+                                                     ifelse(sex=="f" & alc_gpd>20 &
+                                                              alc_gpd<=40, "Medium risk",
+                                                            ifelse(sex=="m" & alc_gpd>60,
                                                                    "High risk",
-                                                                   ifelse(microsim.init.sex=="f" & microsim.init.alc.gpd>40,
+                                                                   ifelse(sex=="f" & alc_gpd>40,
                                                                           "High risk",
-                                                                          ifelse(microsim.init.alc.gpd==0, "Non-drinker",NA))))))))
+                                                                          ifelse(alc_gpd==0, "Non-drinker",NA))))))))
 
   return(data)
 }

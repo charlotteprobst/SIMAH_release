@@ -9,23 +9,23 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
   summary <- migration_rates %>%
     filter(year==y) %>%
     # mutate(toadd = MigrationInN*proportion) %>%
-    dplyr::select(agecat, microsim.init.race, microsim.init.sex, migrationinrate) %>%
+    dplyr::select(agecat, race, sex, migrationinrate) %>%
     drop_na()
 
   denominator <- basepop %>%
-    mutate(agecat = cut(microsim.init.age,
+    mutate(agecat = cut(age,
                         breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
                         labels=c("18","19-24","25-29","30-34","35-39","40-44",
                                  "45-49","50-54","55-59","60-64","65-69",
                                  "70-74","75-79"))) %>%
-    group_by(microsim.init.race, microsim.init.sex,agecat) %>%
+    group_by(race, sex,agecat) %>%
     tally()
 
-  summary <- left_join(summary, denominator)
+  summary <- left_join(summary, denominator, by=c("agecat","race","sex"))
   summary$toadd <- summary$n*summary$migrationinrate
 
-  summary$cat <- paste(summary$microsim.init.sex, summary$agecat, summary$microsim.init.race, sep="_")
-  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd)
+  summary$cat <- paste(summary$sex, summary$agecat, summary$race, sep="_")
+  tojoin <- summary %>% ungroup() %>% dplyr::select(cat, toadd) %>% distinct()
 
   cats <- unique(tojoin$cat)
 
@@ -33,11 +33,11 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
   windowmax <- y+1
 
   pool <- brfss %>% filter(State==SelectedState) %>% filter(YEAR>=windowmin & YEAR<=windowmax) %>%
-    mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
+    mutate(agecat = cut(age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,100),
                         labels=c("18","19-24","25-29","30-34","35-39",
                                  "40-44","45-49","50-54","55-59",
                                  "60-64","65-69","70-74","75-79")),
-           cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_"))
+           cat = paste(sex, agecat, race, sep="_"))
   brfsscats <- unique(pool$cat)
   missing <- setdiff(cats, brfsscats)
   # summary <- tojoin %>% filter(cat %in% missing)
@@ -52,11 +52,11 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
                                  percentmissing = summary$toadd/sum(tojoin$toadd))
     supp <- brfss %>% filter(region==unique(pool$region)) %>% filter(YEAR>=windowmin &
                                                                        YEAR<=windowmax) %>%
-      mutate(agecat = cut(microsim.init.age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,79),
+      mutate(agecat = cut(age, breaks=c(0,18,24,29,34,39,44,49,54,59,64,69,74,79),
                           labels=c("18","19-24","25-29","30-34","35-39",
                                    "40-44","45-49","50-54","55-59",
                                    "60-64","65-69","70-74","75-79")),
-             cat = paste(microsim.init.sex, agecat, microsim.init.race, sep="_")) %>%
+             cat = paste(sex, agecat, race, sep="_")) %>%
       filter(cat %in% missing)
     pool <- rbind(pool, supp)
   }else {
@@ -71,15 +71,16 @@ inward_migration_rate <- function(basepop, migration_rates, y, brfss){
     # mutate(toadd=round(toadd, digits=0)) %>%
     do(dplyr::sample_n(.,size=unique(toadd), replace=TRUE)) %>%
     # do(slice_sample(.,n=toadd, replace = T)) %>%
-    mutate(microsim.init.spawn.year=y) %>% ungroup() %>%
-    dplyr::select(microsim.init.age, microsim.init.race, microsim.init.sex, microsim.init.education, microsim.init.drinkingstatus,
-                  microsim.init.alc.gpd, microsim.init.BMI,
-                  microsim.init.income, microsim.init.spawn.year, agecat, formerdrinker, microsimnewED, AlcCAT)
+    mutate(spawn_year=y) %>% ungroup() %>%
+    dplyr::select(age, race, sex, education, drinkingstatus,
+                  alc_gpd, BMI,
+                  income, spawn_year, agecat, formerdrinker, education_detailed,
+                  alc_cat)
 
-  from <- max(basepop$microsim.init.id)+1
-  to <- (nrow(toadd)) + max(basepop$microsim.init.id)
-  microsim.init.id <- from:to
-  toadd <- cbind(microsim.init.id, toadd)
+  from <- max(basepop$ID)+1
+  to <- (nrow(toadd)) + max(basepop$ID)
+  ID <- from:to
+  toadd <- cbind(ID, toadd)
   basepopnew <- rbind(basepop, toadd)
   # list <- list(basepop,summarymissing)
   return(basepopnew)

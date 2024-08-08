@@ -6,15 +6,11 @@
 #' apply_death_counts
 
 apply_death_counts <- function(basepop, death_counts, y, diseases){
-  basepop <- basepop %>% mutate(agecat = cut(microsim.init.age,
+  basepop <- basepop %>% mutate(agecat = cut(age,
                                              breaks=c(0,24,29,34,39,44,49,54,59,64,69,74,100),
                                              labels=c("18-24","25-29","30-34","35-39","40-44","45-49",
                                                       "50-54","55-59","60-64","65-69","70-74","75-79")),
-                                microsim.init.education = recode(microsim.init.education,
-                                                                 "highschool"="LEHS",
-                                                                 "somecollege"="SomeC",
-                                                                 "collegeplus"="College"),
-                                cat = paste(microsim.init.sex,agecat,microsim.init.race,microsim.init.education, sep=""))
+                                cat = paste(sex,agecat,race,education, sep=""))
   summary <- basepop %>%
     mutate(n=1) %>%
     complete(cat, fill=list(n=0)) %>%
@@ -67,7 +63,7 @@ apply_death_counts <- function(basepop, death_counts, y, diseases){
     # (by filtering on disease vector)
     deaths <- deaths %>%
       filter(!cause %in% diseases)
-    deaths <- deaths %>% dplyr::select(microsim.init.id)
+    deaths <- deaths %>% dplyr::select(ID)
     # return a list of who died
     return(deaths)
   }
@@ -77,54 +73,15 @@ apply_death_counts <- function(basepop, death_counts, y, diseases){
     group_by(cat) %>%
     do(sample_causes(., rates=rates))
 
-  basepopremoved <-basepop %>% filter(!microsim.init.id %in% deaths$microsim.init.id) %>%
-    dplyr::select(-cat)
-
-
-
-    # causes <- unique(rates$cause)
-    # idcause <- expand.grid(microsim.init.id = dead$microsim.init.id, cause = causes)
-    # probs <- dead %>% ungroup() %>% dplyr::select(microsim.init.id, prob)
-    # idcause <- left_join(idcause, probs, by=c("microsim.init.id"))
-    # rates <- rates %>% ungroup() %>% dplyr::select(cause, proportion)
-    # idcause <- left_join(idcause, rates, by=c("cause")) %>%
-    #   group_by(microsim.init.id) %>%
-    #   mutate(cprob = cumsum(proportion))
-    # idcause <- idcause[order(idcause$microsim.init.id),]
-    # causes <- list()
-    # for(i in unique(idcause$microsim.init.id)){
-    #   data <- idcause %>% filter(microsim.init.id==i) %>%
-    #     mutate(cprob = cumsum(proportion))
-    #   data$selectedcause <- 0
-    #
-    #   for(j in 1:nrow(data)){
-    #     cause <- data$cause[j]
-    #     if(cause=="LVDC"){
-    #       data$cause[j] <- ifelse(data$prob[j] <= data$cprob[j], cause, 0)
-    #     }else{
-    #       data$cause[j] <- ifelse(data$prob[j]>data$cprob[j-1] & data$prob[j]<=data$cprob[j], cause, 0)
-    #     }
-    #   }
-    #   data <- data %>% dplyr::select(microsim.init.id, cause) %>% filter(cause!=0)
-    #   causes[[paste(i)]] <- data
-    # }
-    # causes <- do.call(rbind, causes)
-    # x <- left_join(x,causes, by=c("microsim.init.id"))
-    # x$cause <- ifelse(x$prob<=rates$rate[1], "LVDC",
-    #                   ifelse(x$prob>rates$rate[1] & x$prob<=rates$rate[2], "HLVDCmort",
-    #                          ifelse(x$prob>rates$rate[2] & x$prob<=rates$rate[3], "DM",
-    #                                 ifelse(x$prob>rates$rate[3] & x$prob<=rates$rate[4], "IHD",
-    #                                        ifelse(x$prob>rates$rate[4] & x$prob<=rates$rate[5], "ISTR",
-    #                                               ifelse(x$prob>rates$rate[5] & x$prob<=rates$rate[6], "HYPHD",
-    #                                                      ifelse(x$prob>rates$rate[6] & x$prob<=rates$rate[7], "AUD",
-    #                                                             ifelse(x$prob>rates$rate[7] & x$prob<=rates$rate[8], "UIJ",
-    #                                                                    ifelse(x$prob>rates$rate[8] & x$prob<=rates$rate[9], "MVACC",
-    #                                                                           ifelse(x$prob>rates$rate[9] & x$prob<=rates$rate[10], "IJ",
-  #   #                                                                                  ifelse(x$prob>rates$rate[10] & x$prob<=rates$rate[11], "REST",
-  #   #                                                                                  NA)))))))))))
-  #   return(x)
-  # }
-  # dead <- dead %>% group_by(cat) %>% do(fun(., summary))
-  # basepop <- basepop %>% ungroup() %>% dplyr::select(-c(cat, prob)) %>% mutate(cause=NA)
+  # # quicker alternative for alcohol calibration purposes
+  # rates <- rates %>% group_by(cat) %>% summarise(probdeath=max(cprob))
+  # basepop <- left_join(basepop, rates, by=c("cat"))
+  #
+  # basepop$prob <- runif(nrow(basepop))
+  # basepop$death <- ifelse(basepop$prob <= basepop$probdeath, 1,0)
+  #
+  # deaths <- basepop %>% filter(death==1)
+  basepopremoved <-basepop %>% filter(!ID %in% deaths$ID) %>%
+    dplyr::select(-c(cat))
   return(basepopremoved)
 }

@@ -15,13 +15,23 @@ sample_from_markov <- function(model, nsamples, inflation, originalsample,inflat
   # inflate the covariance matrix due to sample sized difference
   # based on magnitude of the difference calculated above
   covmat <- covmat*magnitude
+  diag(covmat) <- newSEs
 
   # now further inflate the cov matrix - due to pre-calculated difference between ACS and PSID
   # this was estimated to be 30x difference but is an adjustable parameter above
   covmat <- covmat*inflation
   # now sample from multivariate normal distribution
   samples <- mvrnorm(n=nsamples, estimates, covmat)
+
+  # lhs_samples <- randomLHS(nsamples, ncol(samples))
+  # #
+  # # # Scale samples to the desired range
+  # scaled_lhs_samples <- t(apply(lhs_samples, 1, function(x) min(samples) + (max(samples) - min(samples)) * x))
+  # #
+  # colnames(scaled_lhs_samples) <- colnames(samples)
+  #
+  # samples <- scaled_lhs_samples
   samplenums <- data.frame(samplenum=1:nrow(samples))
-  samples <- cbind(samplenums, samples)
-  return(samples)
+  newsamples <- cbind(samplenums, samples)
+  return(newsamples)
 }

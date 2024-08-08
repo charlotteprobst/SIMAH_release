@@ -7,12 +7,7 @@
 #' load_education_transitions
 load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDirectory){
   # allocate basepop and migrants a "tunnel state" within some college cat - dependent on age/sex and race
-  if(SelectedState=="USA"){
-    somec <- read.csv(paste0(WorkingDirectory,"somecollege_ACS.csv"))
-  }else{
-    somec <- read.csv(paste0(WorkingDirectory,"somecollege_ACS_states.csv")) %>% filter(STATE==SelectedState) %>%
-      dplyr::select(-STATE)
-  }
+  somec <- read.csv(paste0("SIMAH_workplace/microsim/education_calibration/somecollege_ACS.csv"))
 
   somec <- somec %>% rename(microsim.init.sex=SEX,
                             microsim.init.age=AGE,
@@ -99,7 +94,6 @@ load_education_transitions <- function(SelectedState, basepop, brfss, WorkingDir
   brfss$microsim.init.education <- ifelse(brfss$microsim.init.education=="SomeC1"|
                                             brfss$microsim.init.education=="SomeC2"|
                                             brfss$microsim.init.education=="SomeC3","SomeC",brfss$microsimnewED)
-
 
   # constraints on age for tunnel states
   # basepop <- basepop %>%

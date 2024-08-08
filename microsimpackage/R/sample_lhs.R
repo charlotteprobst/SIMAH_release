@@ -12,6 +12,7 @@
 #' sample_lhs
 sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # setup the list of priors for all possible disease outcomes
+  # add link to the google doc for mortality risk functions
     prior <- list(
       LVDC <- list(
         c("qnorm", 0.04167190, 0.00974742), #MBLIVER1 SD 0.00974742
@@ -107,7 +108,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
       ALL <- list(
         c("qunif", 0, 0.05), #BASE RATE FACTOR - MEN
         c("qunif", 0, 0.05), #BASE RATE FACTOR - WOMEN
-        c("qunif", 2006, 2011)) #BASE RATE YEAR TO IMPLEMENT
+        c("qunif", 2008, 2011)) #BASE RATE YEAR TO IMPLEMENT
       )
 
   # name the disease parameters
@@ -118,7 +119,7 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   names(prior$AUD) <- c("B_AUD1_MEN", "B_AUD1_ALL","AUD_FORMERDRINKER_MEN","AUD_FORMERDRINKER_WOMEN")
   names(prior$IJ) <- c("B_SUICIDE_MEN", "B_SUICIDE_WOMEN","SUICIDE_FORMERDRINKER_MEN","SUICIDE_FORMERDRINKER_WOMEN")
   names(prior$DM) <- c("B_DM_MEN", "B_DM_MEN_OFF", "B_DM1_WOMEN","B_DM2_WOMEN","DM_FORMERDRINKER_MEN","DM_FORMERDRINKER_WOMEN")
-  names(prior$IHD) <- c("B_IHD1_MEN", "B_IHD2_MEN", "B_IHD3_MEN", "B_IHD4_MEN", "B_IHD5_MEN", 
+  names(prior$IHD) <- c("B_IHD1_MEN", "B_IHD2_MEN", "B_IHD3_MEN", "B_IHD4_MEN", "B_IHD5_MEN",
                         "B_IHD1_WOMEN", "B_IHD2_WOMEN", "B_IHD3_WOMEN", "B_IHD4_WOMEN", "B_IHD5_WOMEN", "IHD_FORMERDRINKER_MEN", "IHD_FORMERDRINKER_WOMEN")
   names(prior$ISTR) <- c("B_ISTR1", "B_ISTR2","B_ISTR3","B_ISTR4","ISTR_FORMERDRINKER")
   names(prior$HYPHD) <- c("B_HYPHD_MEN", "B_HYPHD_WOMEN","HYPHD_FORMERDRINKER")
@@ -152,8 +153,8 @@ sample_lhs <- function(N_SAMPLES, PE, DISEASES=diseases){
   # Rename the columns in the lhsSample table to align with the names of the parameters
   names(lhsSample) <- c("SampleNum", names(prior))
 
-  # Save the lhsSample table
-  #write.csv(lhsSample, paste0("SIMAH_workplace/microsim/2_output_data", "lhsSamples_wave", WAVE, ".csv"), row.names=F)
+  # round year variable to be an integer
+  lhsSample$BASERATE_YEAR <- round(lhsSample$BASERATE_YEAR)
 
   # Convert the lhsSample table into list format
     list <- list()
