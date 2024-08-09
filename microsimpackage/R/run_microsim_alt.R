@@ -10,6 +10,7 @@
 run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          death_counts,
                          updatingeducation, education_transitions,
+                         COVID_specific_tps,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, drinkingdistributions,
@@ -209,8 +210,30 @@ if(updatingeducation==1){
   # print("updating education")
   totransition <- basepop %>% filter(age<=34)
   tostay <- basepop %>% filter(age>34)
+  if(y<=2019){
   totransition <- setup_education(totransition,y)
-  totransition <- totransition %>% group_by(cat) %>% do(transition_ed(., education_transitions))
+  }else {
+  totransition <- setup_education_covid(totransition,y)
+  }
+
+  if(COVID_specific_tps==1){
+    if(y<=2019){
+      print("applying pre-covid tps")
+      # apply transitions using pre covid TPs
+      totransition <- totransition %>% group_by(cat) %>%
+        do(transition_ed(., education_transitions))
+    }else {
+      print("applying covid tps")
+      # apply transitions using covid TPs
+      totransition <- totransition %>% group_by(cat) %>%
+        do(transition_ed(., education_transitions_covid))
+    }
+  } else {
+    print("applying pre-covid tps")
+    # apply tps for pre-covid throughout
+    totransition <- totransition %>% group_by(cat) %>%
+      do(transition_ed(., education_transitions))
+  }
   totransition$education_detailed <- totransition$newED
   totransition$education <- ifelse(totransition$education_detailed=="LEHS","LEHS",
                                                  ifelse(totransition$education_detailed=="SomeC1","SomeC",
