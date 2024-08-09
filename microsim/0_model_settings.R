@@ -25,10 +25,10 @@ PopulationSize <- 1000000
 migrationdeaths <- 1
 
 # switch on and off education updates
-updatingeducation <- 0
+updatingeducation <- 1
 
 # switch on and off alcohol updates
-updatingalcohol <- 0
+updatingalcohol <- 1
 
 # switch between modelling mortality and morbidity (mortality = 1)
 mortality <- 1

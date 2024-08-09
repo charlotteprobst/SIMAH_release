@@ -76,7 +76,7 @@ while(wave <= num_waves){
     education_model_num <- as.numeric(sampleseeds$educationmodel[i])
     education_transitions <- education_transitionsList[[education_model_num]]
     # change the mortality parameters being run
-    lhs <- transitionsList[[samplenum]]
+    mortality_parameters <- transitionsList[[samplenum]]
     # execute the simulation with each setting
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
@@ -84,7 +84,7 @@ while(wave <= num_waves){
                      migration_rates,
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
-                     base_counts, diseases, lhs, sesinteraction,
+                     base_counts, diseases, mortality_parameters, sesinteraction,
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
@@ -96,7 +96,9 @@ while(wave <= num_waves){
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
 
   # # # calculate and save implausibility values - age standardised but can be switched
-  summary <- calculate_implausibility_mortality(Output,agest=0, agestyear=2000, model_error=0.05)
+  # at the moment this calculates uncertainty based on 5% tolerance
+  # this needs to be updated based on GBD uncertainty! 
+  summary <- calculate_implausibility_mortality(Output,agest=1, agestyear=2010, model_error=0.05)
   implausibility <- summary[[1]]
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   # 
@@ -132,9 +134,10 @@ while(wave <= num_waves){
   # # keep top 15% of samples 
   implausibility <- implausibility %>% ungroup() %>% 
     mutate(percentile = ntile(max, 100))
+  # select top 15% of samples to keep
   topsamples <- unique(subset(implausibility, percentile<=15)$samplenum)
-
-  lhs <- resample_mortality_lhs(transitionsList, topsamples, nsamples)
+# sample new settings for mortality parameters based on best samples
+  mortality_parameters <- resample_mortality_lhs(transitionsList, topsamples, nsamples)
   
   transitionsList <- list()
   for(i in unique(lhs$sample)){
@@ -145,7 +148,7 @@ while(wave <= num_waves){
   prev_mean_implausibility <- new_mean_implausibility
   wave <- wave + 1
   
-  # save new samples from the regression
-  write.csv(lhs, paste0(OutputDirectory, "/lhs_mortality-", wave,".csv"))
+  # save new mortality parameters for next wave 
+  write.csv(mortality_parameters, paste0(OutputDirectory, "/lhs_mortality-", wave,".csv"))
 }
 

@@ -7,7 +7,7 @@ this outputs a TP}
 \usage{
 calculate_implausibility_mortality(
   data,
-  agest = 0,
+  agest = 1,
   agestyear = 2010,
   model_error
 )
