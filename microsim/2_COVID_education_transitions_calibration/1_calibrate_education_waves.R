@@ -27,8 +27,8 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
 # WorkingDirectory <- "/home/cbuckley"
-# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
-WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
@@ -39,7 +39,7 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_run_microsimulation/2_COVID_education_transitions_calibration/")
+ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_COVID_education_transitions_calibration/")
 
 # read in all model settings
 source(paste0(ScriptDirectory, "/0_model_settings.R"))
@@ -79,7 +79,7 @@ while(wave <= num_waves){
                      migration_rates,
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
-                     base_counts, diseases, lhs, sesinteraction,
+                     base_counts, diseases, mortality_parameters, sesinteraction,
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
@@ -91,7 +91,7 @@ while(wave <= num_waves){
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
 
   # calculate and save implausibility values
-  implausibility <- calculate_implausibility_education(Output, targets, 2022)
+  implausibility <- calculate_implausibility_education(Output, targets, 2019,2022)
   # All implausibilities prev returning -Inf
   
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)

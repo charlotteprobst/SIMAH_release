@@ -30,7 +30,7 @@ prev_mean_implausibility <- 100
 wave <- 1
 
 # read in the pre-COVID education models for COVID education model calibration
-education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
+education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
 
 for(i in 1:length(education_transitionsList)){
   education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
@@ -46,7 +46,7 @@ edmodels <- edmodels %>% bind_rows()
 sampleseeds$educationmodel <- edmodels$education_model
 
 # read in the targets
-targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%
+targets <- read.csv("SIMAH_workplace/microsim/education_calibration/education_targets.csv") %>%
   group_by(YEAR, AGECAT, RACE, SEX) %>%
   mutate(target=TPop/sum(TPop),
          SE=sqrt(target*(1-target)/sum(OrigSample)),

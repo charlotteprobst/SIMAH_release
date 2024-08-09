@@ -71,6 +71,7 @@ while(wave <= num_waves){
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
+                     COVID_specific_tps=0,
                      migration_rates,
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
@@ -86,7 +87,7 @@ while(wave <= num_waves){
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
 
   # calculate and save implausibility values
-  implausibility <- calculate_implausibility_education(Output, targets)
+  implausibility <- calculate_implausibility_education(Output, targets, 2000,2014)
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   
   # calculate the difference between the old implausibility and new implausibility 

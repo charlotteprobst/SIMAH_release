@@ -2,7 +2,6 @@
 
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory
-WorkingDirectory <- ("C:/Users/cmp21seb/Documents/SIMAH")
 DataDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/1_input_data/")
 OutputDirectory <- paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/covid")
 

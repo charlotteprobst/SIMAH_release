@@ -5,7 +5,7 @@
 \title{function to calculate implausibility for education transitions calibration
 this outputs a TP}
 \usage{
-calculate_implausibility_education(data, targets)
+calculate_implausibility_education(data, targets, min_year, max_year)
 }
 \description{
 function to calculate implausibility for education transitions calibration
