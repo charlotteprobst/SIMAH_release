@@ -74,6 +74,7 @@ Output <- list()
 Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
                            death_counts,
                            updatingeducation, education_transitions,
+                           COVID_specific_tps=0,
                            migration_rates,
                            updatingalcohol, alcohol_transitions,
                            catcontmodel, drinkingdistributions,

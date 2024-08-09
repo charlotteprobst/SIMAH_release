@@ -85,6 +85,7 @@ while(wave <= num_waves){
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
+                     COVID_specific_tps=0,
                      migration_rates,
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
