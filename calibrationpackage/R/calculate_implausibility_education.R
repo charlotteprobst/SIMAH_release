@@ -5,8 +5,9 @@
 #' @export
 #' @examples
 #' calculate_implausibility_education
-calculate_implausibility_education <- function(data, targets){
-  data <- data %>% mutate(AGECAT = cut(microsim.init.age,
+calculate_implausibility_education <- function(data, targets, implausability_year){
+  data <- data %>%
+    mutate(AGECAT = cut(microsim.init.age,
                                        breaks=c(0,24,34,44,54,64,79),
                                        labels=c("18-24","25-34","35-44","45-54",
                                                 "55-64","65-79")),
@@ -14,15 +15,14 @@ calculate_implausibility_education <- function(data, targets){
                           RACE = recode(microsim.init.race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                                         "OTH"="Others")) %>%
     rename(EDUC=microsim.init.education, YEAR=year) %>%
-    group_by(YEAR, samplenum, seed, SEX, AGECAT,RACE,
-             EDUC) %>%
+    group_by(YEAR, samplenum, seed, SEX, AGECAT,RACE,EDUC) %>% # added seed
     summarise(n=sum(n)) %>%
     ungroup() %>%
     group_by(YEAR, samplenum, seed, SEX, AGECAT, RACE) %>%
     mutate(prop = n/sum(n))
 
   variance <- data %>%
-    group_by(YEAR, samplenum, SEX, EDUC, RACE, AGECAT) %>%
+    group_by(YEAR, samplenum, SEX, EDUC, RACE, AGECAT) %>% # dropped seed
     summarise(variance = var(prop)) %>%
     ungroup() %>%
     group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>%
@@ -35,7 +35,8 @@ calculate_implausibility_education <- function(data, targets){
 
   implausibility <- data %>%
     # filter(AGECAT=="18-24") %>%
-    filter(YEAR<=2019) %>%
+    filter(YEAR<=implausability_year) %>% # implausibility_year = 2019 for pre-COVID calibration
+                                          # and 2022 for COVID calibration
     group_by(YEAR, samplenum, SEX,AGECAT, RACE, EDUC) %>%
     summarise(prop = mean(prop),
               target = mean(target),

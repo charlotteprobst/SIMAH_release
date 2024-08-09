@@ -9,15 +9,15 @@ options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
 
 # set up the number of samples to be run
-nsamples <- 300
-nreps <- 1
+nsamples <- 3
+nreps <- 2
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
 sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
 
 # maximum number of potential calibration waves
-num_waves <- 1 # normally 15
+num_waves <- 2 # normally 15
 
 # improvement threshold to stop simulation - set at 0.5% 
 # this means the calibration will stop when implausibility does not improve by more than 0.5%
@@ -29,7 +29,7 @@ prev_mean_implausibility <- 100
 # set wave to 1 initially
 wave <- 1
 
-# read in the education models for alcohol model calibration 
+# read in the pre-COVID education models for COVID education model calibration
 education_transitionsList <- read_rds(paste0(WorkingDirectory, "/SIMAH_workplace/microsim/2_output_data/education_calibration/new_implausibility_se", "/transitionsList-10",".RDS"))
 
 for(i in 1:length(education_transitionsList)){
@@ -45,11 +45,10 @@ edmodels[[paste(i)]] <- data.frame(education_model = sample(1:nsamples, replace=
 edmodels <- edmodels %>% bind_rows()
 sampleseeds$educationmodel <- edmodels$education_model
 
-
 # read in the targets
-# targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%
-#   group_by(YEAR, AGECAT, RACE, SEX) %>%
-#   mutate(target=TPop/sum(TPop),
-#          SE=sqrt(target*(1-target)/sum(OrigSample)),
-#          variance = (SE^2) * OrigSample) %>%
-#   dplyr::select(-c(TPop:OrigSample))
+targets <- read.csv("SIMAH_workplace/microsim/2_output_data/education_calibration/education_targets.csv") %>%
+  group_by(YEAR, AGECAT, RACE, SEX) %>%
+  mutate(target=TPop/sum(TPop),
+         SE=sqrt(target*(1-target)/sum(OrigSample)),
+         variance = (SE^2) * OrigSample) %>%
+  dplyr::select(-c(TPop:OrigSample))

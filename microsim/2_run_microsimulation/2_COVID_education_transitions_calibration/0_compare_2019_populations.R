@@ -103,9 +103,11 @@ unique_combinations <- Combinations %>%
   
 # save the results
 write.csv(unique_combinations, "SIMAH_workplace/education_transitions/2021/comparisson_of_populations_2019_300_samples.csv", row.names=F) 
+
+# read in the results
+unique_combinations <- read.csv("SIMAH_workplace/education_transitions/2021/comparisson_of_populations_2019_300_samples.csv")
  
 # Plot
-# Assuming your dataframe is named df
 unique_combinations %>%
   ggplot(aes(x = microsimnewED , y = max_difference, color = microsim.init.race)) +
   geom_point() +

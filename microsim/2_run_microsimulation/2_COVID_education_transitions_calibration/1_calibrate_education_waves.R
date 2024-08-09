@@ -66,12 +66,16 @@ while(wave <= num_waves){
     seed <- as.numeric(sampleseeds$seed[i])
     # reset the base population to the original pop for each calibration iteration
     basepop <- baseorig
-    # change the education transitions for each iteration
-    education_transitions <- transitionsList[[samplenum]]
+    # change the pre-COVID education transitions - based on the prior calibrated models
+    education_model_num <- as.numeric(sampleseeds$educationmodel[i])
+    education_transitions <- education_transitionsList[[education_model_num]]
+    # change the COVID education model for each iteration
+    education_transitions_covid <- transitionsList_covid[[samplenum]] 
     # execute the simulation with each setting
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
+                     COVID_specific_tps=1,
                      migration_rates,
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
@@ -79,7 +83,7 @@ while(wave <= num_waves){
                      policy=0, percentreduction=0.1, year_policy, inflation_factors,
                      age_inflated,
                      update_base_rate,
-                     minyear=2000, maxyear=2002, output="population")
+                     minyear=2000, maxyear=2022, output="demographics")
     }
 
   Output <- do.call(rbind,Output)
@@ -87,7 +91,9 @@ while(wave <= num_waves){
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
 
   # calculate and save implausibility values
-  implausibility <- calculate_implausibility_education(Output, targets)
+  implausibility <- calculate_implausibility_education(Output, targets, 2022)
+  # All implausibilities prev returning -Inf
+  
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   
   # calculate the difference between the old implausibility and new implausibility 

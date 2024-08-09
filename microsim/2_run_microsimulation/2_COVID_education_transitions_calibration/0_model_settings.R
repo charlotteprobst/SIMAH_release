@@ -81,7 +81,7 @@ proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
 # parameter settings for calibration
-n_samples <- 300
+n_samples <- 3
 
 # whether to just use the point estimate - set this to 1 for education and alcohol transitions 
 PE <- 1
