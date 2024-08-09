@@ -1,14 +1,9 @@
 # SIMAH project 2024 - script for generating samples from COVID markov model for calibration
 library(tidyverse)
 library(microsimpackage)
+library(calibrationpackage)
 library(MASS)
 library(msm)
-
-# Source calibration package files
-file_list <- list.files(path = "C:/Users/cmp21seb/Documents/SIMAH/SIMAH_code/calibrationpackage/R/", pattern = "\\.R$", full.names = TRUE)
-for (file in file_list) {
-  source(file)
-}
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH")
 
@@ -49,15 +44,15 @@ probs <- probs %>%
   separate(cov, into=c("age","sex","race"), sep="_") %>% 
   mutate(sex=ifelse(sex=="0", "m","f"))
 
-transitionsList <- list()
+transitionsList_covid <- list()
 for(i in 1:length(unique(samples$samplenum))){
-  transitionsList[[paste(i)]] <- probs %>% filter(samplenum==i) %>%
+  transitionsList_covid[[paste(i)]] <- probs %>% filter(samplenum==i) %>%
     mutate(cat = paste(age, sex, race, "STATEFROM", StateFrom, sep="_")) %>%
     group_by(cat) %>% mutate(cumsum=cumsum(prob)) %>%
     dplyr::select(cat, StateTo, cumsum)
 }
 
 # save samples - for wave 1 in Output Directory
-saveRDS(transitionsList, paste0(OutputDirectory, "/transitionsList-1-COVID",".RDS"))
+saveRDS(transitionsList_covid, paste0(OutputDirectory, "/transitionsList-1-COVID",".RDS"))
 colnames(samples) <- make.unique(colnames(samples))
 write.csv(samples, paste0(OutputDirectory, "/sampled_markov-1-COVID", ".csv"), row.names=F)
