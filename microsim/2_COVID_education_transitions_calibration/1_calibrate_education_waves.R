@@ -27,14 +27,14 @@ options(dplyr.summarise.inform = FALSE)
 # WorkingDirectory <- "U:/SIMAH"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH"
 # WorkingDirectory <- "/home/cbuckley"
-WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
-# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+# WorkingDirectory <- "/Users/charlottebuckley/Google Drive/SIMAH Sheffield"
+ WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
 # set wd and install the microsim and calibration packages
 setwd(paste(WorkingDirectory))
 
-install("SIMAH_code/microsimpackage", dep=T)
-install("SIMAH_code/calibrationpackage", dep=T)
+# install("SIMAH_code/microsimpackage", dep=T)
+# install("SIMAH_code/calibrationpackage", dep=T)
 
 library(microsimpackage)
 library(calibrationpackage)
@@ -44,14 +44,14 @@ ScriptDirectory <- paste0(WorkingDirectory, "/SIMAH_code/microsim/2_COVID_educat
 # read in all model settings
 source(paste0(ScriptDirectory, "/0_model_settings.R"))
 
-# read in settings for calibration
-source(paste0(ScriptDirectory,"0_calibration_settings.R"))
-
 # load all microsim files
 source(paste0(ScriptDirectory, "0_load_microsim_files.R"))
 
 # set up samples for calibration for education transitions
 source(paste0(ScriptDirectory,"0_generate_calibration_samples_COVID.R"))
+
+# read in settings for calibration
+source(paste0(ScriptDirectory,"0_calibration_settings.R"))
 
 # parallel loop that runs the calibration process 
 # this loops through waves of calibration and runs all sampled settings
@@ -91,8 +91,8 @@ while(wave <= num_waves){
   write.csv(Output, paste0(OutputDirectory, "/output-",wave, ".csv"), row.names=F)
 
   # calculate and save implausibility values
+  # (set min and max year of calibration here - currently 2019 and 2022)
   implausibility <- calculate_implausibility_education(Output, targets, 2019,2022)
-  # All implausibilities prev returning -Inf
   
   write.csv(implausibility, paste0(OutputDirectory, "/implausibility-",wave, ".csv"), row.names=F)
   
