@@ -3,7 +3,7 @@
 # setting up parallel settings for calibration
 # note that this is for use on HPC across multiple cores 
 # if running locally (which is not suggested) set to 1
-registerDoParallel(1)
+registerDoParallel(1) # set to 16 max when using HPC
 options(future.rng.onMisuse="ignore")
 options(future.globals.maxSize = 10000 * 1024^3)
 options(future.fork.multithreading.enable = FALSE)
@@ -14,10 +14,10 @@ nreps <- 2
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
-sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=T)
+sampleseeds$seed <- sample(1:nrow(sampleseeds), nrow(sampleseeds), replace=F)
 
 # maximum number of potential calibration waves
-num_waves <- 1 # normally 15
+num_waves <- 2 # normally 15
 
 # improvement threshold to stop simulation - set at 0.5% 
 # this means the calibration will stop when implausibility does not improve by more than 0.5%

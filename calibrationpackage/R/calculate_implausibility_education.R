@@ -26,7 +26,9 @@ calculate_implausibility_education <- function(data, targets, min_year, max_year
     summarise(variance = var(prop)) %>%
     ungroup() %>%
     group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>%
-    summarise(v_s = mean(variance))
+    summarise(v_s = mean(variance, na.rm=T))
+
+  targets$RACE <- ifelse(targets$RACE=="Other", "Others", targets$RACE)
 
   data <- left_join(data,targets) %>%
     mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
