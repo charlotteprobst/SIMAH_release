@@ -264,14 +264,14 @@ mdata_prepped <- mdata_prepped %>% mutate(
  mdata_prepped <- mdata_prepped %>% 
    group_by(intersections) %>%
    mutate(pmn = mean(p),
-          plo = quantile(p,.25),
-          phi = quantile(p,.75),
+          plo = quantile(p,.025),
+          phi = quantile(p,.975),
           pAmn = mean(pA),
-          pAlo = quantile(pA,.25),
-          pAhi = quantile(pA,.75),
+          pAlo = quantile(pA,.025),
+          pAhi = quantile(pA,.975),
           pBmn = mean(pB),
-          pBlo = quantile(pB,.25),
-          pBhi = quantile(pB,.75))
+          pBlo = quantile(pB,.025),
+          pBhi = quantile(pB,.975))
 
 # Drop chains and just keep their summaries (mean, 2.5th and 97.5th)
 mdata_results <- mdata_prepped %>%
@@ -282,10 +282,10 @@ mdata_results <- mdata_prepped %>%
 mdata_results <- inner_join(mdata_results, intersections_reference)
 
 # save results
-saveRDS(mdata_results, paste0(outputs, "binary drinking status/results binary drinking status.rds"))
+saveRDS(mdata_results, paste0(outputs, "binary drinking status/results binary drinking status corrected CIs.rds"))
 
 ##### SUMMARY RESULTS TABLES
-mdata_results <- readRDS(paste0(outputs, "binary drinking status/results binary drinking status.rds"))
+mdata_results <- readRDS(paste0(outputs, "binary drinking status/results binary drinking status corrected CIs.rds"))
 
 # Summarise intersectional groups with the highest and lowest proportions of HEDs
 mdata_max_5_overall <- mdata_results %>% ungroup %>% slice_max(pmn, n = 5) %>% 
@@ -294,7 +294,7 @@ mdata_min_5_overall <- mdata_results %>% ungroup %>% slice_min(pmn, n = 5) %>%
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_overall <- rbind(mdata_max_5_overall, mdata_min_5_overall)
 
-write.csv(mdata_overall, paste0(outputs, "binary drinking status/mdata_5_estimates_drinking_status.csv"))
+write.csv(mdata_overall, paste0(outputs, "binary drinking status/mdata_5_estimates_drinking_status_corrected_cis.csv"))
 
 # Summarise which intersectional groups have the largest interaction effects
 mdata_max_5_interactions <- mdata_results %>% ungroup %>% slice_max(pBmn, n = 5) %>% 
@@ -303,7 +303,7 @@ mdata_min_5_interactions <- mdata_results %>% ungroup %>% slice_min(pBmn, n = 5)
   dplyr::select(intersectional_names, pmn, plo, phi, pAmn, pAlo, pAhi, pBmn, pBlo, pBhi)
 mdata_interactions <- rbind(mdata_max_5_interactions, mdata_min_5_interactions)
 
-write.csv(mdata_interactions, paste0(outputs, "binary drinking status/mdata_5_interactions_drinking_status.csv"))
+write.csv(mdata_interactions, paste0(outputs, "binary drinking status/mdata_5_interactions_drinking_status_corrected_cis.csv"))
 
 ##### Explore face validity of estimates
 
