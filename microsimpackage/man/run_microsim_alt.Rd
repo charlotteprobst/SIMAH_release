@@ -28,9 +28,9 @@ run_microsim_alt(
   inflation_factors,
   age_inflated,
   update_base_rate,
-  minyear = 2000,
-  maxyear = 2005,
-  output = "mortality"
+  minyear,
+  maxyear,
+  output
 )
 }
 \description{

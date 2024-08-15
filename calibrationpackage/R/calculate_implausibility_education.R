@@ -15,18 +15,20 @@ calculate_implausibility_education <- function(data, targets, min_year, max_year
                           RACE = recode(race, "BLA"="Black","WHI"="White","SPA"="Hispanic",
                                         "OTH"="Others")) %>%
     rename(EDUC=education, YEAR=year) %>%
-    group_by(YEAR, samplenum, seed, SEX, AGECAT,RACE,EDUC) %>% # added seed
+    group_by(YEAR, samplenum, seed, SEX, AGECAT,RACE,EDUC) %>%
     summarise(n=sum(n)) %>%
     ungroup() %>%
     group_by(YEAR, samplenum, seed, SEX, AGECAT, RACE) %>%
     mutate(prop = n/sum(n))
 
   variance <- data %>%
-    group_by(YEAR, samplenum, SEX, EDUC, RACE, AGECAT) %>% # dropped seed
+    group_by(YEAR, samplenum, SEX, EDUC, RACE, AGECAT) %>%
     summarise(variance = var(prop)) %>%
     ungroup() %>%
     group_by(YEAR, SEX, EDUC, RACE, AGECAT) %>%
-    summarise(v_s = mean(variance))
+    summarise(v_s = mean(variance, na.rm=T))
+
+  targets$RACE <- ifelse(targets$RACE=="Other", "Others", targets$RACE)
 
   data <- left_join(data,targets) %>%
     mutate(EDUC = factor(EDUC, levels=c("LEHS","SomeC","College")))
