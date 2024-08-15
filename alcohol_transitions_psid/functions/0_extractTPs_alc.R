@@ -29,8 +29,8 @@ extractTPs_subgroups <- function(model,combo){
     probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(age_cat=age_var,sex=sex_var,race=race_var,education=education_var))
     probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
     probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
-    probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.4,
-                                                            names_to="StateTo", values_to="prob") %>% 
+    probs[[paste(i)]] <- probs[[paste(i)]] %>% 
+      pivot_longer(cols=State.1:State.4,names_to="StateTo", values_to="prob") %>% 
       mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
                                  endsWith(StateTo,"2") ~ "State 2",
                                  endsWith(StateTo,"3") ~ "State 3",
@@ -39,6 +39,7 @@ extractTPs_subgroups <- function(model,combo){
              sex=sex_var,
              race=race_var,
              education=education_var)
+
   }
   probs <- do.call(rbind,probs) 
   return(probs)

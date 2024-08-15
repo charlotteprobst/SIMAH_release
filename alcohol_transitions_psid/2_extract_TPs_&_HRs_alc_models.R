@@ -33,14 +33,13 @@ data <- data %>%
 data <- data %>% drop_na(race,education,sex,age_cat)
 
 # Load MSM Models 
-model_2005_2010 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
-model_2011_2019 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019.RDS")
-model_2019_2021 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021.RDS")
-model_timevary <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_model_4_timeperiod.RDS")
-model_2019_2021_weighted <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021_incl_sample_weights.RDS")
+#model_2005_2010 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
+model_2011_2019 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019_incl_sample_weights.RDS")
+model_2019_2021 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021_incl_sample_weights.RDS")
+#model_timevary <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_model_4_timeperiod.RDS")
 
 # Extract TPs for moving between states, overall
-model_2005_2010_TPs <- extractTPs_basic(model_2005_2010, 1)
+#model_2005_2010_TPs <- extractTPs_basic(model_2005_2010, 1)
 model_2011_2019_TPs <- extractTPs_basic(model_2011_2019, 1)
 model_2019_2021_TPs <- extractTPs_basic(model_2019_2021, 1)
 model_2019_2021_TPs_weighted <- extractTPs_basic(model_2019_2021_weighted, 1)
@@ -49,9 +48,9 @@ model_2019_2021_TPs_weighted <- extractTPs_basic(model_2019_2021_weighted, 1)
 # Asymptotic standard errors not available in fitted model
 
 # Save results
-write_csv(model_2005_2010_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_TPs.csv")
-write_csv(model_2011_2019_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_TPs.csv")
-write_csv(model_2019_2021_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs.csv")
+#write_csv(model_2005_2010_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_TPs.csv")
+write_csv(model_2011_2019_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_weighted_TPs.csv")
+write_csv(model_2019_2021_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_weighted_TPs.csv")
 # write_csv(model_timevary_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_timevary_TPs.csv")
 write_csv(model_2019_2021_TPs_weighted, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs_weighted.csv")
 
@@ -61,7 +60,7 @@ write_csv(model_2019_2021_TPs_weighted, "SIMAH_workplace/alcohol_transitions_psi
 # Extract TPs for specific groups
 combo <- expand.grid(age_cat = unique(data$age_cat), sex = unique(data$sex), race=unique(data$race), education=unique(data$education))
 
-model_2005_2010_TPs_detail <- extractTPs_subgroups(model_2005_2010, combo) 
+# model_2005_2010_TPs_detail <- extractTPs_subgroups(model_2005_2010, combo) 
 model_2011_2019_TPs_detail <- extractTPs_subgroups(model_2011_2019, combo)
 model_2019_2021_TPs_detail <- extractTPs_subgroups(model_2019_2021, combo)
 model_2019_2021_TPs_detail_weighted <- extractTPs_subgroups(model_2019_2021_weighted, combo)
@@ -73,11 +72,10 @@ write_csv(model_2011_2019_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/
 write_csv(model_2019_2021_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs_detail.csv")
 write_csv(model_2019_2021_TPs_detail_weighted, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_weighted_TPs_detail.csv")
 
-
 ########################################
 # Hazard ratios
-model_2005_2010_HRs <- predict_HRs(model_2005_2010)
 model_2011_2019_HRs <- predict_HRs(model_2011_2019)
+model_2019_2021_HRs <- predict_HRs(model_2019_2021)
 
-write_csv(model_2005_2010_HRs, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_HRs.csv")
-write_csv(model_2011_2019_HRs, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_HRs.csv")
+write_csv(model_2011_2019_HRs, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_HRs_weighted.csv")
+write_csv(model_2019_2021_HRs, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_HRs_weighted.csv")

@@ -56,14 +56,31 @@ brfssorig <- brfssorig %>%
 # Rename education variable 
 brfssorig <- brfssorig %>% rename(education_cat=education_summary)
 
-### COMPARE GRAMS PER DAY ESTIMATES
+# Add confidence intervals to estimates
 
+# Calcualte CIs
+conf_intervals <- brfssorig %>%
+  group_by(YEAR, race_eth, sex_recode, age_cat) %>%
+  mutate(sample_size=n(),
+  mean_gpd = mean(gramsperday_upshifted),
+sd = sd(gramsperday_upshifted),
+SE = sd/sqrt(sample_size),
+lower_gpd = mean_gpd - 1.96*SE,
+upper_gpd = mean_gpd + 1.96*SE) %>% ungroup()
+
+### COMPARE GRAMS PER DAY ESTIMATES
 summary_psid_gpd <- PSID %>% group_by(year, sex) %>% filter(gpd!=0) %>% 
   summarise(meangpd = mean(gpd),
             type="PSID")
 
 summarybrfss_gpd <- brfssorig %>%  filter(gramsperday_upshifted!=0) %>% 
-  group_by(YEAR, sex_recode) %>% summarise(meangpd = mean(gramsperday_upshifted)) %>% 
+  group_by(YEAR, sex_recode) %>% 
+  summarise(sample_size=n(),
+            meangpd = mean(gramsperday_upshifted),
+            sd = sd(gramsperday_upshifted),
+            SE = sd/sqrt(sample_size),
+            lower_gpd = meangpd - 1.96*SE,
+            upper_gpd = meangpd + 1.96*SE) %>% 
   rename(year=YEAR, sex=sex_recode) %>% 
   mutate(sex = ifelse(sex=="Male","male","female"),
          type="BRFSS")
@@ -72,13 +89,17 @@ summary_gpd <- rbind(summary_psid_gpd, summarybrfss_gpd)
 
 ggplot(data=summary_gpd, aes(x=year, y=meangpd, colour=type)) + 
   geom_line() + 
+  geom_ribbon(data = summary_gpd %>% filter(type == "BRFSS"), 
+              aes(x = year, ymin = lower_gpd, ymax = upper_gpd, fill = type), 
+              alpha = 0.2) +
   scale_x_continuous(limits = c(2005, 2022), breaks = seq(2005, 2022, by = 1), labels = seq(2005, 2022, by = 1)) + 
   ylim(0, NA) + 
   theme_bw() +
-  facet_grid(rows=vars(sex)) + 
+  facet_grid(rows = vars(sex)) + 
   ylab("mean gpd (in drinkers)") +
   theme(legend.title = element_blank(),
-        strip.background = element_rect(fill = "white"))
+        strip.background = element_rect(fill = "white")) +
+  labs(title = "Mean GPD with Confidence Intervals for BRFSS Data")
 ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_gpd_2022.png",dpi=300, width=33, height=19, units="cm")
 
 # by sex, year and race
@@ -208,8 +229,9 @@ cat_complex_plots_female <- cat_complex_plots %>% filter (sex=="female")
 
 ggplot(data=cat_complex_plots_male, aes(x=year, y=percent, colour=type)) + geom_line() +
   theme_bw() +
-  scale_x_continuous(limits = c(2015, 2022), breaks = seq(2015, 2022, by = 1), labels = seq(2015, 2022, by = 1)) + 
+  scale_x_continuous(limits = c(2000, 2022), breaks = seq(2000, 2022, by = 4), labels = seq(2000, 2022, by = 4)) + 
   theme(legend.title=element_blank(),
+        legend.position="bottom",
         strip.background = element_rect(fill="white"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   geom_vline(aes(xintercept=2019), linetype="dashed", colour="red")+
@@ -219,8 +241,9 @@ ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_
 
 ggplot(data=cat_complex_plots_female, aes(x=year, y=percent, colour=type)) + geom_line() +
   theme_bw() +
-  scale_x_continuous(limits = c(2015, 2022), breaks = seq(2015, 2022, by = 1), labels = seq(2015, 2022, by = 1)) + 
+  scale_x_continuous(limits = c(2000, 2022), breaks = seq(2000, 2022, by = 4), labels = seq(2000, 2022, by = 4)) + 
   theme(legend.title=element_blank(),
+        legend.position="bottom",
         strip.background = element_rect(fill="white"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
   geom_vline(aes(xintercept=2019), linetype="dashed", colour="red")+
@@ -228,3 +251,153 @@ ggplot(data=cat_complex_plots_female, aes(x=year, y=percent, colour=type)) + geo
   ggtitle("Women")
 ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_female.png",dpi=300, width=33, height=19, units="cm")
 
+######## Review BRFSS data only, but including all targets
+
+library(forcats)
+
+# Reorder education_cat using forcats
+brfssorig$education_cat <- fct_relevel(brfssorig$education_cat, 
+                                                      "LEHS", "SomeC", "College")
+
+# Calculate the confidence intervals
+brfss_target <- brfssorig %>%
+  mutate(final_alc_cat = case_when(
+    gramsperday_upshifted == 0 ~ "nondrinker",
+    sex_recode == "Male" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 40 ~ "lowrisk",
+    sex_recode == "Female" & gramsperday_upshifted > 0 & gramsperday_upshifted <= 20 ~ "lowrisk",
+    sex_recode == "Male" & gramsperday_upshifted > 40 & gramsperday_upshifted <= 60 ~ "medrisk",
+    sex_recode == "Female" & gramsperday_upshifted > 20 & gramsperday_upshifted <= 40 ~ "medrisk",
+    sex_recode == "Male" & gramsperday_upshifted > 60 ~ "highrisk",
+    sex_recode == "Female" & gramsperday_upshifted > 40 ~ "highrisk",
+    TRUE ~ NA_character_
+  )) %>%  
+  drop_na(final_alc_cat, age_cat) %>%
+  group_by(YEAR, age_cat, sex_recode, race_eth, education_cat, final_alc_cat) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  group_by(YEAR, age_cat, sex_recode, race_eth, education_cat) %>%
+  mutate(percent = n / sum(n),
+         se = sqrt((percent * (1 - percent)) / sum(n)), # standard error
+         lower_ci = pmax(0, percent - 1.96 * se), # lower 95% CI bounded at 0
+         upper_ci = pmin(1, percent + 1.96 * se)  # upper 95% CI bounded at 1
+  ) %>%
+  ungroup() %>%
+  rename(year = YEAR, sex = sex_recode) %>%
+  mutate(sex = ifelse(sex == "Male", "male", "female"),
+         type = "BRFSS")
+
+brfss_target$final_alc_cat <- fct_relevel(brfss_target$final_alc_cat,
+"nondrinker", "lowrisk", "medrisk", "highrisk")
+
+# Filter for White males and females 
+
+brfss_targets_male_white <- brfss_target %>% filter (sex=="male", race_eth=="White") %>%
+  mutate(percent=percent)
+brfss_targets_female_white <- brfss_target %>% filter (sex=="female", race_eth=="White") %>%
+  mutate(percent=percent)
+
+ggplot(data = brfss_targets_male_white, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("White Men") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_white_male.png",dpi=300, width=33, height=19, units="cm")
+
+ggplot(data = brfss_targets_female_white, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("White Women") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_white_female.png",dpi=300, width=33, height=19, units="cm")
+
+# Filter for Hispanic males and females 
+brfss_targets_male_hispanic <- brfss_target %>%
+  filter(sex == "male", race_eth == "Hispanic") %>%
+  mutate(percent = percent)
+
+brfss_targets_female_hispanic <- brfss_target %>%
+  filter(sex == "female", race_eth == "Hispanic") %>%
+  mutate(percent = percent)
+
+# Plot for Hispanic males
+ggplot(data = brfss_targets_male_hispanic, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("Hispanic Men") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_hispanic_male.png", dpi = 300, width = 33, height = 19, units = "cm")
+
+# Plot for Hispanic females
+ggplot(data = brfss_targets_female_hispanic, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("Hispanic Women") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_hispanic_female.png", dpi = 300, width = 33, height = 19, units = "cm")
+
+# Filter for Black males and females 
+brfss_targets_male_black <- brfss_target %>%
+  filter(sex == "male", race_eth == "Black") %>%
+  mutate(percent = percent)
+
+brfss_targets_female_black <- brfss_target %>%
+  filter(sex == "female", race_eth == "Black") %>%
+  mutate(percent = percent)
+
+# Plot for Black males
+ggplot(data = brfss_targets_male_black, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = )) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("Black Men") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_black_male.png", dpi = 300, width = 33, height = 19, units = "cm")
+
+# Plot for Black females
+ggplot(data = brfss_targets_female_black, aes(x = year, y = percent * 100)) +
+  geom_line(aes(color = final_alc_cat)) +
+  geom_ribbon(aes(ymin = lower_ci * 100, ymax = upper_ci * 100, fill = final_alc_cat), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous(limits = c(2010, 2022), breaks = seq(2010, 2022, by = 2), labels = seq(2010, 2022, by = 2)) + 
+  theme(legend.title = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  geom_vline(aes(xintercept = 2020), linetype = "dashed", colour = "red") +
+  facet_grid(cols = vars(age_cat, education_cat), rows = vars(final_alc_cat), scales = "free_y") +
+  ggtitle("Black Women") +
+  labs(y = "Percent (%)")
+ggsave("SIMAH_workplace/PSID/Results/Alcohol trends/brfss_vs_psid_alc_cats_2022_black_female.png", dpi = 300, width = 33, height = 19, units = "cm")

@@ -4,7 +4,7 @@
 \alias{outward_migration}
 \title{Deletes individuals due to migration in each simulated year}
 \usage{
-outward_migration(basepop, year_rates, y)
+outward_migration(basepop, migration_counts, y)
 }
 \description{
 Deletes individuals due to migration in each simulated year

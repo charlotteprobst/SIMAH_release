@@ -1,0 +1,57 @@
+Sample_Probs <- function(model, nsamples, TimePeriod, inflation,original,inflated){
+  estimates <- model$estimates.t
+  covmat <- model$covmat
+  SEs <- diag(covmat)
+  SDs <- SEs * sqrt(inflated)
+  newSEs = SDs / (sqrt(original))
+  # work out the magnitude of the difference 
+  magnitude <- newSEs/SEs
+  covmat <- covmat*magnitude
+  covmat <- covmat*inflation
+
+  # adjust the covariance matrix - first estimate standard deviations 
+  
+  samples <- mvrnorm(n=nsamples, estimates, covmat)
+
+  # now make prior for hispanic black samples 
+  # samples[,29] <- samples[,25]
+  # samples[,30] <- samples[,26]
+  # samples[,31] <- samples[,27]
+  # samples[,32] <- samples[,28]
+  
+  x <- model
+  sex <- unique(model$data$mf$female_w1)
+  race <- unique(model$data$mf$race_w1)
+  age <- unique(model$data$mf$age7)
+  education <- unique(model$data$mf$edu3)
+    # every age sex race combination
+  combinations <- expand.grid(age,sex,race,education)
+  names(combinations) <- c("age","sex","race","education")
+  combinations <- data.frame(combinations)
+  options(digits=3)
+  combinations$cat <- paste(combinations$age, combinations$sex, combinations$race, combinations$education, sep="_")
+  # plist <- list()
+  # plist <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
+  #                                msm.parse.covariates, MatrixExp)
+  options(scipen=999)
+  
+  sampleList <- as.list(as.data.frame(t(samples)))
+  names(sampleList) <- 1:nrow(samples)
+  allsamples <- list()
+  for(k in 1:nrow(samples)){
+    estimates <- sampleList[[k]]
+    allsamples[[paste(k)]] <- extract_for_estimates(estimates, combinations, x, setupQ, msm.fixdiag.qmatrix,
+                                                    msm.parse.covariates, MatrixExp)
+    allsamples[[paste(k)]]$SampleNum <- k
+  }
+  allsamples <- do.call(rbind,allsamples)
+  allsamples <- allsamples %>% mutate(StateTo=parse_number(StateTo),
+                                      sex = ifelse(sex==1,"female","male"),
+                                      time = TimePeriod,
+                                      inflation = inflation) %>% 
+    dplyr::select(SampleNum, inflation, StateFrom, StateTo, time, age, sex, race, prob)
+  SampleNum <- 1:nrow(samples)
+  samples <- data.frame(cbind(SampleNum, inflation, TimePeriod, samples))
+  list <- list(allsamples, samples)
+  return(list)
+}

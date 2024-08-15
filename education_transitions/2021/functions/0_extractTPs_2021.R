@@ -13,7 +13,7 @@ extractTPs_basic <- function(model, year) {
       newUpper = round(Upper*100, digits=2),
       Estimate = round(Estimate*100, digits=2),
       EstimateCI = paste0(Estimate, " (", newLower, ", ", newUpper, ")")) %>%
-    select (From, To, EstimateCI) %>%
+    dplyr::select(From, To, EstimateCI) %>%
     pivot_wider(names_from = "To", values_from = "EstimateCI")
   
   return(table)
@@ -21,27 +21,30 @@ extractTPs_basic <- function(model, year) {
 
 extractTPs_subgroups <- function(model,combo){
   probs <- list()
-  for(i in 1:nrow(combo)){
+  for (i in 1:nrow(combo)) {
     agecat <- combo$agecat[i]
     sex <- combo$sex[i]
     racefinal2 <- combo$racefinal2[i]
-    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(agecat,sex,racefinal2))
-    probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
-    probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
-    probs[[paste(i)]] <- probs[[paste(i)]] %>% pivot_longer(cols=State.1:State.5,
-                                                            names_to="StateTo", values_to="prob") %>% 
-      mutate(StateTo = case_when(endsWith(StateTo,"1") ~ "State 1",
-                                 endsWith(StateTo,"2") ~ "State 2",
-                                 endsWith(StateTo,"3") ~ "State 3",
-                                 endsWith(StateTo,"4") ~ "State 4",
-                                 endsWith(StateTo,"5") ~ "State 5")) %>% 
-      mutate(age=agecat,
-             sex=sex,
-             race=racefinal2)
+    prob_matrix <- pmatrix.msm(model, covariates = list(agecat = agecat, sex = sex, racefinal2 = racefinal2), ci = "norm")
+    prob_df <- data.frame(unclass(prob_matrix))
+    prob_df$StateFrom <- row.names(prob_df)
+    prob_df$agecat <- agecat
+    prob_df$sex <- sex
+    prob_df$racefinal2 <- racefinal2
+        probs[[paste(i)]] <- prob_df
   }
-  probs <- do.call(rbind,probs) 
-  return(probs)
+  
+  combined_probs <- do.call(rbind, probs)
+  
+  probs_long <- combined_probs %>%
+    pivot_longer(
+      cols = starts_with("estimates.State.") | starts_with("L.") | starts_with("U."),
+      names_to = c(".value", "StateTo"),
+      names_pattern = "(.*?)\\.(\\d+)",
+      values_to = "count")
+  return(probs_long)
 }
+
 
 extractTP_incl_time <- function(model,combo){
   probs <- list()

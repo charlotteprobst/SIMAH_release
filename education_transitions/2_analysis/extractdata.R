@@ -18,6 +18,6 @@ extractdata <- function(model){
            "SomeC2->SomeC2"=State.3...State.3,
            "SomeC2->SomeC3"=State.3...State.4,
            "SomeC3->SomeC3"=State.4...State.4,
-           "SomeC3->College"=State.4...State.5) %>% select(-c(names)) %>% pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College"))
+           "SomeC3->College"=State.4...State.5) %>% dplyr::select(-c(names)) %>% pivot_wider(names_from=Type, values_from=c("LEHS->LEHS":"SomeC3->College"))
   return(dat)
 }

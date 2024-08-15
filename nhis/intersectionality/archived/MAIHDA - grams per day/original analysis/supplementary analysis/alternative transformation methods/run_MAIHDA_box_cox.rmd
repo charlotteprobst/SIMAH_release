@@ -1,0 +1,211 @@
+---
+title: "Run MAIHDA analysis"
+output: html_notebook
+---
+
+This script undertakes a multi-level analysis of individual heterogeneity and discriminatory accuracy (MAIHDA)
+to estimate average alcohol consumption per intersectional group of sex/age/race/SES
+
+Setup
+```{r, warning=FALSE}
+# Load in data
+transformed_drinkers_boxcox <- readRDS("U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/6_nhis_alc_clean_transformed_drinkers_boxcox.RDS")
+
+# Load necessary packages
+library("R2MLwiN")
+library(tidyr)
+library(dplyr)
+
+# Bias toward non-scientific notation
+options(scipen=10)
+
+# Change file path ONLY IF using Uni desktop
+# options(MLwiN_path="C:\\Program Files\\MLwiN v3.01")
+```
+
+Generate intersectional groups
+```{r}
+data_intersections_MAIHDA_boxcox <- transformed_drinkers_boxcox %>% 
+  group_by(SEX, race_5_cats, education_3_cats, age_3_cats, decade) %>% 
+  mutate(intersections = cur_group_id()) %>%
+  group_by(intersections) %>%
+  mutate(count=n())
+```
+
+Create a reference table of the intersectional groups - numbers and names
+```{r}
+temp_boxcox <- data_intersections_MAIHDA_boxcox %>%
+  mutate(sex = dplyr::recode(SEX, Male = "M", Female = "F"),
+         race_5_cats = dplyr::recode(race_5_cats, 
+                                     "Black/African American" = "Black", 
+                                     "Hispanic, White" = "Hispanic"),
+         education_3_cats = dplyr::recode(education_3_cats, 
+                                          "high school or less" = "low edu.", 
+                                          "some college" = "med. edu.", 
+                                          "4+ years college" = "high edu."))
+
+temp2_boxcox <- temp_boxcox %>% 
+  mutate(intersectional_names = as.character(paste(sex, age_3_cats, race_5_cats, education_3_cats, decade)))
+
+MAIHDA_intersections_reference_boxcox <- distinct(temp2_boxcox, intersections, .keep_all = TRUE) %>% dplyr::select(intersections, intersectional_names)
+```
+
+Prep data for use with R2mlwin package
+```{r}
+# Generate a constant & sort by intersections
+data_intersections_MAIHDA_boxcox <- data_intersections_MAIHDA_boxcox %>%
+  mutate(cons=1)%>% 
+  arrange(intersections)
+```
+
+# MAIHDA with IGLS
+
+## Multilevel model, null
+
+Run the null two-level model and calculate the variance partition coefficient (VPC)
+```{r}
+F1_boxcox <- transformed_grams_lambda_1 ~ 1 + (1 | intersections) + (1 | NHISPID)
+
+(VarCompModel_boxcox <- runMLwiN(Formula = F1_boxcox, data = data_intersections_MAIHDA_boxcox))
+
+# Calculate the VPC
+slotNames(VarCompModel_boxcox)
+
+print(VPC_1_boxcox <- VarCompModel_boxcox["RP"][["RP2_var_Intercept"]]/(VarCompModel_boxcox["RP"][["RP1_var_Intercept"]] + VarCompModel_boxcox["RP"][["RP2_var_Intercept"]]))
+```
+~ 0.118894 of variation at the intersectional level
+
+## Multilevel model, main effects
+
+Run the main-effects two-level model and recalculate VPC
+```{r}
+F2_boxcox <- transformed_grams_lambda_1 ~ 1 + SEX + age_3_cats + race_5_cats + education_3_cats + decade + (1 | intersections) + (1 | NHISPID)
+
+# Save the estimation results under the name VarCompModel2
+(VarCompModel2_boxcox <- runMLwiN(Formula = F2_boxcox, 
+                           data = data_intersections_MAIHDA_boxcox))
+
+# Re-calculate VPC:
+slotNames(VarCompModel2_boxcox)
+
+print(VPC_2_boxcox <- VarCompModel2_boxcox["RP"][["RP2_var_Intercept"]]/(VarCompModel2_boxcox["RP"][["RP1_var_Intercept"]] + 
+  VarCompModel2_boxcox["RP"][["RP2_var_Intercept"]]))
+```
+VPC reduced to 0.01450711
+
+Store residuals
+```{r}
+# Save the estimation results including residuals
+VarCompResid_boxcox <- runMLwiN(Formula = F2_boxcox, data = data_intersections_MAIHDA_boxcox, estoptions = list(resi.store = TRUE))
+
+saveRDS(VarCompResid_boxcox, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/VarCompResidIGLS_boxcox.RDS")
+```
+
+## Model estimates
+```{r}
+# Estimate yhat (and SEs) using predict function
+data_intersections_MAIHDA_boxcox$yhat <- predict(VarCompResid_boxcox) # the predicted expected value
+data_intersections_MAIHDA_boxcox$yhat_se <- predict(VarCompResid_boxcox, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_MAIHDA_boxcox <- distinct(data_intersections_MAIHDA_boxcox, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_MAIHDA_boxcox$residuals <- VarCompResid_boxcox@residual$lev_2_resi_est_Intercept 
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_MAIHDA_boxcox$residualsSE <- sqrt(VarCompResid_boxcox@residual$lev_2_resi_var_Intercept) %>% sqrt() # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_MAIHDA_boxcox <- processed_intersections_MAIHDA_boxcox %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_MAIHDA_boxcox <- processed_intersections_MAIHDA_boxcox %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_IGLS_boxcox <- processed_intersections_MAIHDA_boxcox %>%
+  dplyr::select(intersections, count, birth_year, YEAR, decade, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_IGLS_boxcox <- inner_join(Results_table_IGLS_boxcox, MAIHDA_intersections_reference_boxcox, by = "intersections")
+
+saveRDS(Results_table_IGLS_boxcox, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA_results_IGLS_boxcox.RDS")
+```
+
+###############################################################################################
+# MAIHDA with MCMC
+
+Duplicate dataset to run with MCMC
+```{r}
+data_intersections_MAIHDA_MCMC_boxcox <- data_intersections_MAIHDA_boxcox
+```
+
+## Multilevel model, null
+
+Run the null two-level model and calculate the variance partition coefficient (VPC)
+```{r}
+(VarCompModelMCMC_boxcox <- runMLwiN(Formula = F1_boxcox, 
+                              data = data_intersections_MAIHDA_MCMC_boxcox, 
+                              estoptions = list(EstM = 1)))
+
+slotNames(VarCompModelMCMC_boxcox)
+
+print(VPC_3_boxcox <- VarCompModelMCMC_boxcox["RP"][["RP2_var_Intercept"]]/(VarCompModelMCMC_boxcox["RP"][["RP1_var_Intercept"]] + VarCompModelMCMC_boxcox["RP"][["RP2_var_Intercept"]]))
+```
+
+
+## Multilevel model, main effects
+
+Run the main-effects two-level model and recalculate VPC
+```{r}
+VarCompResidMCMC_boxcox <- runMLwiN(Formula = F2_boxcox, 
+                             data = data_intersections_MAIHDA_MCMC_boxcox, 
+                             estoptions = list(resi.store = TRUE, EstM = 1))
+# Default: burn in = 500, iterations = 5000, non-informative prior (beta 1)
+
+slotNames(VarCompResidMCMC_boxcox)
+
+print(VPC_4_boxcox <- VarCompResidMCMC_boxcox["RP"][["RP2_var_Intercept"]]/(VarCompResidMCMC_boxcox["RP"][["RP1_var_Intercept"]] + VarCompResidMCMC_boxcox["RP"][["RP2_var_Intercept"]]))
+```
+
+
+Saving the VarCompResidMCMC (large mlwinfitsIGLS)
+```{r}
+saveRDS(VarCompResidMCMC_boxcox, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/VarCompResidMCMC_boxcox.RDS")
+```
+
+# Store model results (MCMC)
+```{r}
+# Estimate yhat (and SEs) using predict function
+data_intersections_MAIHDA_MCMC_boxcox$yhat <- predict(VarCompResidMCMC_boxcox) # the predicted expected value
+data_intersections_MAIHDA_MCMC_boxcox$yhat_se <- predict(VarCompResidMCMC_boxcox, se.fit=TRUE)$se.fit # the standard error of the predicted expected value
+
+# Create table with results for just one intersection
+processed_intersections_MAIHDA_MCMC_boxcox <- distinct(data_intersections_MAIHDA_MCMC_boxcox, intersections, .keep_all = TRUE)
+
+# Extract residuals from the Mlwin output object
+processed_intersections_MAIHDA_MCMC_boxcox$residuals <- VarCompResidMCMC_boxcox@residual$lev_2_resi_est_Intercept 
+
+# Extract the estimate of variance around the residuals, and take the sqrt of it to get the standard error around the residuals
+processed_intersections_MAIHDA_MCMC_boxcox$residualsSE <- sqrt(VarCompResidMCMC_boxcox@residual$lev_2_resi_var_Intercept) # standard error around residuals
+
+# Estimate the overall mean combining additive effects (main effects) and multiplicative effects (residuals)
+processed_intersections_MAIHDA_MCMC_boxcox <- processed_intersections_MAIHDA_MCMC_boxcox %>% 
+  mutate(mean = sum(yhat, residuals))
+
+# Estimate the total standard error by combining the error around the mean plus the error around the residuals:
+processed_intersections_MAIHDA_MCMC_boxcox <- processed_intersections_MAIHDA_MCMC_boxcox %>% 
+  mutate(SE =(sqrt((yhat_se*yhat_se)+(residualsSE*residualsSE)))/2)
+
+# Saving subset results table
+Results_table_MCMC_boxcox <- processed_intersections_MAIHDA_MCMC_boxcox %>%
+  dplyr::select(intersections, count, birth_year, YEAR, decade, AGE, SEX, race_5_cats, education_3_cats, age_3_cats, yhat, yhat_se, residuals, residualsSE, mean, SE)
+
+Results_table_MCMC_boxcox <- inner_join(Results_table_MCMC_boxcox, MAIHDA_intersections_reference_boxcox, by = "intersections")
+
+saveRDS(Results_table_MCMC_boxcox, "U:/SIMAH/SIMAH_workplace/nhis/intersectionality/cleaned_data/MAIHDA_results_MCMC_boxcox.RDS")
+```
+
+
+

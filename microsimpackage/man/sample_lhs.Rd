@@ -2,15 +2,19 @@
 % Please edit documentation in R/sample_lhs.R
 \name{sample_lhs}
 \alias{sample_lhs}
-\title{Samples parameters using a latin hypercube space filling design}
+\title{Samples parameters using a latin hypercube space filling design, or takes point estimates.}
 \usage{
-sample_lhs(N_SAMPLES, PE)
+sample_lhs(N_SAMPLES, PE, DISEASES = diseases)
+}
+\arguments{
+\item{PE}{refers to point estimates.  When set to 1, sample point estimates, otherwsie sample from latin hypercube.}
 }
 \description{
-This function generates a latin hypercube for a set number of parameters
-}
-\examples{
+Each prior contains the type of distribution, the point estimate and the variance
 sample_lhs
+}
+\details{
+This function generates a latin hypercube for a set number of parameters
 }
 \keyword{hypercube}
 \keyword{latin}
