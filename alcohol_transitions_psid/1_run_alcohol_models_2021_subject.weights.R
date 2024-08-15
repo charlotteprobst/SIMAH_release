@@ -1,4 +1,7 @@
 # script to generate MSM model for education for education transitions paper
+
+devtools::install_github('chjackson/msm')
+library(msm)
 library(splitstackshape)
 library(dplyr)
 library(readr)
@@ -8,8 +11,6 @@ library(doParallel)
 library(foreach)
 library(parallel)
 library(readxl)
-devtools::install_github('chjackson/msm')
-library(msm, lib.loc = "C:/Users/cmp21seb/AppData/Local/R/win-library/4.3")
 
 setwd("C:/Users/cmp21seb/Documents/SIMAH/")
 
@@ -49,6 +50,11 @@ data <- data %>% group_by(uniqueID) %>%
 # Identify smallest sample weight
 min(data$sampleweight) # 47
 
+# Divde by the smallest sample weight
+data <- data %>% mutate(sampleweight_downscaled = round(sampleweight/47))
+
+saveRDS(data, "SIMAH_workplace/alcohol_transitions_psid/prepped_data_for_markov_alc.rds")
+
 ##### Set-up an individual model for each time period
 # NB. Need to prep the data for each different model type using setup_alcohol_model function 
 # (re-codes education/race, drops individuals with one year of data, scales age data, drops anyone who transitions backwards etc.)
@@ -85,7 +91,7 @@ Q1 <- crudeinits.msm(final_alc_cat~year, subject=uniqueID, qmatrix=Q, data=datat
 modelt1 <- msm(final_alc_cat~year, uniqueID, data=datat1, qmatrix=Q1,
                                    center=FALSE,
                                    covariates=~age_cat + sex + race + education,
-                                   subject.weights=datat1$sampleweight, 
+                                  # subject.weights=datat1$sampleweight_downscaled, # Optimisation does not converge to the max likelihood when including weights
                         control=list(trace=1, maxit=1000, fnscale = 3000000))
 # Warning message:
 # Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
@@ -98,6 +104,7 @@ datat2 <- datat2 %>% ungroup() %>%
   group_by(uniqueID) %>% 
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
+
 length(unique(datat2$uniqueID)) # 14,462
 # Make sure all variables are factors
 datat2 <- datat2 %>% 
@@ -110,6 +117,7 @@ Q2 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat2)
 modelt2 <- msm(final_alc_cat~year, uniqueID, data=datat2, qmatrix=Q2,
                center=FALSE,
                covariates=~age_cat + sex + race + education,
+               subject.weights=datat2$sampleweight_downscaled, 
                control=list(trace=1, maxit=1000, fnscale = 3000000))
 
 # MODEL 3: 2019-2021 
@@ -120,6 +128,7 @@ datat3 <- datat3 %>% ungroup() %>%
   group_by(uniqueID) %>% 
   add_tally(name="totalobservations") %>% 
   filter(totalobservations>1) 
+
 length(unique(datat3$uniqueID)) # 10,721
 # Make sure all variables are factors
 datat3 <- datat3 %>% 
@@ -132,6 +141,7 @@ Q3 <- crudeinits.msm(final_alc_cat~year, uniqueID, qmatrix=Q, data=datat3)
 modelt3 <- msm(final_alc_cat~year, uniqueID, data=datat3, qmatrix=Q3,
                center=FALSE,
                covariates=~age_cat + sex + race + education,
+               subject.weights=datat3$sampleweight_downscaled, 
                control=list(trace=1, maxit=1000, fnscale = 3000))
 
 # MODEL 4: One combined model with a covariate for time period
@@ -162,6 +172,10 @@ modelt4 <- msm(final_alc_cat~year, uniqueID, data=datat4, qmatrix=Q4,
 # Optimisation has probably not converged to the maximum likelihood - Hessian is not positive definite.
 
 # Save all models
+
+saveRDS(modelt1, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2005_2010.RDS")
 saveRDS(modelt2, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2011_2019_incl_sample_weights.RDS")
 saveRDS(modelt3, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_alcohol_model_2019_2021_incl_sample_weights.RDS")
+saveRDS(modelt4, "SIMAH_workplace/alcohol_transitions_psid/markov_models/psid_model_4_timeperiod.RDS")
+
 

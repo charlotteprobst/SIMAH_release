@@ -42,6 +42,7 @@ model_2019_2021 <- readRDS("SIMAH_workplace/alcohol_transitions_psid/markov_mode
 #model_2005_2010_TPs <- extractTPs_basic(model_2005_2010, 1)
 model_2011_2019_TPs <- extractTPs_basic(model_2011_2019, 1)
 model_2019_2021_TPs <- extractTPs_basic(model_2019_2021, 1)
+model_2019_2021_TPs_weighted <- extractTPs_basic(model_2019_2021_weighted, 1)
 # model_timevary_TPs <- extractTPs_basic(model_timevary, 1)
 # Error in normboot.msm(x, function(x) pmatrix.msm(x = x, t = t, t1 = t1,  : 
 # Asymptotic standard errors not available in fitted model
@@ -51,6 +52,7 @@ model_2019_2021_TPs <- extractTPs_basic(model_2019_2021, 1)
 write_csv(model_2011_2019_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_weighted_TPs.csv")
 write_csv(model_2019_2021_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_weighted_TPs.csv")
 # write_csv(model_timevary_TPs, "SIMAH_workplace/alcohol_transitions_psid/model_timevary_TPs.csv")
+write_csv(model_2019_2021_TPs_weighted, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs_weighted.csv")
 
 
 ##################################################################
@@ -61,12 +63,14 @@ combo <- expand.grid(age_cat = unique(data$age_cat), sex = unique(data$sex), rac
 # model_2005_2010_TPs_detail <- extractTPs_subgroups(model_2005_2010, combo) 
 model_2011_2019_TPs_detail <- extractTPs_subgroups(model_2011_2019, combo)
 model_2019_2021_TPs_detail <- extractTPs_subgroups(model_2019_2021, combo)
+model_2019_2021_TPs_detail_weighted <- extractTPs_subgroups(model_2019_2021_weighted, combo)
+
 
 # Save results
-# write_csv(model_2005_2010_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_TPs_detail.csv")
-write_csv(model_2011_2019_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_weighted_TPs_detail.csv")
-write_csv(model_2019_2021_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_weighted_TPs_detail.csv")
-
+write_csv(model_2005_2010_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2005_2010_TPs_detail.csv")
+write_csv(model_2011_2019_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2011_2019_TPs_detail.csv")
+write_csv(model_2019_2021_TPs_detail, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_TPs_detail.csv")
+write_csv(model_2019_2021_TPs_detail_weighted, "SIMAH_workplace/alcohol_transitions_psid/model_2019_2021_weighted_TPs_detail.csv")
 
 ########################################
 # Hazard ratios
