@@ -14,8 +14,9 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          migration_rates,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, drinkingdistributions,
-                         base_counts, diseases, lhs, sesinteraction,
-                         policy=0, percentreduction=0.1, year_policy, inflation_factors,
+                         base_counts, diseases, mortality_parameters, sesinteraction,
+                         policy=0, policy_model, year_policy, scenario, 
+                         inflation_factors,
                          age_inflated,
                          update_base_rate,
                          minyear=2000, maxyear=2005, output="mortality"){
@@ -36,56 +37,68 @@ for(y in minyear:maxyear){
 print(y)
 
 # apply policy effects
-if(policy==1 & year_policy>maxyear & y==minyear){
-  print("policy is not within model time frame")
-}
-
-if(policy==1 & y ==year_policy){
-  # apply policy effect according to percent reduction and then update alcohol categories
-  basepop$alc_gpd <- basepop$alc_gpd - (basepop$alc_gpd*percentreduction)
-  basepop <- update_alcohol_cat(basepop)
-}
+  if(policy==1 & year_policy>maxyear & y==minyear){
+    print("policy is not within model time frame")
+  }
+  
+  if(policy==1 & y ==year_policy){
+    
+    if(policy_model %like% "tax"){
+      prob_alcohol_transitions <- prob_alcohol_transition(basepop, alcohol_transitions)
+      basepop <- apply_tax_policy(basepop, policy_setting = policy_setting, scenario = scenario)  
+    }  
+    
+    if(policy_model %like% "ssp"){
+      print("Sunday sales ban policy currently not implemented")
+    }  
+    
+    # update alcohol categories
+    basepop <- update_alcohol_cat(basepop)
+  }
 
 # calculate implausibility in each year - break if implausibility is over threshold
   if(output=="alcoholcat"){
   CatSummary[[paste(y)]] <- basepop %>%
-    mutate(agecat = cut(age,
+    mutate(samplenum=samplenum,
+           seed=seed,
+           scenario=as.factor(scenario),
+           agecat = cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
-           education = ifelse(agecat=="18-24" & education=="College","SomeC",
-                                            education),
+           education=ifelse(agecat=="18-24" & education=="College", "SomeC", education),
            year=y) %>%
-    group_by(year,sex,race,agecat, education,
+    group_by(year, samplenum, seed, scenario, sex, agecat, race, education,
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
-    group_by(year,sex,race,agecat, education) %>%
+    group_by(year, samplenum, seed, scenario, sex, agecat, race, education, alc_cat) %>%
     mutate(propsimulation=n/sum(n)) %>%
     dplyr::select(-n) %>%
     mutate_at(vars(sex, race, agecat, education, alc_cat), as.character)
 
-  CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","sex","race",
-                                                                           "agecat","education","alc_cat"))
+  # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","sex","race",
+  #                                                                         "agecat","education","alc_cat"))
   # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","sex","race",
   #                                                                           "agecat","education","alc_cat"))
 
-  CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2)
+  # CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2)
   }
 
 if(output=="alcoholcont"){
   meandrinking[[paste(y)]] <- basepop %>%
     mutate(samplenum=samplenum,
            seed=seed,
+           scenario=as.factor(scenario),
            year=y) %>%
     filter(alc_gpd>0) %>%
     mutate(agecat=cut(age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, samplenum, seed, sex, agecat, education, race, alc_cat) %>%
+    group_by(year, samplenum, seed, scenario, sex, agecat, education, race, alc_cat) %>%
     summarise(meansimulation = mean(alc_gpd))
 }
 
 # save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum)
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum, scenario=scenario)
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
@@ -99,50 +112,50 @@ if(!is.null(diseases)){
 # print("simulating disease mortality")
 # disease <- unique(diseases)
 if("HLVDC" %in% diseases==TRUE){
-  basepop <- CirrhosisHepatitis(basepop,lhs)
+  basepop <- CirrhosisHepatitis(basepop,mortality_parameters)
 }
 if("LVDC" %in% diseases==TRUE){
   if(sesinteraction==1){
-    basepop <- CirrhosisAllInteraction(basepop,lhs)
+    basepop <- CirrhosisAllInteraction(basepop,mortality_parameters)
   }else if(sesinteraction==0){
-    basepop <- CirrhosisAll(basepop,lhs)
+    basepop <- CirrhosisAll(basepop,mortality_parameters)
   }
 }
 if("AUD" %in% diseases==TRUE){
   if(sesinteraction==1){
-    basepop <- AUDInteraction(basepop,lhs)
+    basepop <- AUDInteraction(basepop,mortality_parameters)
   }else if(sesinteraction==0){
-    basepop <- AUD(basepop,lhs)
+    basepop <- AUD(basepop,mortality_parameters)
   }
 }
 if("IJ" %in% diseases==TRUE){
-  basepop <- SUICIDE(basepop, lhs)
+  basepop <- SUICIDE(basepop,mortality_parameters)
 }
 if("DM" %in% diseases==TRUE){
   if(DM_men=="off"){
-    basepop <- DM_menoff(basepop,lhs)
+    basepop <- DM_menoff(basepop,mortality_parameters)
   }else if(DM_men=="on"){
-    basepop <- DM(basepop,lhs)
+    basepop <- DM(basepop,mortality_parameters)
   }
 }
 if("IHD" %in% diseases==TRUE){
   if(sesinteraction==1){
-    basepop <- IHDInteraction(basepop,lhs)
+    basepop <- IHDInteraction(basepop,mortality_parameters)
   }else if(sesinteraction==0){
-    basepop <- IHD(basepop,lhs)
+    basepop <- IHD(basepop,mortality_parameters)
   }
 }
 if("ISTR" %in% diseases==TRUE){
-  basepop <- ISTR(basepop, lhs)
+  basepop <- ISTR(basepop, mortality_parameters)
 }
 if("HYPHD" %in% diseases==TRUE){
-  basepop <- HYPHD(basepop, lhs)
+  basepop <- HYPHD(basepop, mortality_parameters)
 }
 if("MVACC" %in% diseases==TRUE){
-  basepop <- MVACC(basepop, lhs)
+  basepop <- MVACC(basepop, mortality_parameters)
 }
 if("UIJ" %in% diseases==TRUE){
-  basepop <- UIJ(basepop, lhs)
+  basepop <- UIJ(basepop, mortality_parameters)
 }
 
 # calculate base rates if year = 2000)
@@ -150,9 +163,9 @@ if(y == 2000){
   rates <- calculate_base_rate(basepop,base_counts,diseases)
 }
 
-# update the base rate based on lhs file
+# update the base rate based on mortality_parameters
 if(update_base_rate==1){
-  rates <- update_base_rate(rates, lhs, y)
+  rates <- update_base_rate(rates, mortality_parameters, y)
 }
 
 basepop <- left_join(basepop, rates, by=c("cat"))
@@ -250,7 +263,7 @@ if(updatingeducation==1){
 
 # update alcohol use categories
 if(updatingalcohol==1){
-  basepop <- transition_alcohol_ordinal_regression(basepop,alcohol_transitions, y)
+  basepop <- transition_alcohol_ordinal_regression(basepop,alcohol_transitions,y)
 #   # allocate a numeric gpd for individuals based on model - only individuals that have changed categories
   if(is.null(catcontmodel)==FALSE){
   basepop <- allocate_gramsperday_sampled(basepop,y,catcontmodel)
@@ -289,7 +302,7 @@ if(output=="population"){
     mutate(percentage = round(count / sum(count) * 100, 1))
 }else if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
-    mutate(seed = seed, samplenum = samplenum)
+    mutate(seed = seed, samplenum = samplenum, scenario = scenario)
 }else if(output=="mortality" & is.null(diseases)){
     Summary <- 0
   }else if(output=="demographics"){
@@ -301,7 +314,7 @@ if(output=="population"){
                                                            "45-49","50-54","55-59","60-64","65-69",
                                                            "70-74","75-79"))
     PopPerYear[[i]] <- as.data.table(PopPerYear[[i]])
-    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, sex, race, education, age, agecat)]
+    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, scenario, sex, race, education, age, agecat)]
   }
     Summary <- do.call(rbind,PopPerYear)
 }else if(output=="alcoholcat"){
@@ -317,8 +330,8 @@ if(output=="population"){
   #     dplyr::select(-n) %>%
   #     mutate_at(vars(sex, race, agecat, education, alc_cat), as.character)
 Summary <- do.call(rbind,CatSummary) %>%
-  mutate(seed=seed, samplenum=samplenum)
-implausibility <- max(CatSummary$implausibility, na.rm=T)
+  mutate(seed=seed, samplenum=samplenum, scenario=scenario)
+#implausibility <- max(CatSummary$implausibility, na.rm=T)
 }else if(output=="alcoholcont"){
   Summary <- do.call(rbind, meandrinking)
 }

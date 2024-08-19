@@ -4,7 +4,7 @@
 #' @export
 #' @examples
 #' transition_alcohol_ordinal_regression
-transition_alcohol_ordinal_regression <- function(data, model,y){
+transition_alcohol_ordinal_regression <- function(data, model, y){
  # create a dataset with the required variables dummy coded
   data_prediction <- data %>%
     mutate(agecat = cut(age,

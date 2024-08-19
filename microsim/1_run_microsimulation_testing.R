@@ -4,6 +4,7 @@ rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 library(devtools)
 library(roxygen2)
 library(gatbxr)
+library(faux)
 # if having trouble with loading this package - run the below two lines
 # install.packages("remotes")
 # remotes::install_github("drizztxx/gatbxr")
@@ -14,14 +15,19 @@ library(lhs)
 library(truncnorm)
 library(data.table)
 library(gridExtra)
+library(doParallel)
 options(dplyr.summarise.inform = FALSE)
+registerDoParallel(1)
+
+library(beepr)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "U:/SIMAH/"
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
-WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
 # WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
+WorkingDirectory <- "/Users/carolinkilian/Desktop/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
@@ -35,51 +41,111 @@ library(microsimpackage)
 library(calibrationpackage)
 
 # load model settings 
+# file.remove("/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_output_data/testing")
 source("SIMAH_code/microsim/0_model_settings.R")
+source("SIMAH_code/microsim/0_policy_settings.R")
 
 # load microsim files
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
+# set up the number of samples to be run
+nsamples <- 1
+nreps <- 1
+
+# generate list of samples to be run with random number seeds
+sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
+sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
+
 # read in calibrated education transitions
-education_transitions <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
-for(i in 1:length(education_transitions)){
-  education_transitions[[i]]$cat <- gsub("1999-2019+_","",education_transitions[[i]]$cat)
+education_transitionsList <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
+for(i in 1:length(education_transitionsList)){
+  education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
 }
+
+# add the final education model to be run to the sampleseeds file 
+edmodels <- list()
+for(i in 1:ceiling(nrow(sampleseeds)/length(education_transitionsList))){
+  edmodels[[paste(i)]] <- data.frame(education_model = sample(1:length(education_transitionsList), replace=F))
+}
+edmodels <- edmodels %>% bind_rows()
+
+sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
+
 # read in calibrated alcohol transitions 
 alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"))
+alcohol_transitionsList <- list()
+for(i in 1:max(alcohol_transitions$sample)){
+  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)}
+
+# add the final alcohol model to be run to the sampleseeds file 
+alcmodels <- list()
+for(i in 1:ceiling(nrow(sampleseeds)/length(alcohol_transitions))){
+  alcmodels[[paste(i)]] <- data.frame(alcohol_model = sample(1:length(alcohol_transitions), replace=F))
+}
+alcmodels <- alcmodels %>% bind_rows()
+
+sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
+
+# set up scenarios and policy settings
+sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
-samplenum <- sample(1:300, 1, replace=F)
+# samplenum <- sample(1:300, 1, replace=F)
 
-education_transitions <- education_transitions[[samplenum]]
-alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
+# education_transitions <- education_transitions[[samplenum]]
+# alcohol_transitions <- alcohol_transitions %>% filter(sample==samplenum)
 
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
-output_type <- "mortality"
-
-# random number seed - sample random number 
-seed <- as.numeric(sample(1:100, 1))
-
-# sample number - set to 1 when just running 1 simulation 
-samplenum <- 1
+output_type <- "alcoholcont"
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2005
+maxyear <- 2019
 
 Output <- list()
-Output <- run_microsim_alt(seed=1,samplenum=1,basepop,brfss,
-                           death_counts,
-                           updatingeducation, education_transitions,
-                           COVID_specific_tps=0,
-                           migration_rates,
-                           updatingalcohol, alcohol_transitions,
-                           catcontmodel, drinkingdistributions,
-                           base_counts, diseases, mortality_parameters, sesinteraction,
-                           policy=0, percentreduction=0.1, year_policy, inflation_factors,
-                           age_inflated,
-                           update_base_rate,
-                           minyear=minyear, maxyear=maxyear, output="mortality")
+baseorig <- basepop
+Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+  print(i)
+  # set seed and sample number for current iteration
+  samplenum <- as.numeric(sampleseeds$samplenum[i])
+  seed <- as.numeric(sampleseeds$seed[i])
+  #set up policy parameters
+  scenario <- as.numeric(sampleseeds$scenarios[i])
+  setting <- sampleseeds$setting[i]
+  participation <- as.numeric(sampleseeds$participation[i])
+  cons_elasticity <- as.numeric(sampleseeds$cons_elasticity[i])
+  cons_elasticity_se <- as.numeric(sampleseeds$cons_elasticity_se[i])
+  part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
+  r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
+  # reset the base population to the original pop for each calibration iteration
+  basepop <- baseorig 
+  # change the alcohol model - based on prior calibrated models 
+  alcohol_model_num <- as.numeric(sampleseeds$alcoholmodel[i])
+  alcohol_transitions <- alcohol_transitionsList[[alcohol_model_num]]
+  # change the education model - based on the prior calibrated models 
+  education_model_num <- as.numeric(sampleseeds$educationmodel[i])
+  education_transitions <- education_transitionsList[[education_model_num]]
+
+  run_microsim_alt(seed,samplenum,basepop,brfss,
+                   death_counts,
+                   updatingeducation, education_transitions,
+                   COVID_specific_tps=0,
+                   migration_rates,
+                   updatingalcohol, alcohol_transitions,
+                   catcontmodel, drinkingdistributions,
+                   base_counts, diseases, mortality_parameters, sesinteraction,
+                   policy, policy_model, year_policy, scenario, 
+                   inflation_factors,
+                   age_inflated,
+                   update_base_rate,
+                   minyear=minyear, maxyear=maxyear, output=output_type)
+}
+beep()
+
+Output <- do.call(rbind,Output)
+# save the output in the output directory
+write.csv(Output, paste0(OutputDirectory, "/output-policy_", Sys.Date(), ".csv"), row.names=F)
+write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)

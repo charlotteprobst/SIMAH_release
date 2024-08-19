@@ -52,19 +52,20 @@ sesinteraction <- 0
 # as the simulation develops there will be more options for policy scenarios
 # this is also a temporary variable for model testing
 # default value is 0
-policy <- 0
+# policy <- 0
 
 # year to introduce policy
 # depends on policy to be implemented
 # 2014, 2015, 2016 (no policy change happened in SIMAH states)
-year_policy <- 2015
+# year_policy <- 2015
 # percentage to reduce alcohol consumption by -> this is overall for the population
 # as the simulation develops this will take a more complex parameter indicating changes in consumption in different groups
 # upper and lower and PE for policy estimate 
 # Kilian et al. 2023: Alcohol control policy review	
 # Relative change in alcohol use for 100% tax increase: 
 # -0.108 (95% CI: -0.145, -0.071; 95% PI: -0.185, -0.012)
-percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
+# percentreductions <- c(0, 0.108, 0.145, 0.071, 0.185, 0.012)
+
 ####################EDIT ONLY ABOVE HERE ##################################################
 
 # what proportion of the population does this represent
