@@ -7,16 +7,17 @@
 assign_beverage_preferences <- function(data){
 
   # read in beverage preference data and recode
-  beverages <- read_csv("SIMAH_workplace/microsim/1_input_data/NESARC1+3_beverage preference.csv") %>%
-    mutate(race = case_when(race4=="White, non-Hispanic" ~ "WHI",
-                            race4=="Black, non-Hispanic" ~ "BLA",
-                            race4=="Hispanic" ~ "SPA",
-                            race4=="Other, non-Hispanic" ~ "OTH"),
+  beverages <- read_csv("SIMAH_workplace/microsim/1_input_data/NESARC1+3_beverage preference.csv",
+                        show_col_types = FALSE) %>%
+    mutate(race = case_when(race4=="White, non-Hispanic" ~ "White",
+                            race4=="Black, non-Hispanic" ~ "Black",
+                            race4=="Hispanic" ~ "Hispanic",
+                            race4=="Other, non-Hispanic" ~ "Others"),
            education = case_when(edu3=="Low" ~ "LEHS",
                                  edu3=="Med" ~ "SomeC",
                                  edu3=="High" ~ "College"),
            sex = case_when(sex=="Men" ~ "m",
-                                         sex=="Women" ~ "f"),
+                           sex=="Women" ~ "f"),
            age_group = age3,
            alc_cat = case_when(
              AlcUse4 == "Category I" ~ "Low risk",
@@ -33,6 +34,9 @@ assign_beverage_preferences <- function(data){
                     "beerp", "beerse", "winep", "winese", "liqp", "liqse"))
 
   # now sort out the population data to get in the correct categories
+  
+  ## ! adjust age group "18-25" to "18-24" and "25-49"
+  
   data <- data %>%
     mutate(age_group = dplyr::case_when(
       (age >= 18 & age <= 25) ~ "18-25",
@@ -41,28 +45,28 @@ assign_beverage_preferences <- function(data){
 
   library(truncnorm)
 
-  data <- left_join(data, beverages) %>%
+  data <- suppressMessages(left_join(data, beverages)) %>%
 
     # sample individual beverage preference
     mutate(beerprop = case_when(
-             drinkingstatus == 1 ~ rtruncnorm(nrow(.), a = 0, b = 1, m = beerp, sd = beerse),
+             alc_cat != "Non-drinker" ~ rtruncnorm(nrow(.), a = 0, b = 1, m = beerp, sd = beerse),
              TRUE ~ 0),
            wineprop = case_when(
-             drinkingstatus == 1 ~ rtruncnorm(nrow(.), a = 0, b = 1, m = winep, sd = winese),
+             alc_cat != "Non-drinker" ~ rtruncnorm(nrow(.), a = 0, b = 1, m = winep, sd = winese),
              TRUE ~ 0),
            liquorprop = case_when(
-             drinkingstatus == 1 ~ rtruncnorm(nrow(.), a = 0, b = 1, m = liqp, sd = liqse),
+             alc_cat != "Non-drinker" ~ rtruncnorm(nrow(.), a = 0, b = 1, m = liqp, sd = liqse),
              TRUE ~ 0)) %>%
 
     # re-normalize proportions so that they add up to 1
     mutate(rbeerprop = case_when(
-             drinkingstatus == 1 ~ beerprop / (beerprop + wineprop + liquorprop),
+             alc_cat != "Non-drinker" ~ beerprop / (beerprop + wineprop + liquorprop),
              TRUE ~ 0),
            rwineprop = case_when(
-             drinkingstatus == 1 ~ wineprop / (beerprop + wineprop + liquorprop),
+             alc_cat != "Non-drinker" ~ wineprop / (beerprop + wineprop + liquorprop),
              TRUE ~ 0),
            rliquorprop = case_when(
-             drinkingstatus == 1 ~ liquorprop / (beerprop + wineprop + liquorprop),
+             alc_cat != "Non-drinker" ~ liquorprop / (beerprop + wineprop + liquorprop),
              TRUE ~ 0))
 
   # calculate beverage-specific gpd
