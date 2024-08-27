@@ -16,6 +16,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          catcontmodel, drinkingdistributions,
                          base_counts, diseases, mortality_parameters, sesinteraction,
                          policy=0, policy_model, year_policy, scenario, 
+                         participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                          inflation_factors,
                          age_inflated,
                          update_base_rate,
@@ -41,19 +42,26 @@ print(y)
     print("policy is not within model time frame")
   }
   
-  if(policy==1 & y ==year_policy){
+  if(policy==1 & y==year_policy & scenario > 0){
     
-    if(policy_model %like% "tax"){
-      prob_alcohol_transitions <- prob_alcohol_transition(basepop, alcohol_transitions)
-      basepop <- apply_tax_policy(basepop, policy_setting = policy_setting, scenario = scenario)  
+    if(policy_model %like% "tax|price"){
+      
+      if(participation == 1){
+        prob_alcohol_transitions <- prob_alcohol_transition(basepop, alcohol_transitions)
+        }
+    
+      basepop <- apply_tax_policy(basepop, policy_model, scenario, 
+                                  participation, part_elasticity, prob_alcohol_transitions, 
+                                  cons_elasticity, cons_elasticity_se, r_sim_obs)  
     }  
     
-    if(policy_model %like% "ssp"){
+    if(policy_model %like% "sales"){
       print("Sunday sales ban policy currently not implemented")
     }  
     
     # update alcohol categories
     basepop <- update_alcohol_cat(basepop)
+    
   }
 
 # calculate implausibility in each year - break if implausibility is over threshold
@@ -61,19 +69,20 @@ print(y)
   CatSummary[[paste(y)]] <- basepop %>%
     mutate(samplenum=samplenum,
            seed=seed,
-           scenario=as.factor(scenario),
+           setting=as.character(setting),
+           scenario=as.character(round(scenario*100,1)),
            agecat = cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
            education=ifelse(agecat=="18-24" & education=="College", "SomeC", education),
            year=y) %>%
-    group_by(year, samplenum, seed, scenario, sex, agecat, race, education,
+    group_by(year, samplenum, seed, scenario, setting, sex, education,
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
-    group_by(year, samplenum, seed, scenario, sex, agecat, race, education, alc_cat) %>%
+    group_by(year, samplenum, seed, scenario, setting, sex, education) %>%
     mutate(propsimulation=n/sum(n)) %>%
     dplyr::select(-n) %>%
-    mutate_at(vars(sex, race, agecat, education, alc_cat), as.character)
+    mutate_at(vars(setting, sex, education, alc_cat), as.character)
 
   # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","sex","race",
   #                                                                         "agecat","education","alc_cat"))
@@ -87,13 +96,14 @@ if(output=="alcoholcont"){
   meandrinking[[paste(y)]] <- basepop %>%
     mutate(samplenum=samplenum,
            seed=seed,
-           scenario=as.factor(scenario),
+           setting=as.character(setting),
+           scenario=as.character(round(scenario*100,1)),
            year=y) %>%
     filter(alc_gpd>0) %>%
     mutate(agecat=cut(age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, samplenum, seed, scenario, sex, agecat, education, race, alc_cat) %>%
+    group_by(year, samplenum, seed, scenario, setting, sex, education) %>%
     summarise(meansimulation = mean(alc_gpd))
 }
 

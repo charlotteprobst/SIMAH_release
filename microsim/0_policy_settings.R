@@ -12,9 +12,8 @@ options(scipen=999)
 # general policy settings
 policy <- 1
 year_policy <- 2015
-policy_model <- "tax_generic"
-# policy_model <- c("tax_generic_main", "tax_generic_min", "tax_generic_max")  
-scenarios <- c(0,1)
+policy_model <- "price_beverage"
+scenarios <- c(0.1)
 
 ######################DO NOT EDIT BELOW HERE ##################################################
 
