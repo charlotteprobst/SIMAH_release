@@ -72,7 +72,7 @@ edmodels <- edmodels %>% bind_rows()
 sampleseeds$educationmodel <- edmodels$education_model[1:nrow(sampleseeds)]
 
 # read in calibrated alcohol transitions 
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"))
+alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"), show_col_types = FALSE)
 alcohol_transitionsList <- list()
 for(i in 1:max(alcohol_transitions$sample)){
   alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)}
@@ -88,6 +88,9 @@ sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 
 # set up scenarios and policy settings
 sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
+counterfactual <- sampleseeds %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
+  slice(1) %>% mutate(scenarios = 0)
+sampleseeds <- rbind(sampleseeds, counterfactual)
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -104,6 +107,9 @@ output_type <- "alcoholcont"
 # set minyear and maxyear 
 minyear <- 2000
 maxyear <- 2019
+year_policy <- 2015
+
+diseases <- NULL
 
 Output <- list()
 baseorig <- basepop
@@ -116,8 +122,8 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
   scenario <- as.numeric(sampleseeds$scenarios[i])
   setting <- sampleseeds$setting[i]
   participation <- as.numeric(sampleseeds$participation[i])
-  cons_elasticity <- as.numeric(sampleseeds$cons_elasticity[i])
-  cons_elasticity_se <- as.numeric(sampleseeds$cons_elasticity_se[i])
+  cons_elasticity <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity[i], ",")))
+  cons_elasticity_se <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity_se[i], ",")))
   part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
   r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
   # reset the base population to the original pop for each calibration iteration
@@ -138,6 +144,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
                    catcontmodel, drinkingdistributions,
                    base_counts, diseases, mortality_parameters, sesinteraction,
                    policy, policy_model, year_policy, scenario, 
+                   participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                    inflation_factors,
                    age_inflated,
                    update_base_rate,
@@ -149,3 +156,8 @@ Output <- do.call(rbind,Output)
 # save the output in the output directory
 write.csv(Output, paste0(OutputDirectory, "/output-policy_", Sys.Date(), ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
+
+plot <- summarise_alcohol_policy(Output, SelectedState = "USA")
+ggsave(paste0(OutputDirectory, "/plot-policy_meangpd_", Sys.Date(), ".png"), plot[[1]], width = 12, height = 8)
+ggsave(paste0(OutputDirectory, "/plot-policy_diffgpd_", Sys.Date(), ".png"), plot[[2]], width = 12, height = 8)
+ggsave(paste0(OutputDirectory, "/plot-policy_percgpd_", Sys.Date(), ".png"), plot[[3]], width = 16, height = 8)
