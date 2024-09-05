@@ -89,8 +89,9 @@ sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 # set up scenarios and policy settings
 sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
 counterfactual <- sampleseeds %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
-  slice(1) %>% mutate(scenarios = 0)
-sampleseeds <- rbind(sampleseeds, counterfactual)
+  slice(1) %>% mutate(scenarios = 0, setting = "standard")
+mup <- sampleseeds %>% filter(setting == "mup") %>% mutate(scenarios = 1) %>% slice(1)
+sampleseeds <- rbind(sampleseeds, counterfactual) %>% filter(setting != "mup") %>% rbind(., mup)
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -154,10 +155,10 @@ beep()
 
 Output <- do.call(rbind,Output)
 # save the output in the output directory
-write.csv(Output, paste0(OutputDirectory, "/output-policy_", Sys.Date(), ".csv"), row.names=F)
+write.csv(Output, paste0(OutputDirectory, "/output-policy_gpd_", Sys.Date(), ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
 
-plot <- summarise_alcohol_policy(Output, SelectedState = "USA")
-ggsave(paste0(OutputDirectory, "/plot-policy_meangpd_", Sys.Date(), ".png"), plot[[1]], width = 12, height = 8)
-ggsave(paste0(OutputDirectory, "/plot-policy_diffgpd_", Sys.Date(), ".png"), plot[[2]], width = 12, height = 8)
-ggsave(paste0(OutputDirectory, "/plot-policy_percgpd_", Sys.Date(), ".png"), plot[[3]], width = 16, height = 8)
+plot <- summarise_alcohol_policy(Output, SelectedState = "USA", out = "main")
+ggsave(paste0(OutputDirectory, "/plot-policy_meangpd_", Sys.Date(), ".png"), plot[[3]], width = 14, height = 8)
+ggsave(paste0(OutputDirectory, "/plot-policy_diffgpd_", Sys.Date(), ".png"), plot[[4]], width = 14, height = 8)
+ggsave(paste0(OutputDirectory, "/plot-policy_percgpd_", Sys.Date(), ".png"), plot[[5]], width = 14, height = 8)

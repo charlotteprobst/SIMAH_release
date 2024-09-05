@@ -80,7 +80,7 @@ print(y)
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
     group_by(year, samplenum, seed, scenario, setting, sex, education) %>%
-    mutate(propsimulation=n/sum(n)) %>%
+    mutate(prop=n/sum(n)) %>%
     dplyr::select(-n) %>%
     mutate_at(vars(setting, sex, education, alc_cat), as.character)
 
@@ -99,7 +99,7 @@ if(output=="alcoholcont"){
            setting=as.character(setting),
            scenario=as.character(round(scenario*100,1)),
            year=y) %>%
-    filter(alc_gpd>0) %>%
+    #filter(alc_gpd>0) %>%
     mutate(agecat=cut(age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%

@@ -13,7 +13,7 @@ options(scipen=999)
 policy <- 1
 year_policy <- 2015
 policy_model <- "price_beverage"
-scenarios <- c(0.1)
+scenarios <- c(0.05, 0.1, 0.2)
 
 ######################DO NOT EDIT BELOW HERE ##################################################
 
