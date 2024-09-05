@@ -35,12 +35,10 @@ assign_beverage_preferences <- function(data){
 
   # now sort out the population data to get in the correct categories
   
-  ## ! adjust age group "18-25" to "18-24" and "25-49"
-  
   data <- data %>%
     mutate(age_group = dplyr::case_when(
-      (age >= 18 & age <= 25) ~ "18-25",
-      (age >= 26 & age <= 49) ~ "26-49",
+      (age >= 18 & age < 25) ~ "18-24",
+      (age >= 25 & age <= 49) ~ "25-49",
       (age >=50) ~ "50+"))
 
   library(truncnorm)

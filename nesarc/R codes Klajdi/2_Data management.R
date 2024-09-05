@@ -28,8 +28,8 @@ nesarc1 <- readRDS(paste0(data, "nesarc1_raw.rds")) %>%
                         fam_income %in% c(12,13,14,15,16,17,18,19,20,21) ~ 3),
     age3 = cut(AGE, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
     age7 = factor(case_when(AGE < 21 ~ "18-20",
-                            AGE >= 21 & AGE <26 ~ "21-25",
-                            AGE >= 26 & AGE <30 ~ "26-29",
+                            AGE >= 21 & AGE <25 ~ "21-24",
+                            AGE >= 25 & AGE <30 ~ "25-29",
                             AGE >= 30 & AGE <40 ~ "30-39",
                             AGE >= 40 & AGE <50 ~ "40-49",
                             AGE >= 50 & AGE <65 ~ "50-64",
@@ -94,7 +94,7 @@ nesarc1 <- readRDS(paste0(data, "nesarc1_raw.rds")) %>%
 
     mutate(
         #calculate total alcohol ounces per day 
-        alc_daily_oz = rowSums(select(., coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), na.rm = TRUE), # those with only NAs get a value of 0
+        alc_daily_oz = rowSums(dplyr::select(., coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), na.rm = TRUE), # those with only NAs get a value of 0
         
         # Code as NA those who reported drinking a cooler, beer, wine, or liquor but their alc_daily_oz = 0
         alc_daily_oz = if_else(alc_daily_oz==0 & (S2AQ4A==1 | S2AQ5A==1 | S2AQ6A==1 | S2AQ7A==1), NA_real_, alc_daily_oz),
@@ -234,7 +234,7 @@ nesarc1 <- nesarc1 %>%
 #  arrange(idnum, wave) %>% 
   
   # Identify the variables to keep
-  select(idnum, wave, psu, stratum, weight, AGE, age3, age7, female, race, 
+  dplyr::select(idnum, wave, psu, stratum, weight, AGE, age3, age7, female, race, 
           married, edu3, income3, alc_daily_oz, alc_daily_g, alc_daily_drinks, alc4_nesarc, alc6, alc5, alc5_v2, alc4, hed,
           coolers_prop, beers_prop, wine_prop, liquor_prop, beers_prop_wcoolers) %>% 
 
@@ -279,21 +279,21 @@ nesarc1 <- nesarc1 %>%
 #nesarc_cc <- nesarc %>% 
 #  filter(lost==0)  # Remove those with missing data
       
-# save just nesarc2
+# save just nesarc1
 saveRDS(nesarc1, paste0(data, "nesarc1_clean.rds"))
 
       
 # Replicate data (and create unique ID variable) to adjust for sampling weight
-nesarc_cc_expanded <- nesarc_cc %>%
-  mutate (new_weight = weight_wave2 / 100) %>%  # because original weight variable ranged from 455 to 73,192
-  expandRows(., "new_weight") %>%  # replicates data
+#nesarc_cc_expanded <- nesarc_cc %>%
+#  mutate (new_weight = weight_wave2 / 100) %>%  # because original weight variable ranged from 455 to 73,192
+#  expandRows(., "new_weight") %>%  # replicates data
   
   # Generate unique ID
-  group_by(idnum, wave) %>%
-    mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
-           idnum = as.numeric(paste0(idnum, iter))) %>%
-  ungroup() %>%
-  arrange(idnum, wave) # order data by ID then wave (needed for the MSM model)
+#  group_by(idnum, wave) %>%
+#    mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
+#           idnum = as.numeric(paste0(idnum, iter))) %>%
+#  ungroup() %>%
+#  arrange(idnum, wave) # order data by ID then wave (needed for the MSM model)
 
 # check
 # filter(nesarc_cc, wave==1) %>% count(hed)
@@ -301,9 +301,9 @@ nesarc_cc_expanded <- nesarc_cc %>%
 
   
 # Save data
-saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
-saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
-saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))
+#saveRDS(nesarc, paste0(data, "nesarc_all.rds"))
+#saveRDS(nesarc_cc, paste0(data, "nesarc_clean.rds"))
+#saveRDS(nesarc_cc_expanded, paste0(data, "nesarc_clean_expanded.rds"))
 
 # NESARC WAVE 3 --------------------------------------------------------------------------------------------------------
 # Edit data - recode and recategorize variables
@@ -324,10 +324,10 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     edu3 = case_when(NEDUC %in% c(1,2,3,4,5,6,7,8,9) ~ 1,
                      NEDUC %in% c(10,11) ~ 2,
                      NEDUC %in% c(12,13,14) ~ 3),
-    age3 = cut(age, breaks = c(-Inf, 30, 50, Inf), labels = c("18-29", "30-49", "50+"), right=FALSE),
+    age3 = cut(age, breaks = c(-Inf, 25, 50, Inf), labels = c("18-24", "25-49", "50+"), right=FALSE),
     age7 = factor(case_when(age < 21 ~ "18-20",
-                            age >= 21 & age <26 ~ "21-25",
-                            age >= 26 & age <30 ~ "26-29",
+                            age >= 21 & age <25 ~ "21-24",
+                            age >= 25 & age <30 ~ "25-29",
                             age >= 30 & age <40 ~ "30-39",
                             age >= 40 & age <50 ~ "40-49",
                             age >= 50 & age <65 ~ "50-64",
@@ -373,7 +373,7 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
     
   mutate(
     #calculate total alcohol ounces per day 
-    alc_daily_oz = rowSums(select(., coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), na.rm = TRUE), # those with only NAs get a value of 0
+    alc_daily_oz = rowSums(dplyr::select(., coolers_daily_oz, beers_daily_oz, wine_daily_oz, liquor_daily_oz), na.rm = TRUE), # those with only NAs get a value of 0
     
     # Code as NA those who reported drinking a cooler, beer, wine, or liquor but their alc_daily_oz = 0
     alc_daily_oz = if_else(alc_daily_oz==0 & (n2aq5a==1 | n2aq6a==1 | n2aq7a==1 | n2aq8a==1), NA_real_, alc_daily_oz),
@@ -458,7 +458,7 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_raw.rds")) %>%
 nesarc3 <- nesarc3 %>%
   
   # Identify the variables to keep
-  select(idnum, cluster, stratum, weight, age, age3, age7, female, race, married, edu3, 
+  dplyr::select(idnum, cluster, stratum, weight, age, age3, age7, female, race, married, edu3, 
          alc_daily_oz, alc_daily_g, alc_daily_drinks, alc6, alc5, alc5_v2, alc4, hed,
          coolers_prop, beers_prop, beers_prop_wcoolers, wine_prop, liquor_prop) %>%
   
@@ -481,20 +481,20 @@ nesarc3 <- nesarc3 %>%
     edu3.factor    = factor(edu3, levels=c(3,1,2), labels=c("High", "Low", "Med")))
 
 
-nesarc3 %>% select(weight) %>% skim()
+nesarc3 %>% dplyr::select(weight) %>% skim()
 
 
 # Replicate data (and create unique ID variable) to adjust for sampling weight
-nesarc3_expanded <- nesarc3 %>%
-  mutate (new_weight = weight / 100) %>%  # because original weight variable ranged from 586 to 49,403
-  expandRows(., "new_weight") %>%         # replicates data
+#nesarc3_expanded <- nesarc3 %>%
+#  mutate (new_weight = weight / 100) %>%  # because original weight variable ranged from 586 to 49,403
+#  expandRows(., "new_weight") %>%         # replicates data
   
   # Generate unique ID
-  group_by(idnum) %>%
-  mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
-    idnum = as.numeric(paste0(idnum, iter))) %>%
-  ungroup() %>%
-  arrange(idnum) # order data by ID 
+#  group_by(idnum) %>%
+#  mutate(iter = sprintf("%04d", 1:n()),  # the sprintf("%04d", X) command is used to add leading 0s to make it a variable with 4 digits
+#    idnum = as.numeric(paste0(idnum, iter))) %>%
+#  ungroup() %>%
+#  arrange(idnum) # order data by ID 
 
 # check
 # filter(nesarc_cc, wave==1) %>% count(hed)
@@ -502,4 +502,4 @@ nesarc3_expanded <- nesarc3 %>%
 
 # Save data
 saveRDS(nesarc3, paste0(data, "nesarc3_clean.rds"))
-saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded.rds"))
+#saveRDS(nesarc3_expanded, paste0(data, "nesarc3_clean_expanded.rds"))
