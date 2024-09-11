@@ -91,7 +91,7 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
     
     data <- assign_beverage_preferences(data)
     
-    if (setting != "mup") {
+    if (!setting %like% "mup") {
       
       # get individual-level percent reduction for price policies
       newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%
@@ -106,7 +106,7 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
       
     }
 
-    if (setting == "mup") {
+    if (setting %like% "mup") {
       
       # get individual-level percent reduction for mup
       newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%

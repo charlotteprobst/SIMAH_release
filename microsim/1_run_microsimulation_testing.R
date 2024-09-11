@@ -28,6 +28,7 @@ library(beepr)
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
 # WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 WorkingDirectory <- "/Users/carolinkilian/Desktop/"
+# WorkingDirectory <- "/imaging/home/Imhpr/ckilian/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
@@ -89,9 +90,10 @@ sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 # set up scenarios and policy settings
 sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
 counterfactual <- sampleseeds %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
-  slice(1) %>% mutate(scenarios = 0, setting = "standard")
-mup <- sampleseeds %>% filter(setting == "mup") %>% mutate(scenarios = 1) %>% slice(1)
-sampleseeds <- rbind(sampleseeds, counterfactual) %>% filter(setting != "mup") %>% rbind(., mup)
+  slice(1) %>% mutate(scenarios = 0, setting = "counterfactual")
+mup <- sampleseeds %>% filter(setting %like% "mup") %>% mutate(scenarios = 1) %>% 
+  group_by(setting) %>% slice(1)
+sampleseeds <- rbind(sampleseeds, counterfactual) %>% filter(!setting %like% "mup") %>% rbind(., mup)
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
