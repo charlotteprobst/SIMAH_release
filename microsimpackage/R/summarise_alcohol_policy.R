@@ -38,29 +38,30 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
   if(out=="main") {
     
     output1 <- Output %>%
-      filter(setting == "standard" | setting == "mup") %>%
       mutate(sex = ifelse(sex=="m","Men","Women"),
              year = as.numeric(as.character(year)),
              scenario = case_when(
-               scenario == 0 ~ "counterfactual",
+               setting == "counterfactual" ~ "counterfactual",
                scenario != 0 & setting == "standard" ~ paste0("price ", scenario, "%"),
                scenario != 0 & setting == "mup" ~ "mup",
                TRUE ~ NA)) %>%
-      group_by(scenario, year, sex, education) %>% 
-      summarise(meangpd = mean(meansimulation)) %>%
-      rbind(., targetdata) %>%
+      group_by(scenario, year, alc_cat, sex, education) %>% 
+      summarise(meangpd = mean(as.numeric(meansimulation))) %>%
+      #rbind(., targetdata) %>%
       mutate(year = as.numeric(as.character(year)),
              #samplenum = as.numeric(as.character(samplenum)),
              education = factor(education, 
                                 levels = c("LEHS", "SomeC", "College"),
                                 labels = c("High school or less", "Some college", "College +")),
              scenario = factor(scenario, 
-                               levels = c("brfss", "counterfactual", "price 5%", 
+                               levels = c("counterfactual", "price 5%", 
                                           "price 10%", "price 20%", "mup"),
-                               labels = c("BRFSS (upshifted)", "No policy", "5% price increase", 
-                                          "10% price increase", "20% price increase", "Minimum unit price")))
+                               labels = c("No policy", "5% price increase", 
+                                          "10% price increase", "20% price increase", "Minimum unit price")),
+             alc_cat = factor(alc_cat,
+                              levels = c("Low risk","Medium risk", "High risk")))
     
-    plot1 <- ggplot(data = output1, aes(x = year, y = meangpd, colour = scenario)) + 
+    plot1A <- ggplot(data = output1[output1$alc_cat == "High risk",], aes(x = year, y = meangpd, colour = scenario)) + 
       geom_line(linewidth = 1) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
@@ -68,7 +69,27 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
       ggtheme + xlab("") + 
       scale_color_manual(values = c6, name="") + 
-      ggtitle("Simulated reduction in alcohol use")
+      ggtitle("Simulated reduction in alcohol use — High risk alcohol user")
+
+    plot1B <- ggplot(data = output1[output1$alc_cat == "Medium risk",], aes(x = year, y = meangpd, colour = scenario)) + 
+      geom_line(linewidth = 1) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
+      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      ggtheme + xlab("") + 
+      scale_color_manual(values = c6, name="") + 
+      ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user")
+    
+    plot1C <- ggplot(data = output1[output1$alc_cat == "Low risk",], aes(x = year, y = meangpd, colour = scenario)) + 
+      geom_line(linewidth = 1) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
+      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      ggtheme + xlab("") + 
+      scale_color_manual(values = c6, name="") + 
+      ggtitle("Simulated reduction in alcohol use — Low risk alcohol user")
     
     output2 <- output1 %>% ungroup() %>%
       #dplyr::select(-c(samplenum, seed)) %>%
@@ -81,7 +102,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
              percP10 = (`10% price increase` - `No policy`) / `No policy`,
              percP20 = (`20% price increase` - `No policy`) / `No policy`,
              percMUP = (`Minimum unit price` - `No policy`) / `No policy`) %>% 
-      dplyr::select(c(year, sex, education,
+      dplyr::select(c(year, alc_cat, sex, education,
                       diffP05, diffP10, diffP20, diffMUP, 
                       percP05, percP10, percP20, percMUP)) %>% 
       pivot_longer(cols = c(diffP05, diffP10, diffP20, diffMUP, 
@@ -95,16 +116,37 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
                                labels = c("5% price increase", "10% price increase", 
                                           "20% price increase", "Minimum unit price")))
     
-    plot2 <- ggplot(data = output2, aes(x = year, y = diff, colour = scenario)) + 
+    plot2A <- ggplot(data = output2[output2$alc_cat == "High risk",], aes(x = year, y = diff, colour = scenario)) + 
       geom_line(linewidth = 1) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
       ggtheme + xlab("") + ylab("") +
       scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use", "Change in mean grams per day, reference: no policy")
+      ggtitle("Simulated reduction in alcohol use — High risk alcohol user", 
+              "Change in mean grams per day, reference: no policy")
     
-    plot3 <- ggplot(data = output2, aes(x = year, y = perc, colour = scenario)) + 
+    plot2B <- ggplot(data = output2[output2$alc_cat == "Medium risk",], aes(x = year, y = diff, colour = scenario)) + 
+      geom_line(linewidth = 1) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(sex)) + 
+      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      ggtheme + xlab("") + ylab("") +
+      scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user", 
+              "Change in mean grams per day, reference: no policy")
+
+    plot2C <- ggplot(data = output2[output2$alc_cat == "Low risk",], aes(x = year, y = diff, colour = scenario)) + 
+      geom_line(linewidth = 1) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(sex)) + 
+      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      ggtheme + xlab("") + ylab("") +
+      scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use — Low risk alcohol user", 
+              "Change in mean grams per day, reference: no policy")
+    
+plot3A <- ggplot(data = output2[output2$alc_cat == "High risk",], aes(x = year, y = perc, colour = scenario)) + 
       geom_line(linewidth = 1) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
@@ -112,8 +154,31 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
       ggtheme + xlab("") + ylab("") +
       scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use", "% change in mean grams per day, reference: no policy")
-    
+      ggtitle("Simulated reduction in alcohol use — High risk alcohol user", 
+              "% change in mean grams per day, reference: no policy")
+
+plot3B <- ggplot(data = output2[output2$alc_cat == "Medium risk",], aes(x = year, y = perc, colour = scenario)) + 
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+  facet_grid(cols = vars(education), rows = vars(sex)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+  ggtheme + xlab("") + ylab("") +
+  scale_color_manual(values = c4, name="") + 
+  ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user", 
+          "% change in mean grams per day, reference: no policy")
+
+plot3C <- ggplot(data = output2[output2$alc_cat == "Low risk",], aes(x = year, y = perc, colour = scenario)) + 
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+  facet_grid(cols = vars(education), rows = vars(sex)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+  ggtheme + xlab("") + ylab("") +
+  scale_color_manual(values = c4, name="") + 
+  ggtitle("Simulated reduction in alcohol use — Low risk alcohol user", 
+          "% change in mean grams per day, reference: no policy")
+
   }
   
   if(out=="sens") {
