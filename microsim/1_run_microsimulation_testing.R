@@ -50,8 +50,8 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # set up the number of samples to be run
-nsamples <- 1
-nreps <- 1
+nsamples <- 1 # indicates samples per same sample seed
+nreps <- 5 # indicates number of different sample seeds
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
@@ -92,8 +92,10 @@ sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
 counterfactual <- sampleseeds %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
   slice(1) %>% mutate(scenarios = 0, setting = "counterfactual")
 mup <- sampleseeds %>% filter(setting %like% "mup") %>% mutate(scenarios = 1) %>% 
-  group_by(setting) %>% slice(1)
+  group_by(samplenum, seed, educationmodel, alcoholmodel, setting) %>% slice(1)
 sampleseeds <- rbind(sampleseeds, counterfactual) %>% filter(!setting %like% "mup") %>% rbind(., mup)
+
+sampleseeds <- sampleseeds %>% filter(setting == "mup" | setting %like% "stand|count") 
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -113,6 +115,8 @@ maxyear <- 2019
 year_policy <- 2015
 
 diseases <- NULL
+
+sampleseeds <- read.csv(paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"))
 
 Output <- list()
 baseorig <- basepop
