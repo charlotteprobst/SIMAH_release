@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(ggthemes)
 library(survey)
+library(data.table)
 #library(scales)
 
 # Load settings
@@ -79,10 +80,6 @@ pdat <- left_join(brfss, mort) %>%
          edclass = factor(edclass, levels = c("LEHS", "SomeC", "College"),
                           labels = c("Less than high school", "Some college", "Bachelor's degree or higher")))
 
-# GPD and ALVDC
-
-scaleFactor <- max(pdat$ALVDCasrate) / max(pdat$gpd)
-
 theme_barplot <- theme_bw() + 
   theme(axis.text = element_text(size=12, color = "black"),
         legend.text = element_text(size=12, color = "black"),
@@ -91,6 +88,10 @@ theme_barplot <- theme_bw() +
         axis.title.x = element_blank(),
         legend.title = element_blank(),
         legend.position = "none")
+
+# GPD and ALVDC
+
+scaleFactor <- max(pdat$ALVDCasrate) / max(pdat$gpd)
 
 ggplot(pdat, aes(x = year, group = sex)) +
   geom_line(aes(y = gpd*scaleFactor, linetype = sex), color = "#729928", linewidth = 1) + 
@@ -109,15 +110,15 @@ ggsave(paste0("lancet_commentary/Fig1_ALVDCxGPD_", Sys.Date(), ".jpg"), dpi=300,
 
 scaleFactor <- max(pdat$ALVDCasrate) / max(pdat$alccat3)
 
-ggplot(pdat, aes(x = year, group = sex)) +
-  geom_bar(aes(y = alccat3*scaleFactor), stat = "identity", fill = "#729928", alpha = 0.5) + 
-  geom_linerange(aes(ymin = alccat3_lci*scaleFactor, ymax = alccat3_uci*scaleFactor), 
-                 stat = "identity", alpha = 0.3) + 
-  geom_line(aes(y = ALVDCasrate), color = "#4568BA", linewidth = 1) + 
+ggplot(pdat, aes(x = year)) +
+  geom_smooth(aes(y = alccat3*scaleFactor), method = "loess", color = "#729928", fill = "#729928", alpha = 0.1) + 
+  geom_smooth(aes(y = ALVDCasrate), method = "loess", color = "#4568BA", fill = "#4568BA", alpha = 0.1) + 
   scale_y_continuous(name = "Age-standardized mortality rate (per 100,000)",
                      sec.axis = sec_axis(~./scaleFactor, name = "Prevalence of high-risk alcohol use (%)"),
                      limits = c(0, 30)) + 
-  facet_grid(cols = vars(edclass), rows = vars(sex)) + 
+  scale_x_continuous(limits = c(2010,2021), breaks = seq(2010, 2022, 2)) +
+  facet_grid(cols = vars(edclass), rows = vars(sex), #scales = "free_y"
+             ) + 
   ggtitle("High-risk alcohol use and alcohol-related liver cirrhosis in the US (2000-2021)") +
   theme_barplot
 
