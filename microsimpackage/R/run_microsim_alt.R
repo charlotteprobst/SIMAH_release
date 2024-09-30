@@ -15,7 +15,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          updatingalcohol, alcohol_transitions,
                          catcontmodel, drinkingdistributions,
                          base_counts, diseases, mortality_parameters, sesinteraction,
-                         policy=0, policy_model, year_policy, scenario, 
+                         policy=0, policy_model, model, year_policy, scenario, 
                          participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                          inflation_factors,
                          age_inflated,
@@ -28,6 +28,7 @@ DiseaseSummary <- list()
 PopPerYear <- list()
 CatSummary <- list()
 meandrinking <- list()
+Alcohol <- list()
 targets <- generate_targets_alcohol(brfss)
 targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
 DM_men <- "off"
@@ -42,7 +43,7 @@ print(y)
     print("policy is not within model time frame")
   }
   
-  if(policy==1 & y==year_policy & scenario > 0){
+  if(policy==1 & y==year_policy){
     
     if(policy_model %like% "tax|price"){
       
@@ -50,7 +51,7 @@ print(y)
         prob_alcohol_transitions <- prob_alcohol_transition(basepop, alcohol_transitions)
         }
     
-      basepop <- apply_tax_policy(basepop, policy_model, scenario, 
+      basepop <- apply_tax_policy(basepop, scenario, 
                                   participation, part_elasticity, prob_alcohol_transitions, 
                                   cons_elasticity, cons_elasticity_se, r_sim_obs)  
     }  
@@ -65,50 +66,55 @@ print(y)
   }
 
 # calculate implausibility in each year - break if implausibility is over threshold
-  if(output=="alcoholcat"){
+if(output=="alcoholcat"){
   CatSummary[[paste(y)]] <- basepop %>%
     mutate(samplenum=samplenum,
            seed=seed,
            setting=as.character(setting),
-           scenario=as.character(round(scenario*100,1)),
+           model=as.character(model),
            agecat = cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
            education=ifelse(agecat=="18-24" & education=="College", "SomeC", education),
            year=y) %>%
-    group_by(year, samplenum, seed, scenario, setting, sex, education,
+    group_by(year, samplenum, seed, model, setting, sex, education,
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
-    group_by(year, samplenum, seed, scenario, setting, sex, education) %>%
+    group_by(year, samplenum, seed, model, setting, sex, education) %>%
     mutate(prop=n/sum(n)) %>%
     dplyr::select(-n) %>%
     mutate_at(vars(setting, sex, education, alc_cat), as.character)
-
-  # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],targets, by=c("year","sex","race",
-  #                                                                         "agecat","education","alc_cat"))
-  # CatSummary[[paste(y)]] <- left_join(CatSummary[[paste(y)]],variance, by=c("year","sex","race",
-  #                                                                           "agecat","education","alc_cat"))
-
-  # CatSummary[[paste(y)]]$implausibility <- abs(CatSummary[[paste(y)]]$propsimulation-CatSummary[[paste(y)]]$proptarget)/sqrt(CatSummary[[paste(y)]]$se^2)
-  }
-
+} 
+  
 if(output=="alcoholcont"){
   meandrinking[[paste(y)]] <- basepop %>%
     mutate(samplenum=samplenum,
            seed=seed,
            setting=as.character(setting),
-           scenario=as.character(round(scenario*100,1)),
+           model=as.character(model),
            year=y) %>%
     #filter(alc_gpd>0) %>%
     mutate(agecat=cut(age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, samplenum, seed, scenario, setting, sex, education) %>%
+    group_by(year, samplenum, seed, model, setting, sex, education) %>%
     summarise(meansimulation = mean(alc_gpd))
 }
 
+if(output=="alcoholdetail" & y >= year_policy-1){
+  Alcohol[[paste(y)]] <- basepop %>%
+    mutate(samplenum=samplenum,
+           seed=seed,
+           setting=as.character(setting),
+           model=as.character(model),
+           year=y,
+           agecat=cut(age,
+                      breaks=c(0,24,64,100),
+                      labels=c("18-24","25-64","65+")))
+}
+  
 # save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum, scenario=scenario)
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum, model=model)
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
@@ -312,7 +318,7 @@ if(output=="population"){
     mutate(percentage = round(count / sum(count) * 100, 1))
 }else if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
-    mutate(seed = seed, samplenum = samplenum, scenario = scenario)
+    mutate(seed = seed, samplenum = samplenum, model = model)
 }else if(output=="mortality" & is.null(diseases)){
     Summary <- 0
   }else if(output=="demographics"){
@@ -324,7 +330,7 @@ if(output=="population"){
                                                            "45-49","50-54","55-59","60-64","65-69",
                                                            "70-74","75-79"))
     PopPerYear[[i]] <- as.data.table(PopPerYear[[i]])
-    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, scenario, sex, race, education, age, agecat)]
+    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, model, sex, race, education, age, agecat)]
   }
     Summary <- do.call(rbind,PopPerYear)
 }else if(output=="alcoholcat"){
@@ -340,10 +346,12 @@ if(output=="population"){
   #     dplyr::select(-n) %>%
   #     mutate_at(vars(sex, race, agecat, education, alc_cat), as.character)
 Summary <- do.call(rbind,CatSummary) %>%
-  mutate(seed=seed, samplenum=samplenum, scenario=scenario)
+  mutate(seed=seed, samplenum=samplenum, model=model)
 #implausibility <- max(CatSummary$implausibility, na.rm=T)
 }else if(output=="alcoholcont"){
   Summary <- do.call(rbind, meandrinking)
+}else if(output=="alcoholdetail"){
+  Summary <- do.call(rbind, Alcohol)
 }
 
 # formerdrinkers <- list()

@@ -50,8 +50,8 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # set up the number of samples to be run
-nsamples <- 1 # indicates samples per same sample seed
-nreps <- 5 # indicates number of different sample seeds
+nsamples <- 1 # indicates samples per same sample seed (for calibration purposes only)
+nreps <- 20 # indicates number of different sample seeds
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
@@ -88,14 +88,13 @@ alcmodels <- alcmodels %>% bind_rows()
 sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 
 # set up scenarios and policy settings
-sampleseeds <- sampleseeds %>% expand(sampleseeds, scenarios, policy_setting)
-counterfactual <- sampleseeds %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
-  slice(1) %>% mutate(scenarios = 0, setting = "counterfactual")
-mup <- sampleseeds %>% filter(setting %like% "mup") %>% mutate(scenarios = 1) %>% 
-  group_by(samplenum, seed, educationmodel, alcoholmodel, setting) %>% slice(1)
-sampleseeds <- rbind(sampleseeds, counterfactual) %>% filter(!setting %like% "mup") %>% rbind(., mup)
+sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting)
+counterfactual <- sampleseeds %>% 
+  group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
+  slice(1) %>% mutate(scenario = "0,0,0", setting = "counterfactual")
+sampleseeds <- rbind(sampleseeds, counterfactual)
 
-sampleseeds <- sampleseeds %>% filter(setting == "mup" | setting %like% "stand|count") 
+sampleseeds <- sampleseeds %>% filter(setting == "standard" | setting == "counterfactual") 
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -116,7 +115,8 @@ year_policy <- 2015
 
 diseases <- NULL
 
-sampleseeds <- read.csv(paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"))
+#sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-09-12/output-policy_sampleseeds_2024-09-12.csv"))
+#sampleseeds <- sampleseeds %>% filter(setting == "mup")
 
 Output <- list()
 baseorig <- basepop
@@ -126,7 +126,8 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
   samplenum <- as.numeric(sampleseeds$samplenum[i])
   seed <- as.numeric(sampleseeds$seed[i])
   #set up policy parameters
-  scenario <- as.numeric(sampleseeds$scenarios[i])
+  model <- sampleseeds$model[i]
+  scenario <- as.numeric(unlist(strsplit(sampleseeds$scenario[i], ",")))
   setting <- sampleseeds$setting[i]
   participation <- as.numeric(sampleseeds$participation[i])
   cons_elasticity <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity[i], ",")))
@@ -150,7 +151,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
                    updatingalcohol, alcohol_transitions,
                    catcontmodel, drinkingdistributions,
                    base_counts, diseases, mortality_parameters, sesinteraction,
-                   policy, policy_model, year_policy, scenario, 
+                   policy, policy_model, model, year_policy, scenario, 
                    participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                    inflation_factors,
                    age_inflated,
@@ -161,7 +162,7 @@ beep()
 
 Output <- do.call(rbind,Output)
 # save the output in the output directory
-write.csv(Output, paste0(OutputDirectory, "/output-policy_gpd_", Sys.Date(), ".csv"), row.names=F)
+write.csv(Output, paste0(OutputDirectory, "/output-policy_alcohol_20rep_", Sys.Date(), ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
 
 plot <- summarise_alcohol_policy(Output, SelectedState = "USA", out = "main")

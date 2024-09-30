@@ -7,7 +7,7 @@
 #' @examples
 
 
-apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenario = scenario,
+apply_tax_policy <- function(data = basepop, scenario = scenario,
                              participation = participation, part_elasticity = part_elasticity, prob_alcohol_transitions = prob_alcohol_transitions,
                              cons_elasticity = cons_elasticity, cons_elasticity_se = cons_elasticity_se, r_sim_obs = r_sim_obs){
   
@@ -19,7 +19,7 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
   } 
   
   if (participation == 1){
-    if (scenario != 0) { print("applying participation elasticities") }
+    if (mean(scenario) != 0) { print("applying participation elasticities") }
     
     # determine weighted number of drinkers to become non-drinkers
     temp <- prob_alcohol_transitions %>% filter(alc_cat != "Non-drinker") %>%
@@ -51,7 +51,7 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
       mutate(prop_alc_cat = n / sum(n), # get proportion of people within each alcohol category
              prop_alc = prop_alc_cat * prob_quit, # multiple proportion of people within each alcohol category by alc TPs
              ratio = prop_alc/min(prop_alc), 
-             prop_change = (-1 * part_elasticity * scenario) / sum(ratio) * ratio, # split up participation elasticity by calculated ratio based on population and TP by alchol category
+             prop_change = (-1 * part_elasticity * min(scenario)) / sum(ratio) * ratio, # split up participation elasticity by calculated ratio based on population and TP by alchol category
              tochange_by_alc_cat = round(prop_change*sum(n), 0)) # multiple this group-specific elasticity by total sample size 
     
     # sample IDs to become non-drinkers
@@ -68,7 +68,7 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
   # CONSUMPTION ELASTICITY 
   
   # generic taxation 
-  if (policy_model == "tax_generic"){
+  if (policy_model == "tax"){
     
     if (scenario != 0) { print("applying generic consumption elasticities") }
     
@@ -86,41 +86,22 @@ apply_tax_policy <- function(data = basepop, policy_model = policy_model, scenar
   }
   
   # beverage-specific taxation
-  if (policy_model == "price_beverage"){
-    if (scenario != 0) { print("applying beverage-specific consumption elasticities") }
+  if (policy_model == "price"){
+    if (mean(scenario) != 0) { print("applying beverage-specific consumption elasticities") }
     
     data <- assign_beverage_preferences(data)
-    
-    if (!setting %like% "mup") {
       
-      # get individual-level percent reduction for price policies
-      newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%
+    # get individual-level percent reduction for price policies
+    newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%
         mutate(beer_percentreduction = rnorm_pre(log(beergpd)^2, mu = cons_elasticity[1], sd = cons_elasticity_se[1], r = r_sim_obs, empirical = T),
-               beer_newGPD = beergpd + (beergpd*beer_percentreduction*scenario),
+               beer_newGPD = beergpd + (beergpd*beer_percentreduction*scenario[1]),
                wine_percentreduction = rnorm_pre(log(winegpd)^2, mu = cons_elasticity[2], sd = cons_elasticity_se[2], r = r_sim_obs, empirical = T),
-               wine_newGPD = winegpd + (winegpd*wine_percentreduction*scenario),
+               wine_newGPD = winegpd + (winegpd*wine_percentreduction*scenario[2]),
                liq_percentreduction = rnorm_pre(log(liqgpd)^2, mu = cons_elasticity[3], sd = cons_elasticity_se[3], r = r_sim_obs, empirical = T),
-               liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*scenario),
+               liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*scenario[3]),
                newGPD = beer_newGPD + wine_newGPD + liq_newGPD) %>%
         dplyr::select(ID, newGPD) 
-      
-    }
-
-    if (setting %like% "mup") {
-      
-      # get individual-level percent reduction for mup
-      newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%
-        mutate(beer_percentreduction = rnorm_pre(log(beergpd)^2, mu = cons_elasticity[1], sd = cons_elasticity_se[1], r = r_sim_obs, empirical = T),
-               beer_newGPD = beergpd + (beergpd*beer_percentreduction*0.448),
-               wine_percentreduction = rnorm_pre(log(winegpd)^2, mu = cons_elasticity[2], sd = cons_elasticity_se[2], r = r_sim_obs, empirical = T),
-               wine_newGPD = winegpd + (winegpd*wine_percentreduction*0.1),
-               liq_percentreduction = rnorm_pre(log(liqgpd)^2, mu = cons_elasticity[3], sd = cons_elasticity_se[3], r = r_sim_obs, empirical = T),
-               liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*0.595),
-               newGPD = beer_newGPD + wine_newGPD + liq_newGPD) %>%
-        dplyr::select(ID, newGPD) 
-      
-    }
-    
+  
     # merge simulated percentreduction into data
     data <- merge(data, newGPD, by = "ID", all.x = T) %>% 
       mutate(alc_gpd = ifelse(alc_gpd != 0, newGPD, 0),

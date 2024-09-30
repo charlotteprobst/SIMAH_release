@@ -12,11 +12,11 @@ options(scipen=999)
 # general policy settings
 policy <- 1
 year_policy <- 2015
-policy_model <- "price_beverage"
-scenarios <- c(0.05, 0.1, 0.2)
+policy_model <- "price"
+#scenarios <- c(0.05, 0.1, 0.2)
 
 ######################DO NOT EDIT BELOW HERE ##################################################
 
 policy_setting <- read.csv(paste0(DataDirectory,"input_policy_sim.csv")) %>% 
-  filter(model %in% policy_model)
+  filter(policy %in% policy_model)
 
