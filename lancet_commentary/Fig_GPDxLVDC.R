@@ -78,7 +78,7 @@ pdat <- left_join(brfss, mort) %>%
   filter(year <= 2021) %>% 
   mutate(alccat3 = alccat3*100, alccat3_lci = alccat3_lci*100, alccat3_uci = alccat3_uci*100,
          edclass = factor(edclass, levels = c("LEHS", "SomeC", "College"),
-                          labels = c("Less than high school", "Some college", "Bachelor's degree or higher")))
+                          labels = c("High school or less", "Some college", "Bachelor's degree or higher")))
 
 theme_barplot <- theme_bw() + 
   theme(axis.text = element_text(size=12, color = "black"),
@@ -111,15 +111,14 @@ ggsave(paste0("lancet_commentary/Fig1_ALVDCxGPD_", Sys.Date(), ".jpg"), dpi=300,
 scaleFactor <- max(pdat$ALVDCasrate) / max(pdat$alccat3)
 
 ggplot(pdat, aes(x = year)) +
-  geom_smooth(aes(y = alccat3*scaleFactor), method = "loess", color = "#729928", fill = "#729928", alpha = 0.1) + 
+  geom_smooth(aes(y = alccat3*scaleFactor), method = "loess", color = "#729928", fill = "#729928", alpha = 0.1, linetype = "dashed") + 
   geom_smooth(aes(y = ALVDCasrate), method = "loess", color = "#4568BA", fill = "#4568BA", alpha = 0.1) + 
   scale_y_continuous(name = "Age-standardized mortality rate (per 100,000)",
-                     sec.axis = sec_axis(~./scaleFactor, name = "Prevalence of high-risk alcohol use (%)"),
-                     limits = c(0, 30)) + 
-  scale_x_continuous(limits = c(2010,2021), breaks = seq(2010, 2022, 2)) +
-  facet_grid(cols = vars(edclass), rows = vars(sex), #scales = "free_y"
-             ) + 
-  ggtitle("High-risk alcohol use and alcohol-related liver cirrhosis in the US (2000-2021)") +
+                     sec.axis = sec_axis(~./scaleFactor, name = "Prevalence of heavy alcohol use (%)"),
+                     limits = c(0, NA)) + 
+  scale_x_continuous(limits = c(2000,2021), breaks = seq(2000, 2020, 3)) +
+  facet_grid(cols = vars(edclass), rows = vars(sex)) + 
+  ggtitle("Heavy alcohol use and alcohol-related liver cirrhosis mortality in the US (2000-2021)") +
   theme_barplot
 
-ggsave(paste0("lancet_commentary/Fig1_ALVDCxAlcCat3_", Sys.Date(), ".jpg"), dpi=300, width = 10, height = 6)
+ggsave(paste0("lancet_commentary/Fig1_ALVDCxAlcCat3_", Sys.Date(), ".jpg"), dpi=300, width = 12, height = 6)
