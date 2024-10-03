@@ -51,7 +51,7 @@ source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # set up the number of samples to be run
 nsamples <- 1 # indicates samples per same sample seed (for calibration purposes only)
-nreps <- 20 # indicates number of different sample seeds
+nreps <- 10 # indicates number of different sample seeds
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
@@ -91,7 +91,7 @@ sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting)
 counterfactual <- sampleseeds %>% 
   group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
-  slice(1) %>% mutate(scenario = "0,0,0", setting = "counterfactual")
+  slice(1) %>% mutate(policymodel = 0, scenario = "0,0,0", setting = "counterfactual")
 sampleseeds <- rbind(sampleseeds, counterfactual)
 
 sampleseeds <- sampleseeds %>% filter(setting == "standard" | setting == "counterfactual") 
@@ -106,7 +106,7 @@ sampleseeds <- sampleseeds %>% filter(setting == "standard" | setting == "counte
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
-output_type <- "alcoholcont"
+output_type <- "alcoholcontcat"
 
 # set minyear and maxyear 
 minyear <- 2000
@@ -126,7 +126,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
   samplenum <- as.numeric(sampleseeds$samplenum[i])
   seed <- as.numeric(sampleseeds$seed[i])
   #set up policy parameters
-  model <- sampleseeds$model[i]
+  policymodel <- sampleseeds$policymodel[i]
   scenario <- as.numeric(unlist(strsplit(sampleseeds$scenario[i], ",")))
   setting <- sampleseeds$setting[i]
   participation <- as.numeric(sampleseeds$participation[i])
@@ -151,7 +151,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
                    updatingalcohol, alcohol_transitions,
                    catcontmodel, drinkingdistributions,
                    base_counts, diseases, mortality_parameters, sesinteraction,
-                   policy, policy_model, model, year_policy, scenario, 
+                   policy, policy_int, policymodel, year_policy, scenario, 
                    participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                    inflation_factors,
                    age_inflated,
@@ -162,7 +162,7 @@ beep()
 
 Output <- do.call(rbind,Output)
 # save the output in the output directory
-write.csv(Output, paste0(OutputDirectory, "/output-policy_alcohol_20rep_", Sys.Date(), ".csv"), row.names=F)
+write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcontcat_", Sys.Date(), ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
 
 plot <- summarise_alcohol_policy(Output, SelectedState = "USA", out = "main")
