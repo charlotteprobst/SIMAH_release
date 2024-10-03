@@ -5,12 +5,16 @@
 #' @export
 #' @examples
 
-summarise_alcohol_policy <- function(Output, SelectedState, out = main){
+summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
+  
+  library(ggpubr)
   
   # set ggplot layout
   options(digits = 4)
   
+  #c4 <- c("#A9D8B6", "#487B79", "#1F4328", "#1482AB")
   c4 <- c("#A9D8B6", "#487B79", "#1F4328", "#1482AB")
+  c5 <- c("#BFBFBF", "#A9D8B6", "#487B79", "#1F4328", "#1482AB")
   c6 <- c("#FFD679", "#BFBFBF", "#A9D8B6", "#487B79", "#1F4328", "#1482AB")
   
   ggtheme <- theme_bw() + theme(legend.position="right",
@@ -19,376 +23,332 @@ summarise_alcohol_policy <- function(Output, SelectedState, out = main){
                                 text = element_text(size=20))
   
   # generate output for continuous alcohol use
+  
   if(output=="alcoholcont") {
     
-  targetdata <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>%
-    filter(State==SelectedState) %>% filter(YEAR>=2000 & YEAR<2020) %>%
-    filter(drinkingstatus==1) %>% 
-    mutate(age_cat = cut(age_var,
-                         breaks=c(0,24,64,100),
-                         labels=c("18-24","25-64","65+")),
-           sex = ifelse(sex_recode == "Male", "Men", "Women")) %>%
-    rename(year = YEAR,
-           education = education_summary,
-           race = race_eth) %>%
-    group_by(year, sex, education) %>%
-    summarise(meangpd = mean(gramsperday_upshifted)) %>%
-    mutate(scenario = "brfss")
+  # targetdata <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>%
+  #   filter(State==SelectedState) %>% filter(YEAR>=2000 & YEAR<2020) %>%
+  #   filter(drinkingstatus==1) %>% 
+  #   mutate(age_cat = cut(age_var,
+  #                        breaks=c(0,24,64,100),
+  #                        labels=c("18-24","25-64","65+")),
+  #          sex = ifelse(sex_recode == "Male", "Men", "Women")) %>%
+  #   rename(year = YEAR,
+  #          education = education_summary,
+  #          race = race_eth) %>%
+  #   group_by(year, sex, education) %>%
+  #   summarise(meangpd = mean(gramsperday_upshifted)) %>%
+  #   mutate(scenario = "brfss")
   
-  if(out=="main") {
-    
-    output1 <- Output %>%
-      mutate(sex = ifelse(sex=="m","Men","Women"),
-             year = as.numeric(as.character(year)),
-             scenario = case_when(
+    Output <- Output %>%
+      filter(setting == version | setting == "counterfactual") %>% 
+      mutate(year = as.numeric(as.character(year)),
+             sex = ifelse(sex=="m","Men","Women"),
+             education = factor(education, 
+                                levels = c("LEHS", "SomeC", "College"),
+                                labels = c("High school or less", "Some college", "College +")),
+             scenario = factor(case_when(
                setting == "counterfactual" ~ "counterfactual",
-               scenario != 0 & setting == "standard" ~ paste0("price ", scenario, "%"),
-               scenario != 0 & setting == "mup" ~ "mup",
-               TRUE ~ NA)) %>%
-      group_by(scenario, year, alc_cat, sex, education) %>% 
-      summarise(meangpd = mean(as.numeric(meansimulation))) %>%
-      #rbind(., targetdata) %>%
-      mutate(year = as.numeric(as.character(year)),
-             #samplenum = as.numeric(as.character(samplenum)),
-             education = factor(education, 
-                                levels = c("LEHS", "SomeC", "College"),
-                                labels = c("High school or less", "Some college", "College +")),
-             scenario = factor(scenario, 
-                               levels = c("counterfactual", "price 5%", 
-                                          "price 10%", "price 20%", "mup"),
-                               labels = c("No policy", "5% price increase", 
-                                          "10% price increase", "20% price increase", "Minimum unit price")),
-             alc_cat = factor(alc_cat,
-                              levels = c("Low risk","Medium risk", "High risk")))
+               setting == "standard" ~ paste0("model", policymodel),
+               TRUE ~ NA), levels = c("counterfactual", "model1", 
+                                      "model2", "model3", "model4"))) 
     
-    plot1A <- ggplot(data = output1[output1$alc_cat == "High risk",], aes(x = year, y = meangpd, colour = scenario)) + 
-      geom_line(linewidth = 1) +
+    # 1) MEAN ALCOHOL CONSUMPTION LEVELS
+    
+    # mean across model runs (seeds)
+    output1.mean <- Output %>%
+      group_by(scenario, year, sex, education) %>% 
+      summarise(meangpd = mean(as.numeric(meansimulation)))
+    
+    # min/max across model runs (seeds)
+    var <- Output %>% filter(year == year_policy) %>% 
+      group_by(scenario, year, sex, education) %>% 
+      mutate(min = min(as.numeric(meansimulation)),
+             max = max(as.numeric(meansimulation)),
+             var = ifelse(meansimulation == min, "max",
+                          ifelse(meansimulation == max, "min", NA))) %>% ungroup() %>%
+      filter(meansimulation == min | meansimulation == max) %>%
+      dplyr::select(c(seed, scenario, sex, education, var)) 
+    
+    output1 <- merge(Output, var, all.y = T) %>% 
+      rename("meangpd" = "meansimulation") %>% 
+      dplyr::select(c(scenario, year, sex, education, meangpd, var)) %>%
+      pivot_wider(names_from = "var", values_from = "meangpd") %>%
+      left_join(output1.mean, .)
+    
+    plot1 <- ggplot(data = output1, aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = meangpd), linewidth = 0.5) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
       ylim(0,NA) + ylab("Mean grams of alcohol per day") +
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + 
-      scale_color_manual(values = c6, name="") + 
-      ggtitle("Simulated reduction in alcohol use — High risk alcohol user")
+      ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
+      ggtitle("Simulated reduction in alcohol use (total population)")
 
-    plot1B <- ggplot(data = output1[output1$alc_cat == "Medium risk",], aes(x = year, y = meangpd, colour = scenario)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + 
-      scale_color_manual(values = c6, name="") + 
-      ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user")
+    # 2) CHANGE IN ALCOHOL CONSUMPTION LEVELS
     
-    plot1C <- ggplot(data = output1[output1$alc_cat == "Low risk",], aes(x = year, y = meangpd, colour = scenario)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + 
-      scale_color_manual(values = c6, name="") + 
-      ggtitle("Simulated reduction in alcohol use — Low risk alcohol user")
+    counterfactual <- output1 %>% filter(scenario == "counterfactual") %>% ungroup() %>%
+      rename("meangpdref" = "meangpd", "maxref" = "max", "minref" = "min") %>% 
+      dplyr::select(-scenario)
     
-    output2 <- output1 %>% ungroup() %>%
-      #dplyr::select(-c(samplenum, seed)) %>%
-      pivot_wider(names_from = scenario, values_from = meangpd) %>%
-      mutate(diffP05 = `5% price increase` - `No policy`,
-             diffP10 = `10% price increase` - `No policy`,
-             diffP20 = `20% price increase` - `No policy`,
-             diffMUP = `Minimum unit price` - `No policy`,
-             percP05 = (`5% price increase` - `No policy`) / `No policy`,
-             percP10 = (`10% price increase` - `No policy`) / `No policy`,
-             percP20 = (`20% price increase` - `No policy`) / `No policy`,
-             percMUP = (`Minimum unit price` - `No policy`) / `No policy`) %>% 
-      dplyr::select(c(year, alc_cat, sex, education,
-                      diffP05, diffP10, diffP20, diffMUP, 
-                      percP05, percP10, percP20, percMUP)) %>% 
-      pivot_longer(cols = c(diffP05, diffP10, diffP20, diffMUP, 
-                            percP05, percP10, percP20, percMUP),
-                   names_to = "scenario", values_to = "value") %>%
-      mutate(out = substr(scenario, start = 1, stop = 4),
-             scenario = substr(scenario, start = 5, stop = 7)) %>% 
-      pivot_wider(names_from = out, values_from = value) %>%
-      mutate(scenario = factor(scenario, 
-                              levels = c("P05", "P10", "P20", "MUP"),
-                               labels = c("5% price increase", "10% price increase", 
-                                          "20% price increase", "Minimum unit price")))
+    output2 <- output1 %>% filter(scenario != "counterfactual") %>% 
+      left_join(., counterfactual) %>% 
+      mutate(diffgpd = meangpd - meangpdref,
+             diffmin = min - minref,
+             diffmax = max - maxref,
+             percgpd = (meangpd - meangpdref) / meangpdref,
+             percmin = (min - minref) / minref,
+             percmax = (max - maxref) / maxref) %>% 
+      dplyr::select(c(scenario, year, sex, education,
+                      diffgpd, diffmin, diffmax,
+                      percgpd, percmin, percmax)) 
     
-    plot2A <- ggplot(data = output2[output2$alc_cat == "High risk",], aes(x = year, y = diff, colour = scenario)) + 
-      geom_line(linewidth = 1) +
+    plot2 <- ggplot(data = output2, aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffgpd), linewidth = 0.5) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use — High risk alcohol user", 
-              "Change in mean grams per day, reference: no policy")
+      ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use (total population)")
     
-    plot2B <- ggplot(data = output2[output2$alc_cat == "Medium risk",], aes(x = year, y = diff, colour = scenario)) + 
-      geom_line(linewidth = 1) +
+    plot3 <- ggplot(data = output2, aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percgpd), linewidth = 0.5) +
       geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
       scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user", 
-              "Change in mean grams per day, reference: no policy")
-
-    plot2C <- ggplot(data = output2[output2$alc_cat == "Low risk",], aes(x = year, y = diff, colour = scenario)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex)) + 
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use — Low risk alcohol user", 
-              "Change in mean grams per day, reference: no policy")
-    
-plot3A <- ggplot(data = output2[output2$alc_cat == "High risk",], aes(x = year, y = perc, colour = scenario)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex)) + 
       scale_y_continuous(labels = scales::percent) + 
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use — High risk alcohol user", 
-              "% change in mean grams per day, reference: no policy")
+      ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use (total population)")
 
-plot3B <- ggplot(data = output2[output2$alc_cat == "Medium risk",], aes(x = year, y = perc, colour = scenario)) + 
-  geom_line(linewidth = 1) +
-  geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-  facet_grid(cols = vars(education), rows = vars(sex)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-  ggtheme + xlab("") + ylab("") +
-  scale_color_manual(values = c4, name="") + 
-  ggtitle("Simulated reduction in alcohol use — Medium risk alcohol user", 
-          "% change in mean grams per day, reference: no policy")
-
-plot3C <- ggplot(data = output2[output2$alc_cat == "Low risk",], aes(x = year, y = perc, colour = scenario)) + 
-  geom_line(linewidth = 1) +
-  geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-  facet_grid(cols = vars(education), rows = vars(sex)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
-  ggtheme + xlab("") + ylab("") +
-  scale_color_manual(values = c4, name="") + 
-  ggtitle("Simulated reduction in alcohol use — Low risk alcohol user", 
-          "% change in mean grams per day, reference: no policy")
-
+    list <- list(output1, output2, plot1, plot2, plot3)
+    
   }
   
-  if(out=="sens") {
-    
-    output1 <- Output %>%
-      filter(scenario == out_scenario & setting != "mup" | scenario == 0) %>%
-      mutate(sex = ifelse(sex=="m","Men","Women"),
-             year = as.numeric(as.character(year)),
-             setting = ifelse(scenario != 0, setting,
-                              ifelse(scenario == 0, "counterfactual", NA))) %>%
-      group_by(setting, year, sex, education) %>% 
-      summarise(meangpd = mean(meansimulation)) %>%
-      rbind(., targetdata) %>%
-      mutate(year = as.numeric(as.character(year)),
-             #samplenum = as.numeric(as.character(samplenum)),
-             education = factor(education, 
-                                levels = c("LEHS", "SomeC", "College"),
-                                labels = c("High school or less", "Some college", "College +")),
-             setting = factor(setting, 
-                              levels = c("brfss", "counterfactual", "standard", "min", "max"),
-                              labels = c("BRFSS (upshifted)", "No policy",
-                                         "Taxation (standard)", "Taxation (minimum)", "Taxation (maximum)")))
-    
-    plot1 <- ggplot(data = output1, aes(x = year, y = meangpd, colour = setting)) + 
-      geom_line(linewidth = 1) + 
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = scales::pretty_breaks(), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + 
-      scale_color_manual(values = c6, name="") + 
-      ggtitle("Simulated reduction in alcohol use")
-    
-    output2 <- output1 %>% ungroup() %>%
-      #dplyr::select(-c(samplenum, seed)) %>%
-      pivot_wider(names_from = setting, values_from = meangpd) %>%
-      mutate(diffSta = `Taxation (standard)` - `No policy`,
-             diffMin = `Taxation (minimum)` - `No policy`,
-             diffMax = `Taxation (maximum)` - `No policy`,
-             percSta = (`Taxation (standard)` - `No policy`) / `No policy`,
-             percMin = (`Taxation (minimum)` - `No policy`) / `No policy`,
-             percMax = (`Taxation (maximum)` - `No policy`) / `No policy`) %>% 
-      pivot_longer(cols = c(diffSta, diffMin, diffMax, 
-                            percSta, percMin, percMax),
-                   names_to = "setting", values_to = "value") %>%
-      mutate(out = substr(setting, start = 1, stop = 4),
-             setting = substr(setting, start = 5, stop = 7)) %>% 
-      pivot_wider(names_from = out, values_from = value) %>%
-      mutate(setting = factor(setting, 
-                              levels = c("Sta", "Min", "Max"),
-                              labels = c("Taxation (standard)", "Taxation (minimum)", 
-                                         "Taxation (maximum)")))
-    
-    plot2 <- ggplot(data = output2, aes(x = year, y = diff, colour = setting)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex)) + 
-      scale_x_continuous(breaks = scales::pretty_breaks(), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use", "Change in mean grams per day, reference: no policy")
-    
-    plot3 <- ggplot(data = output2, aes(x = year, y = perc, colour = setting)) + 
-      geom_line(linewidth = 1) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
-      facet_grid(cols = vars(education), rows = vars(sex)) + 
-      scale_y_continuous(labels = scales::percent) + 
-      scale_x_continuous(breaks = scales::pretty_breaks(), limits = c(2010,2020)) + 
-      ggtheme + xlab("") + ylab("") +
-      scale_color_manual(values = c4, name="") + 
-      ggtitle("Simulated reduction in alcohol use", "% change in mean grams per day, reference: no policy")
-  
-    }
-  
-  list <- list(output1, output2, plot1, plot2, plot3)
-  
-  }
+  # generate output for categorial alcohol use
 
   if(output=="alcoholcat") {
     
-    targetdata <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>%
-      filter(State==SelectedState) %>% filter(YEAR>=2000 & YEAR<2020) %>%
-      mutate(age_cat = cut(age_var,
-                           breaks=c(0,24,64,100),
-                           labels=c("18-24","25-64","65+")),
-             sex = ifelse(sex_recode == "Male", "Men", "Women"),
-             alc_cat = ifelse(sex=="Men" & gramsperday_upshifted>0 &
-                                gramsperday_upshifted<=40, "Low risk",
-                              ifelse(sex=="Women" & gramsperday_upshifted>0 &
-                                       gramsperday_upshifted<=20, "Low risk",
-                                     ifelse(sex=="Men" & gramsperday_upshifted>40 &
-                                              gramsperday_upshifted<=60, "Medium risk",
-                                            ifelse(sex=="Women" & gramsperday_upshifted>20 &
-                                                     gramsperday_upshifted<=40, "Medium risk",
-                                                   ifelse(sex=="Men" & gramsperday_upshifted>60,
-                                                          "High risk",
-                                                          ifelse(sex=="Women" & gramsperday_upshifted>40,
-                                                                 "High risk",
-                                                                 ifelse(gramsperday_upshifted==0, "Non-drinker",NA)))))))) %>%
-      rename(year = YEAR,
-             education = education_summary,
-             race = race_eth) %>%
-      group_by(year, sex, education, alc_cat, .drop=FALSE) %>% tally() %>%
-      ungroup() %>%
-      group_by(year, sex, education) %>%
-      mutate(prop=n/sum(n)) %>%
-      dplyr::select(-n) %>%
-      mutate(scenario = "brfss", setting = "brfss")
+    Output <- Output %>%
+      filter(setting == version | setting == "counterfactual") %>% 
+      mutate(year = as.numeric(as.character(year)),
+             sex = ifelse(sex=="m","Men","Women"),
+             education = factor(education, 
+                                levels = c("LEHS", "SomeC", "College"),
+                                labels = c("High school or less", "Some college", "College +")),
+             alc_cat = factor(alc_cat, 
+                              levels = c("High risk", "Medium risk", "Low risk", "Non-drinker")), 
+             scenario = factor(case_when(
+               setting == "counterfactual" ~ "counterfactual",
+               setting == "standard" ~ paste0("model", model),
+               TRUE ~ NA), levels = c("counterfactual", "model1", 
+                                      "model2", "model3", "model4"))) 
     
-    if(out=="main") {
+      # 1) MEAN PROPORTION BY ALCOHOL CATEGORY
       
-      output1 <- Output %>%
-        filter(setting == "standard" | setting == "mup") %>%
-        mutate(sex = ifelse(sex=="m","Men","Women"),
-               year = as.numeric(as.character(year)),
-               scenario = case_when(
-                 scenario == 0 ~ "counterfactual",
-                 scenario != 0 & setting == "standard" ~ paste0("price ", scenario, "%"),
-                 scenario != 0 & setting == "mup" ~ "mup",
-                 TRUE ~ NA)) %>%
+      # mean across model runs (seeds)
+      output1.mean <- Output %>%
         group_by(scenario, year, sex, education, alc_cat) %>% 
-        summarise(prop = mean(prop)) %>%
-        rbind(., targetdata) %>%
-        mutate(year = as.numeric(as.character(year)),
-               #samplenum = as.numeric(as.character(samplenum)),
-               education = factor(education, 
-                                  levels = c("LEHS", "SomeC", "College"),
-                                  labels = c("High school or less", "Some college", "College +")),
-               scenario = factor(scenario, 
-                                 levels = c("brfss", "counterfactual", "price 5%", 
-                                            "price 10%", "price 20%", "mup"),
-                                 labels = c("BRFSS (upshifted)", "No policy", "5% price increase", 
-                                            "10% price increase", "20% price increase", "Minimum unit price")),
-               alc_cat = factor(alc_cat, 
-                                levels = c("High risk", "Medium risk", "Low risk", "Non-drinker")))
+        summarise(meanprop = mean(as.numeric(prop)))
       
-      plot1A <- ggplot(data = output1[output1$sex == "Men",], 
-                      aes(x = year, y = prop, fill = alc_cat)) + 
-        geom_bar(stat = "identity") +
+      # min/max across model runs (seeds)
+      var <- Output %>% filter(year == year_policy) %>% 
+        group_by(scenario, year, sex, education, alc_cat) %>% 
+        mutate(min = min(as.numeric(prop)),
+               max = max(as.numeric(prop)),
+               var = ifelse(prop == min, "max",
+                            ifelse(prop == max, "min", NA))) %>% ungroup() %>%
+        filter(prop == min | prop == max) %>%
+        dplyr::select(c(seed, scenario, sex, education, alc_cat, var)) 
+      
+      output1 <- merge(Output, var, all.y = T) %>% 
+        rename("meanprop" = "prop") %>% 
+        dplyr::select(c(scenario, year, sex, education, alc_cat, meanprop, var)) %>%
+        pivot_wider(names_from = "var", values_from = "meanprop") %>%
+        left_join(output1.mean, .)
+      
+      # men
+      plot1m <- ggplot(data = output1[output1$sex == "Men",], 
+                      aes(x = year, fill = alc_cat)) + 
+        geom_bar(aes(y = meanprop), stat = "identity") +
+        geom_errorbar(aes(ymin = min, ymax = max)) + 
         facet_grid(cols = vars(education), rows = vars(scenario), scales = "free") + 
         scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
         ggtheme + xlab("") + ylab("Population in alcohol category (%)") +
         scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
-        ggtitle("Simulated reduction in alcohol use", "Men")
-  
-      plot1B <- ggplot(data = output1[output1$sex == "Women",], 
-                       aes(x = year, y = prop, fill = alc_cat)) + 
-        geom_bar(stat = "identity") +
-        facet_grid(cols = vars(education), rows = vars(scenario), scales = "free") + 
-        scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
-        scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
-        ggtheme + xlab("") + ylab("") +
-        scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
-        ggtitle("", "Women")
-
-    }
+        ggtitle("Simulated reduction in alcohol use (total population)", "Men")
     
-    if(out=="sens") {
-      
-      output1 <- Output %>%
-        filter(scenario == out_scenario & setting != "mup" | scenario == 0) %>%
-        mutate(sex = ifelse(sex=="m","Men","Women"),
-               year = as.numeric(as.character(year)),
-               setting = ifelse(scenario != 0, setting,
-                                ifelse(scenario == 0, "counterfactual", NA))) %>%
-        group_by(setting, year, sex, education, alc_cat) %>% 
-        summarise(prop = mean(prop)) %>%
-        rbind(., targetdata) %>%
-        mutate(year = as.numeric(as.character(year)),
-               #samplenum = as.numeric(as.character(samplenum)),
-               education = factor(education, 
-                                  levels = c("LEHS", "SomeC", "College"),
-                                  labels = c("High school or less", "Some college", "College +")),
-               setting = factor(setting, 
-                                levels = c("brfss", "counterfactual", "standard", "min", "max"),
-                                labels = c("BRFSS (upshifted)", "No policy",
-                                           "Taxation (standard)", "Taxation (minimum)", "Taxation (maximum)")),
-               alc_cat = factor(alc_cat, 
-                                levels = c("High risk", "Medium risk", "Low risk", "Non-drinker")))
-      
-      plot1A <- ggplot(data = output1[output1$sex == "Men",], 
-                       aes(x = year, y = prop, fill = alc_cat)) + 
-        geom_bar(stat = "identity") +
-        facet_grid(cols = vars(education), rows = vars(setting), scales = "free") + 
+      # women
+      plot1w <- ggplot(data = output1[output1$sex == "Women",], 
+                       aes(x = year, fill = alc_cat)) + 
+        geom_bar(aes(y = meanprop), stat = "identity") +
+        geom_errorbar(aes(ymin = min, ymax = max)) + 
+        facet_grid(cols = vars(education), rows = vars(scenario), scales = "free") + 
         scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
         ggtheme + xlab("") + ylab("Population in alcohol category (%)") +
         scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
-        ggtitle("Simulated reduction in alcohol use", "Men")
-      
-      plot1B <- ggplot(data = output1[output1$sex == "Women",], 
-                       aes(x = year, y = prop, fill = alc_cat)) + 
-        geom_bar(stat = "identity") +
-        facet_grid(cols = vars(education), rows = vars(setting), scales = "free") + 
-        scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
-        scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
-        ggtheme + xlab("") + ylab("") +
-        scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
         ggtitle("", "Women")
       
-    }
-          
-    library(ggpubr)
-    plot1 <- ggarrange(plot1A, plot1B, ncol = 2, common.legend = T, legend = "bottom")
+      plot1 <- ggarrange(plot1m, plot1w, ncol = 1, common.legend = T, legend = "bottom")
     
     list <- list(output1, plot1)
     
   }
 
+  # generate output for continuous alcohol use by constant alcohol category
+
+  
+  if(output=="alcoholcontcat") {
+    
+    Output <- Output %>%
+      filter(!is.na(!!alccatref) & !!alccatref != "Non-drinker") %>% 
+      filter(setting == version | setting == "counterfactual") %>% 
+      mutate(year = as.numeric(as.character(year)),
+             sex = ifelse(sex=="m","Men","Women"),
+             education = factor(education, 
+                                levels = c("LEHS", "SomeC", "College"),
+                                labels = c("High school or less", "Some college", "College +")),
+             scenario = factor(case_when(
+               setting == "counterfactual" ~ "counterfactual",
+               setting == "standard" ~ paste0("model", policymodel),
+               TRUE ~ NA), levels = c("counterfactual", "model1", 
+                                      "model2", "model3", "model4")),
+             !!alccatref := factor(!!alccatref, levels = c("Low risk", "Medium risk", "High risk"))) 
+    
+    # 1) MEAN ALCOHOL CONSUMPTION LEVELS
+    
+    # mean across model runs (seeds)
+    output1.mean <- Output %>%
+      group_by(scenario, year, sex, education, !!alccatref) %>% 
+      summarise(meangpd = mean(as.numeric(meansimulation)))
+    
+    # min/max across model runs (seeds)
+    var <- Output %>% filter(year == year_policy) %>% 
+      group_by(scenario, year, sex, education, !!alccatref) %>% 
+      mutate(min = min(as.numeric(meansimulation)),
+             max = max(as.numeric(meansimulation)),
+             var = ifelse(meansimulation == min, "max",
+                          ifelse(meansimulation == max, "min", NA))) %>% ungroup() %>%
+      filter(meansimulation == min | meansimulation == max) %>%
+      dplyr::select(c(seed, scenario, sex, education, !!alccatref, var)) 
+    
+    output1 <- merge(Output, var, all.y = T) %>% 
+      rename("meangpd" = "meansimulation") %>% 
+      dplyr::select(c(scenario, year, sex, education, !!alccatref, meangpd, var)) %>%
+      pivot_wider(names_from = "var", values_from = "meangpd") %>%
+      left_join(output1.mean, .)
+    
+    plot1m <- ggplot(data = output1[output1$sex == "Men",], 
+                     aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = meangpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref), scales = "free") + 
+      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014, 2019)) + 
+      ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
+      ggtitle("Simulated reduction in alcohol use", "Men")
+
+    plot1w <- ggplot(data = output1[output1$sex == "Women",], 
+                     aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = meangpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref), scales = "free") + 
+      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014, 2019)) + 
+      ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
+      ggtitle("", "Women")
+    
+    plot1 <- ggarrange(plot1m, plot1w, ncol = 1, common.legend = T, legend = "bottom")
+    
+    # 2) CHANGE IN ALCOHOL CONSUMPTION LEVELS
+    
+    counterfactual <- output1 %>% filter(scenario == "counterfactual") %>% ungroup() %>%
+      rename("meangpdref" = "meangpd", "maxref" = "max", "minref" = "min") %>% 
+      dplyr::select(-scenario)
+    
+    output2 <- output1 %>% filter(scenario != "counterfactual") %>% 
+      left_join(., counterfactual) %>% 
+      mutate(diffgpd = meangpd - meangpdref,
+             diffmin = min - minref,
+             diffmax = max - maxref,
+             percgpd = (meangpd - meangpdref) / meangpdref,
+             percmin = (min - minref) / minref,
+             percmax = (max - maxref) / maxref) %>% 
+      dplyr::select(c(scenario, year, sex, education, !!alccatref,
+                      diffgpd, diffmin, diffmax,
+                      percgpd, percmin, percmax)) 
+    
+    plot2m <- ggplot(data = output2[output2$sex == "Men",], 
+                    aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffgpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use","Men")
+    
+    plot2w <- ggplot(data = output2[output2$sex == "Women",], 
+                     aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = diffgpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("","Women")
+
+    plot2 <- ggarrange(plot2m, plot2w, ncol = 1, common.legend = T, legend = "bottom")
+    
+    plot3m <- ggplot(data = output2[output2$sex == "Men",], 
+                     aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percgpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_y_continuous(labels = scales::percent) + 
+      ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("Simulated reduction in alcohol use", "Men")
+    
+    plot3w <- ggplot(data = output2[output2$sex == "Women",], 
+                     aes(x = year, colour = scenario)) + 
+      geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
+      geom_line(aes(y = percgpd), linewidth = 0.5) +
+      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
+      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_y_continuous(labels = scales::percent) + 
+      ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
+      ggtheme + scale_color_manual(values = c4, name="") + 
+      ggtitle("", "Women")
+
+    plot3 <- ggarrange(plot3m, plot3w, ncol = 1, common.legend = T, legend = "bottom")
+    
+    list <- list(output1, output2, plot1, plot2, plot3)
+    
+  }
+  
   return(list)
   
 }
