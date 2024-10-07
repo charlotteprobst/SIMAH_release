@@ -38,8 +38,8 @@ nesarc3 <- readRDS(paste0(data, "nesarc3_clean.rds")) %>%
 data <- rbind(nesarc1, nesarc3) %>% 
   #nesarc3 %>% 
   mutate(sex = factor(female, levels=c(0,1), labels=c("Men", "Women")),
-         age3 = factor(case_when(age7 == "18-20" | age7 == "21-25" ~ "18-25",
-                                 age7 == "26-29" | age7 == "30-39" | age7 == "40-49" ~ "26-49",
+         age3 = factor(case_when(age7 == "18-20" | age7 == "21-24" ~ "18-24",
+                                 age7 == "25-29" | age7 == "30-39" | age7 == "40-49" ~ "25-49",
                                  age7 == "50-64" | age7 == "65+" ~ "50+")),
          total_prop = rowSums(select(., coolers_prop, beers_prop, wine_prop, liquor_prop), na.rm=TRUE), # calculate total proportion as a consistency check
          highest_prop = pmax(coolers_prop, beers_prop, wine_prop, liquor_prop, na.rm=TRUE),
@@ -55,11 +55,11 @@ data <- rbind(nesarc1, nesarc3) %>%
                                liquor_prop >=50 ~ "Liquor",
                                TRUE ~ "No preferene")) %>% 
   filter(!is.na(total_prop) & total_prop!=0) %>%  # remove non-drinkers
-  replace(is.na(.), 0) %>% 
+  mutate_at(vars(c(coolers_prop, beers_prop, beers_prop_wcoolers, wine_prop, liquor_prop, 
+                   total_prop, highest_prop)), ~ifelse(is.na(.), 0, .)) %>% 
   mutate(wave = recode (wave, `1` = "NESARC I", `2` = "NESARC II", `3` = "NESARC III"),
           edu3 = fct_relevel(edu3, "Low", "Med", "High"),
-          age3 = fct_relevel(age3, "18-25", "26-49", "50+"), 
-          age7 = fct_relevel(age7, "18-20", "21-25", "26-29", "30-39", "40-49", "50-64", "65+")) %>% 
+          age3 = fct_relevel(age3, "18-24", "25-49", "50+")) %>% 
   dplyr::select(idnum, cluster, stratum, weight, wave, sex, age3, edu3, race4, AlcUse4, bev_pref, coolers_prop, beers_prop, beers_prop_wcoolers, wine_prop, liquor_prop, highest_prop) %>%
   filter(AlcUse4 != "Non-drinker") # filter non-drinkers
 
@@ -126,11 +126,11 @@ output <- out_data %>% filter(AlcUse4 != "Cat II + III") %>% rbind(., sub1, sub2
   mutate(cat = paste0(sex, edu3, race4, AlcUse4))
 
 # impute missing data by using props from age group 26-49
-imp1 <- output %>% filter(is.na(beers_prop_wcoolers) & age3 == "18-25") %>% pull(cat)
-imp1 <- output %>% filter(cat %in% imp1 & age3 == "26-49") %>% mutate(age3 = "18-25")
+imp1 <- output %>% filter(is.na(beers_prop_wcoolers) & age3 == "18-24") %>% pull(cat)
+imp1 <- output %>% filter(cat %in% imp1 & age3 == "25-49") %>% mutate(age3 = "18-24")
 
 imp2 <- output %>% filter(is.na(beers_prop_wcoolers) & age3 == "50+") %>% pull(cat)
-imp2 <- output %>% filter(cat %in% imp2 & age3 == "26-49") %>% mutate(age3 = "50+")
+imp2 <- output %>% filter(cat %in% imp2 & age3 == "25-49") %>% mutate(age3 = "50+")
  
 output <- output %>% filter(!is.na(beers_prop_wcoolers)) %>% rbind(., imp1, imp2) 
 
