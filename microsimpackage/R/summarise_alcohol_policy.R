@@ -13,9 +13,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   options(digits = 4)
   
   #c4 <- c("#A9D8B6", "#487B79", "#1F4328", "#1482AB")
-  c4 <- c("#A9D8B6", "#487B79", "#1F4328", "#1482AB")
-  c5 <- c("#BFBFBF", "#A9D8B6", "#487B79", "#1F4328", "#1482AB")
-  c6 <- c("#FFD679", "#BFBFBF", "#A9D8B6", "#487B79", "#1F4328", "#1482AB")
+  col <- colorRampPalette(c("#A9D8B6", "#1F4328"))
+  c4 <- col(4)
+  c5 <- c("#BFBFBF", c4)
+  c6 <- c("#FFD679", "#BFBFBF", c4)
   
   ggtheme <- theme_bw() + theme(legend.position="right",
                                 strip.background = element_rect(fill="white"),
@@ -24,7 +25,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   
   # generate output for continuous alcohol use
   
-  if(output=="alcoholcont") {
+  if(output_type=="alcoholcont") {
     
   # targetdata <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS") %>%
   #   filter(State==SelectedState) %>% filter(YEAR>=2000 & YEAR<2020) %>%
@@ -134,7 +135,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   
   # generate output for categorial alcohol use
 
-  if(output=="alcoholcat") {
+  if(output_type=="alcoholcat") {
     
     Output <- Output %>%
       filter(setting == version | setting == "counterfactual") %>% 
@@ -207,7 +208,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   # generate output for continuous alcohol use by constant alcohol category
 
   
-  if(output=="alcoholcontcat") {
+  if(output_type=="alcoholcontcat") {
+    
+    alccatref <- sym(paste0("alc_cat_", year_policy-1))
     
     Output <- Output %>%
       filter(!is.na(!!alccatref) & !!alccatref != "Non-drinker") %>% 
