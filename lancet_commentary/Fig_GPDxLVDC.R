@@ -122,3 +122,44 @@ ggplot(pdat, aes(x = year)) +
   theme_barplot
 
 ggsave(paste0("lancet_commentary/Fig1_ALVDCxAlcCat3_", Sys.Date(), ".jpg"), dpi=300, width = 12, height = 6)
+
+## ----------------------------------------------------------------
+## Age-standardized mortality rate by SES 
+## ----------------------------------------------------------------
+
+# prepare population data
+
+pop <- pop.raw %>% 
+  mutate(sex = ifelse(sex == 2, "Women", ifelse(sex == 1, "Men", NA))) %>%
+  group_by(year, age_gp, edclass) %>%
+  summarise(pop = sum(TPop)) 
+
+standard.pop <- pop %>% filter(year == 2000) %>%
+  group_by(edclass) %>%
+  mutate(age_weight = pop/sum(pop)) %>% dplyr::select(-c(pop,year))
+
+# get age-standarized mortality rate
+
+mort <- mort.raw %>%
+  filter(!age_gp %like% "17|999") %>% 
+  mutate(age_gp = ifelse(age_gp %like% "18", 18,
+                         ifelse(age_gp %like% "25", 25,
+                                ifelse(age_gp %like% "30", 30,
+                                       ifelse(age_gp %like% "35", 35,
+                                              ifelse(age_gp %like% "40", 40,
+                                                     ifelse(age_gp %like% "45", 45,
+                                                            ifelse(age_gp %like% "50", 50,
+                                                                   ifelse(age_gp %like% "55", 55,
+                                                                          ifelse(age_gp %like% "60", 60,
+                                                                                 ifelse(age_gp %like% "65", 65,
+                                                                                        ifelse(age_gp %like% "70", 70,
+                                                                                               ifelse(age_gp %like% "75", 75,
+                                                                                                      ifelse(age_gp %like% "80|85", 80, NA))))))))))))), 
+         sex = ifelse(sex == 2, "Women", ifelse(sex == 1, "Men", NA))) %>% 
+  group_by(year, age_gp, edclass) %>%
+  summarise(ALVDC = sum(ALVDCmort)) %>% 
+  left_join(., pop) %>% 
+  mutate(ALVDCrate = ALVDC / pop * 100000) %>%
+  left_join(., standard.pop) %>%
+  group_by(year, edclass) %>%
+  summarise(ALVDCasrate = sum(ALVDCrate * age_weight))
