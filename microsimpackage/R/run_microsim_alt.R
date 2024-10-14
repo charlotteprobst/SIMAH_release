@@ -76,7 +76,7 @@ if(output=="alcoholcat"){
                         labels=c("18-24","25-64","65+")),
            education=ifelse(agecat=="18-24" & education=="College", "SomeC", education),
            year=y) %>%
-    group_by(year, samplenum, seed, policymodel, setting, sex, education,
+    group_by(year, seed, policymodel, setting, sex, education,
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
     group_by(year, seed, policymodel, setting, sex, education) %>%

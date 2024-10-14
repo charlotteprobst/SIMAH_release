@@ -106,7 +106,7 @@ sampleseeds <- rbind(sampleseeds, counterfactual)
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
-output_type <- "alcoholcont"
+output_type <- "alcoholcat"
 
 # set minyear and maxyear 
 minyear <- 2000
@@ -115,8 +115,7 @@ year_policy <- 2015
 
 diseases <- NULL
 
-#sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-09-12/output-policy_sampleseeds_2024-09-12.csv"))
-#sampleseeds <- sampleseeds %>% filter(setting == "mup")
+#sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-10-05/output-policy_sampleseeds_2024-10-05.csv"))
 
 Output <- list()
 baseorig <- basepop
@@ -160,14 +159,15 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
 }
 beep()
 
+Sys.Date <- "2024-10-05"
 Output <- do.call(rbind,Output)
 # save the output in the output directory
-write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcont_", Sys.Date(), ".csv"), row.names=F)
+write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcat_", Sys.Date, ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
 
 plot <- summarise_alcohol_policy(Output, SelectedState = "USA", version = "standard")
-write.csv(plot[[1]], paste0(OutputDirectory, "/tab-policy_meangpd_", Sys.Date(), ".csv"))
-write.csv(plot[[2]], paste0(OutputDirectory, "/tab-policy_changegpd_", Sys.Date(), ".csv"))
-ggsave(paste0(OutputDirectory, "/plot-policy_meangpd_", Sys.Date(), ".png"), plot[[3]], width = 14, height = 18)
-ggsave(paste0(OutputDirectory, "/plot-policy_diffgpd_", Sys.Date(), ".png"), plot[[4]], width = 14, height = 18)
-ggsave(paste0(OutputDirectory, "/plot-policy_percgpd_", Sys.Date(), ".png"), plot[[5]], width = 14, height = 18)
+write.csv(plot[[1]], paste0(OutputDirectory, "/tab-policy_alccat_", Sys.Date, ".csv"))
+write.csv(plot[[2]], paste0(OutputDirectory, "/tab-policy_alccat_", Sys.Date, ".csv"))
+ggsave(paste0(OutputDirectory, "/plot-policy_gpd_", Sys.Date, ".png"), plot[[3]], width = 14, height = 8)
+ggsave(paste0(OutputDirectory, "/plot-policy_diffgpd_", Sys.Date, ".png"), plot[[4]], width = 14, height = 18)
+ggsave(paste0(OutputDirectory, "/plot-policy_percgpd_", Sys.Date, ".png"), plot[[5]], width = 14, height = 18)

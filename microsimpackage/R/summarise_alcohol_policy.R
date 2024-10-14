@@ -17,7 +17,8 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   c4 <- col(4)
   c5 <- c("#BFBFBF", c4)
   c6 <- c("#FFD679", "#BFBFBF", c4)
-  
+  c2 <- c("#E7BC29", "#9C85C0")
+    
   ggtheme <- theme_bw() + theme(legend.position="right",
                                 strip.background = element_rect(fill="white"),
                                 panel.spacing = unit(1,"lines"),
@@ -148,7 +149,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
                               levels = c("High risk", "Medium risk", "Low risk", "Non-drinker")), 
              scenario = factor(case_when(
                setting == "counterfactual" ~ "counterfactual",
-               setting == "standard" ~ paste0("model", model),
+               setting == "standard" ~ paste0("model", policymodel),
                TRUE ~ NA), levels = c("counterfactual", "model1", 
                                       "model2", "model3", "model4"))) 
     
@@ -175,33 +176,130 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         pivot_wider(names_from = "var", values_from = "meanprop") %>%
         left_join(output1.mean, .)
       
-      # men
-      plot1m <- ggplot(data = output1[output1$sex == "Men",], 
-                      aes(x = year, fill = alc_cat)) + 
-        geom_bar(aes(y = meanprop), stat = "identity") +
-        geom_errorbar(aes(ymin = min, ymax = max)) + 
-        facet_grid(cols = vars(education), rows = vars(scenario), scales = "free") + 
-        scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
-        scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
-        ggtheme + xlab("") + ylab("Population in alcohol category (%)") +
-        scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
-        ggtitle("Simulated reduction in alcohol use (total population)", "Men")
+      # non-drinkers
+      plot1nd <- ggplot(data = output1[output1$alc_cat == "Non-drinker",], 
+                      aes(x = year, color = scenario)) + 
+        geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = meanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(labels = scales::percent, limits = c(0, 0.5)) +
+        ggtheme + xlab("") + ylab("") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated reduction in the prevalence of non-drinkers")
     
-      # women
-      plot1w <- ggplot(data = output1[output1$sex == "Women",], 
-                       aes(x = year, fill = alc_cat)) + 
-        geom_bar(aes(y = meanprop), stat = "identity") +
-        geom_errorbar(aes(ymin = min, ymax = max)) + 
-        facet_grid(cols = vars(education), rows = vars(scenario), scales = "free") + 
-        scale_x_continuous(breaks = seq(2000, 2015, 5)) + 
-        scale_y_continuous(labels = scales::percent, limits = c(0, 1.00001)) +
-        ggtheme + xlab("") + ylab("Population in alcohol category (%)") +
-        scale_fill_manual(values = c4, name = "", guide = guide_legend(reverse = TRUE)) + 
-        ggtitle("", "Women")
+      # low-risk
+      plot1low <- ggplot(data = output1[output1$alc_cat == "Low risk",], 
+                         aes(x = year, color = scenario)) + 
+        geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = meanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(labels = scales::percent, limits = c(0, .75)) +
+        ggtheme + xlab("") + ylab("") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated reduction in the prevalence of low-risk drinkers")
+
+      # medium-risk
+      plot1med <- ggplot(data = output1[output1$alc_cat == "Medium risk",], 
+                         aes(x = year, color = scenario)) + 
+        geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = meanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(labels = scales::percent, limits = c(0, .08)) +
+        ggtheme + xlab("") + ylab("") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated reduction in the prevalence of medium-risk drinkers")
       
-      plot1 <- ggarrange(plot1m, plot1w, ncol = 1, common.legend = T, legend = "bottom")
-    
-    list <- list(output1, plot1)
+      # high-risk
+      plot1high <- ggplot(data = output1[output1$alc_cat == "High risk",], 
+                          aes(x = year, color = scenario)) + 
+        geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = meanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(labels = scales::percent, limits = c(0, .08)) +
+        ggtheme + xlab("") + ylab("") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated reduction in the prevalence of high-risk drinkers")
+      
+      # 2) PERCENTAGE POINTS DIFFERENCE BY ALCOHOL CATEGORY
+      
+      counterfactual <- output1 %>% filter(scenario == "counterfactual") %>%
+        rename("meanpropref" = "meanprop", "minref" = "min", "maxref" = "max") %>%
+        ungroup() %>% dplyr::select(-scenario)
+      
+      output2 <- output1 %>% filter(scenario != "counterfactual") %>% 
+        left_join(., counterfactual) %>% ungroup %>% 
+        mutate(diffmeanprop = (meanprop - meanpropref)*100,
+               diffmin = (min - minref)*100,
+               diffmax = (max - maxref)*100,
+               percmeanprop = (meanprop - meanpropref) / meanpropref,
+               percmin = (min - minref) / minref,
+               percmax = (max - maxref) / maxref) %>% 
+        dplyr::select(c(scenario, year, sex, education, alc_cat,
+                        diffmeanprop, diffmin, diffmax,
+                        percmeanprop, percmin, percmax)) 
+      
+      # non-drinkers
+      plot2nd <- ggplot(data = output2[output2$alc_cat == "Non-drinker",], 
+                        aes(x = year, color = scenario)) + 
+        geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(limits = c(0, 10)) +
+        ggtheme + xlab("") + ylab("Percentage points") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated change in the prevalence of non-drinkers")
+      
+      # low-risk
+      plot2low <- ggplot(data = output2[output2$alc_cat == "Low risk",], 
+                         aes(x = year, color = scenario)) + 
+        geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(limits = c(-10, 0)) +
+        ggtheme + xlab("") + ylab("Percentage points") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated change in the prevalence of low-risk drinkers")
+      
+      # medium-risk
+      plot2med <- ggplot(data = output2[output2$alc_cat == "Medium risk",], 
+                         aes(x = year, color = scenario)) + 
+        geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(limits = c(-3, 1)) +
+        ggtheme + xlab("") + ylab("Percentage points") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated change in the prevalence of medium-risk drinkers")
+      
+      # high-risk
+      plot2high <- ggplot(data = output2[output2$alc_cat == "High risk",], 
+                         aes(x = year, color = scenario)) + 
+        geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
+        geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_y_continuous(limits = c(-3, 1)) +
+        ggtheme + xlab("") + ylab("Percentage points") +
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Simulated change in the prevalence of high-risk drinkers")
+      
+    list <- list(output1, plot1nd, plot1low, plot1med, plot1high,
+                 plot2nd, plot2low, plot2med, plot2high)
     
   }
 
