@@ -106,16 +106,16 @@ sampleseeds <- rbind(sampleseeds, counterfactual)
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
-output_type <- "alcoholcat"
+output_type <- "alcoholcontcat"
 
 # set minyear and maxyear 
 minyear <- 2000
 maxyear <- 2019
-year_policy <- 2015
+year_policy <- 2019
 
 diseases <- NULL
 
-#sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-10-05/output-policy_sampleseeds_2024-10-05.csv"))
+sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-10-05/output-policy_sampleseeds_2024-10-05.csv"))
 
 Output <- list()
 baseorig <- basepop
@@ -159,11 +159,11 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
 }
 beep()
 
-Sys.Date <- "2024-10-05"
+Sys.Date <- "2024-11-08"
 Output <- do.call(rbind,Output)
 # save the output in the output directory
-write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcat_", Sys.Date, ".csv"), row.names=F)
-write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
+write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcontcat_", Sys.Date, ".csv"), row.names=F)
+write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date, ".csv"), row.names=F)
 
 plot <- summarise_alcohol_policy(Output, SelectedState = "USA", version = "standard")
 write.csv(plot[[1]], paste0(OutputDirectory, "/tab-policy_alccat_", Sys.Date, ".csv"))

@@ -80,7 +80,9 @@ if(output=="alcoholcat"){
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
     group_by(year, seed, policymodel, setting, sex, education) %>%
-    mutate(prop=n/sum(n)) %>%
+    mutate(propsimulation = n/sum(n), 
+           lcisimulation = propsimulation - (qnorm(0.975)*sqrt(propsimulation*(1-propsimulation)/n)),
+           ucisimulation = propsimulation + (qnorm(0.975)*sqrt(propsimulation*(1-propsimulation)/n))) %>%
     dplyr::select(-n) %>%
     mutate_at(vars(setting, sex, education, alc_cat), as.character)
 } 
@@ -96,7 +98,10 @@ if(output=="alcoholcont"){
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
     group_by(year, seed, policymodel, setting, sex, education) %>%
-    summarise(meansimulation = mean(alc_gpd))
+    summarise(meansimulation = mean(alc_gpd),
+              sesimulation = sd(alc_gpd)/sqrt(length(alc_gpd)),
+              lcisimulation = mean(alc_gpd) - qnorm(0.975)*sesimulation,
+              ucisimulation = mean(alc_gpd) + qnorm(0.975)*sesimulation)
 }
 
 if(output=="alcoholcontcat" & y>=year_policy-1){
@@ -122,7 +127,10 @@ if(output=="alcoholcontcat" & y>=year_policy-1){
                         labels=c("18-24","25-64","65+")),
              !!alccatref := alc_cat) %>%
       group_by(year, seed, policymodel, setting, sex, education, !!alccatref) %>%
-      summarise(meansimulation = mean(alc_gpd))
+      summarise(meansimulation = mean(alc_gpd),
+                sesimulation = sd(alc_gpd)/sqrt(length(alc_gpd)),
+                lcisimulation = mean(alc_gpd) - qnorm(0.975)*sesimulation,
+                ucisimulation = mean(alc_gpd) + qnorm(0.975)*sesimulation)
     
     }
 

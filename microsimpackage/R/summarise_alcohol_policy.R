@@ -18,7 +18,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
   c5 <- c("#BFBFBF", c4)
   c6 <- c("#FFD679", "#BFBFBF", c4)
   c2 <- c("#E7BC29", "#9C85C0")
-    
+  c4_cat <- c("#ECCB84", "#88C391", "#3B7A6D", "#162F4E")
+  c3_cat <- c("#88C391", "#3B7A6D", "#162F4E")
+  
   ggtheme <- theme_bw() + theme(legend.position="right",
                                 strip.background = element_rect(fill="white"),
                                 panel.spacing = unit(1,"lines"),
@@ -67,8 +69,8 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       group_by(scenario, year, sex, education) %>% 
       mutate(min = min(as.numeric(meansimulation)),
              max = max(as.numeric(meansimulation)),
-             var = ifelse(meansimulation == min, "max",
-                          ifelse(meansimulation == max, "min", NA))) %>% ungroup() %>%
+             var = ifelse(meansimulation == min, "min",
+                          ifelse(meansimulation == max, "max", NA))) %>% ungroup() %>%
       filter(meansimulation == min | meansimulation == max) %>%
       dplyr::select(c(seed, scenario, sex, education, var)) 
     
@@ -82,10 +84,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = meangpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      ylim(0,NA) + ylab("Mean grams of pure alcohol per day") +
+      scale_x_continuous(breaks = seq(2000, year_policy, 3), limits = c(2000,year_policy+0.1)) + 
       ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
       ggtitle("Simulated reduction in alcohol use (total population)")
 
@@ -111,9 +112,8 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      scale_x_continuous(breaks = seq(year_policy-5, year_policy, 1), limits = c(year_policy-5, year_policy+0.1)) + 
       ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
       ggtitle("Simulated reduction in alcohol use (total population)")
@@ -122,9 +122,8 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
       facet_grid(cols = vars(education), rows = vars(sex)) + 
-      scale_x_continuous(breaks = seq(2010, 2019, 3), limits = c(2010,2020)) + 
+      scale_x_continuous(breaks = seq(year_policy-5, year_policy, 1), limits = c(year_policy-5,year_policy+0.1)) + 
       scale_y_continuous(labels = scales::percent) + 
       ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
@@ -153,25 +152,25 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
                TRUE ~ NA), levels = c("counterfactual", "model1", 
                                       "model2", "model3", "model4"))) 
     
-      # 1) MEAN PROPORTION BY ALCOHOL CATEGORY
+      # 1) MEAN PROPORTION BY ALCOHOL CATEGORY OVER TIME
       
       # mean across model runs (seeds)
       output1.mean <- Output %>%
         group_by(scenario, year, sex, education, alc_cat) %>% 
-        summarise(meanprop = mean(as.numeric(prop)))
+        summarise(meanprop = mean(as.numeric(propsimulation)))
       
       # min/max across model runs (seeds)
       var <- Output %>% filter(year == year_policy) %>% 
         group_by(scenario, year, sex, education, alc_cat) %>% 
-        mutate(min = min(as.numeric(prop)),
-               max = max(as.numeric(prop)),
-               var = ifelse(prop == min, "max",
-                            ifelse(prop == max, "min", NA))) %>% ungroup() %>%
-        filter(prop == min | prop == max) %>%
+        mutate(min = min(as.numeric(propsimulation)),
+               max = max(as.numeric(propsimulation)),
+               var = ifelse(propsimulation == min, "min",
+                            ifelse(propsimulation == max, "max", NA))) %>% ungroup() %>%
+        filter(propsimulation == min | propsimulation == max) %>%
         dplyr::select(c(seed, scenario, sex, education, alc_cat, var)) 
       
       output1 <- merge(Output, var, all.y = T) %>% 
-        rename("meanprop" = "prop") %>% 
+        rename("meanprop" = "propsimulation") %>% 
         dplyr::select(c(scenario, year, sex, education, alc_cat, meanprop, var)) %>%
         pivot_wider(names_from = "var", values_from = "meanprop") %>%
         left_join(output1.mean, .)
@@ -183,7 +182,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = meanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, 2019.5), breaks = seq(year_policy-5, 2019, 3)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, 0.5)) +
         ggtheme + xlab("") + ylab("") +
         scale_color_manual(values = c5, name = "") + 
@@ -196,7 +195,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = meanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, 2019.5), breaks = seq(year_policy-5, 2019, 3)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, .75)) +
         ggtheme + xlab("") + ylab("") +
         scale_color_manual(values = c5, name = "") + 
@@ -209,7 +208,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = meanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, 2019.5), breaks = seq(year_policy-5, 2019, 3)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, .08)) +
         ggtheme + xlab("") + ylab("") +
         scale_color_manual(values = c5, name = "") + 
@@ -222,7 +221,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = meanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, year_policy+0.1), breaks = seq(year_policy-5, year_policy, 1)) + 
         scale_y_continuous(labels = scales::percent, limits = c(0, .08)) +
         ggtheme + xlab("") + ylab("") +
         scale_color_manual(values = c5, name = "") + 
@@ -253,10 +252,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, year_policy+0.1), breaks = seq(year_policy-5, year_policy, 1)) + 
         scale_y_continuous(limits = c(0, 10)) +
         ggtheme + xlab("") + ylab("Percentage points") +
-        scale_color_manual(values = c5, name = "") + 
+        scale_color_manual(values = c4, name = "") + 
         ggtitle("Simulated change in the prevalence of non-drinkers")
       
       # low-risk
@@ -266,10 +265,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, year_policy+0.1), breaks = seq(year_policy-5, year_policy, 1)) + 
         scale_y_continuous(limits = c(-10, 0)) +
         ggtheme + xlab("") + ylab("Percentage points") +
-        scale_color_manual(values = c5, name = "") + 
+        scale_color_manual(values = c4, name = "") + 
         ggtitle("Simulated change in the prevalence of low-risk drinkers")
       
       # medium-risk
@@ -279,10 +278,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, year_policy+0.1), breaks = seq(year_policy-5, year_policy, 1)) + 
         scale_y_continuous(limits = c(-3, 1)) +
         ggtheme + xlab("") + ylab("Percentage points") +
-        scale_color_manual(values = c5, name = "") + 
+        scale_color_manual(values = c4, name = "") + 
         ggtitle("Simulated change in the prevalence of medium-risk drinkers")
       
       # high-risk
@@ -292,19 +291,49 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
         geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
         geom_line(aes(y = diffmeanprop), linewidth = 0.5) +
         facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-        scale_x_continuous(limits = c(2010, 2019.5), breaks = seq(2010, 2019, 3)) + 
+        scale_x_continuous(limits = c(year_policy-5, year_policy+0.1), breaks = seq(year_policy-5, year_policy, 1)) + 
         scale_y_continuous(limits = c(-3, 1)) +
         ggtheme + xlab("") + ylab("Percentage points") +
-        scale_color_manual(values = c5, name = "") + 
+        scale_color_manual(values = c4, name = "") + 
         ggtitle("Simulated change in the prevalence of high-risk drinkers")
       
+      # 3) BAR PLOT CHANGES YEARS OF POLICY
+      
+      output3 <- output1 %>% filter(year == year_policy | year == year_policy-1) %>%
+        filter(scenario == "model4") %>%
+        mutate(alc_cat = factor(alc_cat, 
+                                levels = c("Non-drinker", "Low risk", "Medium risk", "High risk")))
+    
+      plot3 <- ggplot(output3, aes(x = as.factor(year), y = meanprop, 
+                          group = alc_cat, fill = alc_cat)) +
+        geom_bar(stat = "identity", position = position_stack()) + 
+        facet_grid(cols = vars(education), rows = vars(sex)) + 
+        ggtheme + xlab("") + ylab("") +
+        scale_y_continuous(labels = scales::percent) + 
+        scale_fill_manual(values = c4_cat, name = "") + 
+        ggtitle("Prevalence of alcohol use categories before and after the policy", "Model 4")
+
+      # 4) 
+      
+      output4 <- output1 %>% filter(year == year_policy | year == year_policy-1) %>% 
+        filter(alc_cat == "Non-drinker")
+        
+      plot4 <- ggplot(output4, aes(x = as.factor(year), y = meanprop, 
+                                   group = scenario, color = scenario)) +
+        geom_line() + geom_point(shape = 18, size = 3) + 
+        facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+        ggtheme + xlab("") + ylab("") +
+        scale_y_continuous(labels = scales::percent, limits = c(0,NA)) + 
+        scale_color_manual(values = c5, name = "") + 
+        ggtitle("Prevalence of non-drinkers in total population")
+      
     list <- list(output1, plot1nd, plot1low, plot1med, plot1high,
-                 plot2nd, plot2low, plot2med, plot2high)
+                 plot2nd, plot2low, plot2med, plot2high,
+                 plot3, plot4)
     
   }
-
+  
   # generate output for continuous alcohol use by constant alcohol category
-
   
   if(output_type=="alcoholcontcat") {
     
@@ -353,10 +382,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = meangpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = meangpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014, 2019)) + 
+      ylim(0,NA) + ylab("Mean grams of pure alcohol per day") +
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
       ggtitle("Simulated reduction in alcohol use", "Men")
 
@@ -365,10 +394,10 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = min), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = max), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = meangpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = meangpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref), scales = "free") + 
-      ylim(0,NA) + ylab("Mean grams of alcohol per day") +
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014, 2019)) + 
+      ylim(0,NA) + ylab("Mean grams of pure alcohol per day") +
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       ggtheme + xlab("") + scale_color_manual(values = c5, name="") + 
       ggtitle("", "Women")
     
@@ -397,9 +426,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = diffgpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
       ggtitle("Simulated reduction in alcohol use","Men")
@@ -409,9 +438,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = diffmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = diffgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = diffgpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       ylab("Change in mean grams per day (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
       ggtitle("","Women")
@@ -423,9 +452,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = percgpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       scale_y_continuous(labels = scales::percent) + 
       ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
@@ -436,9 +465,9 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
       geom_line(aes(y = percmin), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percmax), linewidth = 0.5, alpha = 0.5) + 
       geom_line(aes(y = percgpd), linewidth = 0.5) +
-      geom_vline(xintercept = 2015, color = "#FF0000", linetype = "dashed") +
+      geom_point(aes(y = percgpd), shape = 18, size = 3) +
       facet_grid(cols = vars(education), rows = vars(!!alccatref)) + 
-      scale_x_continuous(breaks = seq(2014, 2019, 1), limits = c(2014,2019)) + 
+      scale_x_continuous(breaks = seq(year_policy-1, year_policy, 1), limits = c(year_policy-1, year_policy+0.1)) + 
       scale_y_continuous(labels = scales::percent) + 
       ylab("Change in mean grams per day in % (reference: no policy)\n") + xlab("") + 
       ggtheme + scale_color_manual(values = c4, name="") + 
@@ -446,7 +475,20 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
 
     plot3 <- ggarrange(plot3m, plot3w, ncol = 1, common.legend = T, legend = "bottom")
     
-    list <- list(output1, output2, plot1, plot2, plot3)
+    # 3) DETAILED CHANGE IN ALC LEVELS MODEL 4 
+    
+    output3 <- output2 %>% 
+      filter(scenario == "model4") 
+    
+    plot4 <- ggplot(output3, aes(x = as.factor(year), y = diffgpd, 
+                                 group = alc_cat_2018, color = alc_cat_2018)) +
+      geom_line() + geom_point(shape = 18, size = 3) + 
+      facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+      ggtheme + xlab("") + ylab("Grams of pure alcohol per day") +
+      scale_color_manual(values = c3_cat, name = "") + 
+      ggtitle("Change in average alcohol consumption levels by alcohol use categories", "Model 4")
+    
+    list <- list(output1, output2, plot1, plot2, plot3, plot4)
     
   }
   
