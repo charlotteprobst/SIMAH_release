@@ -9,7 +9,8 @@
 
 apply_tax_policy <- function(data = basepop, scenario = scenario,
                              participation = participation, part_elasticity = part_elasticity, prob_alcohol_transitions = prob_alcohol_transitions,
-                             cons_elasticity = cons_elasticity, cons_elasticity_se = cons_elasticity_se, r_sim_obs = r_sim_obs){
+                             cons_elasticity = cons_elasticity, cons_elasticity_se = cons_elasticity_se, 
+                             r_sim_obs = r_sim_obs){
   
   # assign beverage preference
   data <- assign_beverage_preferences(data)
@@ -110,12 +111,20 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
     # get individual-level percent reduction for price policies
     newGPD <- data %>% filter(alc_cat != "Non-drinker") %>%
         mutate(beer_percentreduction = rnorm_pre(log(beergpd)^2, mu = cons_elasticity[1], sd = cons_elasticity_se[1], r = r_sim_obs, empirical = T),
+               beer_percentreduction = ifelse(beer_percentreduction < -1, -1, beer_percentreduction), 
                beer_newGPD = beergpd + (beergpd*beer_percentreduction*scenario[1]),
                wine_percentreduction = rnorm_pre(log(winegpd)^2, mu = cons_elasticity[2], sd = cons_elasticity_se[2], r = r_sim_obs, empirical = T),
+               wine_percentreduction = ifelse(wine_percentreduction < -1, -1, wine_percentreduction),
                wine_newGPD = winegpd + (winegpd*wine_percentreduction*scenario[2]),
                liq_percentreduction = rnorm_pre(log(liqgpd)^2, mu = cons_elasticity[3], sd = cons_elasticity_se[3], r = r_sim_obs, empirical = T),
+               liq_percentreduction = ifelse(liq_percentreduction < -1, -1, liq_percentreduction),
                liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*scenario[3]),
-               newGPD = beer_newGPD + wine_newGPD + liq_newGPD) %>%
+               newGPD = beer_newGPD + wine_newGPD + liq_newGPD)
+    
+    percentreduction <- newGPD %>% dplyr::select(ID, beergpd, winegpd, liqgpd,
+                                                 beer_percentreduction, wine_percentreduction, liq_percentreduction)
+    
+    newGPD <- newGPD %>%
         dplyr::select(ID, newGPD) 
   
     # merge simulated percentreduction into data
@@ -125,6 +134,8 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
       dplyr::select(-c(newGPD, beergpd, winegpd, liqgpd))
     
   }
+  
+  data <- list(data, percentreduction)
   
   return(data)
 }
