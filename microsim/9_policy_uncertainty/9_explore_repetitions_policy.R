@@ -12,16 +12,18 @@ library(data.table)
 library(ggplot2)
 library(ggthemes)
 
+options(digits = 4)
+
 # load data file
 WorkingDirectory <- "/Users/carolinkilian/Desktop/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/")
 setwd(paste(DataDirectory))
 
 # select one model version randomly 
-select <- sample(1:4, 1)
-  
-data <- read.csv("2024-09-27/output-policy_alcohol_20rep_2024-09-27.csv") %>%
-  filter(model == select)
+# select <- sample(1:4, 1)
+select <- 4  
+data <- read.csv("2024-11-18/output-policy_alcohol_20rep_2024-11-18.csv") %>%
+  filter(policymodel == select)
 
 # set ggplot layout
 #options(digits = 4)
@@ -110,7 +112,7 @@ ggplot(data = pdat, aes(x = year, y = meangpd, colour = nrep)) +
   ylab("Mean grams of alcohol per day") +
   scale_colour_viridis_d(direction = -1) + ggtheme + xlab("") + 
   ggtitle("Change in mean GPD across multiple simulation runs")
-ggsave(paste0("NRep Simulation runs/", Sys.Date(), "_ChangeMeanGPDByNRep.png"), height = 10, width = 15)
+ggsave(paste0("policy_test_runs/NRep Simulation runs/", Sys.Date, "_ChangeMeanGPDByNRep.png"), height = 10, width = 15)
 
 ggplot(data = pdat[pdat$sex == "Men" & pdat$education == "LEHS",], 
        aes(x = year, y = meangpd, colour = nrep)) + 
@@ -128,16 +130,6 @@ pdat.dev <- pdat %>% filter(nrep != "nrep19") %>%
   mutate(diff = meangpd19 - meangpd,
          nrep = as.numeric(gsub("nrep", "", nrep)))
 
-ggplot(data = pdat.dev[pdat.dev$year == 2015,], 
-       aes(x = nrep, y = diff)) + geom_line() +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  facet_grid(cols = vars(education), rows = vars(sex), scales = "free_y") + 
-  ylab("Deviation in grams of alcohol per day") +
-  xlab("Number of simulation runs") + 
-  scale_colour_viridis_d(direction = -1) + ggtheme + 
-  ggtitle("Deviation in mean GPD by simulation run in 2015")
-ggsave(paste0("NRep Simulation runs/", Sys.Date(), "_DeviationMeanGPDByNRep_2015.png"), height = 10, width = 15)
-
 ggplot(data = pdat.dev[pdat.dev$year == 2019,], 
        aes(x = nrep, y = diff)) + geom_line() +
   geom_hline(yintercept = 0, linetype = "dashed") +
@@ -146,4 +138,4 @@ ggplot(data = pdat.dev[pdat.dev$year == 2019,],
   xlab("Number of simulation runs") + 
   scale_colour_viridis_d(direction = -1) + ggtheme + 
   ggtitle("Deviation in mean GPD by simulation run in 2019")
-ggsave(paste0("NRep Simulation runs/", Sys.Date(), "_DeviationMeanGPDByNRep_2019.png"), height = 10, width = 15)
+ggsave(paste0("policy_test_runs/NRep Simulation runs/", Sys.Date(), "_DeviationMeanGPDByNRep_2019.png"), height = 10, width = 15)
