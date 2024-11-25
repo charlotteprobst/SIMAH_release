@@ -59,12 +59,12 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
     
     # 1) MEAN ALCOHOL CONSUMPTION LEVELS
     
-    # mean across model runs (seeds)
+    # mean across model runs 
     output1.mean <- Output %>%
       group_by(scenario, year, sex, education) %>% 
       summarise(meangpd = mean(as.numeric(meansimulation)))
     
-    # min/max across model runs (seeds)
+    # min/max across model runs 
     var <- Output %>% filter(year == year_policy) %>% 
       group_by(scenario, year, sex, education) %>% 
       mutate(min = min(as.numeric(meansimulation)),
@@ -72,7 +72,7 @@ summarise_alcohol_policy <- function(Output, SelectedState, version = standard){
              var = ifelse(meansimulation == min, "min",
                           ifelse(meansimulation == max, "max", NA))) %>% ungroup() %>%
       filter(meansimulation == min | meansimulation == max) %>%
-      dplyr::select(c(seed, scenario, sex, education, var)) 
+      dplyr::select(c(seed, nunc, scenario, sex, education, var)) 
     
     output1 <- merge(Output, var, all.y = T) %>% 
       rename("meangpd" = "meansimulation") %>% 
