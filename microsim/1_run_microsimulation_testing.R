@@ -51,7 +51,8 @@ source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # set up the number of samples to be run
 nsamples <- 1 # indicates samples per same sample seed (for calibration purposes only)
-nreps <- 10 # indicates number of different sample seeds
+nreps <- 1 # indicates number of different sample seeds
+n_uncertainty <- 100
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)
@@ -88,13 +89,20 @@ alcmodels <- alcmodels %>% bind_rows()
 sampleseeds$alcoholmodel <- alcmodels$alcohol_model[1:nrow(sampleseeds)]
 
 # set up scenarios and policy settings
-sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting)
+sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting, scenarios)
+
+# sample policy parameters here based on sampleseeds groups by samplenum, seed, edu/alcmodel
+sampleseeds <- sample_policy_parameters(sampleseeds, n_uncertainty)
+
+# get counterfactual scenario
 counterfactual <- sampleseeds %>% 
   group_by(samplenum, seed, educationmodel, alcoholmodel) %>% 
   slice(1) %>% mutate(policymodel = 0, scenario = "0,0,0", setting = "counterfactual")
 sampleseeds <- rbind(sampleseeds, counterfactual)
 
-#sampleseeds <- sampleseeds %>% filter(setting == "standard" | setting == "counterfactual") 
+# FOR NOW: limit to standard model and only one policy model
+sampleseeds <- sampleseeds %>% filter(setting == "standard") %>%
+  filter(policymodel == 0 | policymodel == 4)
 
 # pick a random education / alcohol model to use (for testing purposes)
 # this picks a random model from the calibrated education / alcohol models
@@ -106,16 +114,16 @@ sampleseeds <- rbind(sampleseeds, counterfactual)
 # read in the categorical to continuous distributions
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
-output_type <- "alcoholcontcat"
+output_type <- "percentreduction"
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2019
-year_policy <- 2019
+maxyear <- 2001
+year_policy <- 2001
 
 diseases <- NULL
 
-sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-10-05/output-policy_sampleseeds_2024-10-05.csv"))
+#sampleseeds <- read.csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/2024-10-05/output-policy_sampleseeds_2024-10-05.csv"))
 
 Output <- list()
 baseorig <- basepop
@@ -124,6 +132,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
   # set seed and sample number for current iteration
   samplenum <- as.numeric(sampleseeds$samplenum[i])
   seed <- as.numeric(sampleseeds$seed[i])
+  nunc <- as.numeric(sampleseeds$nunc[i])
   #set up policy parameters
   policymodel <- sampleseeds$policymodel[i]
   scenario <- as.numeric(unlist(strsplit(sampleseeds$scenario[i], ",")))
@@ -131,6 +140,7 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
   participation <- as.numeric(sampleseeds$participation[i])
   cons_elasticity <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity[i], ",")))
   cons_elasticity_se <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity_se[i], ",")))
+  #cons_elasticity <- sample_policy_parameters(sampleseeds[i,], n_uncertainty)
   part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
   r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
   # reset the base population to the original pop for each calibration iteration
@@ -159,8 +169,9 @@ Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
 }
 beep()
 
-Sys.Date <- "2024-11-08"
-Output <- do.call(rbind,Output)
+Sys.Date <- "2024-11-14"
+Output <- do.call(rbind,Output) %>% 
+  group_by(nunc) %>% sample_frac(0.001)
 # save the output in the output directory
 write.csv(Output, paste0(OutputDirectory, "/output-policy_alcoholcontcat_", Sys.Date, ".csv"), row.names=F)
 write.csv(sampleseeds, paste0(OutputDirectory, "/output-policy_sampleseeds_", Sys.Date, ".csv"), row.names=F)
