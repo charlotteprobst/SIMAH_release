@@ -29,6 +29,7 @@ PopPerYear <- list()
 CatSummary <- list()
 meandrinking <- list()
 MeanCatSummary <- list()
+Policy <- list()
 targets <- generate_targets_alcohol(brfss)
 targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
 DM_men <- "off"
@@ -53,7 +54,8 @@ print(y)
     
       basepop <- apply_tax_policy(basepop, scenario, 
                                   participation, part_elasticity, prob_alcohol_transitions, 
-                                  cons_elasticity, cons_elasticity_se, r_sim_obs)  
+                                  cons_elasticity, cons_elasticity_se, r_sim_obs)
+      
     }  
     
     if(policy_int %like% "sales"){
@@ -65,21 +67,22 @@ print(y)
     
   }
 
-# calculate implausibility in each year - break if implausibility is over threshold
+# summarise alcohol outcome
 if(output=="alcoholcat"){
   CatSummary[[paste(y)]] <- basepop %>%
     mutate(seed=seed,
            setting=as.character(setting),
+           nunc=nunc,
            policymodel=as.character(policymodel),
            agecat = cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
            education=ifelse(agecat=="18-24" & education=="College", "SomeC", education),
            year=y) %>%
-    group_by(year, seed, policymodel, setting, sex, education,
+    group_by(year, seed, nunc, policymodel, setting, sex, education,
              alc_cat, .drop=FALSE) %>% tally() %>%
     ungroup() %>%
-    group_by(year, seed, policymodel, setting, sex, education) %>%
+    group_by(year, seed, nunc, policymodel, setting, sex, education) %>%
     mutate(propsimulation = n/sum(n), 
            lcisimulation = propsimulation - (qnorm(0.975)*sqrt(propsimulation*(1-propsimulation)/n)),
            ucisimulation = propsimulation + (qnorm(0.975)*sqrt(propsimulation*(1-propsimulation)/n))) %>%
@@ -91,13 +94,14 @@ if(output=="alcoholcont"){
   meandrinking[[paste(y)]] <- basepop %>%
     mutate(seed=seed,
            setting=as.character(setting),
+           nunc=nunc,
            policymodel=as.character(policymodel),
            year=y) %>%
     #filter(alc_gpd>0) %>%
     mutate(agecat=cut(age,
                       breaks=c(0,24,64,100),
                       labels=c("18-24","25-64","65+"))) %>%
-    group_by(year, seed, policymodel, setting, sex, education) %>%
+    group_by(year, seed, nunc, policymodel, setting, sex, education) %>%
     summarise(meansimulation = mean(alc_gpd),
               sesimulation = sd(alc_gpd)/sqrt(length(alc_gpd)),
               lcisimulation = mean(alc_gpd) - qnorm(0.975)*sesimulation,
@@ -120,13 +124,14 @@ if(output=="alcoholcontcat" & y>=year_policy-1){
     MeanCatSummary[[paste(y)]] <- basepop %>%
       mutate(seed=seed,
              setting=as.character(setting),
+             nunc=nunc,
              policymodel=as.character(policymodel),
              year=y,
              agecat=cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
              !!alccatref := alc_cat) %>%
-      group_by(year, seed, policymodel, setting, sex, education, !!alccatref) %>%
+      group_by(year, seed, nunc, policymodel, setting, sex, education, !!alccatref) %>%
       summarise(meansimulation = mean(alc_gpd),
                 sesimulation = sd(alc_gpd)/sqrt(length(alc_gpd)),
                 lcisimulation = mean(alc_gpd) - qnorm(0.975)*sesimulation,
@@ -143,13 +148,14 @@ if(output=="alcoholcontcat" & y>=year_policy-1){
       left_join(., alccat) %>% 
       mutate(seed=seed,
              setting=as.character(setting),
+             nunc=nunc,
              policymodel=as.character(policymodel),
              year=y,
              agecat=cut(age,
                         breaks=c(0,24,64,100),
                         labels=c("18-24","25-64","65+")),
              !!alccatref := as.factor(!!alccatref)) %>%
-      group_by(year, seed, policymodel, setting, sex, education, !!alccatref) %>%
+      group_by(year, seed, nunc, policymodel, setting, sex, education, !!alccatref) %>%
       summarise(meansimulation = mean(alc_gpd))
     
   }
