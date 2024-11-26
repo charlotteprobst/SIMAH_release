@@ -54,7 +54,8 @@ for(i in 1:length(education_transitionsList)){
 alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"), show_col_types = FALSE)
 alcohol_transitionsList <- list()
 for(i in 1:max(alcohol_transitions$sample)){
-  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)}
+  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)
+}
 
 # read in sampleseeds file (or source 0_generate_sampleseeds.R)
 sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2024-11-25.csv")
@@ -68,8 +69,8 @@ output_type <- c("alcoholcat", "alcoholcont", "alcoholcontcat")
 
 # set minyear and maxyear 
 minyear <- 2000
-maxyear <- 2002
-year_policy <- 2002
+maxyear <- 2019
+year_policy <- 2019
 
 # use empty disease vector
 diseases <- NULL
@@ -77,6 +78,7 @@ diseases <- NULL
 # load required package if not loaded through microsimpackage
 source("~/Desktop/SIMAH_code/microsimpackage/R/apply_tax_policy.R")
 source("~/Desktop/SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
+source("~/Desktop/SIMAH_code/microsimpackage/R/run_microsim_alt.R")
 
 # generate copy of basepop
 baseorig <- basepop
