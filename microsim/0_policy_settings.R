@@ -13,12 +13,13 @@ options(scipen=999)
 policy <- 1
 year_policy <- 2019
 policy_int <- "price"
-n_uncertainty <- 10
+n_uncertainty <- 30
 
 # define policy modelling scenarios 
 # for price policites specific to beer, wine, spirits
-scenarios <- cbind(policymodel = 1:4,
-                   scenario = c("0.1,0.1,0.1",
+scenarios <- cbind(policymodel = 1:5,
+                   scenario = c("0,0,0",
+                                "0.1,0.1,0.1",
                                 "0.3,0.3,0.3",
                                 "0.3,0.1,0.3",
                                 "0.5,0.1,0.5")) %>% as.data.frame()
