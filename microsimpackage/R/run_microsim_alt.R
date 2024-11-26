@@ -142,7 +142,7 @@ if(output=="alcoholcontcat" & y>=year_policy-1){
   if(y >= year_policy) {
     
     alccatref <- sym(paste0("alc_cat_", year_policy-1))
-    # Note: NAs introduced as people are added to the microsim in 2015 and after
+    # Note: NAs introduced as people are added to the microsim in the year of the policy
     
     MeanCatSummary[[paste(y)]] <- basepop %>%
       left_join(., alccat) %>% 
@@ -156,13 +156,16 @@ if(output=="alcoholcontcat" & y>=year_policy-1){
                         labels=c("18-24","25-64","65+")),
              !!alccatref := as.factor(!!alccatref)) %>%
       group_by(year, seed, nunc, policymodel, setting, sex, education, !!alccatref) %>%
-      summarise(meansimulation = mean(alc_gpd))
+      summarise(meansimulation = mean(alc_gpd),
+                sesimulation = sd(alc_gpd)/sqrt(length(alc_gpd)),
+                lcisimulation = mean(alc_gpd) - qnorm(0.975)*sesimulation,
+                ucisimulation = mean(alc_gpd) + qnorm(0.975)*sesimulation)
     
   }
 }
   
 # save a population summary
-PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum, policymodel=policymodel)
+PopPerYear[[paste(y)]] <- basepop %>% mutate(year=y, seed=seed, samplenum=samplenum, nunc=nunc, policymodel=policymodel)
 
 # apply death rates - all other causes
 basepop <- apply_death_counts(basepop, death_counts, y, diseases)
@@ -366,7 +369,7 @@ if(output=="population"){
     mutate(percentage = round(count / sum(count) * 100, 1))
 }else if(output=="mortality" & !is.null(diseases)){
   Summary <- postprocess_mortality(DiseaseSummary,diseases, death_counts) %>%
-    mutate(seed = seed, samplenum = samplenum, policymodel = policymodel)
+    mutate(seed = seed, samplenum = samplenum, nunc = nunc, policymodel = policymodel)
 }else if(output=="mortality" & is.null(diseases)){
     Summary <- 0
   }else if(output=="demographics"){
@@ -378,36 +381,16 @@ if(output=="population"){
                                                            "45-49","50-54","55-59","60-64","65-69",
                                                            "70-74","75-79"))
     PopPerYear[[i]] <- as.data.table(PopPerYear[[i]])
-    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, policymodel, sex, race, education, age, agecat)]
+    PopPerYear[[i]] <- PopPerYear[[i]][, .(n = .N), by = .(year, samplenum, seed, nunc, policymodel, sex, race, education, age, agecat)]
   }
     Summary <- do.call(rbind,PopPerYear)
 }else if(output=="alcoholcat"){
-  # CatSummary <- do.call(rbind,PopPerYear) %>%
-  #   mutate(agecat = cut(age,
-  #                       breaks=c(0,24,64,100),
-  #                       labels=c("18-24","25-64","65+")) %>%
-  #   group_by(year, samplenum, seed, sex,race,age, education,
-  #            alc_cat, .drop=FALSE) %>% tally() %>%
-  #     ungroup() %>%
-  #     group_by(year, sex,race,agecat, education) %>%
-  #     mutate(propsimulation=n/sum(n)) %>%
-  #     dplyr::select(-n) %>%
-  #     mutate_at(vars(sex, race, agecat, education, alc_cat), as.character)
-Summary <- do.call(rbind,CatSummary) #%>%
-  #mutate(seed=seed, policymodel=policymodel)
-#implausibility <- max(CatSummary$implausibility, na.rm=T)
+  Summary <- do.call(rbind,CatSummary) 
 }else if(output=="alcoholcont"){
   Summary <- do.call(rbind, meandrinking)
 }else if(output=="alcoholcontcat"){
   Summary <- do.call(rbind, MeanCatSummary)
 }
 
-# formerdrinkers <- list()
-# for(i in 1:length(PopPerYear)){
-#   formerdrinkers[[i]] <- PopPerYear[[i]] %>% group_by(formerdrinker) %>% tally() %>%
-#     ungroup() %>% mutate(prop=n/sum(n))
-# }
-# migration_rates <- do.call(rbind,migration_rates)
-# birth_rates <- do.call(rbind,birth_rates)
 return(Summary)
 }

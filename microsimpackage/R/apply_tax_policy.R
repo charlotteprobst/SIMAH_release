@@ -121,8 +121,8 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
                liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*scenario[3]),
                newGPD = beer_newGPD + wine_newGPD + liq_newGPD)
     
-    percentreduction <- newGPD %>% dplyr::select(ID, beergpd, winegpd, liqgpd,
-                                                 beer_percentreduction, wine_percentreduction, liq_percentreduction)
+    #percentreduction <- newGPD %>% dplyr::select(ID, beergpd, winegpd, liqgpd,
+    #                                             beer_percentreduction, wine_percentreduction, liq_percentreduction)
     
     newGPD <- newGPD %>%
         dplyr::select(ID, newGPD) 
@@ -134,8 +134,6 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
       dplyr::select(-c(newGPD, beergpd, winegpd, liqgpd))
     
   }
-  
-  data <- list(data, percentreduction)
   
   return(data)
 }
