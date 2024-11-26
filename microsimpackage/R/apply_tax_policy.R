@@ -37,6 +37,8 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
           sex == "Women" ~ "f")) %>% 
       dplyr::select(c("sex", "agecat", "race", "education", "alc_cat", "prob_nondrinker"))
     
+    ## SOME HAVE NA AS SOME GROUPS ARE EMPTY IN PROB_ALC_TRANSITIONS?
+    
     temp2 <- data %>%
       mutate(agecat = cut(age,
                           breaks=c(0,24,64,100),
@@ -119,13 +121,11 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
                liq_percentreduction = rnorm_pre(log(liqgpd)^2, mu = cons_elasticity[3], sd = cons_elasticity_se[3], r = r_sim_obs, empirical = T),
                liq_percentreduction = ifelse(liq_percentreduction < -1, -1, liq_percentreduction),
                liq_newGPD = liqgpd + (liqgpd*liq_percentreduction*scenario[3]),
-               newGPD = beer_newGPD + wine_newGPD + liq_newGPD)
+               newGPD = beer_newGPD + wine_newGPD + liq_newGPD) %>%
+      dplyr::select(ID, newGPD) 
     
     #percentreduction <- newGPD %>% dplyr::select(ID, beergpd, winegpd, liqgpd,
     #                                             beer_percentreduction, wine_percentreduction, liq_percentreduction)
-    
-    newGPD <- newGPD %>%
-        dplyr::select(ID, newGPD) 
   
     # merge simulated percentreduction into data
     data <- merge(data, newGPD, by = "ID", all.x = T) %>% 
