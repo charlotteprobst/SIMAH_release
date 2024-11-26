@@ -8,17 +8,15 @@
 
 sample_policy_parameters <- function(data = data, n_uncertainty = n_uncertainty) {
 
-  #include superior foreach loop to loop through groups of samplenum, seed, ed/alcmodels
-  data <- data %>% group_by(samplenum, seed, educationmodel, alcoholmodel) %>%
-    mutate(group = cur_group_id()) %>% ungroup()
-  
+  #include superior foreach loop to loop through seeds
   out <- list()
-  out <- foreach(i=1:max(unique(data$group))) %do% {
+  out <- foreach(i=1:length(unique(data$seed))) %do% {
     
-    temp <- data %>% filter(group == i) %>% slice(1) %>% 
-      dplyr::select(seed, group, beverage, cons_elasticity, cons_elasticity_se)
+    seed <- unique(data$seed)[i]
+    set.seed(seed)
     
-    set.seed(temp$seed)
+    temp <- data %>% filter(seed == seed) %>% 
+      dplyr::select(seed, beverage, cons_elasticity, cons_elasticity_se) %>% slice(1)
     
     # reshape data
     pdat <- cbind(beverage = unlist(strsplit(as.character(temp$beverage), ",")),
@@ -34,20 +32,23 @@ sample_policy_parameters <- function(data = data, n_uncertainty = n_uncertainty)
     }
     
     do.call(cbind,elasticities) %>% as.data.frame() %>%
+      # get scaled beverage-specific SE based on population mean and SE
+      mutate(SE_beer = (pdat[pdat$beverage=="beer",]$cons_elasticity_se / pdat[pdat$beverage=="beer",]$cons_elasticity) * V1,
+             SE_wine = (pdat[pdat$beverage=="wine",]$cons_elasticity_se / pdat[pdat$beverage=="wine",]$cons_elasticity) * V2,
+             SE_spir = (pdat[pdat$beverage=="spirits",]$cons_elasticity_se / pdat[pdat$beverage=="spirits",]$cons_elasticity) * V3) %>% 
+      # get required data format
       mutate(cons_elasticity = paste0(V1, ",", V2, ",", V3), 
-             
-             # FOR NOW: set se=0.08
-             cons_elasticity_se = "0.081,0.0808,0.0806",
+             cons_elasticity_se = paste0(SE_beer, ",", SE_wine, ",", SE_spir),
              nunc = 1:n_uncertainty,
-             group = i) %>% 
-      dplyr::select(-c(V1,V2,V3))
+             seed = seed) %>% 
+      dplyr::select(-c(V1,V2,V3, SE_beer, SE_wine, SE_spir))
     
   }
   
   out <- do.call(rbind,out)
   
   data <- data %>% dplyr::select(-c(cons_elasticity, cons_elasticity_se)) %>%
-    left_join(out, relationship = "many-to-many")
+    left_join(., out, relationship = "many-to-many")
   
   return(data)
 }
