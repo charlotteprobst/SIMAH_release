@@ -18,6 +18,9 @@ library(gridExtra)
 library(doParallel)
 options(dplyr.summarise.inform = FALSE)
 
+WorkingDirectory <- "/Users/carolinkilian/Desktop/"
+setwd(paste(WorkingDirectory))
+
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
@@ -35,12 +38,13 @@ data <- basepop
 # Population distribution
 dist <- rnorm(100000, -0.52, 0.0808)
 hist(dist, xlab = "Own-price elasticity", main = "", col = "white", breaks = 100)
-abline(v = -0.52, col = "blue", lwed = 2)
+abline(v = -0.52, col = "red", lwd = 2)
+abline(v = -0.48, col = "blue", lwd = 2)
 
 # Distribution for one microsimulation run
 dist <- rnorm(100000, -0.48, 0.07)
 hist(dist, xlab = "Own-price elasticity", main = "", col = "white", breaks = 100)
-abline(v = -0.48, col = "blue", lwed = 2)
+abline(v = -0.48, col = "blue", lwd = 2)
 
 # Inter-individual variability
 newGPD <- data %>% filter(alc_cat != "Non-drinker") %>% 
