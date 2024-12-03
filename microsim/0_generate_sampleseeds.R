@@ -31,7 +31,7 @@ for(i in 1:length(unique(sampleseeds$seed))){
                                        educationmodel = sample(1:length(education_transitionsList), replace=F))
   }
   
-  edmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:30)
+  edmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:n_uncertainty)
 }
 
 edmodels <- edmodels %>% bind_rows()
@@ -49,7 +49,7 @@ for(i in 1:length(unique(sampleseeds$seed))){
                                         alcoholmodel = sample(1:length(alcohol_transitions), replace=F))
   }
 
-  alcmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:30)
+  alcmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:n_uncertainty)
 }
 
 alcmodels <- alcmodels %>% bind_rows()
