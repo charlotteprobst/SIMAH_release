@@ -34,7 +34,8 @@ nesarc1 <- nesarc1_orig %>%
   
   # Select the variables of interest 
   select(idnum, psu, stratum, weight, AGE, sex, CDAY, CMON, CYEAR, 
-    sex, olds1q1c, olds1q1d3, olds1q1d5, MARITAL, S1Q6A, olds1q11b, CONSUMER,
+    olds1q1c, olds1q1d1, olds1q1d2, olds1q1d3, olds1q1d4, olds1q1d5, 
+    MARITAL, S1Q6A, olds1q11b, CONSUMER,
     S2AQ4A, S2AQ4B, s2aq4cr, S2AQ4D, S2AQ4E, S2AQ4F, S2AQ4G, coolecf, 
     S2AQ5A, S2AQ5B, s2aq5cr, S2AQ5D, S2AQ5E, S2AQ5F, S2AQ5G, beerecf, 
     S2AQ6A, S2AQ6B, s2aq6cr, S2AQ6D, S2AQ6E, S2AQ6F, S2AQ6G, wineecf, 
@@ -47,10 +48,10 @@ nesarc1 <- nesarc1_orig %>%
     #age = NA,    # placeholder variable - age as NA since it will be extracted from Wave 2
     #nw1age = NA, # Placeholder variable - matches  age1 from wave 2
     female = recode(sex, `1` = 0, `2` = 1),
-    race = case_when(olds1q1d5==1 & olds1q1d3 ==2 & olds1q1c==2  ~ 1, # white, non-hispanic
-                     olds1q1d3==1 & olds1q1c==2 ~ 2, # black, non-hispanic
+    race = case_when(olds1q1d5==1 & olds1q1d1 ==2 & olds1q1d2 ==2 & olds1q1d3 ==2 & olds1q1d4 ==2 & olds1q1c==2  ~ 1, # white, non-hispanic (single race)
+                     olds1q1d3==1 & olds1q1d1 ==2 & olds1q1d2 ==2 & olds1q1d5 ==2 & olds1q1d4 ==2 & olds1q1c==2 ~ 2, # black, non-hispanic (single race)
                      olds1q1c==1 ~ 3,                # Hispanic
-                     TRUE ~ 4)) %>%                  # Other, non-hispanic  
+                     TRUE ~ 4)) %>%                  # Other, non-hispanic (incl. multiple race)  
   
    # rename variables to align with Wave 2
   rename(
@@ -67,7 +68,7 @@ nesarc1 <- nesarc1_orig %>%
   # count(nesarc1, sex, female)
   
   # Remove extra variables  
-  nesarc1 <- select(nesarc1, -olds1q1d5, -olds1q1d3, -olds1q1c)
+  nesarc1 <- select(nesarc1, -olds1q1d5, -olds1q1d4, -olds1q1d3, -olds1q1d2, -olds1q1d1, -olds1q1c)
 
   saveRDS(nesarc1, paste0(data_new, "nesarc1_raw.rds"))
   
