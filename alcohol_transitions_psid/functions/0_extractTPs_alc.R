@@ -22,11 +22,11 @@ extractTPs_basic <- function(model, year) {
 extractTPs_subgroups <- function(model,combo){
   probs <- list()
   for(i in 1:nrow(combo)){
-    age_cat <- combo$age_cat[i]
-    sex <- combo$sex[i]
-    race <- combo$race[i]
-    education <- combo$education[i]
-    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(age_cat = age_cat, sex = sex, race = race, education = education))
+    age_var <- as.character(combo$age_cat[i])
+    sex_var <- combo$sex[i]
+    race_var <- as.character(combo$race[i])
+    education_var <- as.character(combo$education[i])
+    probs[[paste(i)]] <- pmatrix.msm(model, covariates=list(age_cat=age_var,sex=sex_var,race=race_var,education=education_var))
     probs[[paste(i)]] <- data.frame(unclass(probs[[paste(i)]]))
     probs[[paste(i)]]$StateFrom <- row.names(probs[[paste(i)]])
     probs[[paste(i)]] <- probs[[paste(i)]] %>% 
@@ -35,15 +35,16 @@ extractTPs_subgroups <- function(model,combo){
                                  endsWith(StateTo,"2") ~ "State 2",
                                  endsWith(StateTo,"3") ~ "State 3",
                                  endsWith(StateTo,"4") ~ "State 4"), 
-      age_cat=age_cat,
-             sex=sex,
-             race=race,
-             education=education)
+      age_cat=age_var,
+             sex=sex_var,
+             race=race_var,
+             education=education_var)
+
   }
   probs <- do.call(rbind,probs) 
   return(probs)
 }
-# 
+
 # extractTP_incl_time <- function(model,combo){
 #   probs <- list()
 #   for(i in 1:nrow(combo)){

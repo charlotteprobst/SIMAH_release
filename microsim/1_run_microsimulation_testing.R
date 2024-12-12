@@ -26,9 +26,8 @@ library(beepr)
 # WorkingDirectory <- "C:/Users/laura/Documents/CAMH/SIMAH/"
 # WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
 # WorkingDirectory <- "C:/Users/marie/Dropbox/NIH2020/"
-# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 WorkingDirectory <- "/Users/carolinkilian/Desktop/"
-# WorkingDirectory <- "/imaging/home/Imhpr/ckilian/"
+# WorkingDirectory <- "C:/Users/cmp21seb/Documents/SIMAH/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 

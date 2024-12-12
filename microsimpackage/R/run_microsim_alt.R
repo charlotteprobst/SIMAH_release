@@ -20,7 +20,7 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          inflation_factors,
                          age_inflated,
                          update_base_rate,
-                         minyear=2000, maxyear=2005, output="mortality"){
+                         minyear, maxyear, output){
 set.seed(seed)
 # Summary <- list()
 DeathSummary <- list()
@@ -324,9 +324,6 @@ if(updatingeducation==1){
   totransition <- totransition %>% ungroup() %>% dplyr::select(-c(prob, state, year, newED,cat))
   basepop <- rbind(totransition, tostay)
 }
-
-# if(updatingeducation==1 & y>=2019){
-# }
 
 # update alcohol use categories
 if(updatingalcohol==1){

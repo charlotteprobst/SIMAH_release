@@ -57,8 +57,8 @@ States <- c("California","Colorado","Florida","Indiana",
 # for(s in States){
 SelectedState <- "USA"
 
-source("SIMAH_code/microsim/2_run_microsimulation/0_model_settings.R")
-lhs <- lhs[[1]]
+source("SIMAH_code/microsim/2_education_transitions_calibration/0_model_settings.R")
+lhs <- 1
 
 # read in the education transitions from the final wave of calibration
 transitionsList <- read_rds(paste0(OutputDirectory, "/transitionsList-10",".RDS"))

@@ -43,15 +43,12 @@ mortality <- 1
 #  insert causes to model here - this can be a vector so multiple causes can be modelled
 diseases <- NULL
 
-# switch between CASCADE and SIMAH models 
-model <- "SIMAH"
-
 # output (which version of the output is required) options are "education" "alcohol" or "mortality"
-output_type <- "mortality"
+output_type <- "demographics"
 
 # whether we want SES interaction effects for liver cirrhosis 
 # note this is a temporary variable and may change to a more general SES interaction flag 
-liverinteraction <- 0
+sesinteraction <- 0
 
 # do you want policy effects switched on? at the moment this is binary but 
 # as the simulation develops there will be more options for policy scenarios
@@ -80,7 +77,7 @@ proportion <- PopulationSize/WholePopSize$total
 proportion <- ifelse(proportion>1,1,proportion)
 
 # parameter settings for calibration
-n_samples <- 3
+#nsamples <- 10
 
 # whether to just use the point estimate - set this to 1 for education and alcohol transitions 
 PE <- 1

@@ -55,7 +55,8 @@ data <- rbind(nesarc1, nesarc3) %>%
                                liquor_prop >=50 ~ "Liquor",
                                TRUE ~ "No preferene")) %>% 
   filter(!is.na(total_prop) & total_prop!=0) %>%  # remove non-drinkers
-  replace(is.na(.), 0) %>% 
+  mutate_at(vars(c(coolers_prop, beers_prop, beers_prop_wcoolers, wine_prop, liquor_prop, 
+                   total_prop, highest_prop)), ~ifelse(is.na(.), 0, .)) %>% 
   mutate(wave = recode (wave, `1` = "NESARC I", `2` = "NESARC II", `3` = "NESARC III"),
           edu3 = fct_relevel(edu3, "Low", "Med", "High"),
           age3 = fct_relevel(age3, "18-24", "25-49", "50+"), 
