@@ -121,15 +121,16 @@ pdat3 <- pdat3 %>% group_by(nrep) %>%
   pivot_longer(cols = c("mean_pr_beer", "mean_pr_wine", "mean_pr_liq"),
                names_to = "beverage", values_to = "mean_pr") %>% 
   mutate(beverage = factor(str_sub(beverage, 9, str_length(beverage)), 
-                           levels = c("beer", "wine", "liq")),
-         pr = ifelse(beverage == "beer", -0.52,
-                     ifelse(beverage == "wine", -0.55,
-                            ifelse(beverage == "liq", -0.6, NA))))
+                           levels = c("beer", "wine", "liq"),
+                           labels = c("Beer", "Wine", "Spirits")),
+         pr = ifelse(beverage == "Beer", -0.52,
+                     ifelse(beverage == "Wine", -0.55,
+                            ifelse(beverage == "Spirits", -0.6, NA))))
 
 # plot 
 ggplot(data = pdat3, aes(x = nrep)) + 
-  geom_line(aes(y = mean_pr)) + geom_hline(aes(yintercept = pr), color = "#77131D", linetype = "dashed") +
+  geom_line(aes(y = mean_pr)) + geom_hline(aes(yintercept = pr), linetype = "dashed") +
   facet_grid(rows = vars(beverage)) + 
-  ylab("Mean of policy effect estimates") + xlab("Simulation runs") + 
-  ggtheme + ggtitle("Change in mean policy effect estimate across multiple simulation runs")
+  ylab("Mean of own-price consumption elasticity") + xlab("Number of simulation runs") + 
+  ggtheme + ggtitle("")
 ggsave(paste0("policy_test_runs/NRep Simulation runs/", Sys.Date(), "_UncertaintyPolicyEffect_ChangeMeanByNRep_.01_2001.png"), height = 10, width = 15)
