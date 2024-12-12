@@ -114,8 +114,10 @@ test <- data %>% filter(drinkingstatus_updated==1) %>% filter(gramsperday_upshif
 # adding the regions to the BRFSS 
 data <- add_brfss_regions(data)
 
+data$state <- data$State
+
 final_version <- data %>%
-  dplyr::select(YEAR, surveymonth, surveyyear, State, region, race_eth, sex_recode, age_var,
+  dplyr::select(YEAR, surveymonth, surveyyear, state, region, race_eth, sex_recode, age_var,
                 education_summary, household_income,
                 employment, marital_status, BMI,
                 drinkingstatus_detailed, drinkingstatus_updated,

@@ -12,6 +12,8 @@ setwd(paste(WorkingDirectory))
 
 # Load in deterministic population
 deterministic_pop <- read_csv("/Users/charlottebuckley/Google Drive/SIMAH Sheffield/SIMAH_workplace/microsim/alcohol_calibration/deterministic_regression/full_pop_deterministic10000_withID.csv") 
+deterministic_pop$alc_gpd <- deterministic_pop$microsim.init.alc.gpd
+deterministic_pop$sex <- deterministic_pop$microsim.init.sex
 
 deterministic_pop <- code_alcohol_categories(deterministic_pop)
 
