@@ -26,7 +26,7 @@ scenarios <- cbind(policymodel = 1:5,
 
 ######################DO NOT EDIT BELOW HERE ##################################################
 
-policy_setting <- read.csv(paste0(DataDirectory,"input_policy_sim.csv")) %>% 
+policy_setting <- read.csv(paste0(DataDirectory,"input_PricePolicy_sim.csv")) %>% 
   filter(policy %in% policy_int) %>% 
   mutate(beverage = as.factor(beverage))
 
