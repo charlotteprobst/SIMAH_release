@@ -8,6 +8,7 @@ options(scipen=999)
 # set up the number of samples to be run
 nsamples <- 1 # indicates samples per same sample seed (for calibration purposes only)
 nreps <- 10 # indicates number of different sample seeds
+n_uncertainty <- 60 # indicates number of unique combinations of education x alcohol models x own-price elasticities
 
 # generate list of samples to be run with random number seeds
 sampleseeds <- expand.grid(samplenum = 1:nsamples, seed=1:nreps)

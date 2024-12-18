@@ -13,7 +13,6 @@ options(scipen=999)
 policy <- 1
 year_policy <- 2019
 policy_int <- "price"
-n_uncertainty <- 30
 
 # define policy modelling scenarios 
 # for price policites specific to beer, wine, spirits
