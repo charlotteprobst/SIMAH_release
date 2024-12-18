@@ -39,9 +39,10 @@ ggtheme <- theme_bw() + theme(legend.position="right",
 # MEAN BY MODEL REPETITIONS
 
 # generate replication columns
-nunc <- data %>% pull(seed) %>% unique() %>% as.data.frame() %>% 
-  mutate(nunc = 1:length(.)) %>% rename("seed" = ".")
-data <- data %>% dplyr::select(-nunc) %>% left_join(., nunc)
+# nunc <- data %>% pull(seed) %>% unique() %>% as.data.frame() %>% 
+#   mutate(nunc = 1:length(.)) %>% rename("seed" = ".")
+# data <- data %>% dplyr::select(-nunc) %>% left_join(., nunc)
+# table(data$seed, data$nunc)
 
 n <- max(data$nunc)
 columns <- c(paste0("nrep", 1:n))
@@ -99,13 +100,17 @@ nrep <- pdat2 %>% ungroup() %>% filter(nrep == nrepmax) %>%
   rename("meangpdMAX" = "meangpd") %>% dplyr::select(-nrep)
 pdat.dev <- pdat2 %>% ungroup() %>% filter(nrep != nrepmax) %>% 
   left_join(., nrep) %>% 
-  mutate(diff = meangpdMAX - meangpd)
+  mutate(diff = meangpdMAX - meangpd,
+         ymax = ifelse(sex == "Men", 0.02, 0.01),
+         ymin = ifelse(sex == "Men", -0.02, -0.01))
 
 ggplot(data = pdat.dev[pdat.dev$year == 2019,], 
        aes(x = as.numeric(nrep), y = diff)) + geom_line() +
-  geom_hline(yintercept = 0, linetype = "dashed") + xlim(c(0, 20)) +
+  geom_hline(yintercept = 0, linetype = "dashed") + 
+  geom_hline(aes(yintercept = ymax), color = "blue", alpha = 0.5) + 
+  geom_hline(aes(yintercept = ymin), color = "blue", alpha = 0.5) + 
   facet_grid(cols = vars(education), rows = vars(sex), scales = "free_y") + 
-  ylab("Deviation in grams of pure alcohol per day") +
+  ylab("Deviation in grams of pure alcohol per day") + 
   xlab("Number of simulation runs") + 
   ggtheme + ggtitle("")
-ggsave(paste0("policy_test_runs/NRep Simulation runs/", Sys.Date(), "_DeviationMeanGPDByNRep_2019.png"), height = 10, width = 15)
+ggsave(paste0("policy_test_runs/NRep Simulation runs/", Sys.Date(), "_DeviationMeanGPDByNUNC_2019.png"), height = 10, width = 15)
