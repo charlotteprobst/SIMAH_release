@@ -19,9 +19,9 @@ WorkingDirectory <- "/Users/carolinkilian/Desktop/"
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/")
 setwd(paste(DataDirectory))
 
-# select one model version randomly 
-# select <- sample(1:4, 1)
-select <- 4  
+# select one model version 
+# select <- sample(2:5, 1)
+select <- 5  
 data <- read.csv("2024-11-18/output-policy_alcohol_20rep_2024-11-18.csv") %>%
   filter(policymodel == select)
 
