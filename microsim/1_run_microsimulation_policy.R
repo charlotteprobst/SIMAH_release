@@ -58,7 +58,7 @@ for(i in 1:max(alcohol_transitions$sample)){
 }
 
 # read in sampleseeds file (or source 0_generate_sampleseeds.R)
-sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2024-11-25.csv")
+sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2025-01-20.csv")
 # source("SIMAH_code/microsim/0_generate_sampleseeds.R")
 
 # read in the categorical to continuous distributions
@@ -76,9 +76,10 @@ year_policy <- 2019
 diseases <- NULL
 
 # load required package if not loaded through microsimpackage
-source("~/Desktop/SIMAH_code/microsimpackage/R/apply_tax_policy.R")
-source("~/Desktop/SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
-source("~/Desktop/SIMAH_code/microsimpackage/R/run_microsim_alt.R")
+# may require to update path to run on your local device
+#source("~/Desktop/SIMAH_code/microsimpackage/R/apply_tax_policy.R")
+#source("~/Desktop/SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
+#source("~/Desktop/SIMAH_code/microsimpackage/R/run_microsim_alt.R")
 
 # generate copy of basepop
 baseorig <- basepop
