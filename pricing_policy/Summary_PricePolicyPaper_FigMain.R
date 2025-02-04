@@ -16,12 +16,12 @@ WorkingDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_out
 OutputDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/pricing_policy/"
  
 # load data
-data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcont_2025-01-13.csv"))
-data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcat_2025-01-13.csv"))
-data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcontcat_2025-01-13.csv"))
+data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcont_2025-01-31.csv"))
+data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcat_2025-01-31.csv"))
+data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcontcat_2025-01-31.csv"))
   
 # set ggplot layout
-options(digits = 4)
+options(digits = 8)
   
 col_green <- colorRampPalette(c("#74C67A", "#137751"))
 col_blue <- colorRampPalette(c("#82A9B2", "#2D6D7A"))
@@ -29,6 +29,7 @@ col_red <- colorRampPalette(c("#FAAA74", "#9F4238"))
 cb2 <- col_blue(2)
 cr2 <- col_red(2)
 c4 <- c(cb2, cr2)
+c5 <- c("black", c4)
 cg3 <- col_green(3)
 
 ggtheme <- theme_bw() + theme(legend.position = "right",
@@ -98,12 +99,13 @@ ggplot() +
   geom_errorbar(data = output1[output1$year == 2019,], 
                 aes(ymin = meangpd_min, ymax = meangpd_max, x = year, colour = scenario), width = 0.2) + 
   facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-  ylim(0,NA) + ylab("Mean grams of pure alcohol per day") +
+  #ylim(0,NA) + 
+  ylab("Mean grams of pure alcohol per day") +
   scale_x_continuous(breaks = seq(2000, 2019, 3), limits = c(2000, 2019+0.1)) + 
   scale_color_manual(values = c5, name = "") + scale_fill_manual(values = c5, name = "") + 
   ggtheme + xlab("") 
 
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig1_MeanGPD_", Sys.Date(), ".png"), height = 7, width = 14, dpi = 300)
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig1_MeanGPD_V2_", Sys.Date(), ".png"), height = 7, width = 14, dpi = 300)
 
 # Figure 2) Change in the prevalence of non-drinkers (categorial alcohol outcome)
 
@@ -172,8 +174,8 @@ ggplot() +
   geom_bar(data = output2[output2$condition == "reference",], 
            aes(y = meanprop, x = scenario), 
            stat = "identity", color = "black", fill = "black", alpha = 0.5) +
-  geom_errorbar(data = output2[output2$condition == "model",], 
-                aes(ymin = min, ymax = max, x = scenario, colour = scenario), width = 0.2) +
+  #geom_errorbar(data = output2[output2$condition == "model",], 
+  #              aes(ymin = min, ymax = max, x = scenario, colour = scenario), width = 0.2) +
   facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
   scale_y_continuous(labels = scales::percent, limits = c(0,NA)) + ylab("Prevalence of abstinence (%)") +
   scale_color_manual(values = c4, name = "") + scale_fill_manual(values = c4, name = "") + 
@@ -255,5 +257,5 @@ ggplot(data = output3) +
   scale_color_manual(values = cg3, name = "Alcohol use") + scale_fill_manual(values = cg3, name = "Alcohol use") + 
   ggtheme + xlab("") 
 
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 7, width = 14, dpi = 300)
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 8, width = 16, dpi = 300)
 

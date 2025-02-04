@@ -15,9 +15,9 @@ WorkingDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_out
 OutputDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/pricing_policy/"
  
 # load data
-data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcont_2025-01-13.csv"))
-data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcat_2025-01-13.csv"))
-data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcontcat_2025-01-13.csv"))
+data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcont_2025-01-31.csv"))
+data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcat_2025-01-31.csv"))
+data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcontcat_2025-01-31.csv"))
   
 # set standard format
 options(digits = 8)
@@ -96,11 +96,11 @@ output1 <- left_join(output1A, output1B) %>%
           !is.na(meangpd) & year == 2000 ~ paste0(format(round(meangpd, digits = 2), nsmall = 2)),
           TRUE ~ NA), 
          diff = case_when(
-           !is.na(diffgpd) & year != 2000 ~ paste0(format(round(diffgpd, digits = 2), nsmall = 2), " (", format(round(diffmin, digits = 2), nsmall = 2), ", ", format(round(diffmax, digits = 2), nsmall = 2), ")"),
+           !is.na(diffgpd) & year != 2000 ~ paste0(format(round(diffgpd, digits = 2), nsmall = 2), " (", format(round(diffmax, digits = 2), nsmall = 2), ", ", format(round(diffmin, digits = 2), nsmall = 2), ")"),
            !is.na(diffgpd) & year == 2000 ~ paste0(format(round(diffgpd, digits = 2), nsmall = 2)),
            TRUE ~ NA),
          perc = case_when(
-           !is.na(percgpd) & year != 2000 ~ paste0(format(round(percgpd*100, digits = 2), nsmall = 2), " (", format(round(percmin*100, digits = 2), nsmall = 2), ", ", format(round(percmax*100, digits = 2), nsmall = 2), ")"),
+           !is.na(percgpd) & year != 2000 ~ paste0(format(round(percgpd*100, digits = 2), nsmall = 2), " (", format(round(percmax*100, digits = 2), nsmall = 2), ", ", format(round(percmin*100, digits = 2), nsmall = 2), ")"),
            !is.na(percgpd) & year == 2000 ~ paste0(format(round(percgpd*100, digits = 2), nsmall = 2)),
            TRUE ~ NA)) %>% 
   dplyr::select(c(setting, scenario, year, sex, education, mean, diff, perc)) %>% 
@@ -172,12 +172,12 @@ output2B <- output2A %>% filter(scenario != "Reference") %>%
 # combine elements into Table 2 and formatting
 output2 <- left_join(output2A, output2B) %>% 
   mutate(mean = case_when(
-          !is.na(meanprop) & year != 2000 ~ paste0(format(round(meanprop, digits = 2), nsmall = 2), " (", format(round(min, digits = 2), nsmall = 2), ", ", format(round(max, digits = 2), nsmall = 2), ")"),
-          !is.na(meanprop) & year == 2000 ~ paste0(format(round(meanprop, digits = 2), nsmall = 2)),
+          !is.na(meanprop) & year != 2000 ~ paste0(format(round(meanprop*100, digits = 2), nsmall = 2), " (", format(round(min*100, digits = 2), nsmall = 2), ", ", format(round(max*100, digits = 2), nsmall = 2), ")"),
+          !is.na(meanprop) & year == 2000 ~ paste0(format(round(meanprop*100, digits = 2), nsmall = 2)),
           TRUE ~ NA), 
          diff = case_when(
-           !is.na(diffprop) & year != 2000 ~ paste0(format(round(diffprop, digits = 2), nsmall = 2), " (", format(round(diffmin, digits = 2), nsmall = 2), ", ", format(round(diffmax, digits = 2), nsmall = 2), ")"),
-           !is.na(diffprop) & year == 2000 ~ paste0(format(round(diffprop, digits = 2), nsmall = 2)),
+           !is.na(diffprop) & year != 2000 ~ paste0(format(round(diffprop*100, digits = 2), nsmall = 2), " (", format(round(diffmax*100, digits = 2), nsmall = 2), ", ", format(round(diffmin*100, digits = 2), nsmall = 2), ")"),
+           !is.na(diffprop) & year == 2000 ~ paste0(format(round(diffprop*100, digits = 2), nsmall = 2)),
            TRUE ~ NA)) %>% 
   dplyr::select(c(setting, scenario, year, sex, education, mean, diff, alc_cat)) %>% 
   pivot_wider(names_from = alc_cat, values_from = c(mean, diff)) %>% 
@@ -263,10 +263,10 @@ output3 <- left_join(output3A, output3B) %>%
           !is.na(meangpd) ~ paste0(format(round(meangpd, digits = 2), nsmall = 2), " (", format(round(min, digits = 2), nsmall = 2), ", ", format(round(max, digits = 2), nsmall = 2), ")"),
           TRUE ~ NA),
          diff = case_when(
-           !is.na(diffgpd) ~ paste0(format(round(diffgpd, digits = 2), nsmall = 2), " (", format(round(diffmin, digits = 2), nsmall = 2), ", ", format(round(diffmax, digits = 2), nsmall = 2), ")"),
+           !is.na(diffgpd) ~ paste0(format(round(diffgpd, digits = 2), nsmall = 2), " (", format(round(diffmax, digits = 2), nsmall = 2), ", ", format(round(diffmin, digits = 2), nsmall = 2), ")"),
            TRUE ~ NA), 
          perc = case_when(
-           !is.na(percgpd) ~ paste0(format(round(percgpd*100, digits = 2), nsmall = 2), " (", format(round(percmin*100, digits = 2), nsmall = 2), ", ", format(round(percmax*100, digits = 2), nsmall = 2), ")"),
+           !is.na(percgpd) ~ paste0(format(round(percgpd*100, digits = 2), nsmall = 2), " (", format(round(percmax*100, digits = 2), nsmall = 2), ", ", format(round(percmin*100, digits = 2), nsmall = 2), ")"),
            TRUE ~ NA)) %>% 
   dplyr::select(c(setting, alc_cat_2018, scenario, year, sex, education, mean, diff, perc)) %>% 
   arrange(setting, alc_cat_2018) 

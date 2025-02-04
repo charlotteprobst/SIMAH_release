@@ -17,9 +17,9 @@ WorkingDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_out
 OutputDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/pricing_policy/"
  
 # load data
-data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcont_2025-01-13.csv"))
-data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcat_2025-01-13.csv"))
-data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-13/output-policy_alcoholcontcat_2025-01-13.csv"))
+data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcont_2025-01-31.csv"))
+data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcat_2025-01-31.csv"))
+data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcontcat_2025-01-31.csv"))
   
 # set ggplot layout
 options(digits = 4)
@@ -30,6 +30,7 @@ col_red <- colorRampPalette(c("#FAAA74", "#9F4238"))
 cb2 <- col_blue(2)
 cr2 <- col_red(2)
 c4 <- c(cb2, cr2)
+c5 <- c("black", c4)
 cg3 <- col_green(3)
 
 ggtheme <- theme_bw() + theme(legend.position = "right",
@@ -93,7 +94,8 @@ ggplot(data = output1) +
   geom_point(aes(y = meangpd, x = setting, color = scenario, fill = scenario), shape = 23, size = 2) +
   geom_errorbar(aes(ymin = meangpd_min, ymax = meangpd_max, x = setting, colour = scenario), width = 0.1) +
   facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-  ylim(0,NA) + ylab("Mean grams of pure alcohol per day") +
+  #ylim(0,NA) + 
+  ylab("Mean grams of pure alcohol per day") +
   scale_color_manual(values = c5, name = "") + scale_fill_manual(values = c5, name = "") + 
   ggtheme + xlab("") 
 
@@ -168,8 +170,8 @@ ggplot() +
   geom_bar(data = output2[output2$condition == "reference",], 
            aes(y = meanprop, x = setting), 
            stat = "identity", color = "black", fill = "black", alpha = 0.5) +
-  geom_errorbar(data = output2[output2$condition == "model",], 
-                aes(ymin = min, ymax = max, x = setting, colour = scenario), width = 0.2) +
+  #geom_errorbar(data = output2[output2$condition == "model",], 
+  #              aes(ymin = min, ymax = max, x = setting, colour = scenario), width = 0.2) +
   facet_nested(sex + education ~ scenario, scales = "free") + 
   scale_x_discrete(guide = guide_axis_nested(delim = "#")) + 
   scale_y_continuous(labels = scales::percent, limits = c(0,NA)) + ylab("Prevalence of abstinence (%)") +
