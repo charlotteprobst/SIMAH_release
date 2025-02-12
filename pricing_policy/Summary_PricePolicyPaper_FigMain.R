@@ -259,3 +259,45 @@ ggplot(data = output3) +
 
 ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 8, width = 16, dpi = 300)
 
+
+# Edit Julia Feb 7, 2025: get mean of change with uncertainty
+diff_2019 <- alccontcat %>% filter(year == "2019") %>%
+  dplyr::select(-sesimulation) %>%
+  tidyr::pivot_wider(names_from = "scenario", values_from = "meansimulation") %>%
+  mutate(across(starts_with("Scenario"), ~ . - Reference, .names = "{.col}_diff")) %>% # compute the difference between the reference scenario and each scenario (1-4) in 2019
+  mutate(across(ends_with("_diff"), ~ (. / Reference), .names = "{.col}_percent"))
+
+# summarise across nunc (mean, min, max)
+output3C <- diff_2019 %>%
+  group_by(year, sex, education, alc_cat_2018) %>%
+  summarise(across(ends_with("_diff"), ~ mean(.x, na.rm = TRUE), .names = "{.col}mean_new"),
+            across(ends_with("_diff"), ~ min(.x, na.rm = TRUE), .names = "{.col}min_new"),
+            across(ends_with("_diff"), ~ max(.x, na.rm = TRUE), .names = "{.col}max_new"),
+            across(ends_with("_percent"), ~ mean(.x, na.rm = TRUE), .names = "{.col}mean_new"),
+            across(ends_with("_percent"), ~ min(.x, na.rm = TRUE), .names = "{.col}min_new"),
+            across(ends_with("_percent"), ~ max(.x, na.rm = TRUE), .names = "{.col}max_new")) %>%
+  ungroup()
+
+output3C = output3C %>%
+  pivot_longer(
+    cols = starts_with("Scenario"), 
+    names_to = c("Scenario", ".value"), 
+    names_pattern = "Scenario (\\d+)_diff(.*)") %>%
+  mutate(Scenario = paste0("Scenario ", Scenario))
+
+output3C = output3C %>%
+  rename_with(~ str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
+  rename_with(~ str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
+  rename(diffgpd_new = diffmean_new,
+         percgpd_new = percmean_new,
+         scenario = Scenario)
+
+ggplot(data = output3C) + 
+  geom_point(aes(y = diffgpd_new, x = scenario, color = alc_cat_2018, fill = alc_cat_2018), shape = 23, size = 2) +
+  geom_errorbar(aes(ymin = diffmin_new, ymax = diffmax_new, x = scenario, colour = alc_cat_2018), width = 0.1) +
+  facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
+  ylim(NA,0) + ylab("Change in mean grams per day (reference: no policy)") +
+  scale_color_manual(values = cg3, name = "Alcohol use") + scale_fill_manual(values = cg3, name = "Alcohol use") + 
+  ggtheme + xlab("") 
+
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new.png"), height = 8, width = 16, dpi = 300)
