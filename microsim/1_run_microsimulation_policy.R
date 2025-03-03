@@ -23,7 +23,8 @@ library(beepr)
 
 ###set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
-WorkingDirectory <- "/Users/carolinkilian/Desktop/"
+# WorkingDirectory <- "/Users/carolinkilian/Desktop/"
+WorkingDirectory <- "/Users/julialemp/Desktop/"
 
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 
@@ -59,6 +60,7 @@ for(i in 1:max(alcohol_transitions$sample)){
 
 # read in sampleseeds file (or source 0_generate_sampleseeds.R)
 sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2025-01-20.csv")
+# test <- read.csv("/Users/julialemp/Downloads/output-policy_sampleseeds_2025-01-20.csv")
 # source("SIMAH_code/microsim/0_generate_sampleseeds.R")
 
 # read in the categorical to continuous distributions
