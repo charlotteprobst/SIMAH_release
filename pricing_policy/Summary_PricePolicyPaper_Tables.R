@@ -15,9 +15,9 @@ WorkingDirectory <- "/Users/julialemp/Desktop/SIMAH_workplace/microsim/2_output_
 OutputDirectory <- "/Users/julialemp/Desktop/SIMAH_workplace/pricing_policy/"
  
 # load data
-data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcont_2025-01-31.csv"))
-data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcat_2025-01-31.csv"))
-data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcontcat_2025-01-31.csv"))
+data_alccont <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcont_2025-03-02.csv"))
+data_alccat <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcat_2025-03-02.csv"))
+data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcontcat_2025-03-02.csv"))
   
 # set standard format
 options(digits = 8)
@@ -114,8 +114,8 @@ output1C = output1C %>%
   mutate(Scenario = paste0("Scenario ", Scenario))
  
 output1C = output1C %>%
-  rename_with(~ str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
-  rename_with(~ str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
 rename(diffgpd_new = diffmean_new,
        percgpd_new = percmean_new,
        scenario = Scenario)
@@ -194,6 +194,9 @@ var <- alccat %>% filter(year != "2000") %>%
 output2A <- merge(alccat, var, all.y = T) %>% 
   rename("meanprop" = "propsimulation") %>% 
   dplyr::select(c(scenario, setting, year, sex, education, alc_cat, meanprop, var)) %>%
+  # issue: for men, college, cat III, two nuncs happen to result in the same (min & max) values in 2018 and 2019: nunc 48 and nunc 52
+  # made sure this does not affect results; resolved by using distinct() 
+  distinct() %>%
   pivot_wider(names_from = "var", values_from = "meanprop") %>%
   left_join(mean, .) %>% 
   # select just 2019 or 2000 in reference scenario
@@ -233,7 +236,7 @@ output2C = output2C %>%
   mutate(Scenario = paste0("Scenario ", Scenario))
 
 output2C = output2C %>%
-  rename_with(~ str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
   rename(diffprop_new = prop_new,
          scenario = Scenario)
 
@@ -309,7 +312,10 @@ var <- alccontcat %>%
 # get mean GPD by alcohol use categories
 output3A <- merge(alccontcat, var, all.y = T) %>% 
   rename("meangpd" = "meansimulation") %>% 
-  dplyr::select(c(scenario, setting, year, sex, education, alc_cat_2018, meangpd, var)) %>%
+  dplyr::select(c(scenario, setting, year, sex, education, alc_cat_2018, meangpd, var)) %>% 
+  # issue: for men, college, cat III, two nuncs happen to result in the same (min & max) values in 2018 and 2019: nunc 48 and nunc 52
+  # made sure this does not affect results; resolved by using distinct() 
+  distinct() %>%
   pivot_wider(names_from = "var", values_from = "meangpd") %>%
   left_join(mean, .) %>% 
   # select just 2019 or 2018 in reference scenario
@@ -359,8 +365,8 @@ output3C = output3C %>%
   mutate(Scenario = paste0("Scenario ", Scenario))
 
 output3C = output3C %>%
-  rename_with(~ str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
-  rename_with(~ str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
   rename(diffgpd_new = diffmean_new,
          percgpd_new = percmean_new,
          scenario = Scenario)

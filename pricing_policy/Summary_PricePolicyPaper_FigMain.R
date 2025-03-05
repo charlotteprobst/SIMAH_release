@@ -12,14 +12,14 @@ library(data.table)
 library(ggplot2)  
 library(ggpubr)
 
-WorkingDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_output_data/"
-OutputDirectory <- "/Users/carolinkilian/Desktop/SIMAH_workplace/pricing_policy/"
- 
+WorkingDirectory <- "/Users/julialemp/Desktop/SIMAH_workplace/microsim/2_output_data/"
+OutputDirectory <- "/Users/julialemp/Desktop/SIMAH_workplace/pricing_policy/"
+
 # load data
-data_alccont <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcont_2025-01-31.csv"))
-data_alccat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcat_2025-01-31.csv"))
-data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-01-29/output-policy_alcoholcontcat_2025-01-31.csv"))
-  
+data_alccont <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcont_2025-03-02.csv"))
+data_alccat <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcat_2025-03-02.csv"))
+data_alccontcat <- read.csv(paste0(WorkingDirectory, "2025-02-27/output-policy_alcoholcontcat_2025-03-02.csv"))
+
 # set ggplot layout
 options(digits = 8)
   
@@ -227,7 +227,11 @@ var <- alccontcat %>%
 
 output3 <- merge(alccontcat, var, all.y = T) %>% 
   rename("meangpd" = "meansimulation", "segpd" = "sesimulation") %>% 
-  dplyr::select(c(scenario, year, sex, education, alc_cat_2018, meangpd, segpd, var)) %>%
+  dplyr::select(c(scenario, year, sex, education, alc_cat_2018, meangpd, segpd, var)) %>% 
+  # output3 %>% janitor::get_dupes()
+  # issue: for men, college, cat III, two nuncs happen to result in the same (min & max) values in 2018 and 2019: nunc 48 and nunc 52
+  # made sure this does not affect results; resolved by using distinct() 
+  distinct() %>% 
   pivot_wider(names_from = "var", values_from = c("meangpd", "segpd")) %>%
   left_join(mean, .) %>% 
   # use just 2019
@@ -286,8 +290,8 @@ output3C = output3C %>%
   mutate(Scenario = paste0("Scenario ", Scenario))
 
 output3C = output3C %>%
-  rename_with(~ str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
-  rename_with(~ str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "(mean|min|max)_new", "diff\\1_new")) %>%
+  rename_with(~ stringr::str_replace(.x, "_percentdiff(mean|min|max)_new", "perc\\1_new")) %>%
   rename(diffgpd_new = diffmean_new,
          percgpd_new = percmean_new,
          scenario = Scenario)
