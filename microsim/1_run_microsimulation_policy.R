@@ -45,13 +45,13 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 # load microsim files
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
-# read in calibrated education transitions
+# read in calibrated education transitions --> put in load_microsim_files.R
 education_transitionsList <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
 for(i in 1:length(education_transitionsList)){
   education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
 }
 
-# read in calibrated alcohol transitions 
+# read in calibrated alcohol transitions --> put in load_microsim_files.R
 alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"), show_col_types = FALSE)
 alcohol_transitionsList <- list()
 for(i in 1:max(alcohol_transitions$sample)){
@@ -63,7 +63,7 @@ sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/outp
 # test <- read.csv("/Users/julialemp/Downloads/output-policy_sampleseeds_2025-01-20.csv")
 # source("SIMAH_code/microsim/0_generate_sampleseeds.R")
 
-# read in the categorical to continuous distributions
+# read in the categorical to continuous distributions --> put this in load_microsim_files.R
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
 # set output_type
