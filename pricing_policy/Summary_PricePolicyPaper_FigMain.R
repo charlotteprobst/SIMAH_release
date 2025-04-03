@@ -88,30 +88,6 @@ output1 <- merge(alccont, var, all.y = T) %>%
   dplyr::select(c(scenario, year, sex, education, meangpd, segpd, var)) %>%
   pivot_wider(names_from = "var", values_from = c("meangpd", "segpd")) %>%
   left_join(mean, .)
-    
-ggplot() + 
-  geom_vline(xintercept = 2019, linetype = "dashed", linewidth = 0.5, colour = "grey") + 
-  geom_line(data = output1[output1$scenario == "Reference" & output1$year != 2019,], 
-            aes(y = meangpd_min, x = year, colour = scenario), linewidth = 0.5, alpha = 0.5) + 
-  geom_line(data = output1[output1$scenario == "Reference" & output1$year != 2019,], 
-            aes(y = meangpd_max, x = year, colour = scenario), linewidth = 0.5, alpha = 0.5) + 
-  geom_line(data = output1[output1$scenario == "Reference" & output1$year != 2019,], 
-            aes(y = meangpd, x = year, colour = scenario), linewidth = 0.5) +
-  geom_point(data = output1[output1$year == 2019,], 
-             aes(y = meangpd, x = year, colour = scenario, fill = scenario), shape = 23, size = 2,
-             position = position_dodge(width = 1.0)) +
-  geom_errorbar(data = output1[output1$year == 2019,], 
-                aes(ymin = meangpd_min, ymax = meangpd_max, x = year, colour = scenario), 
-                width = 0.2, position = position_dodge(width = 1.0)) + 
-  facet_grid(cols = vars(education), rows = vars(sex), scales = "free") + 
-  #ylim(0,NA) + 
-  ylab("Mean grams of pure alcohol per day") +
-  scale_x_continuous(breaks = seq(2000, 2019, 3), limits = c(2000, 2019+0.5)) + 
-  scale_color_manual(values = c5, name = "") + scale_fill_manual(values = c5, name = "") + 
-  ggtheme + xlab("") 
-
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig1_MeanGPD_V2_", Sys.Date(), ".png"), height = 7, width = 14, dpi = 300)
-
 
 ggplot() + 
   geom_vline(xintercept = 2019, linetype = "dashed", linewidth = 0.5, colour = "grey") + 
@@ -132,8 +108,7 @@ ggplot() +
   scale_fill_manual(values = c5, name = "") + 
   ggtheme + xlab("")
 
-
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig1_MeanGPD_V3_", Sys.Date(), "_final.png"), height = 7, width = 14, dpi = 300)
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig1_MeanGPD_", Sys.Date(), "_submitted.png"), height = 7, width = 14, dpi = 300)
 
 # Figure 2) Change in the prevalence of non-drinkers (categorial alcohol outcome)
 
@@ -210,30 +185,7 @@ ggplot() +
   scale_linetype_manual(values = c("dashed", "solid"), name = "") +
   ggtheme + xlab("") + theme(legend.position = "none")
 
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig2_PrevNonDrinkers_", Sys.Date(), "_final.png"), height = 7, width = 14, dpi = 300)
-
-# ----------------
-# Update March 17, 2024: Change facets to improve comparison between education categories
-
-ggplot() + 
-  geom_bar(data = output2[output2$condition == "model",], 
-           aes(y = meanprop, x = education, color = education, fill = education), 
-           stat = "identity", linetype = "dashed", alpha = 1) + # 0.5
-  geom_bar(data = output2[output2$condition == "reference",], 
-           aes(y = meanprop, x = education), 
-           stat = "identity", color = "black", fill = "black", alpha = 0.8) +
-  #geom_errorbar(data = output2[output2$condition == "model",], 
-  #              aes(ymin = min, ymax = max, x = scenario, colour = scenario), width = 0.2) +
-  facet_grid(cols = vars(scenario), rows = vars(sex), scales = "free") + 
-  scale_y_continuous(labels = scales::percent, limits = c(0,NA)) + ylab("Prevalence of abstinence (%)") +
-  scale_x_discrete(labels = c("LEHS", "Some college", "College +"), guide = guide_axis(angle = 45)) + xlab("") +
-  scale_color_manual(values = c3, name = "", labels = c("LEHS", "Some college", "College +")) + 
-  scale_fill_manual(values = c3, name = "", labels = c("LEHS", "Some college", "College +")) + 
-  scale_linetype_manual(values = c("dashed", "solid"), name = "") +
-  ggtheme + theme(legend.position = "none")
-
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig2_PrevNonDrinkers_", Sys.Date(), "_V2.png"), height = 7, width = 14, dpi = 300)
-
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig2_PrevNonDrinkers_", Sys.Date(), "_submitted.png"), height = 7, width = 14, dpi = 300)
 
 
 # Figure 3) Change in mean consumption by alcohol use category (continuous-categorical alcohol outcome)
@@ -313,7 +265,7 @@ ggplot(data = output3) +
   scale_color_manual(values = cg3, name = "Alcohol use") + scale_fill_manual(values = cg3, name = "Alcohol use") + 
   ggtheme + xlab("") 
 
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 8, width = 16, dpi = 300)
+# ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 8, width = 16, dpi = 300)
 
 
 # Edit Julia Feb 7, 2025: get mean of change with uncertainty
@@ -356,32 +308,10 @@ ggplot(data = output3C) +
   scale_color_manual(values = cg3, name = "Alcohol use") + scale_fill_manual(values = cg3, name = "Alcohol use") + 
   ggtheme + xlab("") 
 
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new.png"), height = 8, width = 16, dpi = 300)
+# ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), ".png"), height = 8, width = 16, dpi = 300)
 
 
 # Update March 17, 2024: Change facets to improve comparison between education categories
-ggplot(data = output3C) + 
-  geom_point(aes(y = diffgpd_new, x = education, color = alc_cat_2018, fill = alc_cat_2018), shape = 23, size = 2.4) +
-  geom_errorbar(aes(ymin = diffmin_new, ymax = diffmax_new, x = education, colour = alc_cat_2018), width = 0.1) +
-  facet_grid(cols = vars(scenario), rows = vars(sex), scales = "free") + 
-  ylim(NA,0) + ylab("Change in mean grams per day (reference: no policy)") +
-  scale_color_manual(values = c3, name = "Alcohol use") + scale_fill_manual(values = c3, name = "Alcohol use") + 
-  ggtheme + 
-  scale_x_discrete(labels = c("High school or less", "Some college", "College degree or more"), 
-                   guide = guide_axis(angle = 39)) + xlab("")
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new_V2.png"), height = 8, width = 16, dpi = 300)
-
-ggplot(data = output3C) + 
-  geom_point(aes(y = diffgpd_new, x = education, color = alc_cat_2018, fill = alc_cat_2018), shape = 23, size = 2.4) +
-  geom_errorbar(aes(ymin = diffmin_new, ymax = diffmax_new, x = education, colour = alc_cat_2018), width = 0.1) +
-  facet_grid(cols = vars(scenario), rows = vars(sex), scales = "free") + 
-  ylim(NA,0) + ylab("Change in mean grams per day (reference: no policy)") +
-  scale_color_manual(values = c3, name = "Alcohol use") + scale_fill_manual(values = c3, name = "Alcohol use") + 
-  ggtheme +
-    scale_x_discrete(labels = c("High school\ndegree or less", "Some college", "College degree\n or more"),
-                     guide = guide_axis(angle = 39)) + xlab("")
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new_V2_1.png"), height = 8, width = 16, dpi = 300)
-
 
 ggplot(data = output3C) + 
   geom_point(aes(y = diffgpd_new, x = education, color = alc_cat_2018, fill = alc_cat_2018), shape = 23, size = 2.4) +
@@ -392,42 +322,7 @@ ggplot(data = output3C) +
   ggtheme + 
   scale_x_discrete(labels = c("LEHS", "Some college", "College +"), 
                    guide = guide_axis(angle = 30)) + xlab("Education")
-# ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new_V2_2.png"), height = 8, width = 16, dpi = 300)
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_final.png"), height = 8, width = 16, dpi = 300)
 
-
-# ---
-ggplot(data = output3C) + 
-  geom_point(aes(y = diffgpd_new, x = alc_cat_2018, color = education, fill = education), 
-             shape = 23, size = 2.4, position = position_dodge(width = 0.5)) +
-  geom_errorbar(aes(ymin = diffmin_new, ymax = diffmax_new, x = alc_cat_2018, colour = education), 
-                width = 0.1, position = position_dodge(width = 0.5)) +
-  facet_grid(cols = vars(scenario), rows = vars(sex), scales = "free") + 
-  ylim(NA,0) + ylab("Change in mean grams per day (reference: no policy)") +
-  scale_color_manual(values = c3, name = "Education", labels = c("High school or less", "Some college", "College degree or more")) + 
-  scale_fill_manual(values = c3, name = "Education", labels = c("High school or less", "Some college", "College degree or more")) + 
-  ggtheme + 
-  scale_x_discrete(labels = c("Cat I", "Cat II", "Cat III") # , guide = guide_axis(angle = 45)
-                   ) + xlab("Alcohol use")
-
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new_V3.png"), height = 8, width = 16, dpi = 300)
-
-
-# ---
-
-ggplot(data = output3C) + 
-  geom_point(aes(y = diffgpd_new, x = alc_cat_2018, color = education, fill = education), 
-             shape = 23, size = 2.4, position = position_dodge(width = 0.5)) +
-  geom_errorbar(aes(ymin = diffmin_new, ymax = diffmax_new, x = alc_cat_2018, colour = education), 
-                width = 0.1, position = position_dodge(width = 0.5)) +
-  facet_grid(cols = vars(scenario), rows = vars(sex), scales = "free") + 
-  ylim(NA,0) + ylab("Change in mean grams per day (reference: no policy)") +
-  scale_color_manual(values = c3_alt, name = "Education", labels = c("High school or less", "Some college", "College degree or more")) + 
-  scale_fill_manual(values = c3_alt, name = "Education", labels = c("High school or less", "Some college", "College degree or more")) + 
-  ggtheme + 
-  scale_x_discrete(labels = c("Category I", "Category II", "Category III") , guide = guide_axis(angle = 30)
-  ) + xlab("Alcohol use")
-
-ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_new_V4.png"), height = 8, width = 16, dpi = 300)
+ggsave(paste0(OutputDirectory, Sys.Date(), "/Fig3_GPDbyAlcCat_", Sys.Date(), "_submitted.png"), height = 8, width = 16, dpi = 300)
 
 
