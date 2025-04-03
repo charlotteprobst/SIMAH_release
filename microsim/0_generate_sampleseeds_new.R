@@ -29,7 +29,7 @@ education_assignments <- data.frame(
 
 alcohol_assignments <- data.frame(
   nunc = 1:n_uncertainty,
-  alcoholmodel = sample(1:length(alcohol_transitions), n_uncertainty, replace = TRUE)
+  alcoholmodel = sample(1:length(alcohol_transitionsList), n_uncertainty, replace = TRUE)
 )
 
 # Expand for each unique seed
