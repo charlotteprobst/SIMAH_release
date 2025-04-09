@@ -1,11 +1,9 @@
-# SIMAH project 2022 - script for setting up microsimulation model settings
+# SIMAH project - script for setting up policy model settings
 library(dplyr)
 library(readr)
 library(microsimpackage)
 
 set.seed(42)
-
-options(scipen=999)
 
 ######################EDIT ONLY BELOW HERE ##################################################
 

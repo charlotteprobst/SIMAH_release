@@ -21,16 +21,17 @@ registerDoParallel(1)
 
 library(beepr)
 
-###set working directory to the main "SIMAH" folder in your directory 
-# WorkingDirectory <- "~/Google Drive/SIMAH Sheffield/"
+# set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "/Users/carolinkilian/Desktop/"
 WorkingDirectory <- "/Users/julialemp/Desktop/"
-
-DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
-
-# load in microsim R package
 setwd(paste(WorkingDirectory))
 
+# set up data input and output directories 
+DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
+OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/", Sys.Date())
+dir.create(OutputDirectory)
+
+# load in microsim R package
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
@@ -65,17 +66,6 @@ sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/outp
 
 # read in the categorical to continuous distributions --> put this in load_microsim_files.R
 catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
-
-# set output_type
-output_type <- c("alcoholcat", "alcoholcont", "alcoholcontcat")
-
-# set minyear and maxyear 
-minyear <- 2000
-maxyear <- 2019
-year_policy <- 2019
-
-# use empty disease vector
-diseases <- NULL
 
 # load required package if not loaded through microsimpackage
 # may require to update path to run on your local device
