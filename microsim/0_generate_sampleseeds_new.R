@@ -18,8 +18,6 @@ sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
 sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting, scenarios)
 
 # sample policy parameters here based on sampleseeds groups by samplenum, seed, edu/alcmodel
-# source("~/Desktop/SIMAH_code/microsimpackage/R/sample_policy_parameters.R") # if required
-source("~/Desktop/SIMAH_code/microsimpackage/R/sample_policy_parameters_new.R") # if required
 sampleseeds <- sample_policy_parameters(sampleseeds, n_uncertainty)
 
 education_assignments <- data.frame(
