@@ -1,4 +1,4 @@
-# SIMAH project 2022 - script for setting up sampleseeds file
+# SIMAH project - script for setting up sampleseeds file
 library(dplyr)
 library(readr)
 library(microsimpackage)
