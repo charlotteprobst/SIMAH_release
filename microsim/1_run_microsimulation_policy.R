@@ -19,8 +19,6 @@ library(doParallel)
 options(dplyr.summarise.inform = FALSE)
 registerDoParallel(1)
 
-library(beepr)
-
 # set working directory to the main "SIMAH" folder in your directory 
 # WorkingDirectory <- "/Users/carolinkilian/Desktop/"
 WorkingDirectory <- "/Users/julialemp/Desktop/"
