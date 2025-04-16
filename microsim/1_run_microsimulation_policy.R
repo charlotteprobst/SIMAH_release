@@ -36,13 +36,11 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-# Double-check that those functions are loaded - does not always work for some reason!
+# Double-check that those functions are loaded correctly - package needs to be amended to include these
 source("SIMAH_code/microsimpackage/R/sample_policy_parameters.R")
 source("SIMAH_code/microsimpackage/R/apply_tax_policy.R")
 source("SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
 source("SIMAH_code/microsimpackage/R/run_microsim_alt.R")
-source("SIMAH_code/microsimpackage/R/fix_initial_education.R")
-
 
 # load model settings 
 source("SIMAH_code/microsim/0_model_settings.R")
