@@ -1,9 +1,7 @@
-# SIMAH project 2022 - script for setting up sampleseeds file
-library(dplyr)
-library(readr)
-library(microsimpackage)
+# SIMAH project - script for setting up sampleseeds file
 
-options(scipen=999)
+# set seed to replicate selection of transition models and policy parameters 
+set.seed(123)
 
 # set up the number of samples to be run
 nsamples <- 1 # indicates samples per same sample seed (for calibration purposes only)
@@ -17,49 +15,28 @@ sampleseeds$seed <- sample(1:3000, nrow(sampleseeds), replace=F)
 # set up scenarios and policy settings
 sampleseeds <- sampleseeds %>% expand(sampleseeds, policy_setting, scenarios)
 
-# sample policy parameters here based on sampleseeds groups by samplenum, seed, edu/alcmodel
-source("~/Desktop/SIMAH_code/microsimpackage/R/sample_policy_parameters.R") # if required
-source("~/Desktop/SIMAH_code/microsimpackage/R/sample_policy_parameters_new.R") # if required
+# sample policy parameters
 sampleseeds <- sample_policy_parameters(sampleseeds, n_uncertainty)
 
-# add the final education model to be run to the sampleseeds file 
-edmodels <- list()
-submodel <- list()
-for(i in 1:length(unique(sampleseeds$seed))){
-  set.seed(unique(sampleseeds$seed)[i])
-  
-  for(k in 1:ceiling(length(unique(sampleseeds$nunc))/length(education_transitionsList))){
-    submodel[[paste(k)]] <- data.frame(seed = unique(sampleseeds$seed)[i],
-                                       educationmodel = sample(1:length(education_transitionsList), replace=F))
-  }
-  
-  edmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:n_uncertainty)
-}
+# sample education transition models
+education_assignments <- data.frame(
+  nunc = 1:n_uncertainty,
+  educationmodel = sample(1:length(education_transitionsList), n_uncertainty, replace = TRUE)
+)
 
-edmodels <- edmodels %>% bind_rows()
+# sample alcohol transition models
+alcohol_assignments <- data.frame(
+  nunc = 1:n_uncertainty,
+  alcoholmodel = sample(1:length(alcohol_transitionsList), n_uncertainty, replace = TRUE)
+)
 
-sampleseeds <- sampleseeds %>% left_join(., edmodels)
+# Join sample seeds and policy parameters with transition models
+sampleseeds <- sampleseeds %>%
+  left_join(education_assignments, by = "nunc") %>%
+  left_join(alcohol_assignments, by = "nunc")
 
-# add the final alcohol model to be run to the sampleseeds file 
-alcmodels <- list()
-submodel <- list()
-for(i in 1:length(unique(sampleseeds$seed))){
-  set.seed(unique(sampleseeds$seed)[i])
-  
-  for(k in 1:ceiling(length(unique(sampleseeds$nunc))/length(alcohol_transitions))){
-    submodel[[paste(k)]] <- data.frame(seed = unique(sampleseeds$seed)[i],
-                                        alcoholmodel = sample(1:length(alcohol_transitions), replace=F))
-  }
+# check whether there are seeds X n_uncertainty unique combinations of elasticities, education, and alcohol model
+unique_combinations <- unique(sampleseeds %>% dplyr::select(c("cons_elasticity", "educationmodel", "alcoholmodel")))
 
-  alcmodels[[paste(i)]] <- submodel %>% bind_rows() %>% slice_sample(n = n_uncertainty) %>% mutate(nunc = 1:n_uncertainty)
-}
-
-alcmodels <- alcmodels %>% bind_rows()
-
-sampleseeds <- sampleseeds %>% left_join(., alcmodels)
-
-#check whether there are seeds X n_uncertainty unique combinations of elasticities, education, and alcohol model
-unique(sampleseeds %>% dplyr::select(c("cons_elasticity", "educationmodel", "alcoholmodel")))
-
-#save sampleseeds file for reproducability 
-write.csv(sampleseeds, paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_", Sys.Date(), ".csv"), row.names=F)
+# save sampleseeds file for reproducibility 
+write.csv(sampleseeds, paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_", Sys.Date(), "_lhs.csv"), row.names=F)
