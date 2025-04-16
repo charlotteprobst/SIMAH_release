@@ -1,4 +1,4 @@
-#####first read in and process all the necessary data files 
+# SIMAH project - script for reading in and processing all the necessary data files 
 
 # read in base population
 basepop <- read_csv(paste0(DataDirectory, "agent_files/", SelectedState, "basepop", PopulationSize, ".csv"),
@@ -29,17 +29,25 @@ basepop <- fix_years_somecollege(basepop)
 brfss <- fix_years_somecollege(brfss)
 basepop$YEAR <- NULL
 
-# no longer read in education transitions here -> this is generated in a separate script
-education_transitions <- NULL
-
-# load in alcohol transition rates
-#### bring alcohol TPs out as an adjustable parameter - with name of the alcohol transitions file?
 # code alcohol categories 
 basepop <- code_alcohol_categories(basepop)
 brfss <- code_alcohol_categories(brfss)
 
-# no longer read in alcohol transitions here -> this is generated in a separate script 
-alcohol_transitions <- NULL
+# read in calibrated education transitions 
+education_transitionsList <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
+for(i in 1:length(education_transitionsList)){
+  education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
+}
+
+# read in calibrated alcohol transitions
+alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"), show_col_types = FALSE)
+alcohol_transitionsList <- list()
+for(i in 1:max(alcohol_transitions$sample)){
+  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)
+}
+
+# read in the categorical to continuous distributions 
+catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
 
 # set up latin hypercube for mortality parameters - PE only (sampling is elsewhere)
 mortality_parameters <- sample_lhs(n_samples, 1)

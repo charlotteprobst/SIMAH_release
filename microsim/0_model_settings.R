@@ -1,5 +1,4 @@
 # SIMAH project - script for setting up microsimulation model settings
-
 options(scipen=999)
 
 # set minyear and maxyear - the microsimulation must start in year 2000 (minyear)

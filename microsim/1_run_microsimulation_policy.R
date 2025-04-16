@@ -1,4 +1,4 @@
-#####SIMAH project 2024 - script for running SIMAH microsimulation model
+#####SIMAH project - script for running SIMAH microsimulation model
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(devtools)
@@ -31,12 +31,20 @@ DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data
 OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/", Sys.Date())
 dir.create(OutputDirectory)
 
-# load in microsim R package
+# load in microsim R package - IMPORTANT: required to update functions for price policy version
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
 library(microsimpackage)
 library(calibrationpackage)
+
+# Double-check that those functions are loaded - does not always work for some reason!
+source("SIMAH_code/microsimpackage/R/sample_policy_parameters.R")
+source("SIMAH_code/microsimpackage/R/apply_tax_policy.R")
+source("SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
+source("SIMAH_code/microsimpackage/R/run_microsim_alt.R")
+source("SIMAH_code/microsimpackage/R/fix_initial_education.R")
+
 
 # load model settings 
 # file.remove("/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_output_data/testing")
@@ -46,34 +54,12 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 # load microsim files
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
-# read in calibrated education transitions --> put in load_microsim_files.R
-education_transitionsList <- read_rds(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/education_calibration", "/transitionsList-10",".RDS"))
-for(i in 1:length(education_transitionsList)){
-  education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
-}
 
-# read in calibrated alcohol transitions --> put in load_microsim_files.R
-alcohol_transitions <- read_csv(paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv"), show_col_types = FALSE)
-alcohol_transitionsList <- list()
-for(i in 1:max(alcohol_transitions$sample)){
-  alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)
-}
+# read in sampleseeds file or source 0_generate_sampleseeds.R
+source("SIMAH_code/microsim/0_generate_sampleseeds.R") 
+# sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/price_policy/output-policy_sampleseeds_2025-01-20.csv")
 
-# read in sampleseeds file (or source 0_generate_sampleseeds.R)
-sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2025-01-20.csv")
-# test <- read.csv("/Users/julialemp/Downloads/output-policy_sampleseeds_2025-01-20.csv")
-# source("SIMAH_code/microsim/0_generate_sampleseeds.R")
-
-# read in the categorical to continuous distributions --> put this in load_microsim_files.R
-catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
-
-# load required package if not loaded through microsimpackage
-# may require to update path to run on your local device
-#source("~/Desktop/SIMAH_code/microsimpackage/R/apply_tax_policy.R")
-#source("~/Desktop/SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
-#source("~/Desktop/SIMAH_code/microsimpackage/R/run_microsim_alt.R")
-
-# generate copy of basepop
+# generate copy of basepop to loop through sampleseeds iterations
 baseorig <- basepop
 
 # loop by outcome_type
@@ -84,13 +70,14 @@ foreach(k=1:length(output_type)) %do% {
   
   # microsimulation loop 
   Output <- list()
-  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+  # Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+  Output <- foreach(i=1:2, .inorder=TRUE) %do% {
     print(i)
     # set seed and nunc for current iteration
     seed <- as.numeric(sampleseeds$seed[i])
     nunc <- as.numeric(sampleseeds$nunc[i])
     samplenum <- as.numeric(sampleseeds$samplenum[i])
-    #set up policy parameters
+    # set up policy parameters
     policymodel <- sampleseeds$policymodel[i]
     scenario <- as.numeric(unlist(strsplit(sampleseeds$scenario[i], ",")))
     setting <- sampleseeds$setting[i]
@@ -99,7 +86,7 @@ foreach(k=1:length(output_type)) %do% {
     cons_elasticity_se <- as.numeric(unlist(strsplit(sampleseeds$cons_elasticity_se[i], ",")))
     part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
     r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
-    # reset the base population to the original pop for each calibration iteration
+    # reset the base population to the original pop for each sampleseed iteration
     basepop <- baseorig 
     # change the alcohol model - based on prior calibrated models 
     alcohol_model_num <- as.numeric(sampleseeds$alcoholmodel[i])

@@ -1,9 +1,4 @@
 # SIMAH project - script for setting up policy model settings
-library(dplyr)
-library(readr)
-library(microsimpackage)
-
-set.seed(42)
 
 ######################EDIT ONLY BELOW HERE ##################################################
 
