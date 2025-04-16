@@ -47,17 +47,17 @@ source("SIMAH_code/microsimpackage/R/fix_initial_education.R")
 
 
 # load model settings 
-# file.remove("/Users/carolinkilian/Desktop/SIMAH_workplace/microsim/2_output_data/testing")
 source("SIMAH_code/microsim/0_model_settings.R")
 source("SIMAH_code/microsim/0_policy_settings.R")
 
 # load microsim files
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
-
 # read in sampleseeds file or source 0_generate_sampleseeds.R
 source("SIMAH_code/microsim/0_generate_sampleseeds.R") 
-# sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/price_policy/output-policy_sampleseeds_2025-01-20.csv")
+
+# for trial run only
+sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2025-04-16_selected.csv")
 
 # generate copy of basepop to loop through sampleseeds iterations
 baseorig <- basepop
@@ -70,8 +70,7 @@ foreach(k=1:length(output_type)) %do% {
   
   # microsimulation loop 
   Output <- list()
-  # Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
-  Output <- foreach(i=1:2, .inorder=TRUE) %do% {
+  Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
     print(i)
     # set seed and nunc for current iteration
     seed <- as.numeric(sampleseeds$seed[i])
