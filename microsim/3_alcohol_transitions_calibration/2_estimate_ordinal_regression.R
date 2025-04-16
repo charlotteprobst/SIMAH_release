@@ -1,5 +1,5 @@
 
-# SIMAH 2024 - script for estimating ordinal regression for alcohol transitions 
+# SIMAH - script for estimating ordinal regression for alcohol transitions 
 
 # Load packages and data
 library(tidyverse)  # data management

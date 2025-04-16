@@ -1,4 +1,4 @@
-# SIMAH project 2024 - script for generating samples from markov model for calibration
+# SIMAH project - script for generating samples from markov model for calibration
 
 model <- readRDS("SIMAH_workplace/education_transitions/final_psid_education_model.RDS")
 

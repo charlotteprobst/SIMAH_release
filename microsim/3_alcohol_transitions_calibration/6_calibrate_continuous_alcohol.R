@@ -1,4 +1,4 @@
-# SIMAH project July 2024
+# SIMAH project
 
 # code to calibrate continuous alcohol use distributions
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.

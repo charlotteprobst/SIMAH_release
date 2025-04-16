@@ -1,4 +1,4 @@
-#####SIMAH project 2022 - script for running SIMAH microsimulation model
+#####SIMAH project - script for running SIMAH microsimulation model
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.
 
 library(devtools)

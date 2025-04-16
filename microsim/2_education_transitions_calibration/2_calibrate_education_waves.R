@@ -1,4 +1,4 @@
-# SIMAH project Feb 2024 
+# SIMAH project
 
 # code to run calibration of MSM model parameters to national / state-level education output
 rm(list = ls(all.names = TRUE)) #will clear all objects includes hidden objects.

@@ -1,4 +1,4 @@
-# SIMAH project August 2024 
+# SIMAH project 
 
 # code for validation of calibrated model outputs
 

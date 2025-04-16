@@ -1,4 +1,4 @@
-# SIMAH project 2024 - script for generating samples from COVID markov model for calibration
+# SIMAH project - script for generating samples from COVID markov model for calibration
 library(tidyverse)
 library(microsimpackage)
 library(calibrationpackage)

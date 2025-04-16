@@ -1,4 +1,4 @@
-# SIMAH project 2024 - script for setting up microsimulation model settings
+# SIMAH project - script for setting up microsimulation model settings
 
 # set up working directories and data output directories 
 ###set working directory to the main "Microsimulation" folder in your directory

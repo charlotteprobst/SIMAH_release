@@ -1,4 +1,4 @@
-# SIMAH project 2024 - script for setting up settings for calibration
+# SIMAH project - script for setting up settings for calibration
 
 # setting up parallel settings for calibration
 # note that this is for use on HPC across multiple cores 

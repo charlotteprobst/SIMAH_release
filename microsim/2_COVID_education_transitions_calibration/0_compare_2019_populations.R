@@ -1,4 +1,4 @@
-# SIMAH project Feb 2024 
+# SIMAH project
 
 # This script compares the proportion of people in each demographic group in the year 2019 
 # when using the final post-calibration versions of the education TPs for 2000-2019 (i.e. wave 10)

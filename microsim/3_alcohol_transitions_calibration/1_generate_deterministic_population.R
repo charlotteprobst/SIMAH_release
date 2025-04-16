@@ -1,4 +1,4 @@
-# SIMAH project Feb 2024 
+# SIMAH project  
 
 # code to generate "deterministic" population for the US level alcohol use 
 # this is then used to fit a model of alcohol transitions 
