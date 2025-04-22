@@ -1,7 +1,5 @@
 # SIMAH project - script for setting up policy model settings
 
-######################EDIT ONLY BELOW HERE ##################################################
-
 # general policy settings
 policy <- 1
 year_policy <- 2019
