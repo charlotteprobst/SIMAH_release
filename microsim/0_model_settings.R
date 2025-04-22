@@ -8,12 +8,6 @@ maxyear <- 2019
 # select geography -  needs to be written as USA or full state name 
 SelectedState <- "USA"
 
-# list of states - for calibration looping through states
-States <- c("California","Colorado","Florida","Indiana",
-            "Louisiana","Massachusetts","Michigan","Minnesota",
-            "Missouri","New York", "Oregon", "Pennsylvania",
-            "Tennessee","Texas","USA")
-
 # specify size of synthetic population 
 PopulationSize <- 1000000
 
