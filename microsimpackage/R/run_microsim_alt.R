@@ -22,20 +22,16 @@ run_microsim_alt <- function(seed,samplenum,basepop,brfss,
                          update_base_rate,
                          minyear, maxyear, output){
 set.seed(seed)
-# Summary <- list()
-DeathSummary <- list()
+
+  DeathSummary <- list()
 DiseaseSummary <- list()
 PopPerYear <- list()
 CatSummary <- list()
 meandrinking <- list()
 MeanCatSummary <- list()
 Policy <- list()
-#targets <- generate_targets_alcohol(brfss)
-#targets$proptarget <- ifelse(targets$year==2000, NA, targets$proptarget)
 DM_men <- "off"
-# names <- names(lhs)
-# lhs <- as.numeric(lhs)
-# names(lhs) <- names
+  
 for(y in minyear:maxyear){
 print(y)
 
