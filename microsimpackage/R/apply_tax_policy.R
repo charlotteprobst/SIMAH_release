@@ -37,8 +37,6 @@ apply_tax_policy <- function(data = basepop, scenario = scenario,
           sex == "Women" ~ "f")) %>% 
       dplyr::select(c("sex", "agecat", "race", "education", "alc_cat", "prob_nondrinker"))
     
-    ## SOME HAVE NA AS SOME GROUPS ARE EMPTY IN PROB_ALC_TRANSITIONS?
-    
     temp2 <- data %>%
       mutate(agecat = cut(age,
                           breaks=c(0,24,64,100),
