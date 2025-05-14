@@ -9,7 +9,7 @@ ID <- 1:nrow(basepop)
 basepop <- cbind(ID, basepop)
 
 # read in BRFSS data for migrants and 18-year-olds entering the model
-brfss <- read_rds("SIMAH_workplace/brfss/processed_data/BRFSS_upshifted_2000_2022_final.RDS")
+brfss <- read_rds(paste0(DataDirectory, "BRFSS_upshifted_2000_2022_final.RDS"))
 brfss <- process_brfss(brfss,SelectedState)
 
 # read in death counts data
@@ -34,20 +34,20 @@ basepop <- code_alcohol_categories(basepop)
 brfss <- code_alcohol_categories(brfss)
 
 # read in calibrated education transitions 
-education_transitionsList <- read_rds("SIMAH_workplace/microsim/2_output_data/education_calibration/transitionsList-10.RDS")
+education_transitionsList <- read_rds(paste0(DataDirectory, "transitionsList-10.RDS"))
 for(i in 1:length(education_transitionsList)){
   education_transitionsList[[i]]$cat <- gsub("1999-2019+_","",education_transitionsList[[i]]$cat)
 }
 
 # read in calibrated alcohol transitions
-alcohol_transitions <- read_csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/lhs_regression-4.csv", show_col_types = FALSE)
+alcohol_transitions <- read_csv(paste0(DataDirectory, "lhs_regression-4.csv"), show_col_types = FALSE)
 alcohol_transitionsList <- list()
 for(i in 1:max(alcohol_transitions$sample)){
   alcohol_transitionsList[[i]] <- alcohol_transitions %>% filter(sample==i)
 }
 
 # read in the categorical to continuous distributions 
-catcontmodel <- read.csv("SIMAH_workplace/microsim/2_output_data/alcohol_calibration/calibration_continuous_distribution.csv")
+catcontmodel <- read.csv(paste0(DataDirectory, "calibration_continuous_distribution.csv"))
 
 # set up latin hypercube for mortality parameters - PE only (sampling is elsewhere)
 mortality_parameters <- sample_lhs(n_samples, 1)
