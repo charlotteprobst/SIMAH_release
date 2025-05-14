@@ -1,5 +1,0 @@
-Note: The data management file (file "1_") is located in: 
-"...\SIMAH\SIMAH_code\nhis\1_Data management"
-
-The file is named: 
-1_Data management
