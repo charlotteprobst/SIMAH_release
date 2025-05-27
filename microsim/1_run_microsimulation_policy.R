@@ -19,11 +19,11 @@ library(doParallel)
 options(dplyr.summarise.inform = FALSE)
 registerDoParallel(1) # adapt to number of cores if computing cluster being used
 
-# set working directory to the main "SIMAH" folder in your directory 
+# set working directory to the main "SIMAH" folder in your directory
 WorkingDirectory <- "/Users/Username/Folder/" # must be parent directory of SIMAH_workplace and SIMAH_code
 setwd(paste(WorkingDirectory))
 
-# set up data input and output directories 
+# set up data input and output directories
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/", Sys.Date())
 dir.create(OutputDirectory)
@@ -35,7 +35,7 @@ install("SIMAH_code/calibrationpackage", dep=T)
 library(microsimpackage)
 library(calibrationpackage)
 
-# load model settings 
+# load model settings
 source("SIMAH_code/microsim/0_model_settings.R")
 source("SIMAH_code/microsim/0_policy_settings.R")
 
@@ -43,7 +43,7 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # read in sampleseeds file or source 0_generate_sampleseeds.R
-source("SIMAH_code/microsim/0_generate_sampleseeds.R") 
+source("SIMAH_code/microsim/0_generate_sampleseeds.R")
 
 # generate copy of basepop to loop through sampleseeds iterations
 baseorig <- basepop
@@ -53,8 +53,8 @@ foreach(k=1:length(output_type)) %do% {
 
   output <- output_type[k]
   print(output)
-  
-  # microsimulation loop 
+
+  # microsimulation loop
   Output <- list()
   Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
 
@@ -73,14 +73,14 @@ foreach(k=1:length(output_type)) %do% {
     part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
     r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
     # reset the base population to the original pop for each sampleseed iteration
-    basepop <- baseorig 
-    # change the alcohol model - based on prior calibrated models 
+    basepop <- baseorig
+    # change the alcohol model - based on prior calibrated models
     alcohol_model_num <- as.numeric(sampleseeds$alcoholmodel[i])
     alcohol_transitions <- alcohol_transitionsList[[alcohol_model_num]]
-    # change the education model - based on the prior calibrated models 
+    # change the education model - based on the prior calibrated models
     education_model_num <- as.numeric(sampleseeds$educationmodel[i])
     education_transitions <- education_transitionsList[[education_model_num]]
-    
+
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
@@ -89,7 +89,7 @@ foreach(k=1:length(output_type)) %do% {
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
                      base_counts, diseases, mortality_parameters, sesinteraction,
-                     policy, policy_int, policymodel, year_policy, scenario, 
+                     policy, policy_int, policymodel, year_policy, scenario,
                      participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                      inflation_factors,
                      age_inflated,
@@ -100,6 +100,6 @@ foreach(k=1:length(output_type)) %do% {
   Output <- do.call(rbind,Output)
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-policy_", output, "_", Sys.Date(), ".csv"), row.names=F)
-  
+
 }
 
