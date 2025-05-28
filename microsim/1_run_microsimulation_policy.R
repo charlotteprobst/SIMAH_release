@@ -17,32 +17,25 @@ library(data.table)
 library(gridExtra)
 library(doParallel)
 options(dplyr.summarise.inform = FALSE)
-registerDoParallel(1)
+registerDoParallel(1) # adapt to number of cores if computing cluster being used
 
-# set working directory to the main "SIMAH" folder in your directory 
-# WorkingDirectory <- "/Users/carolinkilian/Desktop/"
-WorkingDirectory <- "/Users/julialemp/Desktop/"
+# set working directory to the main "SIMAH" folder in your directory
+WorkingDirectory <- "/Users/Username/Folder/" # must be parent directory of SIMAH_workplace and SIMAH_code
 setwd(paste(WorkingDirectory))
 
-# set up data input and output directories 
+# set up data input and output directories
 DataDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/1_input_data/")
 OutputDirectory <- paste0(WorkingDirectory, "SIMAH_workplace/microsim/2_output_data/", Sys.Date())
 dir.create(OutputDirectory)
 
-# load in microsim R package - IMPORTANT: required to update functions for price policy version
+# load in microsim R package
 install("SIMAH_code/microsimpackage", dep=T)
 install("SIMAH_code/calibrationpackage", dep=T)
 
 library(microsimpackage)
 library(calibrationpackage)
 
-# Double-check that those functions are loaded correctly - package needs to be amended to include these
-source("SIMAH_code/microsimpackage/R/sample_policy_parameters.R")
-source("SIMAH_code/microsimpackage/R/apply_tax_policy.R")
-source("SIMAH_code/microsimpackage/R/prob_alcohol_transition.R")
-source("SIMAH_code/microsimpackage/R/run_microsim_alt.R")
-
-# load model settings 
+# load model settings
 source("SIMAH_code/microsim/0_model_settings.R")
 source("SIMAH_code/microsim/0_policy_settings.R")
 
@@ -50,10 +43,7 @@ source("SIMAH_code/microsim/0_policy_settings.R")
 source("SIMAH_code/microsim/0_load_microsim_files.R")
 
 # read in sampleseeds file or source 0_generate_sampleseeds.R
-source("SIMAH_code/microsim/0_generate_sampleseeds.R") 
-
-# for trial run only
-sampleseeds <- read.csv("SIMAH_workplace/microsim/2_output_data/sampleseeds/output-policy_sampleseeds_2025-04-16_selected.csv")
+source("SIMAH_code/microsim/0_generate_sampleseeds.R")
 
 # generate copy of basepop to loop through sampleseeds iterations
 baseorig <- basepop
@@ -63,10 +53,11 @@ foreach(k=1:length(output_type)) %do% {
 
   output <- output_type[k]
   print(output)
-  
-  # microsimulation loop 
+
+  # microsimulation loop
   Output <- list()
   Output <- foreach(i=1:nrow(sampleseeds), .inorder=TRUE) %do% {
+
     print(i)
     # set seed and nunc for current iteration
     seed <- as.numeric(sampleseeds$seed[i])
@@ -82,14 +73,14 @@ foreach(k=1:length(output_type)) %do% {
     part_elasticity <- as.numeric(sampleseeds$part_elasticity[i])
     r_sim_obs <- as.numeric(sampleseeds$r_sim_obs[i])
     # reset the base population to the original pop for each sampleseed iteration
-    basepop <- baseorig 
-    # change the alcohol model - based on prior calibrated models 
+    basepop <- baseorig
+    # change the alcohol model - based on prior calibrated models
     alcohol_model_num <- as.numeric(sampleseeds$alcoholmodel[i])
     alcohol_transitions <- alcohol_transitionsList[[alcohol_model_num]]
-    # change the education model - based on the prior calibrated models 
+    # change the education model - based on the prior calibrated models
     education_model_num <- as.numeric(sampleseeds$educationmodel[i])
     education_transitions <- education_transitionsList[[education_model_num]]
-    
+
     run_microsim_alt(seed,samplenum,basepop,brfss,
                      death_counts,
                      updatingeducation, education_transitions,
@@ -98,7 +89,7 @@ foreach(k=1:length(output_type)) %do% {
                      updatingalcohol, alcohol_transitions,
                      catcontmodel, drinkingdistributions,
                      base_counts, diseases, mortality_parameters, sesinteraction,
-                     policy, policy_int, policymodel, year_policy, scenario, 
+                     policy, policy_int, policymodel, year_policy, scenario,
                      participation, part_elasticity, cons_elasticity, cons_elasticity_se, r_sim_obs,
                      inflation_factors,
                      age_inflated,
@@ -109,6 +100,6 @@ foreach(k=1:length(output_type)) %do% {
   Output <- do.call(rbind,Output)
   # save the output in the output directory
   write.csv(Output, paste0(OutputDirectory, "/output-policy_", output, "_", Sys.Date(), ".csv"), row.names=F)
-  
+
 }
 
