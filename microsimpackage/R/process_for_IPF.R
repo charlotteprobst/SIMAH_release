@@ -1,0 +1,73 @@
+#' processes the BRFSS data for IPF for generating baseline population
+#'
+#' @param
+#' @keywords brfss
+#' @export
+#' @examples
+#' process_for_IPF
+process_for_IPF <- function(data, selectedstate, variables){
+  data <- data %>%
+    filter(age_var<=79) %>%
+    mutate(race = recode(race_eth,"White"="WHI",
+                         "Black"="BLA", "Hispanic"="SPA", "Other"="OTH"),
+           sex = recode(sex_recode,"Male"="M","Female"="F"),
+           education = education_summary,
+           agecat = cut(age_var, breaks=c(0,24,29,34,39,44,49,54,59,64,69,79),
+                        labels=c("18.24","25.29","30.34","35.39","40.44",
+                                 "45.49","50.54","55.59","60.64","65.69","70.79")),
+           frequency = ifelse(frequency_upshifted==0 & gramsperday_upshifted>0, 1, frequency_upshifted),
+           quantity_per_occasion = (gramsperday_upshifted/14 * 30) / frequency_upshifted,
+           quantity_per_occasion = ifelse(gramsperday_upshifted==0, 0, quantity_per_occasion),
+           gramsperday = gramsperday_upshifted,
+           formerdrinker=ifelse(drinkingstatus_detailed=="Former drinker", 1,0))
+
+  selected <- data %>% filter(state==selectedstate) %>%
+    ungroup() %>%
+    dplyr::select(all_of(variables)) %>% drop_na(agecat,race,sex,education)
+
+  # work out if there are any missing categories for this state and if so do something about that
+  if(selectedstate!="USA"){
+      missing <- selected %>% mutate(sex = as.factor(sex),
+                                     agecat = as.factor(agecat),
+                                     education=as.factor(education),
+                                     race=as.factor(race)) %>%
+        group_by(sex,agecat, education, race, .drop=FALSE) %>%
+        tally() %>%
+        mutate(cat = paste(race, sex, agecat, education, sep="")) %>% ungroup() %>%
+        dplyr::select(cat, n) %>% filter(n==0)
+      missingcats <- unique(missing$cat)
+      # cons <- cons %>% filter(state==selectedstate) %>% dplyr::select()
+      # 100-round(rowSums(cons[c(missingcats)]) / rowSums(cons)*100,digits=2)
+      if(length(missingcats>0)){
+        toreplace <- data %>% drop_na() %>% filter(region==unique(selected$region)) %>%
+          mutate(cat=paste(race,sex,agecat,education,sep="")) %>%
+          filter(cat %in% missingcats) %>% ungroup() %>%
+          dplyr::select(all_of(variables))
+        selected <- rbind(toreplace, selected)
+      }
+      # are there still any missing categories?
+      missing <- selected %>% mutate(sex = as.factor(sex),
+                                     agecat = as.factor(agecat),
+                                     education=as.factor(education),
+                                     race=as.factor(race)) %>%
+        group_by(sex,agecat, education, race, .drop=FALSE) %>%
+        tally() %>%
+        mutate(cat = paste(race, sex, agecat, education, sep="")) %>% ungroup() %>%
+        dplyr::select(cat, n) %>% filter(n==0)
+      missingcats <- unique(missing$cat)
+      # if so borrow from whole US
+      if(length(missingcats>0)){
+        toreplace <- data %>% drop_na() %>%
+          mutate(cat=paste(race,sex,agecat,education,sep="")) %>%
+          filter(cat %in% missingcats) %>% ungroup() %>%
+          dplyr::select(all_of(variables))
+        selected <- rbind(toreplace, selected)
+      }
+  }
+  # create and ID and make sure any "borrowed" individuals from other states have correct state ID
+  id <- 1:nrow(selected)
+  selected <- cbind(id, selected)
+  selected$State <- selectedstate
+  return(selected)
+}
+
